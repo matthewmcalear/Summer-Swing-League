@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Member {
+  id         Int      @id @default(autoincrement())
+  full_name  String
+  handicap   Float
+  email      String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  is_test    Boolean  @default(false)
+}
+
+model Score {
+  id            Int      @id @default(autoincrement())
+  player        String
+  holes         Int
+  gross         Int
+  handicap      Float
+  difficulty    Float
+  group_members Int
+  total_points  Float
+  play_date     DateTime
+  course_name   String
+  created_at    DateTime @default(now())
+} 
