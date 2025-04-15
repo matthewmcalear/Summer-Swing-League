@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Member {
+model members {
   id         Int      @id @default(autoincrement())
   full_name  String
   handicap   Float
@@ -17,7 +17,7 @@ model Member {
   is_test    Boolean  @default(false)
 }
 
-model Score {
+model scores {
   id            Int      @id @default(autoincrement())
   player        String
   holes         Int

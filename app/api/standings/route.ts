@@ -39,14 +39,14 @@ interface DBScore {
 export async function GET() {
   try {
     // Get all non-test members
-    const members = await prisma.member.findMany({
+    const members = await prisma.members.findMany({
       where: {
         is_test: false
       }
     }) as DBMember[];
 
     // Get all scores
-    const scores = await prisma.score.findMany() as DBScore[];
+    const scores = await prisma.scores.findMany() as DBScore[];
 
     // Calculate standings for each member
     const standings: StandingEntry[] = members.map((member) => {
