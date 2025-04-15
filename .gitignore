@@ -1,0 +1,47 @@
+# PHP
+/vendor/
+.env
+*.log
+*.cache
+composer.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+/temp/
+/tmp/
+
+# Database credentials
+/config/database.php
+/config.php
+
+# Environment files
+.env.local
+.env.*.local
+
+# PHP installation files
+php-*/
+PostgreSQL/
+php/
+
+# Installation scripts
+*-pgsql.ps1
+install-*.ps1
+
+# Logs
+logs/
+
+# Heroku
+heroku/
+
+scores.json 
