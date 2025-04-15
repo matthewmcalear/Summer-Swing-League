@@ -6,10 +6,11 @@ use PDO;
 use PDOException;
 use Exception;
 
-class Connection
-{
-    public static function getConnection(): PDO
-    {
+class Connection {
+    private static $instance = null;
+    private $connection = null;
+
+    private function __construct() {
         $host = getenv('DB_HOST') ?: 'localhost';
         $port = getenv('DB_PORT') ?: '5432';
         $dbname = getenv('DB_NAME') ?: 'ssl_golf';
@@ -17,7 +18,7 @@ class Connection
         $password = getenv('DB_PASSWORD') ?: '';
 
         try {
-            $pdo = new PDO(
+            $this->connection = new PDO(
                 "pgsql:host=$host;port=$port;dbname=$dbname",
                 $user,
                 $password,
@@ -27,9 +28,19 @@ class Connection
                     PDO::ATTR_EMULATE_PREPARES => false
                 ]
             );
-            return $pdo;
         } catch (PDOException $e) {
             throw new Exception("Database connection failed: " . $e->getMessage());
         }
+    }
+
+    public static function getInstance() {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
+    public function getConnection() {
+        return $this->connection;
     }
 } 
