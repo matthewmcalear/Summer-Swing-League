@@ -15,6 +15,7 @@ model Member {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   is_test    Boolean  @default(false)
+  Score      Score[]
 }
 
 model Score {
@@ -29,4 +30,5 @@ model Score {
   play_date     DateTime
   course_name   String
   created_at    DateTime @default(now())
+  member        Member   @relation(fields: [player], references: [full_name])
 } 
