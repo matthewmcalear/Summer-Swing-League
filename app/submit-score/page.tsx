@@ -7,6 +7,9 @@ interface Member {
   id: number;
   full_name: string;
   handicap: number;
+  email: string;
+  created_at: Date;
+  updated_at: Date;
   is_test: boolean;
 }
 
