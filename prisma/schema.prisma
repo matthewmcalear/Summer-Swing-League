@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model members {
+model Member {
   id         Int      @id @default(autoincrement())
   full_name  String
   handicap   Float
@@ -15,9 +15,11 @@ model members {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   is_test    Boolean  @default(false)
+
+  @@map("members")
 }
 
-model scores {
+model Score {
   id            Int      @id @default(autoincrement())
   player        String
   holes         Int
@@ -29,4 +31,6 @@ model scores {
   play_date     DateTime
   course_name   String
   created_at    DateTime @default(now())
+
+  @@map("scores")
 } 
