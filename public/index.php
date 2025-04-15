@@ -1,14 +1,22 @@
 <?php
-require_once __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../config.php';
+// Enable error reporting
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/../logs/php-error.log');
 
 try {
+    require_once __DIR__ . '/../vendor/autoload.php';
+    require_once __DIR__ . '/../config.php';
+
     // Initialize application
     use SSL\Config\Config;
     Config::init();
 
     // Test database connection
     $pdo = Connection::getConnection();
+    error_log("Database connection successful");
     
     // Include the navigation
     include __DIR__ . '/../includes/nav.php';
@@ -33,8 +41,8 @@ try {
     </html>
     <?php
 } catch (Exception $e) {
-    // Log the error
-    error_log("Application error: " . $e->getMessage());
+    // Log the error with stack trace
+    error_log("Application error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
     
     // Display a user-friendly error message
     ?>
@@ -54,6 +62,7 @@ try {
                 <?php if (getenv('APP_ENV') !== 'production'): ?>
                     <hr>
                     <p class="mb-0">Debug information: <?php echo htmlspecialchars($e->getMessage()); ?></p>
+                    <pre><?php echo htmlspecialchars($e->getTraceAsString()); ?></pre>
                 <?php endif; ?>
             </div>
         </div>
