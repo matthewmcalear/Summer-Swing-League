@@ -1,0 +1,35 @@
+<?php
+
+namespace SSL\Database;
+
+use PDO;
+use PDOException;
+use Exception;
+
+class Connection
+{
+    public static function getConnection(): PDO
+    {
+        $host = getenv('DB_HOST') ?: 'localhost';
+        $port = getenv('DB_PORT') ?: '5432';
+        $dbname = getenv('DB_NAME') ?: 'ssl_golf';
+        $user = getenv('DB_USER') ?: 'postgres';
+        $password = getenv('DB_PASSWORD') ?: '';
+
+        try {
+            $pdo = new PDO(
+                "pgsql:host=$host;port=$port;dbname=$dbname",
+                $user,
+                $password,
+                [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::ATTR_EMULATE_PREPARES => false
+                ]
+            );
+            return $pdo;
+        } catch (PDOException $e) {
+            throw new Exception("Database connection failed: " . $e->getMessage());
+        }
+    }
+} 
