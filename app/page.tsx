@@ -12,6 +12,9 @@ export default function Home() {
               </div>
             </div>
             <div className="flex items-center">
+              <Link href="/submit-score" className="ml-4 px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700">
+                Submit Score
+              </Link>
               <Link href="/register" className="ml-4 px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700">
                 Register
               </Link>
@@ -50,6 +53,11 @@ export default function Home() {
                   <li>
                     <Link href="/standings" className="text-green-600 hover:text-green-800">
                       Current Standings
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/submit-score" className="text-green-600 hover:text-green-800">
+                      Submit Score
                     </Link>
                   </li>
                   <li>
