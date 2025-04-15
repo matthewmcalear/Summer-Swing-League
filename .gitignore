@@ -3,7 +3,6 @@
 .env
 *.log
 *.cache
-composer.lock
 
 # IDE
 .idea/
