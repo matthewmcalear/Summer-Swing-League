@@ -21,12 +21,20 @@ export default function AllScoresPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/scores')
-      .then((r) => r.json())
-      .then((data) => {
-        setScores(data);
-      })
-      .finally(() => setLoading(false));
+    const getScores = () => {
+      fetch('/api/scores')
+        .then((r) => r.json())
+        .then((data) => {
+          setScores(data);
+        })
+        .finally(() => setLoading(false));
+    };
+    getScores();
+    const vis = () => {
+      if (document.visibilityState === 'visible') getScores();
+    };
+    document.addEventListener('visibilitychange', vis);
+    return () => document.removeEventListener('visibilitychange', vis);
   }, []);
 
   return (

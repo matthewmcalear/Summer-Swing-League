@@ -16,7 +16,7 @@ export default function MembersPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchMembers() {
+    const fetchMembers = async () => {
       try {
         const res = await fetch('/api/members');
         if (!res.ok) throw new Error('Failed to fetch members');
@@ -27,8 +27,15 @@ export default function MembersPage() {
       } finally {
         setLoading(false);
       }
-    }
+    };
+
     fetchMembers();
+
+    const handleVis = () => {
+      if (document.visibilityState === 'visible') fetchMembers();
+    };
+    document.addEventListener('visibilitychange', handleVis);
+    return () => document.removeEventListener('visibilitychange', handleVis);
   }, []);
 
   const rowClass = (idx: number) =>

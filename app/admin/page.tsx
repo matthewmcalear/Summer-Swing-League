@@ -22,8 +22,16 @@ export default function AdminDashboard() {
   const [tab, setTab] = useState<'members'|'scores'>('members');
 
   useEffect(() => {
-    fetch('/api/members').then(r=>r.json()).then(setMembers);
-    fetch('/api/scores').then(r=>r.json()).then(setScores);
+    const fetchAll = () => {
+      fetch('/api/members').then(r=>r.json()).then(setMembers);
+      fetch('/api/scores').then(r=>r.json()).then(setScores);
+    };
+    fetchAll();
+    const vis = () => {
+      if (document.visibilityState === 'visible') fetchAll();
+    };
+    document.addEventListener('visibilitychange', vis);
+    return () => document.removeEventListener('visibilitychange', vis);
   }, []);
 
   return (
