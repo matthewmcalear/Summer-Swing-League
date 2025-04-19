@@ -72,7 +72,7 @@ export async function POST(request: Request) {
       const nineHoleHandicap = handicapIndex / 2;
       basePoints = 75 - (grossScore - nineHoleHandicap);
     } else {
-      basePoints = 150 - ((grossScore - handicapIndex) * 0.5);
+      basePoints = (150 - (grossScore - handicapIndex)) / 2;
     }
 
     // Group bonus is +1 per additional member (excluding self)
