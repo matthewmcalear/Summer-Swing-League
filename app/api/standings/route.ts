@@ -27,7 +27,7 @@ interface DBScore {
   gross: number;
   handicap: number;
   difficulty: number;
-  group_members: number;
+  group_members: string;
   total_points: number;
   play_date: Date;
   course_name: string;
