@@ -13,6 +13,6 @@ export async function GET() {
     return NextResponse.json(members, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     console.error('Error fetching members:', error);
-    return NextResponse.json({ error: 'Failed to fetch members' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+    return NextResponse.json({ error: 'Failed to fetch members' }, { status: 500 });
   }
 } 
