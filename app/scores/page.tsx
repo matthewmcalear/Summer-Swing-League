@@ -53,6 +53,7 @@ export default function AllScoresPage() {
                   <th className="px-4 py-2 text-left">Handicap</th>
                   <th className="px-4 py-2 text-left">Net</th>
                   <th className="px-4 py-2 text-left">Group Bonus</th>
+                  <th className="px-4 py-2 text-left">Difficulty</th>
                   <th className="px-4 py-2 text-left">Points</th>
                 </tr>
               </thead>
@@ -67,7 +68,7 @@ export default function AllScoresPage() {
                       const rest=rawNames.slice(1).map(shorten).join(', ');
                       const net=s.holes===9? s.gross - s.handicap/2 : s.gross - s.handicap;
                       const groupBonus= Math.max(rawNames.length - 1, 0);
-                      return (<><td className="px-4 py-2">{main}</td><td className="px-4 py-2">{rest}</td><td className="px-4 py-2">{s.course_name}</td><td className="px-4 py-2">{s.holes}</td><td className="px-4 py-2">{s.gross}</td><td className="px-4 py-2">{s.handicap}</td><td className="px-4 py-2">{net.toFixed(1)}</td><td className="px-4 py-2">{groupBonus}</td></>);
+                      return (<><td className="px-4 py-2">{main}</td><td className="px-4 py-2">{rest}</td><td className="px-4 py-2">{s.course_name}</td><td className="px-4 py-2">{s.holes}</td><td className="px-4 py-2">{s.gross}</td><td className="px-4 py-2">{s.handicap}</td><td className="px-4 py-2">{net.toFixed(1)}</td><td className="px-4 py-2">{groupBonus}</td><td className="px-4 py-2">{s.difficulty}</td></>);
                     })()}
                     <td className="px-4 py-2">{s.total_points.toFixed(1)}</td>
                   </tr>
