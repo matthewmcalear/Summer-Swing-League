@@ -65,7 +65,7 @@ export default function AdminDashboard() {
 
       {tab==='scores' && (
         <table className="min-w-full bg-white rounded shadow text-sm">
-          <thead className="bg-gray-100"><tr><th className="px-4 py-2 text-left">Player(s)</th><th className="px-4 py-2 text-left">Handicap</th><th className="px-4 py-2 text-left">Holes</th><th className="px-4 py-2 text-left">Gross</th><th className="px-4 py-2 text-left">Net</th><th className="px-4 py-2 text-left">Bonus</th><th className="px-4 py-2 text-left">Course</th><th className="px-4 py-2 text-left">Difficulty</th><th className="px-4 py-2 text-left">Points</th><th className="px-4 py-2 text-left">Date</th><th className="px-4 py-2 text-left">Actions</th></tr></thead>
+          <thead className="bg-gray-100"><tr><th className="px-4 py-2 text-left">Player(s)</th><th className="px-4 py-2 text-left">Handicap</th><th className="px-4 py-2 text-left">Holes</th><th className="px-4 py-2 text-left">Gross</th><th className="px-4 py-2 text-left">Net</th><th className="px-4 py-2 text-left">Group Bonus</th><th className="px-4 py-2 text-left">Course</th><th className="px-4 py-2 text-left">Difficulty</th><th className="px-4 py-2 text-left">Round Points</th><th className="px-4 py-2 text-left">Date</th><th className="px-4 py-2 text-left">Actions</th></tr></thead>
           <tbody>
             {scores.map((s) => {
               const names = s.player.split(',');
