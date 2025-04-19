@@ -76,7 +76,7 @@ export default function RecentScores() {
             {scores.map((score) => (
               <tr key={score.id} className="odd:bg-gray-50 hover:bg-green-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {new Date(score.play_date).toLocaleDateString()}
+                  {new Date(score.play_date).toLocaleDateString(undefined,{timeZone:'UTC'})}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {score.player}

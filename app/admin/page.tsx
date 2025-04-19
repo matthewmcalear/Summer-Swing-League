@@ -83,7 +83,7 @@ export default function AdminDashboard() {
                   <td className="px-4 py-2">{s.course_name}</td>
                   <td className="px-4 py-2">{s.difficulty}</td>
                   <td className="px-4 py-2">{s.total_points.toFixed(1)}</td>
-                  <td className="px-4 py-2">{new Date(s.play_date).toLocaleDateString()}</td>
+                  <td className="px-4 py-2">{new Date(s.play_date).toLocaleDateString(undefined,{timeZone:'UTC'})}</td>
                   <td className="px-4 py-2">
                     <button
                       className="text-red-600"

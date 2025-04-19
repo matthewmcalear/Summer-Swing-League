@@ -68,7 +68,7 @@ export default function AllScoresPage() {
               <tbody className="divide-y divide-gray-200">
                 {scores.map((s) => (
                   <tr key={s.id} className="odd:bg-gray-50 hover:bg-green-50 transition-colors">
-                    <td className="px-4 py-2">{new Date(s.play_date).toLocaleDateString()}</td>
+                    <td className="px-4 py-2">{new Date(s.play_date).toLocaleDateString(undefined,{timeZone:'UTC'})}</td>
                     {(() => {
                       const shorten=(name:string)=>{const parts=name.trim().split(' ');return parts[0]+ ' '+(parts[1]?.charAt(0)||'')+'.';};
                       const rawNames=s.player.split(',');
