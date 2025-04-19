@@ -73,6 +73,11 @@ export default function Home() {
                       Register Now
                     </Link>
                   </li>
+                  <li>
+                    <Link href="/admin" className="text-green-600 hover:text-green-800">
+                      Admin Dashboard
+                    </Link>
+                  </li>
                 </ul>
               </div>
             </div>

@@ -42,7 +42,7 @@ export default function AllScoresPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-2 text-left">Date</th>
-                  <th className="px-4 py-2 text-left">Player(s)</th>
+                  <th className="px-4 py-2 text-left">Played With</th>
                   <th className="px-4 py-2 text-left">Course</th>
                   <th className="px-4 py-2 text-left">Holes</th>
                   <th className="px-4 py-2 text-left">Gross</th>
@@ -53,7 +53,7 @@ export default function AllScoresPage() {
                 {scores.map((s) => (
                   <tr key={s.id}>
                     <td className="px-4 py-2">{new Date(s.play_date).toLocaleDateString()}</td>
-                    <td className="px-4 py-2">{s.player}</td>
+                    {(() => {const [main,...rest]=s.player.split(',');return (<><td className="px-4 py-2">{main.trim()}</td><td className="px-4 py-2">{rest.join(', ').trim()}</td></>);})()}
                     <td className="px-4 py-2">{s.course_name}</td>
                     <td className="px-4 py-2">{s.holes}</td>
                     <td className="px-4 py-2">{s.gross}</td>
