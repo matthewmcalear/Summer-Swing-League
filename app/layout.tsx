@@ -19,8 +19,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className + " relative bg-[url('/golf-bg.jpg')] bg-cover bg-center bg-fixed"}>
-        {/* Overlay for readability */}
-        <div className="absolute inset-0 bg-white/30 pointer-events-none z-0" />
+        {/* optional overlay removed for clarity */}
+        <div className="absolute inset-0 pointer-events-none z-0" style={{background:'transparent'}} />
         <nav className="bg-green-700 text-white">
           <div className="max-w-7xl mx-auto px-4 py-3 flex space-x-6 text-sm">
             <Link href="/" className="hover:underline">Home</Link>
