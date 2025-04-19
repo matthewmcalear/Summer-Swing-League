@@ -42,7 +42,7 @@ export default function AllScoresPage() {
         ) : (
           <div className="overflow-x-auto bg-white rounded shadow">
             <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
+              <thead className="sticky top-0 bg-white/90 backdrop-blur supports-backdrop-blur:bg-white/60">
                 <tr>
                   <th className="px-4 py-2 text-left">Date</th>
                   <th className="px-4 py-2 text-left">Player</th>
@@ -59,7 +59,7 @@ export default function AllScoresPage() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {scores.map((s) => (
-                  <tr key={s.id}>
+                  <tr key={s.id} className="odd:bg-gray-50 hover:bg-green-50 transition-colors">
                     <td className="px-4 py-2">{new Date(s.play_date).toLocaleDateString()}</td>
                     {(() => {
                       const shorten=(name:string)=>{const parts=name.trim().split(' ');return parts[0]+ ' '+(parts[1]?.charAt(0)||'')+'.';};

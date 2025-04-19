@@ -53,7 +53,7 @@ export default function Standings() {
 
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="sticky top-0 bg-white/90 backdrop-blur supports-backdrop-blur:bg-white/60">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Rank
@@ -78,6 +78,7 @@ export default function Standings() {
               {players.map((player, index) => (
                 <tr
                   key={player.id}
+                  className="odd:bg-gray-50 hover:bg-green-50 transition-colors"
                   style={
                     index === 0
                       ? { backgroundColor: '#ffd70090' }
