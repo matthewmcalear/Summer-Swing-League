@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   try {
-    const { full_name, email, handicap, is_test } = await request.json();
+    const { full_name, email, handicap } = await request.json();
 
     // Validate input
     if (!full_name || !email || handicap === undefined) {
@@ -42,7 +42,6 @@ export async function POST(request: Request) {
         full_name,
         email,
         handicap: handicapNum,
-        is_test: is_test || false,
         updated_at: new Date()
       },
     });

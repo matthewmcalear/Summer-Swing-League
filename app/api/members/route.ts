@@ -6,7 +6,6 @@ const prisma = new PrismaClient();
 export async function GET() {
   try {
     const members = await prisma.member.findMany({
-      where: { is_test: false },
       orderBy: { full_name: 'asc' }
     });
     return NextResponse.json(members);

@@ -10,7 +10,6 @@ export default function Register() {
     email: '',
     handicap: '',
     handicapSource: 'app', // 'app' or 'average'
-    is_test: false
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,8 +31,7 @@ export default function Register() {
         body: JSON.stringify({
           full_name: formData.full_name,
           email: formData.email,
-          handicap: finalHandicap,
-          is_test: formData.is_test
+          handicap: finalHandicap
         }),
       });
 
@@ -136,21 +134,6 @@ export default function Register() {
                 : "Enter your typical 9-hole score (30-70)"}
             </p>
           </div>
-
-          {process.env.NODE_ENV !== 'production' && (
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="is_test"
-                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                checked={formData.is_test}
-                onChange={(e) => setFormData({ ...formData, is_test: e.target.checked })}
-              />
-              <label htmlFor="is_test" className="ml-2 block text-sm text-gray-700">
-                This is a test registration
-              </label>
-            </div>
-          )}
 
           <div>
             <button
