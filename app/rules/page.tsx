@@ -1,7 +1,19 @@
+import Image from 'next/image';
+
 export default function Rules() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-green-100 py-12">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
+    <div
+      className="min-h-screen relative py-12"
+      style={{
+        backgroundImage:
+          "url('https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?auto=format&fit=crop&w=2100&q=80')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      {/* overlay */}
+      <div className="absolute inset-0 bg-white/80 backdrop-blur-sm" />
+      <div className="relative max-w-4xl mx-auto bg-white/90 rounded-lg shadow-lg p-8">
         <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">
           Summer Swing League Rules
         </h1>
@@ -50,7 +62,7 @@ export default function Rules() {
                   <li>Base Points:
                     <ul className="list-disc list-inside ml-4">
                       <li>9 holes: 75 - (Gross Score - Handicap (9 hole))</li>
-                      <li>18 holes: 150 - (Gross Score - Handicap (18 hole)) * (1/2)</li>
+                      <li>18 holes: (150 - (Gross Score - Handicap (18 hole))) / 2</li>
                     </ul>
                   </li>
                   <li>Course Difficulty Adjustment: Easy (×0.95), Average (×1.0), Tough (×1.05)</li>
@@ -94,6 +106,67 @@ export default function Rules() {
               <h3 className="font-semibold text-gray-800">Going the Distance Award</h3>
               <p className="text-gray-600">$75 for the player with the most rounds played (tie breaker based on total season points)</p>
             </div>
+          </section>
+
+          {/* Handicap Assignment */}
+          <section>
+            <h2 className="text-2xl font-semibold text-green-800 mb-4">Handicap Assignment</h2>
+            <p className="text-gray-600 mb-2">Your handicap is fixed at the start of the season so everyone plays on equal footing.</p>
+            <ul className="list-disc list-inside space-y-2 text-gray-600">
+              <li><span className="font-semibold">Priority – Golf App&nbsp;Users:</span> provide the index shown in your preferred app (Golf&nbsp;Pad, 18Birdies, GHIN, The&nbsp;Grint, etc.). Example: "My Golf&nbsp;Pad handicap is&nbsp;10."</li>
+              <li><span className="font-semibold">No&nbsp;App:</span> send an average 9&nbsp;hole score from recent rounds. Handicap = Average&nbsp;Score&nbsp;−&nbsp;Par. Example: 48&nbsp;avg&nbsp;–&nbsp;36&nbsp;par&nbsp;=&nbsp;12 (×2&nbsp;=&nbsp;24 for 18 holes).</li>
+              <li><span className="font-semibold">New&nbsp;Players:</span> we'll estimate from a practice round or assign a temporary 25&nbsp;–&nbsp;35 until data is available.</li>
+            </ul>
+          </section>
+
+          {/* Registration */}
+          <section>
+            <h2 className="text-2xl font-semibold text-green-800 mb-4">Registration</h2>
+            <p className="text-gray-600 mb-4">Email <a href="mailto:matthew.mcalear@gmail.com" className="text-green-700 underline">Matthew&nbsp;McAlear</a> (or text / DM) with "I'm in!" and your handicap info. You'll be added to the member list, get the live standings sheet and group&nbsp;chat details. Only verified members count toward bonuses.</p>
+          </section>
+
+          {/* Scoring Examples */}
+          <section>
+            <h2 className="text-2xl font-semibold text-green-800 mb-4">Scoring Examples</h2>
+            <div className="space-y-4 text-gray-600 text-sm">
+              <div>
+                <h3 className="font-semibold text-gray-800">9&nbsp;hole Example</h3>
+                <p>Player&nbsp;John&nbsp;Cena (HCP&nbsp;8) shoots 44 (Average course) with 3 league members.</p>
+                <p>Net&nbsp;=&nbsp;44&nbsp;−&nbsp;8&nbsp;=&nbsp;36<br/>Base&nbsp;=&nbsp;75&nbsp;−&nbsp;36&nbsp;=&nbsp;39<br/>Bonus&nbsp;=&nbsp;3<br/>Total&nbsp;=&nbsp;39&nbsp;&nbsp;+&nbsp;&nbsp;3&nbsp;&nbsp;=&nbsp;&nbsp;42&nbsp;&nbsp;pts</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-800">18&nbsp;hole Example</h3>
+                <p>Player&nbsp;Jimmy&nbsp;Buffet (HCP&nbsp;20) shoots 120 (Tough course ×1.05) with 5 members.</p>
+                <p>Net&nbsp;=&nbsp;120&nbsp;−&nbsp;20&nbsp;=&nbsp;100<br/>Base&nbsp;= (150&nbsp;−&nbsp;100)/2&nbsp;= 25<br/>Adj.&nbsp;= 25&nbsp;×&nbsp;1.05&nbsp;= 26.25<br/>Bonus&nbsp;= 5<br/>Total&nbsp;= 31.25&nbsp;pts</p>
+              </div>
+            </div>
+          </section>
+
+          {/* Season Score Examples */}
+          <section>
+            <h2 className="text-2xl font-semibold text-green-800 mb-4">Season Score Examples</h2>
+            <ul className="list-disc list-inside space-y-2 text-gray-600 text-sm">
+              <li><span className="font-semibold">5&nbsp;+ Rounds:</span> Chun&nbsp;Li's best 5 = 42,45,40,43,41 → Total&nbsp;211 ×100%&nbsp;=&nbsp;211</li>
+              <li><span className="font-semibold">3&nbsp;Rounds:</span> Barry's best 3 = 57.5,50,52 → 159.5 ×60%&nbsp;= 95.7</li>
+            </ul>
+          </section>
+
+          {/* Special Events */}
+          <section>
+            <h2 className="text-2xl font-semibold text-green-800 mb-4">Special Events</h2>
+            <p className="text-gray-600">Group outings will be scheduled during the summer. Attendance earns bonus points—details will be announced in advance.</p>
+          </section>
+
+          {/* Financial Responsibility */}
+          <section>
+            <h2 className="text-2xl font-semibold text-green-800 mb-4">Financial Responsibility</h2>
+            <p className="text-gray-600">The SSL does <span className="font-semibold">not</span> cover any golf&nbsp;related expenses. Players pay their own green/cart fees each round. Playing budget&nbsp;friendly courses is encouraged!</p>
+          </section>
+
+          {/* Participation Benefits */}
+          <section>
+            <h2 className="text-2xl font-semibold text-green-800 mb-4">Participation Benefits</h2>
+            <p className="text-gray-600">Enjoy organized summer golf, connect with friends &amp; family, and compete for cash prizes—all while setting your own tee&nbsp;times and course choices.</p>
           </section>
         </div>
       </div>
