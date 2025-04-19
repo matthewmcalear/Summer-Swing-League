@@ -39,8 +39,10 @@ export default function StandingsChart() {
 
   if (!players.length) return null;
 
+  const shorten = (full:string)=>{const parts=full.trim().split(' ');return parts[0]+' '+(parts[1]?.charAt(0)||'')+'.';};
+
   const data = {
-    labels: players.map((p) => p.name),
+    labels: players.map((p) => shorten(p.name)),
     datasets: [
       {
         label: 'Season Score',
