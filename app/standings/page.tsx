@@ -30,6 +30,14 @@ export default function Standings() {
     }
 
     fetchStandings();
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchStandings();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, []);
 
   if (loading) {
