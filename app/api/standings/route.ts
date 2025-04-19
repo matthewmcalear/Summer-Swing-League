@@ -8,6 +8,7 @@ interface StandingEntry {
   totalRounds: number;
   totalPoints: number;
   seasonScore: number;
+  topScores: number[]; // best 5 or fewer round points
 }
 
 interface DBMember {
@@ -69,7 +70,10 @@ export async function GET() {
         multiplier = [0.2, 0.4, 0.6, 0.8][totalRounds - 1] || 1;
       }
       
-      const seasonScore = bestScores.reduce((sum: number, score) => sum + Number(score.total_points ?? 0), 0) * multiplier;
+      const bestPointsSum = bestScores.reduce((sum: number, score) => sum + Number(score.total_points ?? 0), 0);
+      const seasonScore = bestPointsSum * multiplier;
+
+      const topScores = bestScores.map(s => Number(s.total_points ?? 0));
 
       return {
         id: member.id,
@@ -78,6 +82,7 @@ export async function GET() {
         totalRounds,
         totalPoints,
         seasonScore,
+        topScores,
       };
     });
 

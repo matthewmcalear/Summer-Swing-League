@@ -50,15 +50,13 @@ export default function MembersPage() {
                 <tr>
                   <th className="px-4 py-2 text-left">Name</th>
                   <th className="px-4 py-2 text-left">Handicap</th>
-                  <th className="px-4 py-2 text-left">Email</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {members.map((m) => (
                   <tr key={m.id}>
-                    <td className="px-4 py-2">{m.full_name}</td>
+                    <td className="px-4 py-2">{(() => {const parts=m.full_name.split(' ');return parts[0]+ ' '+(parts[1]?.charAt(0)||'')+'.';})()}</td>
                     <td className="px-4 py-2">{m.handicap}</td>
-                    <td className="px-4 py-2">{m.email}</td>
                   </tr>
                 ))}
               </tbody>

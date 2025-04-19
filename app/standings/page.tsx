@@ -9,6 +9,7 @@ interface Player {
   totalRounds: number;
   totalPoints: number;
   seasonScore: number;
+  topScores: number[];
 }
 
 export default function Standings() {
@@ -69,9 +70,8 @@ export default function Standings() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Total Points
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Season Score
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Best Scores</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Season Score</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -91,6 +91,9 @@ export default function Standings() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {player.totalPoints.toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {player.topScores.map((p,i)=><span key={i}>{p.toFixed(1)}{i<player.topScores.length-1?', ':''}</span>)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {player.seasonScore.toFixed(2)}
