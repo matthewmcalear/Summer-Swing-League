@@ -63,10 +63,13 @@ export async function GET() {
       
       // Sum of best 5 (or fewer) rounds
       const totalPoints = bestScores.reduce((sum: number, score) => sum + Number(score.total_points ?? 0), 0);
-      
-      // Calculate season score based on best 5 rounds
-      const multiplier = 1;
-      
+
+      // Season score multiplier based on number of rounds played
+      let multiplier = 1;
+      if (totalRounds < 5) {
+        multiplier = [0.2, 0.4, 0.6, 0.8][totalRounds - 1] || 1;
+      }
+
       const seasonScore = totalPoints * multiplier;
 
       const topScores = bestScores.map(s => Number(s.total_points ?? 0));
