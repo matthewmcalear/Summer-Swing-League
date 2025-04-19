@@ -59,6 +59,11 @@ export default function Home() {
                     </Link>
                   </li>
                   <li>
+                    <Link href="/members" className="text-green-600 hover:text-green-800">
+                      View Members
+                    </Link>
+                  </li>
+                  <li>
                     <Link href="/scores" className="text-green-600 hover:text-green-800">
                       All Scores
                     </Link>

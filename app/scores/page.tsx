@@ -59,7 +59,7 @@ export default function AllScoresPage() {
                 {scores.map((s) => (
                   <tr key={s.id}>
                     <td className="px-4 py-2">{new Date(s.play_date).toLocaleDateString()}</td>
-                    {(() => {const names=s.player.split(',');const main=names[0]?.trim()||'';const rest=names.slice(1).join(', ').trim();const net=s.holes===9? s.gross - s.handicap/2 : s.gross - s.handicap; const groupBonus= names.length; return (<><td className="px-4 py-2">{main}</td><td className="px-4 py-2">{rest}</td><td className="px-4 py-2">{s.course_name}</td><td className="px-4 py-2">{s.holes}</td><td className="px-4 py-2">{s.gross}</td><td className="px-4 py-2">{net.toFixed(1)}</td><td className="px-4 py-2">{groupBonus}</td></>);})()}
+                    {(() => {const names=s.player.split(',');const main=names[0]?.trim()||'';const rest=names.slice(1).join(', ').trim();const net=s.holes===9? s.gross - s.handicap/2 : s.gross - s.handicap; const groupBonus= Math.max(names.length - 1, 0); return (<><td className="px-4 py-2">{main}</td><td className="px-4 py-2">{rest}</td><td className="px-4 py-2">{s.course_name}</td><td className="px-4 py-2">{s.holes}</td><td className="px-4 py-2">{s.gross}</td><td className="px-4 py-2">{net.toFixed(1)}</td><td className="px-4 py-2">{groupBonus}</td></>);})()}
                     <td className="px-4 py-2">{s.total_points.toFixed(1)}</td>
                   </tr>
                 ))}

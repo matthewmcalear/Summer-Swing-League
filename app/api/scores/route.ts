@@ -76,7 +76,8 @@ export async function POST(request: Request) {
     }
 
     const difficultyAdjusted = basePoints * difficultyFactor;
-    const totalGroupMembers = playerNames.length; // includes self
+    // Group bonus is +1 point per *additional* league member present (excluding self)
+    const totalGroupMembers = Math.max(playerNames.length - 1, 0);
     const totalPoints = difficultyAdjusted + totalGroupMembers;
 
     // Persist score

@@ -4,7 +4,17 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 interface Member { id:number; full_name:string; handicap:number; email:string; }
-interface Score { id:number; player:string; total_points:number; play_date:string; }
+interface Score {
+  id: number;
+  player: string;
+  total_points: number;
+  play_date: string;
+  holes: number;
+  gross: number;
+  handicap: number;
+  difficulty: number;
+  course_name: string;
+}
 
 export default function AdminDashboard() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -40,11 +50,38 @@ export default function AdminDashboard() {
 
       {tab==='scores' && (
         <table className="min-w-full bg-white rounded shadow text-sm">
-          <thead className="bg-gray-100"><tr><th className="px-4 py-2 text-left">Player(s)</th><th className="px-4 py-2 text-left">Points</th><th className="px-4 py-2 text-left">Date</th><th className="px-4 py-2 text-left">Actions</th></tr></thead>
+          <thead className="bg-gray-100"><tr><th className="px-4 py-2 text-left">Player(s)</th><th className="px-4 py-2 text-left">Handicap</th><th className="px-4 py-2 text-left">Gross</th><th className="px-4 py-2 text-left">Net</th><th className="px-4 py-2 text-left">Bonus</th><th className="px-4 py-2 text-left">Course</th><th className="px-4 py-2 text-left">Difficulty</th><th className="px-4 py-2 text-left">Points</th><th className="px-4 py-2 text-left">Date</th><th className="px-4 py-2 text-left">Actions</th></tr></thead>
           <tbody>
-            {scores.map(s=> (
-              <tr key={s.id} className="border-t"><td className="px-4 py-2">{s.player}</td><td className="px-4 py-2">{s.total_points.toFixed(1)}</td><td className="px-4 py-2">{new Date(s.play_date).toLocaleDateString()}</td><td className="px-4 py-2"><button className="text-red-600" onClick={async()=>{await fetch(`/api/admin/scores/${s.id}`,{method:'DELETE'});setScores(prev=>prev.filter(x=>x.id!==s.id));}}>🗑</button></td></tr>
-            ))}
+            {scores.map((s) => {
+              const names = s.player.split(',');
+              const main = names[0].trim();
+              const net = s.holes === 9 ? s.gross - s.handicap / 2 : s.gross - s.handicap;
+              const bonus = Math.max(names.length - 1, 0);
+              return (
+                <tr key={s.id} className="border-t">
+                  <td className="px-4 py-2">{main}</td>
+                  <td className="px-4 py-2">{s.handicap}</td>
+                  <td className="px-4 py-2">{s.gross}</td>
+                  <td className="px-4 py-2">{net.toFixed(1)}</td>
+                  <td className="px-4 py-2">{bonus}</td>
+                  <td className="px-4 py-2">{s.course_name}</td>
+                  <td className="px-4 py-2">{s.difficulty}</td>
+                  <td className="px-4 py-2">{s.total_points.toFixed(1)}</td>
+                  <td className="px-4 py-2">{new Date(s.play_date).toLocaleDateString()}</td>
+                  <td className="px-4 py-2">
+                    <button
+                      className="text-red-600"
+                      onClick={async () => {
+                        await fetch(`/api/admin/scores/${s.id}`, { method: 'DELETE' });
+                        setScores((prev) => prev.filter((x) => x.id !== s.id));
+                      }}
+                    >
+                      🗑
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}
