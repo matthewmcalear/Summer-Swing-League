@@ -26,7 +26,7 @@ model Score {
   gross         Int
   handicap      Float
   difficulty    Float
-  group_members Int
+  group_members String
   total_points  Float
   play_date     DateTime
   course_name   String

@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
@@ -89,7 +87,7 @@ export async function POST(request: Request) {
         gross: grossScore,
         handicap: handicapIndex,
         difficulty: difficultyFactor,
-        group_members: totalGroupMembers,
+        group_members: playerNames.join(', '),
         total_points: totalPoints,
         play_date: new Date(play_date),
         course_name,
