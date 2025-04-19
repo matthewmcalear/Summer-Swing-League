@@ -137,18 +137,20 @@ export default function Register() {
             </p>
           </div>
 
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="is_test"
-              className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-              checked={formData.is_test}
-              onChange={(e) => setFormData({ ...formData, is_test: e.target.checked })}
-            />
-            <label htmlFor="is_test" className="ml-2 block text-sm text-gray-700">
-              This is a test registration
-            </label>
-          </div>
+          {process.env.NODE_ENV !== 'production' && (
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="is_test"
+                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                checked={formData.is_test}
+                onChange={(e) => setFormData({ ...formData, is_test: e.target.checked })}
+              />
+              <label htmlFor="is_test" className="ml-2 block text-sm text-gray-700">
+                This is a test registration
+              </label>
+            </div>
+          )}
 
           <div>
             <button

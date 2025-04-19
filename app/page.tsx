@@ -94,8 +94,8 @@ export default function Home() {
                   <p className="text-gray-600">$150</p>
                 </div>
                 <div className="bg-amber-50 p-4 rounded-lg">
-                  <h4 className="font-semibold text-amber-800">3rd Place</h4>
-                  <p className="text-amber-600">$75</p>
+                  <h4 className="font-semibold" style={{color:'#cd7f32'}}>3rd Place</h4>
+                  <p style={{color:'#cd7f32'}}>$75</p>
                 </div>
               </div>
             </div>
