@@ -90,7 +90,7 @@ export async function POST(request: Request) {
         difficulty: difficultyFactor,
         group_members: playerNames.join(', '),
         total_points: totalPoints,
-        play_date: new Date(play_date),
+        play_date: new Date(play_date.endsWith('Z') || play_date.includes('T') ? play_date : play_date + 'T00:00:00'),
         course_name,
       },
     });
