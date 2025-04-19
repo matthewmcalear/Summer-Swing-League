@@ -19,7 +19,7 @@ export default function Standings() {
   useEffect(() => {
     async function fetchStandings() {
       try {
-        const response = await fetch('/api/standings');
+        const response = await fetch(`/api/standings?fresh=${Date.now()}`);
         const data = await response.json();
         setPlayers(data);
       } catch (error) {

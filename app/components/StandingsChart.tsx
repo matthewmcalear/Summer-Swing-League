@@ -26,7 +26,7 @@ export default function StandingsChart() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch('/api/standings');
+        const res = await fetch(`/api/standings?fresh=${Date.now()}`);
         const data = await res.json();
         setPlayers(data);
       } catch (err) {
@@ -35,6 +35,8 @@ export default function StandingsChart() {
       }
     }
     fetchData();
+    const id=setInterval(fetchData,60000);
+    return ()=>clearInterval(id);
   }, []);
 
   if (!players.length) return null;

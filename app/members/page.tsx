@@ -18,7 +18,7 @@ export default function MembersPage() {
   useEffect(() => {
     const fetchMembers = async () => {
       try {
-        const res = await fetch('/api/members');
+        const res = await fetch(`/api/members?fresh=${Date.now()}`);
         if (!res.ok) throw new Error('Failed to fetch members');
         const data = await res.json();
         setMembers(data);
