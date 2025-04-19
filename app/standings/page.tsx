@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { PrismaClient } from '@prisma/client';
 
 interface Player {
   id: number;
@@ -20,14 +19,7 @@ export default function Standings() {
     async function fetchStandings() {
       try {
         const response = await fetch('/api/standings');
-        if (!response.ok) {
-          const errText = await response.text();
-          throw new Error(`Server error: ${errText}`);
-        }
         const data = await response.json();
-        if (!Array.isArray(data)) {
-          throw new Error('Unexpected response');
-        }
         setPlayers(data);
       } catch (error) {
         console.error('Error fetching standings:', error);
@@ -84,7 +76,7 @@ export default function Standings() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {players.map((player, index) => (
-                <tr key={player.id} className={index < 3 ? 'bg-yellow-50' : ''}>
+                <tr key={player.id} className={index ===0?'bg-yellow-50': index===1?'bg-gray-100': index===2?'bg-amber-200':''}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {index + 1}
                   </td>

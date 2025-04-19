@@ -17,7 +17,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={inter.className + ' relative bg-[url(https://images.unsplash.com/photo-1430165558479-de3cf8cf1478?auto=format&fit=crop&w=1920&q=60)] bg-cover bg-center bg-fixed'}>
+        {/* Overlay for readability */}
+        <div className="absolute inset-0 bg-white/60 -z-10" />
         <nav className="bg-green-700 text-white">
           <div className="max-w-7xl mx-auto px-4 py-3 flex space-x-6 text-sm">
             <Link href="/" className="hover:underline">Home</Link>
