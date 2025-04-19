@@ -52,11 +52,12 @@ export default function SubmitScore() {
         },
         body: JSON.stringify({
           ...formData,
-          group_members: selectedMembers.length + 1, // Include the submitting player
+          group_member_ids: selectedMembers,
           play_date: new Date(formData.play_date).toISOString(),
-          gross: parseInt(formData.gross),
-          holes: parseInt(formData.holes),
-          difficulty: parseFloat(formData.difficulty)
+          player: Number(formData.player),
+          gross: Number(formData.gross),
+          holes: Number(formData.holes),
+          difficulty: Number(formData.difficulty)
         }),
       });
 
