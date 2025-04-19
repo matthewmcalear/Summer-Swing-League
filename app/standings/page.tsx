@@ -20,7 +20,14 @@ export default function Standings() {
     async function fetchStandings() {
       try {
         const response = await fetch('/api/standings');
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`Server error: ${errText}`);
+        }
         const data = await response.json();
+        if (!Array.isArray(data)) {
+          throw new Error('Unexpected response');
+        }
         setPlayers(data);
       } catch (error) {
         console.error('Error fetching standings:', error);

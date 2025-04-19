@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 interface StandingEntry {
   id: number;
@@ -59,10 +57,10 @@ export async function GET() {
       const totalRounds = memberScores.length;
       
       // Calculate total points
-      const totalPoints = memberScores.reduce((sum: number, score) => sum + score.total_points, 0);
+      const totalPoints = memberScores.reduce((sum: number, score) => sum + (score.total_points ?? 0), 0);
       
       // Calculate season score based on best 5 rounds
-      const sortedScores = [...memberScores].sort((a, b) => b.total_points - a.total_points);
+      const sortedScores = [...memberScores].sort((a, b) => (b.total_points ?? 0) - (a.total_points ?? 0));
       const bestScores = sortedScores.slice(0, 5);
       
       // Apply multiplier based on number of rounds
@@ -71,7 +69,7 @@ export async function GET() {
         multiplier = [0.2, 0.4, 0.6, 0.8][totalRounds - 1] || 1;
       }
       
-      const seasonScore = bestScores.reduce((sum: number, score) => sum + score.total_points, 0) * multiplier;
+      const seasonScore = bestScores.reduce((sum: number, score) => sum + (score.total_points ?? 0), 0) * multiplier;
 
       return {
         id: member.id,

@@ -14,7 +14,7 @@ model Member {
   email      String
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
-  is_test    Boolean  @default(false)
+  is_test    Boolean  @default(false) @map("is_test_data")
 
   @@map("members")
 }
