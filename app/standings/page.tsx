@@ -34,7 +34,7 @@ export default function Standings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-50 to-green-100 py-12">
+      <div className="min-h-screen py-12">
         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
           <div className="flex justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
@@ -45,8 +45,8 @@ export default function Standings() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-green-100 py-12">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
+    <div className="min-h-screen py-12">
+      <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-8">
         <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">
           League Standings
         </h1>
@@ -76,7 +76,18 @@ export default function Standings() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {players.map((player, index) => (
-                <tr key={player.id} className={index ===0?'bg-yellow-50': index===1?'bg-gray-100': index===2?'bg-amber-200':''}>
+                <tr
+                  key={player.id}
+                  style={
+                    index === 0
+                      ? { backgroundColor: '#ffd70090' }
+                      : index === 1
+                      ? { backgroundColor: '#c0c0c090' }
+                      : index === 2
+                      ? { backgroundColor: '#cd7f3290' }
+                      : {}
+                  }
+                >
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {index + 1}
                   </td>
@@ -106,7 +117,7 @@ export default function Standings() {
 
         <div className="mt-8 text-sm text-gray-500">
           <p>* Season score is calculated using the best 5 rounds with appropriate multipliers for fewer rounds.</p>
-          <p>* Top 3 players are highlighted in yellow.</p>
+          <p>* Top 3 players are highlighted Gold, Silver, and Bronze.</p>
         </div>
       </div>
     </div>
