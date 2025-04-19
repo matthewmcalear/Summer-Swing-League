@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Poppins } from 'next/font/google'
 import './globals.css'
 import Link from 'next/link'
 
 const inter = Inter({ subsets: ['latin'] })
+const pop = Poppins({ subsets:['latin'], weight:['600','700'] })
 
 export const metadata: Metadata = {
   title: 'Summer Swing League 2025',
@@ -17,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className + " relative bg-[url('/golf-bg.jpg')] bg-cover bg-center bg-fixed"}>
+      <body className={inter.className + " relative bg-[url('/golf-bg.jpg')] bg-cover bg-center bg-fixed dark:bg-gray-900 dark:text-gray-100"}>
         {/* Overlay for readability */}
         <div className="absolute inset-0 bg-white/10 pointer-events-none z-0" />
         <nav className="bg-green-700 text-white">

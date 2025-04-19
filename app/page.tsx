@@ -1,7 +1,13 @@
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { Poppins } from 'next/font/google';
 
 const StandingsChart = dynamic(() => import('./components/StandingsChart'), { ssr: false });
+
+const pop = Poppins({
+  weight: '400',
+  subsets: ['latin'],
+});
 
 export default function Home() {
   return (
@@ -11,7 +17,7 @@ export default function Home() {
           <div className="flex justify-between h-16">
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
-                <h1 className="text-2xl font-bold text-green-800">Summer Swing League</h1>
+                <h1 className={`${pop.className} text-2xl font-bold text-green-800 tracking-wide`}>Summer Swing League</h1>
               </div>
             </div>
             <div className="flex items-center">
@@ -29,7 +35,7 @@ export default function Home() {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Welcome to Summer Swing League 2025</h2>
+            <h2 className={`${pop.className} text-3xl font-bold text-gray-900 mb-4`}>Welcome to Summer Swing League 2025</h2>
             <p className="text-gray-600 mb-4">
               Join us for a summer of competitive and social golf from May 1 to August 31, 2025.
             </p>
