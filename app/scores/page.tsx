@@ -30,7 +30,7 @@ export default function AllScoresPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-green-100 py-12">
+    <div className="min-h-screen py-12">
       <div className="max-w-5xl mx-auto px-4">
         <Link href="/" className="text-green-700 hover:underline">← Back Home</Link>
         <h1 className="text-3xl font-bold text-center text-gray-900 my-6">All Score Entries</h1>

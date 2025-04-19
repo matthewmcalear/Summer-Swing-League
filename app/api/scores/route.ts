@@ -4,10 +4,10 @@ import { prisma } from '@/lib/prisma';
 export async function GET() {
   try {
     const scores = await prisma.score.findMany({
-      orderBy: {
-        play_date: 'desc'
-      },
-      take: 10 // Limit to 10 most recent scores
+      orderBy: [
+        { play_date: 'desc' },
+        { id: 'desc' }
+      ]
     });
 
     return NextResponse.json(scores);
