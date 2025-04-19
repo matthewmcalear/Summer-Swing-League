@@ -1,4 +1,7 @@
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+
+const StandingsChart = dynamic(() => import('./components/StandingsChart'), { ssr: false });
 
 export default function Home() {
   return (
@@ -86,6 +89,9 @@ export default function Home() {
                 </div>
               </div>
             </div>
+
+            {/* Standings Chart */}
+            <StandingsChart />
           </div>
         </div>
       </main>
