@@ -75,10 +75,10 @@ export async function POST(request: Request) {
       basePoints = (150 - (grossScore - handicapIndex)) / 2;
     }
 
-    // Group bonus is +1 per additional member (excluding self)
+    // Apply difficulty to base, then add group bonus (+1 per additional member)
+    const difficultyAdjusted = basePoints * difficultyFactor;
     const totalGroupMembers = Math.max(playerNames.length - 1, 0);
-    // Apply difficulty AFTER adding group bonus
-    const totalPoints = (basePoints + totalGroupMembers) * difficultyFactor;
+    const totalPoints = difficultyAdjusted + totalGroupMembers;
 
     // Persist score
     const created = await prisma.score.create({
