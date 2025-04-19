@@ -14,17 +14,13 @@ export default function Home() {
     <div className="min-h-screen">
       <header className="bg-white shadow-sm">
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex">
-              <div className="flex-shrink-0 flex items-center">
-                <h1 className={`${pop.className} text-2xl font-bold text-green-800 tracking-wide`}>Summer Swing League</h1>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <Link href="/submit-score" className="ml-4 px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700">
+          <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center py-2">
+            <h1 className={`${pop.className} text-2xl font-bold text-green-800 tracking-wide`}>Summer Swing League</h1>
+            <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
+              <Link href="/submit-score" className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 text-sm">
                 Submit Score
               </Link>
-              <Link href="/register" className="ml-4 px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700">
+              <Link href="/register" className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 text-sm">
                 Register
               </Link>
             </div>
@@ -112,7 +108,11 @@ export default function Home() {
             </div>
 
             {/* Standings Chart */}
-            <StandingsChart />
+            <div className="mt-6 overflow-x-auto">
+              <div className="min-w-[600px]">
+                <StandingsChart />
+              </div>
+            </div>
           </div>
         </div>
       </main>
