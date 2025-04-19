@@ -53,7 +53,7 @@ export default function SubmitScore() {
         body: JSON.stringify({
           ...formData,
           group_member_ids: selectedMembers,
-          play_date: new Date(formData.play_date + 'T00:00:00').toISOString(),
+          play_date: new Date(formData.play_date + 'T12:00:00').toISOString(),
           player: Number(formData.player),
           gross: Number(formData.gross),
           holes: Number(formData.holes),
