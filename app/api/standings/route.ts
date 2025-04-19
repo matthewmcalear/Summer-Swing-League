@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 interface StandingEntry {
   id: number;
   name: string;
@@ -88,12 +90,12 @@ export async function GET() {
     // Sort by season score
     standings.sort((a, b) => b.seasonScore - a.seasonScore);
 
-    return NextResponse.json(standings);
+    return NextResponse.json(standings, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     console.error('Error fetching standings:', error);
     return NextResponse.json(
       { error: 'Failed to fetch standings' },
-      { status: 500 }
+      { status: 500, headers: { 'Cache-Control': 'no-store' } }
     );
   }
 } 
