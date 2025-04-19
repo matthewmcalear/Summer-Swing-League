@@ -28,11 +28,11 @@ export default function AdminDashboard() {
       {tab==='members' && (
         <table className="min-w-full bg-white rounded shadow text-sm">
           <thead className="bg-gray-100">
-            <tr><th className="px-4 py-2 text-left">Name</th><th className="px-4 py-2 text-left">Email</th><th className="px-4 py-2 text-left">Handicap</th></tr>
+            <tr><th className="px-4 py-2 text-left">Name</th><th className="px-4 py-2 text-left">Email</th><th className="px-4 py-2 text-left">Handicap</th><th className="px-4 py-2 text-left">Actions</th></tr>
           </thead>
           <tbody>
             {members.map(m=> (
-              <tr key={m.id} className="border-t"><td className="px-4 py-2">{m.full_name}</td><td className="px-4 py-2">{m.email}</td><td className="px-4 py-2">{m.handicap}</td></tr>
+              <tr key={m.id} className="border-t"><td className="px-4 py-2">{m.full_name}</td><td className="px-4 py-2">{m.email}</td><td className="px-4 py-2">{m.handicap}</td><td className="px-4 py-2"><button className="text-red-600" onClick={async()=>{await fetch(`/api/admin/members/${m.id}`,{method:'DELETE'});setMembers(prev=>prev.filter(x=>x.id!==m.id));}}>🗑</button></td></tr>
             ))}
           </tbody>
         </table>
@@ -40,10 +40,10 @@ export default function AdminDashboard() {
 
       {tab==='scores' && (
         <table className="min-w-full bg-white rounded shadow text-sm">
-          <thead className="bg-gray-100"><tr><th className="px-4 py-2 text-left">Player(s)</th><th className="px-4 py-2 text-left">Points</th><th className="px-4 py-2 text-left">Date</th></tr></thead>
+          <thead className="bg-gray-100"><tr><th className="px-4 py-2 text-left">Player(s)</th><th className="px-4 py-2 text-left">Points</th><th className="px-4 py-2 text-left">Date</th><th className="px-4 py-2 text-left">Actions</th></tr></thead>
           <tbody>
             {scores.map(s=> (
-              <tr key={s.id} className="border-t"><td className="px-4 py-2">{s.player}</td><td className="px-4 py-2">{s.total_points.toFixed(1)}</td><td className="px-4 py-2">{new Date(s.play_date).toLocaleDateString()}</td></tr>
+              <tr key={s.id} className="border-t"><td className="px-4 py-2">{s.player}</td><td className="px-4 py-2">{s.total_points.toFixed(1)}</td><td className="px-4 py-2">{new Date(s.play_date).toLocaleDateString()}</td><td className="px-4 py-2"><button className="text-red-600" onClick={async()=>{await fetch(`/api/admin/scores/${s.id}`,{method:'DELETE'});setScores(prev=>prev.filter(x=>x.id!==s.id));}}>🗑</button></td></tr>
             ))}
           </tbody>
         </table>
