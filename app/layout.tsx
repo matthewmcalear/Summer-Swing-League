@@ -17,7 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className + ' relative bg-[url(https://images.unsplash.com/photo-1430165558479-de3cf8cf1478?auto=format&fit=crop&w=1920&q=60)] bg-cover bg-center bg-fixed'}>
+      <body className={inter.className + ' relative bg-[url(https://images.unsplash.com/photo-1529961673157-9e8a5abf4f0a?auto=format&fit=crop&w=1920&q=60)] bg-cover bg-center bg-fixed'}>
         {/* Overlay for readability */}
         <div className="absolute inset-0 bg-white/60 -z-10" />
         <nav className="bg-green-700 text-white">
