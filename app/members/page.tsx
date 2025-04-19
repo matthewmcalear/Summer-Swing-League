@@ -35,7 +35,13 @@ export default function MembersPage() {
       if (document.visibilityState === 'visible') fetchMembers();
     };
     document.addEventListener('visibilitychange', handleVis);
-    return () => document.removeEventListener('visibilitychange', handleVis);
+
+    const id = setInterval(fetchMembers, 60000);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVis);
+      clearInterval(id);
+    };
   }, []);
 
   const rowClass = (idx: number) =>

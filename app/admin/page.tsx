@@ -31,7 +31,14 @@ export default function AdminDashboard() {
       if (document.visibilityState === 'visible') fetchAll();
     };
     document.addEventListener('visibilitychange', vis);
-    return () => document.removeEventListener('visibilitychange', vis);
+
+    // Poll every 60s in case page stays open
+    const id = setInterval(fetchAll, 60000);
+
+    return () => {
+      document.removeEventListener('visibilitychange', vis);
+      clearInterval(id);
+    };
   }, []);
 
   return (
