@@ -44,11 +44,7 @@ export default function MembersPage() {
     };
   }, []);
 
-  const rowClass = (idx: number) =>
-    idx === 0 ? 'bg-[#ffd70090]' :     // gold
-    idx === 1 ? 'bg-[#c0c0c090]' :     // silver
-    idx === 2 ? 'bg-[#cd7f3290]' :     // bronze
-    '';
+  const rowClass = () => '';
 
   return (
     <div className="min-h-screen">
@@ -73,7 +69,7 @@ export default function MembersPage() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {members.map((m, index) => (
-                  <tr key={m.id} className={rowClass(index)}>
+                  <tr key={m.id} className={rowClass()}>
                     <td className="px-4 py-2">{(() => {const parts=m.full_name.split(' ');return parts[0]+ ' '+(parts[1]?.charAt(0)||'')+'.';})()}</td>
                     <td className="px-4 py-2">{m.handicap}</td>
                   </tr>
@@ -83,7 +79,7 @@ export default function MembersPage() {
           </div>
         )}
 
-        <p>* Top 3 players are highlighted Gold, Silver, Bronze.</p>
+        {/* Medal highlights removed */}
       </div>
     </div>
   );
