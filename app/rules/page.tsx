@@ -2,17 +2,7 @@ import Image from 'next/image';
 
 export default function Rules() {
   return (
-    <div
-      className="min-h-screen relative py-12"
-      style={{
-        backgroundImage:
-          "url('https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?auto=format&fit=crop&w=2100&q=80')",
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
-    >
-      {/* overlay */}
-      <div className="absolute inset-0 bg-white/80 backdrop-blur-sm" />
+    <div className="min-h-screen py-12">
       <div className="relative max-w-4xl mx-auto bg-white/90 rounded-lg shadow-lg p-8">
         <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">
           Summer Swing League Rules

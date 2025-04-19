@@ -27,7 +27,7 @@ export default function AdminDashboard() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen p-8">
       <Link href="/" className="text-green-600 hover:underline">← Back Home</Link>
       <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
       <div className="mb-4 space-x-4">
@@ -50,7 +50,7 @@ export default function AdminDashboard() {
 
       {tab==='scores' && (
         <table className="min-w-full bg-white rounded shadow text-sm">
-          <thead className="bg-gray-100"><tr><th className="px-4 py-2 text-left">Player(s)</th><th className="px-4 py-2 text-left">Handicap</th><th className="px-4 py-2 text-left">Gross</th><th className="px-4 py-2 text-left">Net</th><th className="px-4 py-2 text-left">Bonus</th><th className="px-4 py-2 text-left">Course</th><th className="px-4 py-2 text-left">Difficulty</th><th className="px-4 py-2 text-left">Points</th><th className="px-4 py-2 text-left">Date</th><th className="px-4 py-2 text-left">Actions</th></tr></thead>
+          <thead className="bg-gray-100"><tr><th className="px-4 py-2 text-left">Player(s)</th><th className="px-4 py-2 text-left">Handicap</th><th className="px-4 py-2 text-left">Holes</th><th className="px-4 py-2 text-left">Gross</th><th className="px-4 py-2 text-left">Net</th><th className="px-4 py-2 text-left">Bonus</th><th className="px-4 py-2 text-left">Course</th><th className="px-4 py-2 text-left">Difficulty</th><th className="px-4 py-2 text-left">Points</th><th className="px-4 py-2 text-left">Date</th><th className="px-4 py-2 text-left">Actions</th></tr></thead>
           <tbody>
             {scores.map((s) => {
               const names = s.player.split(',');
@@ -61,6 +61,7 @@ export default function AdminDashboard() {
                 <tr key={s.id} className="border-t">
                   <td className="px-4 py-2">{main}</td>
                   <td className="px-4 py-2">{s.handicap}</td>
+                  <td className="px-4 py-2">{s.holes}</td>
                   <td className="px-4 py-2">{s.gross}</td>
                   <td className="px-4 py-2">{net.toFixed(1)}</td>
                   <td className="px-4 py-2">{bonus}</td>
