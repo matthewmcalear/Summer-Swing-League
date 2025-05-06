@@ -29,7 +29,8 @@ export async function POST(request: Request) {
       course_name,
       difficulty,
       play_date,
-      group_member_ids: groupMemberIdsRaw = [] // array of additional member ids (excluding player)
+      group_member_ids: groupMemberIdsRaw = [], // array of additional member ids (excluding player)
+      bonus_points = 0
     } = await request.json();
 
     // Basic validation
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
     // Apply difficulty to base, then add group bonus (+1 per additional member)
     const difficultyAdjusted = basePoints * difficultyFactor;
     const totalGroupMembers = Math.max(playerNames.length - 1, 0);
-    const totalPoints = difficultyAdjusted + totalGroupMembers;
+    const totalPoints = difficultyAdjusted + totalGroupMembers + Number(bonus_points);
 
     // Persist score
     const created = await prisma.score.create({
@@ -90,6 +91,8 @@ export async function POST(request: Request) {
         difficulty: difficultyFactor,
         group_members: playerNames.join(', '),
         total_points: totalPoints,
+        // @ts-expect-error prisma schema updated, regenerate client to include field
+        additional_points: Number(bonus_points),
         play_date: new Date(play_date.includes('T') ? play_date : play_date + 'T12:00:00'),
         course_name,
       },

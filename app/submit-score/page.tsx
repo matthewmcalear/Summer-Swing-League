@@ -23,7 +23,8 @@ export default function SubmitScore() {
     gross: '',
     course_name: '',
     difficulty: '1.0', // Default to average
-    play_date: new Date().toISOString().split('T')[0]
+    play_date: new Date().toISOString().split('T')[0],
+    bonus_points: ''
   });
 
   useEffect(() => {
@@ -57,7 +58,8 @@ export default function SubmitScore() {
           player: Number(formData.player),
           gross: Number(formData.gross),
           holes: Number(formData.holes),
-          difficulty: Number(formData.difficulty)
+          difficulty: Number(formData.difficulty),
+          bonus_points: formData.bonus_points === '' ? 0 : Number(formData.bonus_points)
         }),
       });
 
