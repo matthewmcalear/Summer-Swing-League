@@ -181,6 +181,21 @@ export default function SubmitScore() {
           </div>
 
           <div>
+            <label htmlFor="bonus_points" className="block text-sm font-medium text-gray-700">
+              Bonus Points (optional)
+            </label>
+            <input
+              type="number"
+              id="bonus_points"
+              min="0"
+              step="0.1"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              value={formData.bonus_points}
+              onChange={(e) => setFormData({ ...formData, bonus_points: e.target.value })}
+            />
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Group Members (select all that played with you)
             </label>
