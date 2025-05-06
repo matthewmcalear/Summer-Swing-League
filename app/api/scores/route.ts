@@ -91,11 +91,10 @@ export async function POST(request: Request) {
         difficulty: difficultyFactor,
         group_members: playerNames.join(', '),
         total_points: totalPoints,
-        // @ts-expect-error prisma schema updated, regenerate client to include field
         additional_points: Number(bonus_points),
         play_date: new Date(play_date.includes('T') ? play_date : play_date + 'T12:00:00'),
         course_name,
-      },
+      } as any,
     });
 
     return NextResponse.json({ success: true, score: created });
