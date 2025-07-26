@@ -81,6 +81,11 @@ export default function Home() {
                     </Link>
                   </li>
                   <li>
+                    <Link href="/analytics" className="text-green-600 hover:text-green-800">
+                      Analytics Dashboard
+                    </Link>
+                  </li>
+                  <li>
                     <Link href="/admin" className="text-green-600 hover:text-green-800">
                       Admin Dashboard
                     </Link>
