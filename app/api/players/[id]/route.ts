@@ -7,9 +7,14 @@ interface PlayerProfile {
   email: string;
   handicap: number;
   totalRounds: number;
-  averageScore: number;
-  bestScore: number;
-  worstScore: number;
+  total18HoleRounds: number;
+  total9HoleRounds: number;
+  averageScore18: number;
+  averageScore9: number;
+  bestScore18: number;
+  bestScore9: number;
+  worstScore18: number;
+  worstScore9: number;
   totalPoints: number;
   averagePoints: number;
   seasonScore: number;
@@ -27,14 +32,21 @@ interface PlayerProfile {
   monthlyStats: Array<{
     month: string;
     rounds: number;
-    averageScore: number;
+    rounds18: number;
+    rounds9: number;
+    averageScore18: number;
+    averageScore9: number;
     averagePoints: number;
   }>;
   courseStats: Array<{
     course: string;
     rounds: number;
-    averageScore: number;
-    bestScore: number;
+    rounds18: number;
+    rounds9: number;
+    averageScore18: number;
+    averageScore9: number;
+    bestScore18: number;
+    bestScore9: number;
   }>;
 }
 
@@ -85,9 +97,14 @@ export async function GET(
         email: player.email,
         handicap: player.handicap,
         totalRounds: 0,
-        averageScore: 0,
-        bestScore: 0,
-        worstScore: 0,
+        total18HoleRounds: 0,
+        total9HoleRounds: 0,
+        averageScore18: 0,
+        averageScore9: 0,
+        bestScore18: 0,
+        bestScore9: 0,
+        worstScore18: 0,
+        worstScore9: 0,
         totalPoints: 0,
         averagePoints: 0,
         seasonScore: 0,
@@ -98,14 +115,25 @@ export async function GET(
       });
     }
 
-    // Calculate basic stats
+    // Separate scores by hole count
+    const scores18 = scores.filter(s => s.holes === 18);
+    const scores9 = scores.filter(s => s.holes === 9);
+    const total18HoleRounds = scores18.length;
+    const total9HoleRounds = scores9.length;
+
+    // Calculate basic stats separated by hole count
     const totalRounds = scores.length;
-    const grossScores = scores.map(s => s.gross);
+    const grossScores18 = scores18.map(s => s.gross);
+    const grossScores9 = scores9.map(s => s.gross);
     const totalPoints = scores.reduce((sum, score) => sum + score.total_points, 0);
-    const averageScore = grossScores.reduce((sum, score) => sum + score, 0) / totalRounds;
+    
+    const averageScore18 = grossScores18.length > 0 ? grossScores18.reduce((sum, score) => sum + score, 0) / grossScores18.length : 0;
+    const averageScore9 = grossScores9.length > 0 ? grossScores9.reduce((sum, score) => sum + score, 0) / grossScores9.length : 0;
     const averagePoints = totalPoints / totalRounds;
-    const bestScore = Math.min(...grossScores);
-    const worstScore = Math.max(...grossScores);
+    const bestScore18 = grossScores18.length > 0 ? Math.min(...grossScores18) : 0;
+    const bestScore9 = grossScores9.length > 0 ? Math.min(...grossScores9) : 0;
+    const worstScore18 = grossScores18.length > 0 ? Math.max(...grossScores18) : 0;
+    const worstScore9 = grossScores9.length > 0 ? Math.max(...grossScores9) : 0;
 
     // Calculate season score (best 5 rounds)
     const sortedScores = [...scores].sort((a, b) => b.total_points - a.total_points);
@@ -128,38 +156,53 @@ export async function GET(
       groupMembers: score.group_members
     }));
 
-    // Calculate monthly stats
+    // Calculate monthly stats separated by hole count
     const monthlyMap = new Map();
     scores.forEach(score => {
       const month = score.play_date.toISOString().slice(0, 7); // YYYY-MM
       if (!monthlyMap.has(month)) {
-        monthlyMap.set(month, { scores: [], points: [] });
+        monthlyMap.set(month, { scores18: [], scores9: [], points: [] });
       }
-      monthlyMap.get(month).scores.push(score.gross);
+      if (score.holes === 18) {
+        monthlyMap.get(month).scores18.push(score.gross);
+      } else if (score.holes === 9) {
+        monthlyMap.get(month).scores9.push(score.gross);
+      }
       monthlyMap.get(month).points.push(score.total_points);
     });
 
     const monthlyStats = Array.from(monthlyMap.entries()).map(([month, data]) => ({
       month,
-      rounds: data.scores.length,
-      averageScore: data.scores.reduce((sum: number, score: number) => sum + score, 0) / data.scores.length,
+      rounds: data.scores18.length + data.scores9.length,
+      rounds18: data.scores18.length,
+      rounds9: data.scores9.length,
+      averageScore18: data.scores18.length > 0 ? data.scores18.reduce((sum: number, score: number) => sum + score, 0) / data.scores18.length : 0,
+      averageScore9: data.scores9.length > 0 ? data.scores9.reduce((sum: number, score: number) => sum + score, 0) / data.scores9.length : 0,
       averagePoints: data.points.reduce((sum: number, points: number) => sum + points, 0) / data.points.length
     })).sort((a, b) => b.month.localeCompare(a.month));
 
-    // Calculate course stats
+    // Calculate course stats separated by hole count
     const courseMap = new Map();
     scores.forEach(score => {
       if (!courseMap.has(score.course_name)) {
-        courseMap.set(score.course_name, []);
+        courseMap.set(score.course_name, { scores18: [], scores9: [] });
       }
-      courseMap.get(score.course_name).push(score.gross);
+      if (score.holes === 18) {
+        courseMap.get(score.course_name).scores18.push(score.gross);
+      } else if (score.holes === 9) {
+        courseMap.get(score.course_name).scores9.push(score.gross);
+      }
     });
 
-    const courseStats = Array.from(courseMap.entries()).map(([course, scores]) => ({
+    const courseStats = Array.from(courseMap.entries()).map(([course, data]) => ({
       course,
-      rounds: scores.length,
-      averageScore: scores.reduce((sum: number, score: number) => sum + score, 0) / scores.length,
-      bestScore: Math.min(...scores)
+      rounds: data.scores18.length + data.scores9.length,
+      rounds18: data.scores18.length,
+      rounds9: data.scores9.length,
+      averageScore18: data.scores18.length > 0 ? data.scores18.reduce((sum: number, score: number) => sum + score, 0) / data.scores18.length : 0,
+      averageScore9: data.scores9.length > 0 ? data.scores9.reduce((sum: number, score: number) => sum + score, 0) / data.scores9.length : 0,
+      bestScore18: data.scores18.length > 0 ? Math.min(...data.scores18) : 0,
+      bestScore9: data.scores9.length > 0 ? Math.min(...data.scores9) : 0
     })).sort((a, b) => b.rounds - a.rounds);
 
     // Handicap progression (simplified - using current handicap for now)
@@ -176,9 +219,14 @@ export async function GET(
       email: player.email,
       handicap: player.handicap,
       totalRounds,
-      averageScore: Math.round(averageScore * 10) / 10,
-      bestScore,
-      worstScore,
+      total18HoleRounds,
+      total9HoleRounds,
+      averageScore18: Math.round(averageScore18 * 10) / 10,
+      averageScore9: Math.round(averageScore9 * 10) / 10,
+      bestScore18,
+      bestScore9,
+      worstScore18,
+      worstScore9,
       totalPoints: Math.round(totalPoints * 10) / 10,
       averagePoints: Math.round(averagePoints * 10) / 10,
       seasonScore: Math.round(seasonScore * 10) / 10,
