@@ -35,9 +35,14 @@ interface PlayerProfile {
   email: string;
   handicap: number;
   totalRounds: number;
-  averageScore: number;
-  bestScore: number;
-  worstScore: number;
+  total18HoleRounds: number;
+  total9HoleRounds: number;
+  averageScore18: number;
+  averageScore9: number;
+  bestScore18: number;
+  bestScore9: number;
+  worstScore18: number;
+  worstScore9: number;
   totalPoints: number;
   averagePoints: number;
   seasonScore: number;
@@ -55,14 +60,21 @@ interface PlayerProfile {
   monthlyStats: Array<{
     month: string;
     rounds: number;
-    averageScore: number;
+    rounds18: number;
+    rounds9: number;
+    averageScore18: number;
+    averageScore9: number;
     averagePoints: number;
   }>;
   courseStats: Array<{
     course: string;
     rounds: number;
-    averageScore: number;
-    bestScore: number;
+    rounds18: number;
+    rounds9: number;
+    averageScore18: number;
+    averageScore9: number;
+    bestScore18: number;
+    bestScore9: number;
   }>;
 }
 
@@ -130,10 +142,17 @@ export default function PlayerProfile() {
     }),
     datasets: [
       {
-        label: 'Average Score',
-        data: profile.monthlyStats.slice(0, 6).reverse().map(stat => stat.averageScore),
+        label: 'Avg 18-Hole Score',
+        data: profile.monthlyStats.slice(0, 6).reverse().map(stat => stat.averageScore18),
         borderColor: 'rgb(34, 197, 94)',
         backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        yAxisID: 'y',
+      },
+      {
+        label: 'Avg 9-Hole Score',
+        data: profile.monthlyStats.slice(0, 6).reverse().map(stat => stat.averageScore9),
+        borderColor: 'rgb(16, 185, 129)',
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
         yAxisID: 'y',
       },
       {
@@ -195,9 +214,14 @@ export default function PlayerProfile() {
     labels: profile.courseStats.slice(0, 5).map(stat => stat.course),
     datasets: [
       {
-        label: 'Average Score',
-        data: profile.courseStats.slice(0, 5).map(stat => stat.averageScore),
+        label: 'Avg 18-Hole Score',
+        data: profile.courseStats.slice(0, 5).map(stat => stat.averageScore18),
         backgroundColor: 'rgba(34, 197, 94, 0.6)',
+      },
+      {
+        label: 'Avg 9-Hole Score',
+        data: profile.courseStats.slice(0, 5).map(stat => stat.averageScore9),
+        backgroundColor: 'rgba(16, 185, 129, 0.6)',
       },
     ],
   };
@@ -249,10 +273,18 @@ export default function PlayerProfile() {
                 </span>
               </div>
             </div>
-            <div className="mt-4 md:mt-0 grid grid-cols-2 gap-4 text-center">
+            <div className="mt-4 md:mt-0 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
               <div className="bg-green-50 p-4 rounded-lg">
                 <div className="text-2xl font-bold text-green-800">{profile.totalRounds}</div>
                 <div className="text-sm text-green-600">Total Rounds</div>
+              </div>
+              <div className="bg-indigo-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-indigo-800">{profile.total18HoleRounds}</div>
+                <div className="text-sm text-indigo-600">18-Hole Rounds</div>
+              </div>
+              <div className="bg-teal-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-teal-800">{profile.total9HoleRounds}</div>
+                <div className="text-sm text-teal-600">9-Hole Rounds</div>
               </div>
               <div className="bg-blue-50 p-4 rounded-lg">
                 <div className="text-2xl font-bold text-blue-800">{profile.seasonScore}</div>
@@ -263,28 +295,40 @@ export default function PlayerProfile() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-6">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-center">
-              <div className="text-3xl font-bold text-gray-900">{profile.averageScore}</div>
-              <div className="text-sm text-gray-600">Average Score</div>
+              <div className="text-2xl font-bold text-gray-900">{profile.averageScore18}</div>
+              <div className="text-sm text-gray-600">Avg 18-Hole</div>
             </div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-center">
-              <div className="text-3xl font-bold text-green-600">{profile.bestScore}</div>
-              <div className="text-sm text-gray-600">Best Score</div>
+              <div className="text-2xl font-bold text-slate-600">{profile.averageScore9}</div>
+              <div className="text-sm text-gray-600">Avg 9-Hole</div>
             </div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600">{profile.averagePoints}</div>
+              <div className="text-2xl font-bold text-green-600">{profile.bestScore18}</div>
+              <div className="text-sm text-gray-600">Best 18-Hole</div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-emerald-600">{profile.bestScore9}</div>
+              <div className="text-sm text-gray-600">Best 9-Hole</div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{profile.averagePoints}</div>
               <div className="text-sm text-gray-600">Avg Points</div>
             </div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-center">
-              <div className="text-3xl font-bold text-purple-600">{profile.totalPoints}</div>
+              <div className="text-2xl font-bold text-purple-600">{profile.totalPoints}</div>
               <div className="text-sm text-gray-600">Total Points</div>
             </div>
           </div>
@@ -344,14 +388,22 @@ export default function PlayerProfile() {
             {profile.courseStats.length > 0 ? (
               <div className="space-y-3">
                 {profile.courseStats.map((stat, index) => (
-                  <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                    <div>
+                  <div key={index} className="p-3 bg-gray-50 rounded">
+                    <div className="flex justify-between items-center mb-2">
                       <div className="font-medium">{stat.course}</div>
-                      <div className="text-sm text-gray-600">{stat.rounds} rounds played</div>
+                      <div className="text-sm text-gray-600">{stat.rounds} rounds total</div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold">{stat.averageScore.toFixed(1)}</div>
-                      <div className="text-sm text-green-600">Best: {stat.bestScore}</div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <div className="text-gray-600">18-Hole ({stat.rounds18} rounds)</div>
+                        <div className="font-bold">{stat.averageScore18 > 0 ? stat.averageScore18.toFixed(1) : '-'}</div>
+                        <div className="text-xs text-green-600">Best: {stat.bestScore18 > 0 ? stat.bestScore18 : '-'}</div>
+                      </div>
+                      <div>
+                        <div className="text-gray-600">9-Hole ({stat.rounds9} rounds)</div>
+                        <div className="font-bold">{stat.averageScore9 > 0 ? stat.averageScore9.toFixed(1) : '-'}</div>
+                        <div className="text-xs text-emerald-600">Best: {stat.bestScore9 > 0 ? stat.bestScore9 : '-'}</div>
+                      </div>
                     </div>
                   </div>
                 ))}

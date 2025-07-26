@@ -32,14 +32,19 @@ interface AnalyticsData {
   leagueOverview: {
     totalPlayers: number;
     totalRounds: number;
+    total18HoleRounds: number;
+    total9HoleRounds: number;
     averageHandicap: number;
     totalScoresSubmitted: number;
     activePlayers: number;
   };
   performanceMetrics: {
-    averageScore: number;
-    lowestScore: number;
-    highestScore: number;
+    averageScore18: number;
+    averageScore9: number;
+    lowestScore18: number;
+    lowestScore9: number;
+    highestScore18: number;
+    highestScore9: number;
     averagePoints: number;
     mostActivePlayer: string;
     bestImprovement: {
@@ -50,13 +55,19 @@ interface AnalyticsData {
   courseAnalytics: Array<{
     course: string;
     totalRounds: number;
-    averageScore: number;
+    total18HoleRounds: number;
+    total9HoleRounds: number;
+    averageScore18: number;
+    averageScore9: number;
     difficulty: number;
   }>;
   monthlyTrends: Array<{
     month: string;
     totalRounds: number;
-    averageScore: number;
+    total18HoleRounds: number;
+    total9HoleRounds: number;
+    averageScore18: number;
+    averageScore9: number;
     averagePoints: number;
     uniquePlayers: number;
   }>;
@@ -143,17 +154,31 @@ export default function AnalyticsDashboard() {
     }),
     datasets: [
       {
-        label: 'Total Rounds',
-        data: analytics.monthlyTrends.slice(0, 6).reverse().map(trend => trend.totalRounds),
+        label: '18-Hole Rounds',
+        data: analytics.monthlyTrends.slice(0, 6).reverse().map(trend => trend.total18HoleRounds),
         borderColor: 'rgb(34, 197, 94)',
         backgroundColor: 'rgba(34, 197, 94, 0.1)',
         yAxisID: 'y',
       },
       {
-        label: 'Average Score',
-        data: analytics.monthlyTrends.slice(0, 6).reverse().map(trend => trend.averageScore),
+        label: '9-Hole Rounds',
+        data: analytics.monthlyTrends.slice(0, 6).reverse().map(trend => trend.total9HoleRounds),
+        borderColor: 'rgb(16, 185, 129)',
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        yAxisID: 'y',
+      },
+      {
+        label: 'Avg 18-Hole Score',
+        data: analytics.monthlyTrends.slice(0, 6).reverse().map(trend => trend.averageScore18),
         borderColor: 'rgb(59, 130, 246)',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        yAxisID: 'y1',
+      },
+      {
+        label: 'Avg 9-Hole Score',
+        data: analytics.monthlyTrends.slice(0, 6).reverse().map(trend => trend.averageScore9),
+        borderColor: 'rgb(14, 165, 233)',
+        backgroundColor: 'rgba(14, 165, 233, 0.1)',
         yAxisID: 'y1',
       },
     ],
@@ -185,7 +210,7 @@ export default function AnalyticsDashboard() {
         position: 'left' as const,
         title: {
           display: true,
-          text: 'Total Rounds',
+          text: 'Number of Rounds',
         },
       },
       y1: {
@@ -315,7 +340,7 @@ export default function AnalyticsDashboard() {
 
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         {/* League Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-center">
               <div className="text-3xl font-bold text-green-600">{analytics.leagueOverview.totalPlayers}</div>
@@ -330,6 +355,18 @@ export default function AnalyticsDashboard() {
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-center">
+              <div className="text-2xl font-bold text-indigo-600">{analytics.leagueOverview.total18HoleRounds}</div>
+              <div className="text-sm text-gray-600">18-Hole Rounds</div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-teal-600">{analytics.leagueOverview.total9HoleRounds}</div>
+              <div className="text-sm text-gray-600">9-Hole Rounds</div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="text-center">
               <div className="text-3xl font-bold text-purple-600">{analytics.leagueOverview.activePlayers}</div>
               <div className="text-sm text-gray-600">Active Players (30d)</div>
             </div>
@@ -340,25 +377,27 @@ export default function AnalyticsDashboard() {
               <div className="text-sm text-gray-600">Avg Handicap</div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-red-600">{analytics.performanceMetrics.averageScore}</div>
-              <div className="text-sm text-gray-600">Avg Score</div>
-            </div>
-          </div>
         </div>
 
         {/* Performance Metrics */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Performance Highlights</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
             <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-800">{analytics.performanceMetrics.lowestScore}</div>
-              <div className="text-sm text-green-600">Best Score</div>
+              <div className="text-2xl font-bold text-green-800">{analytics.performanceMetrics.lowestScore18}</div>
+              <div className="text-sm text-green-600">Best 18-Hole</div>
+            </div>
+            <div className="text-center p-4 bg-emerald-50 rounded-lg">
+              <div className="text-2xl font-bold text-emerald-800">{analytics.performanceMetrics.lowestScore9}</div>
+              <div className="text-sm text-emerald-600">Best 9-Hole</div>
             </div>
             <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-800">{analytics.performanceMetrics.averagePoints}</div>
-              <div className="text-sm text-blue-600">Avg Points</div>
+              <div className="text-xl font-bold text-blue-800">{analytics.performanceMetrics.averageScore18}</div>
+              <div className="text-sm text-blue-600">Avg 18-Hole</div>
+            </div>
+            <div className="text-center p-4 bg-cyan-50 rounded-lg">
+              <div className="text-xl font-bold text-cyan-800">{analytics.performanceMetrics.averageScore9}</div>
+              <div className="text-sm text-cyan-600">Avg 9-Hole</div>
             </div>
             <div className="text-center p-4 bg-purple-50 rounded-lg">
               <div className="text-lg font-bold text-purple-800">{analytics.performanceMetrics.mostActivePlayer.split(' ')[0]} {analytics.performanceMetrics.mostActivePlayer.split(' ')[1]?.charAt(0)}.</div>
@@ -410,10 +449,19 @@ export default function AnalyticsDashboard() {
                       Course
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Rounds
+                      Total Rounds
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Avg Score
+                      18-Hole Rounds
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      9-Hole Rounds
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Avg 18-Hole
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Avg 9-Hole
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Difficulty
@@ -430,7 +478,16 @@ export default function AnalyticsDashboard() {
                         {course.totalRounds}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {course.averageScore}
+                        {course.total18HoleRounds}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {course.total9HoleRounds}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {course.averageScore18 > 0 ? course.averageScore18 : '-'}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {course.averageScore9 > 0 ? course.averageScore9 : '-'}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                         {course.difficulty}
