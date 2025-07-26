@@ -5,14 +5,19 @@ interface AnalyticsData {
   leagueOverview: {
     totalPlayers: number;
     totalRounds: number;
+    total18HoleRounds: number;
+    total9HoleRounds: number;
     averageHandicap: number;
     totalScoresSubmitted: number;
     activePlayers: number; // players with scores in last 30 days
   };
   performanceMetrics: {
-    averageScore: number;
-    lowestScore: number;
-    highestScore: number;
+    averageScore18: number;
+    averageScore9: number;
+    lowestScore18: number;
+    lowestScore9: number;
+    highestScore18: number;
+    highestScore9: number;
     averagePoints: number;
     mostActivePlayer: string;
     bestImprovement: {
@@ -23,13 +28,19 @@ interface AnalyticsData {
   courseAnalytics: Array<{
     course: string;
     totalRounds: number;
-    averageScore: number;
+    total18HoleRounds: number;
+    total9HoleRounds: number;
+    averageScore18: number;
+    averageScore9: number;
     difficulty: number;
   }>;
   monthlyTrends: Array<{
     month: string;
     totalRounds: number;
-    averageScore: number;
+    total18HoleRounds: number;
+    total9HoleRounds: number;
+    averageScore18: number;
+    averageScore9: number;
     averagePoints: number;
     uniquePlayers: number;
   }>;
@@ -69,18 +80,29 @@ export async function GET() {
     const totalRounds = scores.length;
     const averageHandicap = members.reduce((sum, m) => sum + m.handicap, 0) / totalPlayers;
 
+    // Separate 18-hole and 9-hole rounds
+    const scores18 = scores.filter(s => s.holes === 18);
+    const scores9 = scores.filter(s => s.holes === 9);
+    const total18HoleRounds = scores18.length;
+    const total9HoleRounds = scores9.length;
+
     // Active players (played in last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const recentScores = scores.filter(s => s.play_date >= thirtyDaysAgo);
     const activePlayers = new Set(recentScores.map(s => s.player.split(',')[0].trim())).size;
 
-    // Performance metrics
-    const grossScores = scores.map(s => s.gross);
+    // Performance metrics separated by hole count
+    const grossScores18 = scores18.map(s => s.gross);
+    const grossScores9 = scores9.map(s => s.gross);
     const totalPoints = scores.map(s => s.total_points);
-    const averageScore = grossScores.reduce((sum, score) => sum + score, 0) / grossScores.length;
-    const lowestScore = Math.min(...grossScores);
-    const highestScore = Math.max(...grossScores);
+    
+    const averageScore18 = grossScores18.length > 0 ? grossScores18.reduce((sum, score) => sum + score, 0) / grossScores18.length : 0;
+    const averageScore9 = grossScores9.length > 0 ? grossScores9.reduce((sum, score) => sum + score, 0) / grossScores9.length : 0;
+    const lowestScore18 = grossScores18.length > 0 ? Math.min(...grossScores18) : 0;
+    const lowestScore9 = grossScores9.length > 0 ? Math.min(...grossScores9) : 0;
+    const highestScore18 = grossScores18.length > 0 ? Math.max(...grossScores18) : 0;
+    const highestScore9 = grossScores9.length > 0 ? Math.max(...grossScores9) : 0;
     const averagePoints = totalPoints.reduce((sum, points) => sum + points, 0) / totalPoints.length;
 
     // Most active player
@@ -92,46 +114,62 @@ export async function GET() {
     const mostActivePlayer = Array.from(playerRoundCounts.entries())
       .sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
 
-    // Course analytics
+    // Course analytics separated by hole count
     const courseMap = new Map();
     scores.forEach(score => {
       if (!courseMap.has(score.course_name)) {
         courseMap.set(score.course_name, {
-          scores: [],
+          scores18: [],
+          scores9: [],
           difficulties: []
         });
       }
-      courseMap.get(score.course_name).scores.push(score.gross);
+      if (score.holes === 18) {
+        courseMap.get(score.course_name).scores18.push(score.gross);
+      } else if (score.holes === 9) {
+        courseMap.get(score.course_name).scores9.push(score.gross);
+      }
       courseMap.get(score.course_name).difficulties.push(score.difficulty);
     });
 
     const courseAnalytics = Array.from(courseMap.entries()).map(([course, data]) => ({
       course,
-      totalRounds: data.scores.length,
-      averageScore: data.scores.reduce((sum: number, score: number) => sum + score, 0) / data.scores.length,
+      totalRounds: data.scores18.length + data.scores9.length,
+      total18HoleRounds: data.scores18.length,
+      total9HoleRounds: data.scores9.length,
+      averageScore18: data.scores18.length > 0 ? data.scores18.reduce((sum: number, score: number) => sum + score, 0) / data.scores18.length : 0,
+      averageScore9: data.scores9.length > 0 ? data.scores9.reduce((sum: number, score: number) => sum + score, 0) / data.scores9.length : 0,
       difficulty: data.difficulties.reduce((sum: number, diff: number) => sum + diff, 0) / data.difficulties.length
     })).sort((a, b) => b.totalRounds - a.totalRounds);
 
-    // Monthly trends
+    // Monthly trends separated by hole count
     const monthlyMap = new Map();
     scores.forEach(score => {
       const month = score.play_date.toISOString().slice(0, 7);
       if (!monthlyMap.has(month)) {
         monthlyMap.set(month, {
-          scores: [],
+          scores18: [],
+          scores9: [],
           points: [],
           players: new Set()
         });
       }
-      monthlyMap.get(month).scores.push(score.gross);
+      if (score.holes === 18) {
+        monthlyMap.get(month).scores18.push(score.gross);
+      } else if (score.holes === 9) {
+        monthlyMap.get(month).scores9.push(score.gross);
+      }
       monthlyMap.get(month).points.push(score.total_points);
       monthlyMap.get(month).players.add(score.player.split(',')[0].trim());
     });
 
     const monthlyTrends = Array.from(monthlyMap.entries()).map(([month, data]) => ({
       month,
-      totalRounds: data.scores.length,
-      averageScore: data.scores.reduce((sum: number, score: number) => sum + score, 0) / data.scores.length,
+      totalRounds: data.scores18.length + data.scores9.length,
+      total18HoleRounds: data.scores18.length,
+      total9HoleRounds: data.scores9.length,
+      averageScore18: data.scores18.length > 0 ? data.scores18.reduce((sum: number, score: number) => sum + score, 0) / data.scores18.length : 0,
+      averageScore9: data.scores9.length > 0 ? data.scores9.reduce((sum: number, score: number) => sum + score, 0) / data.scores9.length : 0,
       averagePoints: data.points.reduce((sum: number, points: number) => sum + points, 0) / data.points.length,
       uniquePlayers: data.players.size
     })).sort((a, b) => b.month.localeCompare(a.month)).slice(0, 12);
@@ -227,26 +265,33 @@ export async function GET() {
       leagueOverview: {
         totalPlayers,
         totalRounds,
+        total18HoleRounds,
+        total9HoleRounds,
         averageHandicap: Math.round(averageHandicap * 10) / 10,
         totalScoresSubmitted: totalRounds,
         activePlayers
       },
       performanceMetrics: {
-        averageScore: Math.round(averageScore * 10) / 10,
-        lowestScore,
-        highestScore,
+        averageScore18: Math.round(averageScore18 * 10) / 10,
+        averageScore9: Math.round(averageScore9 * 10) / 10,
+        lowestScore18,
+        lowestScore9,
+        highestScore18,
+        highestScore9,
         averagePoints: Math.round(averagePoints * 10) / 10,
         mostActivePlayer,
         bestImprovement
       },
       courseAnalytics: courseAnalytics.map(course => ({
         ...course,
-        averageScore: Math.round(course.averageScore * 10) / 10,
+        averageScore18: Math.round(course.averageScore18 * 10) / 10,
+        averageScore9: Math.round(course.averageScore9 * 10) / 10,
         difficulty: Math.round(course.difficulty * 10) / 10
       })),
       monthlyTrends: monthlyTrends.map(trend => ({
         ...trend,
-        averageScore: Math.round(trend.averageScore * 10) / 10,
+        averageScore18: Math.round(trend.averageScore18 * 10) / 10,
+        averageScore9: Math.round(trend.averageScore9 * 10) / 10,
         averagePoints: Math.round(trend.averagePoints * 10) / 10
       })),
       handicapDistribution,
