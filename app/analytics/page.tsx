@@ -94,6 +94,7 @@ export default function AnalyticsDashboard() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [timePeriod, setTimePeriod] = useState<number>(6); // Default to 6 months
 
   useEffect(() => {
     async function fetchAnalytics() {
@@ -148,38 +149,51 @@ export default function AnalyticsDashboard() {
 
   // Chart configurations
   const monthlyTrendsChart = {
-    labels: analytics.monthlyTrends.slice(0, 6).reverse().map(trend => {
+    labels: analytics.monthlyTrends.slice(0, timePeriod).reverse().map(trend => {
       const [year, month] = trend.month.split('-');
       return new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
     }),
     datasets: [
       {
         label: '18-Hole Rounds',
-        data: analytics.monthlyTrends.slice(0, 6).reverse().map(trend => trend.total18HoleRounds),
+        data: analytics.monthlyTrends.slice(0, timePeriod).reverse().map(trend => trend.total18HoleRounds),
         borderColor: 'rgb(34, 197, 94)',
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        backgroundColor: 'rgba(34, 197, 94, 0.2)',
         yAxisID: 'y',
+        fill: false,
       },
       {
         label: '9-Hole Rounds',
-        data: analytics.monthlyTrends.slice(0, 6).reverse().map(trend => trend.total9HoleRounds),
+        data: analytics.monthlyTrends.slice(0, timePeriod).reverse().map(trend => trend.total9HoleRounds),
         borderColor: 'rgb(16, 185, 129)',
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        backgroundColor: 'rgba(16, 185, 129, 0.2)',
         yAxisID: 'y',
+        fill: false,
       },
       {
         label: 'Avg 18-Hole Score',
-        data: analytics.monthlyTrends.slice(0, 6).reverse().map(trend => trend.averageScore18),
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        data: analytics.monthlyTrends.slice(0, timePeriod).reverse().map(trend => trend.averageScore18),
+        borderColor: 'rgb(239, 68, 68)',
+        backgroundColor: 'rgba(239, 68, 68, 0.2)',
         yAxisID: 'y1',
+        fill: false,
       },
       {
         label: 'Avg 9-Hole Score',
-        data: analytics.monthlyTrends.slice(0, 6).reverse().map(trend => trend.averageScore9),
-        borderColor: 'rgb(14, 165, 233)',
-        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+        data: analytics.monthlyTrends.slice(0, timePeriod).reverse().map(trend => trend.averageScore9),
+        borderColor: 'rgb(245, 101, 101)',
+        backgroundColor: 'rgba(245, 101, 101, 0.2)',
         yAxisID: 'y1',
+        fill: false,
+      },
+      {
+        label: 'Unique Players',
+        data: analytics.monthlyTrends.slice(0, timePeriod).reverse().map(trend => trend.uniquePlayers),
+        borderColor: 'rgb(168, 85, 247)',
+        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+        yAxisID: 'y',
+        fill: false,
+        borderDash: [5, 5],
       },
     ],
   };
@@ -194,38 +208,88 @@ export default function AnalyticsDashboard() {
       title: {
         display: true,
         text: 'Monthly League Trends',
+        font: { size: 16, weight: 'bold' }
       },
+      tooltip: {
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        titleColor: 'white',
+        bodyColor: 'white',
+        borderColor: 'rgba(255,255,255,0.2)',
+        borderWidth: 1,
+        callbacks: {
+          label: function(context: any) {
+            const label = context.dataset.label || '';
+            const value = context.parsed.y;
+            if (label.includes('Score')) {
+              return `${label}: ${value.toFixed(1)} strokes`;
+            } else {
+              return `${label}: ${value} rounds`;
+            }
+          }
+        }
+      },
+      legend: {
+        position: 'top' as const,
+        labels: { 
+          usePointStyle: true,
+          padding: 20,
+          font: { size: 12 }
+        }
+      }
     },
     scales: {
       x: {
-        display: true,
-        title: {
-          display: true,
-          text: 'Month',
+        grid: { 
+          display: true, 
+          color: 'rgba(0,0,0,0.1)' 
         },
+        title: { 
+          display: true, 
+          text: 'Month',
+          font: { size: 14, weight: 'bold' }
+        }
       },
       y: {
         type: 'linear' as const,
         display: true,
         position: 'left' as const,
+        grid: { 
+          display: true, 
+          color: 'rgba(0,0,0,0.1)' 
+        },
         title: {
           display: true,
           text: 'Number of Rounds',
+          font: { size: 14, weight: 'bold' }
         },
+        beginAtZero: true
       },
       y1: {
         type: 'linear' as const,
         display: true,
         position: 'right' as const,
-        title: {
-          display: true,
-          text: 'Average Score',
-        },
         grid: {
           drawOnChartArea: false,
         },
+        title: {
+          display: true,
+          text: 'Average Score',
+          font: { size: 14, weight: 'bold' }
+        },
+        beginAtZero: true
       },
     },
+    elements: {
+      line: { 
+        tension: 0.4, 
+        borderWidth: 3 
+      },
+      point: { 
+        radius: 4, 
+        hoverRadius: 6,
+        hoverBorderWidth: 2
+      }
+    }
   };
 
   const courseAnalyticsChart = {
@@ -418,6 +482,22 @@ export default function AnalyticsDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Monthly Trends */}
           <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Monthly League Trends</h3>
+              <div className="flex items-center space-x-2">
+                <label className="text-sm text-gray-600">Time Period:</label>
+                <select 
+                  value={timePeriod} 
+                  onChange={(e) => setTimePeriod(Number(e.target.value))}
+                  className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  <option value={3}>3 Months</option>
+                  <option value={6}>6 Months</option>
+                  <option value={12}>12 Months</option>
+                  <option value={24}>All Time</option>
+                </select>
+              </div>
+            </div>
             <Line data={monthlyTrendsChart} options={monthlyTrendsOptions} />
           </div>
 
