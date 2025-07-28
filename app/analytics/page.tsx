@@ -208,7 +208,7 @@ export default function AnalyticsDashboard() {
       title: {
         display: true,
         text: 'Monthly League Trends',
-        font: { size: 16, weight: 'bold' }
+        font: { size: 16, weight: 'bold' as const }
       },
       tooltip: {
         backgroundColor: 'rgba(0,0,0,0.8)',
@@ -246,7 +246,7 @@ export default function AnalyticsDashboard() {
         title: { 
           display: true, 
           text: 'Month',
-          font: { size: 14, weight: 'bold' }
+          font: { size: 14, weight: 'bold' as const }
         }
       },
       y: {
@@ -260,7 +260,7 @@ export default function AnalyticsDashboard() {
         title: {
           display: true,
           text: 'Number of Rounds',
-          font: { size: 14, weight: 'bold' }
+          font: { size: 14, weight: 'bold' as const }
         },
         beginAtZero: true
       },
@@ -274,7 +274,7 @@ export default function AnalyticsDashboard() {
         title: {
           display: true,
           text: 'Average Score',
-          font: { size: 14, weight: 'bold' }
+          font: { size: 14, weight: 'bold' as const }
         },
         beginAtZero: true
       },
