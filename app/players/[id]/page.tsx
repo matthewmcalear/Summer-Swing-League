@@ -452,7 +452,12 @@ export default function PlayerProfile() {
                           {stat.rounds}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {stat.averageScore.toFixed(1)}
+                          {(() => {
+                            const totalRounds = stat.rounds18 + stat.rounds9;
+                            if (totalRounds === 0) return '-';
+                            const weightedAverage = (stat.averageScore18 * stat.rounds18 + stat.averageScore9 * stat.rounds9) / totalRounds;
+                            return weightedAverage.toFixed(1);
+                          })()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {stat.averagePoints.toFixed(1)}
