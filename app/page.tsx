@@ -31,35 +31,35 @@ export default function Home() {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           {/* SSL Open Event Banner */}
-          <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-lg shadow-lg p-6 mb-6 text-white">
+          <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg shadow-lg p-6 mb-6 text-white">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
               <div className="flex-1">
                 <h2 className={`${pop.className} text-2xl md:text-3xl font-bold mb-2`}>🚀 SSL Golf Open 2025</h2>
-                <p className="text-green-100 mb-4">Join us for the annual SSL Golf Open event!</p>
+                <p className="text-yellow-100 mb-4">Join us for the annual SSL Golf Open event!</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                   <div className="flex items-center">
-                    <span className="text-green-200 mr-2">📅</span>
+                    <span className="text-yellow-200 mr-2">📅</span>
                     <span>Sunday, August 10th</span>
                   </div>
                   <div className="flex items-center">
-                    <span className="text-green-200 mr-2">📍</span>
+                    <span className="text-yellow-200 mr-2">📍</span>
                     <span>Greater Montreal Area</span>
                   </div>
                   <div className="flex items-center">
-                    <span className="text-green-200 mr-2">💰</span>
+                    <span className="text-yellow-200 mr-2">💰</span>
                     <span>10 Points Grand Prize</span>
                   </div>
                   <div className="flex items-center">
-                    <span className="text-green-200 mr-2">🏆</span>
+                    <span className="text-yellow-200 mr-2">🏆</span>
                     <span>+5/+10 Bonus Points</span>
                   </div>
                 </div>
               </div>
               <div className="mt-4 md:mt-0 md:ml-6">
                 <div className="bg-white bg-opacity-20 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-green-100">RSVP by</div>
+                  <div className="text-2xl font-bold text-yellow-100">RSVP by</div>
                   <div className="text-xl font-bold">August 1st</div>
-                  <div className="text-sm text-green-200 mt-1">Confirm availability</div>
+                  <div className="text-sm text-yellow-200 mt-1">Confirm availability</div>
                 </div>
               </div>
             </div>
