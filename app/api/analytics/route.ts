@@ -235,7 +235,7 @@ export async function GET() {
       points: Math.round(score.total_points * 10) / 10
     }));
 
-    // Best improvement calculation (simplified - comparing first and last 3 rounds)
+    // Best improvement calculation using linear trend analysis
     let bestImprovement = { player: 'N/A', improvement: 0 };
     
     for (const member of members) {
@@ -243,19 +243,39 @@ export async function GET() {
         .filter(score => score.player.split(',')[0].trim() === member.full_name)
         .sort((a, b) => new Date(a.play_date).getTime() - new Date(b.play_date).getTime());
       
-      if (memberScores.length >= 6) {
-        const firstThree = memberScores.slice(0, 3);
-        const lastThree = memberScores.slice(-3);
+      if (memberScores.length >= 5) { // Need at least 5 rounds for meaningful trend
+        // Calculate linear regression (y = mx + b)
+        // x = round number (1, 2, 3, ...)
+        // y = score for that round
         
-        const firstAvg = firstThree.reduce((sum, score) => sum + score.gross, 0) / 3;
-        const lastAvg = lastThree.reduce((sum, score) => sum + score.gross, 0) / 3;
+        const n = memberScores.length;
+        const xValues = Array.from({length: n}, (_, i) => i + 1);
+        const yValues = memberScores.map(score => score.gross);
         
-        const improvement = firstAvg - lastAvg; // Positive means improvement (lower scores)
+        // Calculate means
+        const xMean = xValues.reduce((sum, x) => sum + x, 0) / n;
+        const yMean = yValues.reduce((sum, y) => sum + y, 0) / n;
         
-        if (improvement > bestImprovement.improvement) {
+        // Calculate slope (m) and intercept (b)
+        let numerator = 0;
+        let denominator = 0;
+        
+        for (let i = 0; i < n; i++) {
+          numerator += (xValues[i] - xMean) * (yValues[i] - yMean);
+          denominator += (xValues[i] - xMean) * (xValues[i] - xMean);
+        }
+        
+        const slope = denominator !== 0 ? numerator / denominator : 0;
+        
+        // Calculate improvement over the entire period
+        // Negative slope means improvement (scores getting lower)
+        // Positive slope means decline (scores getting higher)
+        const totalImprovement = -slope * n; // Convert to positive for improvement
+        
+        if (totalImprovement > bestImprovement.improvement) {
           bestImprovement = {
             player: member.full_name,
-            improvement: Math.round(improvement * 10) / 10
+            improvement: Math.round(totalImprovement * 10) / 10
           };
         }
       }

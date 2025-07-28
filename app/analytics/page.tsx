@@ -408,7 +408,8 @@ export default function AnalyticsDashboard() {
                 {analytics.performanceMetrics.bestImprovement.player.split(' ')[0]} {analytics.performanceMetrics.bestImprovement.player.split(' ')[1]?.charAt(0)}.
               </div>
               <div className="text-sm text-orange-600">Best Improvement</div>
-              <div className="text-xs text-orange-500">-{analytics.performanceMetrics.bestImprovement.improvement} strokes</div>
+              <div className="text-xs text-orange-500">+{analytics.performanceMetrics.bestImprovement.improvement} strokes</div>
+              <div className="text-xs text-orange-400">(linear trend)</div>
             </div>
           </div>
         </div>
