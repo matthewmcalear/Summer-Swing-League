@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Line, Bar, Doughnut, Pie } from 'react-chartjs-2';
+import PlayerProgressionChart from '@/app/components/PlayerProgressionChart';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -476,6 +477,11 @@ export default function AnalyticsDashboard() {
               <div className="text-xs text-orange-400">(linear trend)</div>
             </div>
           </div>
+        </div>
+
+        {/* Player Progression Chart - Full Width */}
+        <div className="mb-8">
+          <PlayerProgressionChart />
         </div>
 
         {/* Charts Grid */}
