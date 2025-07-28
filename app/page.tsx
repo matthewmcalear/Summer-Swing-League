@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { Poppins } from 'next/font/google';
 
@@ -15,7 +16,10 @@ export default function Home() {
       <header className="bg-white shadow-sm">
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center py-2">
-            <h1 className={`${pop.className} text-2xl font-bold text-green-800 tracking-wide`}>Summer Swing League</h1>
+            <div className="flex items-center space-x-3">
+              <Image src="/logo.svg" alt="Summer Swing League Logo" width={120} height={40} className="w-24 h-8" />
+              <h1 className={`${pop.className} text-2xl font-bold text-green-800 tracking-wide`}>Summer Swing League</h1>
+            </div>
             <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
               <Link href="/submit-score" className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 text-sm">
                 Submit Score
