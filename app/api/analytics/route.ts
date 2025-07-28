@@ -65,150 +65,150 @@ interface AnalyticsData {
 
 export const dynamic = 'force-dynamic';
 
+// Course name normalization function
+function normalizeCourseName(courseName: string): string {
+  const normalized = courseName.toLowerCase().trim();
+  
+  // Handle specific course variations from the dataset
+  const courseMappings: { [key: string]: string } = {
+    // St. Lambert variations
+    'st. lambert': 'St. Lambert',
+    'st lambert': 'St. Lambert',
+    'saint lambert': 'St. Lambert',
+    'st-lambert': 'St. Lambert',
+    'saint-lambert': 'St. Lambert',
+    'st lambert golf': 'St. Lambert',
+    'st. lambert golf': 'St. Lambert',
+    'saint lambert golf': 'St. Lambert',
+    'golf st lambert': 'St. Lambert',
+    'stlambert blue': 'St. Lambert',
+    'st lambert [blue]': 'St. Lambert',
+    'country club st lambert': 'St. Lambert',
+    
+    // Oasis variations
+    'oasis': 'Oasis',
+    'oasis front': 'Oasis',
+    'oasis back': 'Oasis',
+    'oasis front 9': 'Oasis',
+    'oasis back 9': 'Oasis',
+    'oasis white': 'Oasis',
+    
+    // Golf Des Iles variations
+    'golf des iles back 9': 'Golf Des Iles',
+    'golf des iles front 9': 'Golf Des Iles',
+    
+    // Caughnawaga variations
+    'caughnawaga': 'Caughnawaga',
+    'caughawagha': 'Caughnawaga',
+    
+    // Parcours du cerf
+    'parcours du cerf': 'Parcours du Cerf',
+    
+    // Anjou variations
+    'anjou': 'Anjou',
+    'golf metropolitan d\'anjou': 'Anjou',
+    'golf métropolitain d\'anjou': 'Anjou',
+    
+    // Dorval
+    'dorval': 'Dorval',
+    
+    // Country Club Montreal variations
+    'country club of montreal': 'Country Club Montreal',
+    'country club montreal': 'Country Club Montreal',
+    'country club montréal': 'Country Club Montreal',
+    
+    // Golf des Îles de Boucherville
+    'golf des îles de boucherville': 'Golf des Îles de Boucherville',
+    
+    // Club de Golf Ste-Rose variations
+    'club de golf ste-rose': 'Club de Golf Ste-Rose',
+    'club de golf ste. rose': 'Club de Golf Ste-Rose',
+    
+    // Hemmingford
+    'hemmingford (village)': 'Hemmingford',
+    
+    // Mystic Pines variations
+    'mystic pines': 'Mystic Pines',
+    'mystic pine': 'Mystic Pines',
+    'mystic pines golf and country club': 'Mystic Pines',
+    
+    // Prescott variations
+    'prescott golf club': 'Prescott',
+    'prescott golf course': 'Prescott',
+    'prescott': 'Prescott',
+    
+    // Club de l'île de Montréal
+    'club de l\'île de montréal - l\'ile': 'Club de l\'île de Montréal',
+    
+    // Club de golf metropolitan
+    'club de golf metropolitan': 'Club de Golf Metropolitan',
+    
+    // Unicorn variations
+    'unicorn golf course': 'Unicorn Golf',
+    'unicorn golf': 'Unicorn Golf',
+    
+    // Amberwood
+    'amberwood golf': 'Amberwood Golf',
+    
+    // Vercheres Madeline variations
+    'verchers madeline back 9': 'Vercheres Madeline',
+    'vercheres - madeleine': 'Vercheres Madeline',
+    'verchere madeline': 'Vercheres Madeline',
+    'vercheres madeline': 'Vercheres Madeline',
+    'vercheres madeline\'s': 'Vercheres Madeline',
+    
+    // Montreal Municipal variations
+    'montréal municipal': 'Montreal Municipal',
+    'montreal municipal par 3 ( score x 1.33)': 'Montreal Municipal',
+    'montréal municipale': 'Montreal Municipal',
+    
+    // Rivière Rouge variations
+    'rivier rouge': 'Rivière Rouge',
+    'rivière rouge': 'Rivière Rouge',
+    'club de golf rivière rouge': 'Rivière Rouge',
+    'river rouge': 'Rivière Rouge',
+    'riviere rouge': 'Rivière Rouge',
+    
+    // Club de Golf Rive-Sud
+    'club de golf rive-sud': 'Club de Golf Rive-Sud',
+  };
+  
+  // Check for exact matches first
+  if (courseMappings[normalized]) {
+    return courseMappings[normalized];
+  }
+  
+  // Apply common transformations
+  let processed = normalized;
+  
+  // Remove common prefixes/suffixes
+  for (const [pattern, replacement] of Object.entries(courseMappings)) {
+    if (pattern.endsWith(' ') && processed.startsWith(pattern)) {
+      processed = processed.replace(pattern, replacement);
+    }
+    if (pattern.startsWith(' ') && processed.endsWith(pattern)) {
+      processed = processed.replace(pattern, replacement);
+    }
+  }
+  
+  // Check for partial matches (contains)
+  for (const [pattern, standardName] of Object.entries(courseMappings)) {
+    if (processed.includes(pattern) || pattern.includes(processed)) {
+      return standardName;
+    }
+  }
+  
+  // Handle common naming patterns
+  if (processed.includes('st.') || processed.includes('saint')) {
+    processed = processed.replace(/saint/g, 'St.').replace(/st\./g, 'St.');
+  }
+  
+  // If no match found, return original with proper capitalization
+  return courseName.charAt(0).toUpperCase() + courseName.slice(1).toLowerCase();
+}
+
 export async function GET() {
   try {
-    // Course name normalization function
-    function normalizeCourseName(courseName: string): string {
-      const normalized = courseName.toLowerCase().trim();
-      
-      // Handle specific course variations from the dataset
-      const courseMappings: { [key: string]: string } = {
-        // St. Lambert variations
-        'st. lambert': 'St. Lambert',
-        'st lambert': 'St. Lambert',
-        'saint lambert': 'St. Lambert',
-        'st-lambert': 'St. Lambert',
-        'saint-lambert': 'St. Lambert',
-        'st lambert golf': 'St. Lambert',
-        'st. lambert golf': 'St. Lambert',
-        'saint lambert golf': 'St. Lambert',
-        'golf st lambert': 'St. Lambert',
-        'stlambert blue': 'St. Lambert',
-        'st lambert [blue]': 'St. Lambert',
-        'country club st lambert': 'St. Lambert',
-        
-        // Oasis variations
-        'oasis': 'Oasis',
-        'oasis front': 'Oasis',
-        'oasis back': 'Oasis',
-        'oasis front 9': 'Oasis',
-        'oasis back 9': 'Oasis',
-        'oasis white': 'Oasis',
-        
-        // Golf Des Iles variations
-        'golf des iles back 9': 'Golf Des Iles',
-        'golf des iles front 9': 'Golf Des Iles',
-        
-        // Caughnawaga variations
-        'caughnawaga': 'Caughnawaga',
-        'caughawagha': 'Caughnawaga',
-        
-        // Parcours du cerf
-        'parcours du cerf': 'Parcours du Cerf',
-        
-        // Anjou variations
-        'anjou': 'Anjou',
-        'golf metropolitan d\'anjou': 'Anjou',
-        'golf métropolitain d\'anjou': 'Anjou',
-        
-        // Dorval
-        'dorval': 'Dorval',
-        
-        // Country Club Montreal variations
-        'country club of montreal': 'Country Club Montreal',
-        'country club montreal': 'Country Club Montreal',
-        'country club montréal': 'Country Club Montreal',
-        
-        // Golf des Îles de Boucherville
-        'golf des îles de boucherville': 'Golf des Îles de Boucherville',
-        
-        // Club de Golf Ste-Rose variations
-        'club de golf ste-rose': 'Club de Golf Ste-Rose',
-        'club de golf ste. rose': 'Club de Golf Ste-Rose',
-        
-        // Hemmingford
-        'hemmingford (village)': 'Hemmingford',
-        
-        // Mystic Pines variations
-        'mystic pines': 'Mystic Pines',
-        'mystic pine': 'Mystic Pines',
-        'mystic pines golf and country club': 'Mystic Pines',
-        
-        // Prescott variations
-        'prescott golf club': 'Prescott',
-        'prescott golf course': 'Prescott',
-        'prescott': 'Prescott',
-        
-        // Club de l'île de Montréal
-        'club de l\'île de montréal - l\'ile': 'Club de l\'île de Montréal',
-        
-        // Club de golf metropolitan
-        'club de golf metropolitan': 'Club de Golf Metropolitan',
-        
-        // Unicorn variations
-        'unicorn golf course': 'Unicorn Golf',
-        'unicorn golf': 'Unicorn Golf',
-        
-        // Amberwood
-        'amberwood golf': 'Amberwood Golf',
-        
-        // Vercheres Madeline variations
-        'verchers madeline back 9': 'Vercheres Madeline',
-        'vercheres - madeleine': 'Vercheres Madeline',
-        'verchere madeline': 'Vercheres Madeline',
-        'vercheres madeline': 'Vercheres Madeline',
-        'vercheres madeline\'s': 'Vercheres Madeline',
-        
-        // Montreal Municipal variations
-        'montréal municipal': 'Montreal Municipal',
-        'montreal municipal par 3 ( score x 1.33)': 'Montreal Municipal',
-        'montréal municipale': 'Montreal Municipal',
-        
-        // Rivière Rouge variations
-        'rivier rouge': 'Rivière Rouge',
-        'rivière rouge': 'Rivière Rouge',
-        'club de golf rivière rouge': 'Rivière Rouge',
-        'river rouge': 'Rivière Rouge',
-        'riviere rouge': 'Rivière Rouge',
-        
-        // Club de Golf Rive-Sud
-        'club de golf rive-sud': 'Club de Golf Rive-Sud',
-      };
-      
-      // Check for exact matches first
-      if (courseMappings[normalized]) {
-        return courseMappings[normalized];
-      }
-      
-      // Apply common transformations
-      let processed = normalized;
-      
-      // Remove common prefixes/suffixes
-      for (const [pattern, replacement] of Object.entries(courseMappings)) {
-        if (pattern.endsWith(' ') && processed.startsWith(pattern)) {
-          processed = processed.replace(pattern, replacement);
-        }
-        if (pattern.startsWith(' ') && processed.endsWith(pattern)) {
-          processed = processed.replace(pattern, replacement);
-        }
-      }
-      
-      // Check for partial matches (contains)
-      for (const [pattern, standardName] of Object.entries(courseMappings)) {
-        if (processed.includes(pattern) || pattern.includes(processed)) {
-          return standardName;
-        }
-      }
-      
-      // Handle common naming patterns
-      if (processed.includes('st.') || processed.includes('saint')) {
-        processed = processed.replace(/saint/g, 'St.').replace(/st\./g, 'St.');
-      }
-      
-      // If no match found, return original with proper capitalization
-      return courseName.charAt(0).toUpperCase() + courseName.slice(1).toLowerCase();
-    }
-
     // Get all members and scores
     const members = await prisma.member.findMany({
       where: { is_test: false }
