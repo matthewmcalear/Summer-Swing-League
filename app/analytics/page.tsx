@@ -471,11 +471,20 @@ export default function AnalyticsDashboard() {
             </div>
             <div className="text-center p-4 bg-orange-50 rounded-lg">
               <div className="text-lg font-bold text-orange-800">
-                {analytics.performanceMetrics.bestImprovement.player.split(' ')[0]} {analytics.performanceMetrics.bestImprovement.player.split(' ')[1]?.charAt(0)}.
+                {analytics.performanceMetrics.bestImprovement.player === 'N/A' ? 
+                  'N/A' : 
+                  `${analytics.performanceMetrics.bestImprovement.player.split(' ')[0]} ${analytics.performanceMetrics.bestImprovement.player.split(' ')[1]?.charAt(0)}.`
+                }
               </div>
               <div className="text-sm text-orange-600">Best Improvement</div>
-              <div className="text-xs text-orange-500">+{analytics.performanceMetrics.bestImprovement.improvement} strokes</div>
-              <div className="text-xs text-orange-400">({analytics.performanceMetrics.bestImprovement.roundType})</div>
+              {analytics.performanceMetrics.bestImprovement.player !== 'N/A' ? (
+                <>
+                  <div className="text-xs text-orange-500">+{analytics.performanceMetrics.bestImprovement.improvement} strokes</div>
+                  <div className="text-xs text-orange-400">({analytics.performanceMetrics.bestImprovement.roundType})</div>
+                </>
+              ) : (
+                <div className="text-xs text-orange-400">No data available</div>
+              )}
             </div>
           </div>
         </div>
