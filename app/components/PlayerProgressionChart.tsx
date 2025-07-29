@@ -71,7 +71,7 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
   
   // Filter states
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-  const [timePeriod, setTimePeriod] = useState<number>(6);
+  const [timePeriod, setTimePeriod] = useState<number>(12);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [roundType, setRoundType] = useState<'all' | '9-hole' | '18-hole'>('all');
   const [scoreType, setScoreType] = useState<'gross' | 'net'>('gross');
@@ -132,7 +132,7 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
       try {
         console.log('Fetching initial player progression data...');
         const params = new URLSearchParams();
-        params.append('timePeriod', '12'); // Get last 12 months for player list
+        params.append('timePeriod', timePeriod.toString()); // Use the same time period as the main fetch
         
         const response = await fetch(`/api/player-progression?${params}`);
         console.log('Initial fetch response status:', response.status);

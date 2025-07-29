@@ -166,6 +166,8 @@ export async function GET(request: Request) {
     // Debug: Show what player names are actually in the database
     const uniquePlayerNames = Array.from(new Set(scores.map((score: any) => score.player))).sort();
     console.log('API: Unique player names in database:', uniquePlayerNames);
+    console.log('API: Total scores found:', scores.length);
+    console.log('API: Date range used:', { startDate: startDate.toISOString(), endDate: endDate.toISOString() });
 
     return NextResponse.json({
       players: Object.values(playerData),
