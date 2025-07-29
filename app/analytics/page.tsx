@@ -474,7 +474,7 @@ export default function AnalyticsDashboard() {
               </div>
               <div className="text-sm text-orange-600">Best Improvement</div>
               <div className="text-xs text-orange-500">+{analytics.performanceMetrics.bestImprovement.improvement} strokes</div>
-              <div className="text-xs text-orange-400">(linear trend)</div>
+              <div className="text-xs text-orange-400">({analytics.performanceMetrics.bestImprovement.roundType})</div>
             </div>
           </div>
         </div>

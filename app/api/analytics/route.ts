@@ -23,6 +23,7 @@ interface AnalyticsData {
     bestImprovement: {
       player: string;
       improvement: number;
+      roundType: string;
     };
   };
   courseAnalytics: Array<{
@@ -378,28 +379,29 @@ export async function GET() {
       points: Math.round(score.total_points * 10) / 10
     }));
 
-    // Best improvement calculation using linear trend analysis
-    let bestImprovement = { player: 'N/A', improvement: 0 };
+    // Best improvement calculation using linear trend analysis - separated by round type
+    let bestImprovement18 = { player: 'N/A', improvement: 0, roundType: '18-hole' };
+    let bestImprovement9 = { player: 'N/A', improvement: 0, roundType: '9-hole' };
     
     for (const member of members) {
-      const memberScores = scores
-        .filter(score => score.player.split(',')[0].trim() === member.full_name)
+      // Separate scores by round type
+      const memberScores18 = scores
+        .filter(score => score.player.split(',')[0].trim() === member.full_name && score.holes === 18)
         .sort((a, b) => new Date(a.play_date).getTime() - new Date(b.play_date).getTime());
       
-      if (memberScores.length >= 5) { // Need at least 5 rounds for meaningful trend
-        // Calculate linear regression (y = mx + b)
-        // x = round number (1, 2, 3, ...)
-        // y = score for that round
-        
-        const n = memberScores.length;
+      const memberScores9 = scores
+        .filter(score => score.player.split(',')[0].trim() === member.full_name && score.holes === 9)
+        .sort((a, b) => new Date(a.play_date).getTime() - new Date(b.play_date).getTime());
+      
+      // Calculate 18-hole improvement
+      if (memberScores18.length >= 3) { // Need at least 3 rounds for meaningful trend
+        const n = memberScores18.length;
         const xValues = Array.from({length: n}, (_, i) => i + 1);
-        const yValues = memberScores.map(score => score.gross);
+        const yValues = memberScores18.map(score => score.gross);
         
-        // Calculate means
         const xMean = xValues.reduce((sum, x) => sum + x, 0) / n;
         const yMean = yValues.reduce((sum, y) => sum + y, 0) / n;
         
-        // Calculate slope (m) and intercept (b)
         let numerator = 0;
         let denominator = 0;
         
@@ -409,20 +411,50 @@ export async function GET() {
         }
         
         const slope = denominator !== 0 ? numerator / denominator : 0;
-        
-        // Calculate improvement over the entire period
-        // Negative slope means improvement (scores getting lower)
-        // Positive slope means decline (scores getting higher)
         const totalImprovement = -slope * n; // Convert to positive for improvement
         
-        if (totalImprovement > bestImprovement.improvement) {
-          bestImprovement = {
+        if (totalImprovement > bestImprovement18.improvement) {
+          bestImprovement18 = {
             player: member.full_name,
-            improvement: Math.round(totalImprovement * 10) / 10
+            improvement: Math.round(totalImprovement * 10) / 10,
+            roundType: '18-hole'
+          };
+        }
+      }
+      
+      // Calculate 9-hole improvement
+      if (memberScores9.length >= 3) { // Need at least 3 rounds for meaningful trend
+        const n = memberScores9.length;
+        const xValues = Array.from({length: n}, (_, i) => i + 1);
+        const yValues = memberScores9.map(score => score.gross);
+        
+        const xMean = xValues.reduce((sum, x) => sum + x, 0) / n;
+        const yMean = yValues.reduce((sum, y) => sum + y, 0) / n;
+        
+        let numerator = 0;
+        let denominator = 0;
+        
+        for (let i = 0; i < n; i++) {
+          numerator += (xValues[i] - xMean) * (yValues[i] - yMean);
+          denominator += (xValues[i] - xMean) * (xValues[i] - xMean);
+        }
+        
+        const slope = denominator !== 0 ? numerator / denominator : 0;
+        const totalImprovement = -slope * n; // Convert to positive for improvement
+        
+        if (totalImprovement > bestImprovement9.improvement) {
+          bestImprovement9 = {
+            player: member.full_name,
+            improvement: Math.round(totalImprovement * 10) / 10,
+            roundType: '9-hole'
           };
         }
       }
     }
+    
+    // Choose the best improvement overall (prioritize 18-hole if similar)
+    let bestImprovement = bestImprovement18.improvement > bestImprovement9.improvement ? 
+      bestImprovement18 : bestImprovement9;
 
     const analytics: AnalyticsData = {
       leagueOverview: {
