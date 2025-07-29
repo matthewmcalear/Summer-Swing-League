@@ -81,6 +81,7 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
     async function fetchData() {
       try {
         setLoading(true);
+        setError(null);
         const params = new URLSearchParams();
         
         if (selectedPlayers.length > 0) {
@@ -98,17 +99,21 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
         }
         
         const result = await response.json();
+        console.log('Fetched data:', result); // Debug log
         setData(result);
-        setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
+        setData(null); // Clear data on error
       } finally {
         setLoading(false);
       }
     }
 
-    fetchData();
-  }, [selectedPlayers, timePeriod, selectedCourse, roundType]);
+    // Only fetch if we have selected players or if this is the initial load
+    if (selectedPlayers.length > 0 || (!data && allPlayers.length > 0)) {
+      fetchData();
+    }
+  }, [selectedPlayers, timePeriod, selectedCourse, roundType, allPlayers.length, data]);
 
   // Fetch initial data to populate player list
   useEffect(() => {
@@ -432,7 +437,12 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
       </div>
 
       {/* Chart */}
-      {data?.players && data.players.length > 0 ? (
+      {loading ? (
+        <div className="text-center text-gray-500 py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p>Loading player data...</p>
+        </div>
+      ) : data?.players && data.players.length > 0 ? (
         <Line data={chartData} options={chartOptions} />
       ) : (
         <div className="text-center text-gray-500 py-8">
