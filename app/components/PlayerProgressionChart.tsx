@@ -198,7 +198,7 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
         borderColor: COLORS[index % COLORS.length],
         backgroundColor: COLORS[index % COLORS.length] + '20',
         borderWidth: 3,
-        tension: 0.4,
+        tension: 0, // Linear lines - no curve
         pointRadius: 4,
         pointHoverRadius: 6,
         fill: false,
