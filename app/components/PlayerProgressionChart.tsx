@@ -93,15 +93,22 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
         }
         params.append('roundType', roundType);
 
+        console.log('Fetching data with params:', params.toString());
+        console.log('Selected players:', selectedPlayers);
+        
         const response = await fetch(`/api/player-progression?${params}`);
+        console.log('Response status:', response.status);
+        
         if (!response.ok) {
           throw new Error('Failed to fetch data');
         }
         
         const result = await response.json();
-        console.log('Fetched data:', result); // Debug log
+        console.log('Fetched data result:', result);
+        console.log('Result players length:', result.players?.length || 0);
         setData(result);
       } catch (err) {
+        console.error('Error fetching data:', err);
         setError(err instanceof Error ? err.message : 'An error occurred');
         setData(null); // Clear data on error
       } finally {
@@ -109,8 +116,12 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
       }
     }
 
-    // Only fetch if we have selected players or if this is the initial load
-    if (selectedPlayers.length > 0 || (!data && allPlayers.length > 0)) {
+    // Always fetch when players are selected, or fetch initial data if no data exists
+    if (selectedPlayers.length > 0) {
+      console.log('Fetching data for selected players:', selectedPlayers);
+      fetchData();
+    } else if (!data && allPlayers.length > 0) {
+      console.log('Fetching initial data');
       fetchData();
     }
   }, [selectedPlayers, timePeriod, selectedCourse, roundType, allPlayers.length]);
