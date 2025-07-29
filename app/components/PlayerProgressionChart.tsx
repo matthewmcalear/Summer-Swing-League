@@ -67,6 +67,7 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
   const [data, setData] = useState<PlayerProgressionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [allPlayers, setAllPlayers] = useState<string[]>([]);
   
   // Filter states
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
@@ -119,6 +120,8 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
         const response = await fetch(`/api/player-progression?${params}`);
         if (response.ok) {
           const result = await response.json();
+          // Set the all players list
+          setAllPlayers(result.players.map((p: any) => p.player));
           // Only update data if we don't have any data yet
           if (!data) {
             setData(result);
@@ -129,13 +132,12 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
       }
     }
 
-    if (!data) {
+    if (allPlayers.length === 0) {
       fetchInitialData();
     }
-  }, [data]);
+  }, [allPlayers.length, data]);
 
   // Get all available players for selection
-  const allPlayers = data?.players.map(p => p.player) || [];
 
   // Prepare chart data with proper date handling
   const { chartData, sortedDates } = (() => {
