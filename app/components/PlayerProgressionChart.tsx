@@ -65,7 +65,7 @@ const COLORS = [
 
 export default function PlayerProgressionChart({ className = '' }: PlayerProgressionChartProps) {
   const [data, setData] = useState<PlayerProgressionData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [allPlayers, setAllPlayers] = useState<string[]>([]);
   
@@ -113,7 +113,7 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
     if (selectedPlayers.length > 0 || (!data && allPlayers.length > 0)) {
       fetchData();
     }
-  }, [selectedPlayers, timePeriod, selectedCourse, roundType, allPlayers.length, data]);
+  }, [selectedPlayers, timePeriod, selectedCourse, roundType, allPlayers.length]);
 
   // Fetch initial data to populate player list
   useEffect(() => {
@@ -146,7 +146,7 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
     if (allPlayers.length === 0) {
       fetchInitialData();
     }
-  }, [allPlayers.length, data]);
+  }, [allPlayers.length]);
 
   // Get all available players for selection
 
