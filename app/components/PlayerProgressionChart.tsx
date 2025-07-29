@@ -181,24 +181,13 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
     // Sort dates chronologically
     const sortedDates = Array.from(allDates).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
 
-    // Create labels from sorted dates
-    const labels = sortedDates.map(date => {
-      const dateObj = new Date(date);
-      return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    });
-
-    // Create datasets for each player
+    // Create datasets for each player with proper date objects
     const datasets = data.players.map((player, index) => {
-      // Create a map of date -> score for this player
-      const scoreMap = new Map<string, number>();
-      player.scores.forEach(score => {
-        scoreMap.set(score.date, scoreType === 'gross' ? score.gross : score.net);
-      });
-
-      // Create data array aligned with sorted dates
-      const data = sortedDates.map(date => {
-        return scoreMap.get(date) || null; // null for missing data points
-      });
+      // Create data points with actual date objects
+      const data = player.scores.map(score => ({
+        x: new Date(score.date), // Use actual date object
+        y: scoreType === 'gross' ? score.gross : score.net
+      })).sort((a, b) => a.x.getTime() - b.x.getTime()); // Sort by date
 
       return {
         label: `${player.player} (${player.averageScore.toFixed(1)} avg)`,
@@ -215,7 +204,7 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
     });
 
     return {
-      chartData: { labels, datasets },
+      chartData: { datasets },
       sortedDates
     };
   })();
@@ -240,28 +229,23 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
         borderWidth: 1,
         callbacks: {
           title: function(context: any) {
-            const dataIndex = context[0].dataIndex;
-            const date = sortedDates[dataIndex];
-            if (date) {
-              const dateObj = new Date(date);
-              return dateObj.toLocaleDateString('en-US', { 
-                weekday: 'short', 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric' 
-              });
-            }
-            return context[0].label;
+            const date = new Date(context[0].parsed.x);
+            return date.toLocaleDateString('en-US', { 
+              weekday: 'short', 
+              year: 'numeric', 
+              month: 'short', 
+              day: 'numeric' 
+            });
           },
           label: function(context: any) {
-            const dataIndex = context.dataIndex;
             const playerIndex = context.datasetIndex;
-            const date = sortedDates[dataIndex];
             const player = data?.players[playerIndex];
+            const date = new Date(context.parsed.x);
+            const dateString = date.toISOString().split('T')[0];
             
-            if (date && player) {
+            if (player) {
               // Find the score for this player on this date
-              const score = player.scores.find(s => s.date === date);
+              const score = player.scores.find(s => s.date === dateString);
               if (score) {
                 return [
                   `${context.dataset.label}`,
@@ -288,6 +272,13 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
     },
     scales: {
       x: {
+        type: 'time' as const,
+        time: {
+          unit: 'day' as const,
+          displayFormats: {
+            day: 'MMM d'
+          }
+        },
         grid: { 
           display: true, 
           color: 'rgba(0,0,0,0.1)' 
