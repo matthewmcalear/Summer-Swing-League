@@ -159,6 +159,10 @@ export async function GET(request: Request) {
     // Get unique courses for filter options
     const uniqueCourses = Array.from(new Set(scores.map((score: any) => score.course_name))).sort();
 
+    // Debug: Show what player names are actually in the database
+    const uniquePlayerNames = Array.from(new Set(scores.map((score: any) => score.player))).sort();
+    console.log('API: Unique player names in database:', uniquePlayerNames);
+
     return NextResponse.json({
       players: Object.values(playerData),
       courses: uniqueCourses,
