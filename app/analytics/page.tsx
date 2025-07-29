@@ -51,6 +51,7 @@ interface AnalyticsData {
     bestImprovement: {
       player: string;
       improvement: number;
+      roundType: string;
     };
   };
   courseAnalytics: Array<{
