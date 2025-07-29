@@ -464,6 +464,10 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
           <p>Select players to view their score progression</p>
           <p className="text-sm mt-2">Available players: {allPlayers.length}</p>
           <p className="text-sm mt-2">Data players: {data?.players?.length || 0}</p>
+          <p className="text-sm mt-2">Data structure: {JSON.stringify(data ? Object.keys(data) : 'null')}</p>
+          {data?.players && (
+            <p className="text-sm mt-2">First player: {JSON.stringify(data.players[0])}</p>
+          )}
           {allPlayers.length === 0 && (
             <p className="text-sm mt-2 text-red-500">No player data available</p>
           )}
