@@ -98,12 +98,15 @@ export async function GET(request: Request) {
         };
       }
 
+      // Calculate net score (gross - handicap)
+      const netScore = score.gross - score.handicap;
+      
       playerData[playerName].scores.push({
         date: score.play_date.toISOString().split('T')[0],
         course: score.course_name,
         gross: score.gross,
-        net: score.net,
-        points: score.points,
+        net: netScore,
+        points: score.total_points + score.additional_points,
         handicap: score.handicap,
         roundType: detectedRoundType as '9-hole' | '18-hole',
       });
