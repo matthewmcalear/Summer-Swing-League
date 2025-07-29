@@ -59,14 +59,28 @@ export async function GET(request: Request) {
     };
 
     if (players.length > 0) {
-      // Use a more flexible matching approach - check if player name contains any of the selected players
-      whereClause.OR = players.map(playerName => ({
-        player: {
-          contains: playerName,
-          mode: 'insensitive',
+      // Use more precise matching - check for exact matches or names that start with the selected player name
+      whereClause.OR = players.map(playerName => [
+        {
+          player: {
+            equals: playerName,
+            mode: 'insensitive',
+          },
         },
-      }));
-      console.log('API: Added flexible player filter for:', players);
+        {
+          player: {
+            startsWith: playerName + ',',
+            mode: 'insensitive',
+          },
+        },
+        {
+          player: {
+            startsWith: playerName + ' ',
+            mode: 'insensitive',
+          },
+        }
+      ]).flat();
+      console.log('API: Added precise player filter for:', players);
     }
 
     if (courseFilter) {
