@@ -11,7 +11,7 @@ export async function GET() {
       }
     });
     
-    const courseNames = [...new Set(scores.map(s => s.course_name))].sort();
+    const courseNames = Array.from(new Set(scores.map(s => s.course_name))).sort();
     
     return NextResponse.json({ 
       courses: courseNames,
