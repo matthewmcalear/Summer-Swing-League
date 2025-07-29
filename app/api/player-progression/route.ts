@@ -30,6 +30,11 @@ interface PlayerProgressionData {
   improvement: number;
 }
 
+// Helper function to determine round type based on holes field
+function detectRoundType(holes: number): '9-hole' | '18-hole' {
+  return holes === 9 ? '9-hole' : '18-hole';
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -109,10 +114,8 @@ export async function GET(request: Request) {
     scores.forEach((score) => {
       const playerName = score.player.split(',')[0].trim();
       
-      // Determine round type based on course name or other logic
-      const detectedRoundType = score.course_name.toLowerCase().includes('front 9') || 
-                       score.course_name.toLowerCase().includes('back 9') ||
-                       score.course_name.toLowerCase().includes('9') ? '9-hole' : '18-hole';
+      // Use the holes field to determine round type
+      const detectedRoundType = detectRoundType(score.holes);
 
       // Filter by round type if specified
       if (roundType !== 'all' && roundType !== detectedRoundType) {
@@ -182,6 +185,15 @@ export async function GET(request: Request) {
     console.log('API: Unique player names in database:', uniquePlayerNames);
     console.log('API: Total scores found:', scores.length);
     console.log('API: Date range used:', { startDate: startDate.toISOString(), endDate: endDate.toISOString() });
+    
+    // Debug: Show course names and their detected round types based on holes field
+    const courseRoundTypes = scores.map((score: any) => ({
+      course: score.course_name,
+      holes: score.holes,
+      roundType: detectRoundType(score.holes)
+    }));
+    const uniqueCourseRoundTypes = Array.from(new Set(courseRoundTypes.map((c: any) => `${c.course} (${c.holes} holes) -> ${c.roundType}`))).sort();
+    console.log('API: Course round type detection:', uniqueCourseRoundTypes);
 
     return NextResponse.json({
       players: Object.values(playerData),
