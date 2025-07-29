@@ -109,27 +109,92 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
     fetchData();
   }, [selectedPlayers, timePeriod, selectedCourse, roundType]);
 
+  // Fetch initial data to populate player list
+  useEffect(() => {
+    async function fetchInitialData() {
+      try {
+        const params = new URLSearchParams();
+        params.append('timePeriod', '12'); // Get last 12 months for player list
+        
+        const response = await fetch(`/api/player-progression?${params}`);
+        if (response.ok) {
+          const result = await response.json();
+          // Only update data if we don't have any data yet
+          if (!data) {
+            setData(result);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching initial data:', err);
+      }
+    }
+
+    if (!data) {
+      fetchInitialData();
+    }
+  }, [data]);
+
   // Get all available players for selection
   const allPlayers = data?.players.map(p => p.player) || [];
 
-  // Prepare chart data
-  const chartData = {
-    labels: data?.players[0]?.scores.map(score => {
-      const date = new Date(score.date);
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }) || [],
-    datasets: data?.players.map((player, index) => ({
-      label: `${player.player} (${player.averageScore.toFixed(1)} avg)`,
-      data: player.scores.map(score => scoreType === 'gross' ? score.gross : score.net),
-      borderColor: COLORS[index % COLORS.length],
-      backgroundColor: COLORS[index % COLORS.length] + '20',
-      borderWidth: 3,
-      tension: 0.4,
-      pointRadius: 4,
-      pointHoverRadius: 6,
-      fill: false,
-    })) || [],
-  };
+  // Prepare chart data with proper date handling
+  const { chartData, sortedDates } = (() => {
+    if (!data?.players || data.players.length === 0) {
+      return {
+        chartData: { labels: [], datasets: [] },
+        sortedDates: []
+      };
+    }
+
+    // Collect all unique dates from all players
+    const allDates = new Set<string>();
+    data.players.forEach(player => {
+      player.scores.forEach(score => {
+        allDates.add(score.date);
+      });
+    });
+
+    // Sort dates chronologically
+    const sortedDates = Array.from(allDates).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+
+    // Create labels from sorted dates
+    const labels = sortedDates.map(date => {
+      const dateObj = new Date(date);
+      return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+
+    // Create datasets for each player
+    const datasets = data.players.map((player, index) => {
+      // Create a map of date -> score for this player
+      const scoreMap = new Map<string, number>();
+      player.scores.forEach(score => {
+        scoreMap.set(score.date, scoreType === 'gross' ? score.gross : score.net);
+      });
+
+      // Create data array aligned with sorted dates
+      const data = sortedDates.map(date => {
+        return scoreMap.get(date) || null; // null for missing data points
+      });
+
+      return {
+        label: `${player.player} (${player.averageScore.toFixed(1)} avg)`,
+        data: data,
+        borderColor: COLORS[index % COLORS.length],
+        backgroundColor: COLORS[index % COLORS.length] + '20',
+        borderWidth: 3,
+        tension: 0.4,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        fill: false,
+        spanGaps: true, // Connect points across gaps
+      };
+    });
+
+    return {
+      chartData: { labels, datasets },
+      sortedDates
+    };
+  })();
 
   const chartOptions = {
     responsive: true,
@@ -152,25 +217,37 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
         callbacks: {
           title: function(context: any) {
             const dataIndex = context[0].dataIndex;
-            const playerIndex = context[0].datasetIndex;
-            const score = data?.players[playerIndex]?.scores[dataIndex];
-            if (score) {
-              return `${score.date} - ${score.course}`;
+            const date = sortedDates[dataIndex];
+            if (date) {
+              const dateObj = new Date(date);
+              return dateObj.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+              });
             }
             return context[0].label;
           },
           label: function(context: any) {
             const dataIndex = context.dataIndex;
             const playerIndex = context.datasetIndex;
-            const score = data?.players[playerIndex]?.scores[dataIndex];
-            if (score) {
-              return [
-                `${context.dataset.label}`,
-                `${scoreType === 'gross' ? 'Gross' : 'Net'}: ${score[scoreType]}`,
-                `Points: ${score.points}`,
-                `Handicap: ${score.handicap}`,
-                `Type: ${score.roundType}`,
-              ];
+            const date = sortedDates[dataIndex];
+            const player = data?.players[playerIndex];
+            
+            if (date && player) {
+              // Find the score for this player on this date
+              const score = player.scores.find(s => s.date === date);
+              if (score) {
+                return [
+                  `${context.dataset.label}`,
+                  `${scoreType === 'gross' ? 'Gross' : 'Net'}: ${score[scoreType]}`,
+                  `Course: ${score.course}`,
+                  `Points: ${score.points}`,
+                  `Handicap: ${score.handicap}`,
+                  `Type: ${score.roundType}`,
+                ];
+              }
             }
             return context.parsed.y;
           }
