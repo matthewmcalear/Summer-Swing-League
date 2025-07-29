@@ -59,10 +59,14 @@ export async function GET(request: Request) {
     };
 
     if (players.length > 0) {
-      whereClause.player = {
-        in: players,
-      };
-      console.log('API: Added player filter:', whereClause.player);
+      // Use a more flexible matching approach - check if player name contains any of the selected players
+      whereClause.OR = players.map(playerName => ({
+        player: {
+          contains: playerName,
+          mode: 'insensitive',
+        },
+      }));
+      console.log('API: Added flexible player filter for:', players);
     }
 
     if (courseFilter) {
