@@ -38,10 +38,17 @@ export async function GET(request: Request) {
     const courseFilter = searchParams.get('course') || '';
     const roundType = searchParams.get('roundType') || 'all'; // '9-hole', '18-hole', or 'all'
 
+    console.log('API: Received players parameter:', players);
+    console.log('API: Time period:', timePeriod);
+    console.log('API: Course filter:', courseFilter);
+    console.log('API: Round type:', roundType);
+
     // Calculate date range
     const endDate = new Date();
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - parseInt(timePeriod));
+
+    console.log('API: Date range:', { startDate, endDate });
 
     // Build where clause
     const whereClause: any = {
@@ -55,6 +62,7 @@ export async function GET(request: Request) {
       whereClause.player = {
         in: players,
       };
+      console.log('API: Added player filter:', whereClause.player);
     }
 
     if (courseFilter) {
@@ -71,6 +79,11 @@ export async function GET(request: Request) {
         play_date: 'asc',
       },
     });
+
+    console.log('API: Found scores count:', scores.length);
+    if (scores.length > 0) {
+      console.log('API: Sample score player field:', scores[0].player);
+    }
 
     // Group scores by player
     const playerData: { [key: string]: PlayerProgressionData } = {};
