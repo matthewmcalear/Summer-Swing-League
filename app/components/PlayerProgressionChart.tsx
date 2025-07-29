@@ -333,7 +333,7 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
         </div>
 
         {/* Player Stats Summary */}
-        {data?.players.length > 0 && (
+        {data?.players && data.players.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             {data.players.map((player, index) => (
               <div key={player.player} className="bg-gray-50 rounded-lg p-3">
@@ -353,7 +353,7 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
       </div>
 
       {/* Chart */}
-      {data?.players.length > 0 ? (
+      {data?.players && data.players.length > 0 ? (
         <Line data={chartData} options={chartOptions} />
       ) : (
         <div className="text-center text-gray-500 py-8">
