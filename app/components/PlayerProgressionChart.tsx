@@ -119,18 +119,24 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
   useEffect(() => {
     async function fetchInitialData() {
       try {
+        console.log('Fetching initial player progression data...');
         const params = new URLSearchParams();
         params.append('timePeriod', '12'); // Get last 12 months for player list
         
         const response = await fetch(`/api/player-progression?${params}`);
+        console.log('Initial fetch response status:', response.status);
+        
         if (response.ok) {
           const result = await response.json();
+          console.log('Initial fetch result:', result);
           // Set the all players list
           setAllPlayers(result.players.map((p: any) => p.player));
           // Only update data if we don't have any data yet
           if (!data) {
             setData(result);
           }
+        } else {
+          console.error('Initial fetch failed with status:', response.status);
         }
       } catch (err) {
         console.error('Error fetching initial data:', err);
@@ -303,6 +309,9 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
           <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
           <div className="h-64 bg-gray-200 rounded"></div>
         </div>
+        <div className="text-center text-gray-500 mt-4">
+          <p>Loading player progression data...</p>
+        </div>
       </div>
     );
   }
@@ -441,12 +450,23 @@ export default function PlayerProgressionChart({ className = '' }: PlayerProgres
         <div className="text-center text-gray-500 py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
           <p>Loading player data...</p>
+          <p className="text-sm mt-2">Debug: Loading state active</p>
+        </div>
+      ) : error ? (
+        <div className="text-center text-red-500 py-8">
+          <p>Error: {error}</p>
+          <p className="text-sm mt-2">Debug: Error state</p>
         </div>
       ) : data?.players && data.players.length > 0 ? (
         <Line data={chartData} options={chartOptions} />
       ) : (
         <div className="text-center text-gray-500 py-8">
           <p>Select players to view their score progression</p>
+          <p className="text-sm mt-2">Available players: {allPlayers.length}</p>
+          <p className="text-sm mt-2">Data players: {data?.players?.length || 0}</p>
+          {allPlayers.length === 0 && (
+            <p className="text-sm mt-2 text-red-500">No player data available</p>
+          )}
         </div>
       )}
     </div>
