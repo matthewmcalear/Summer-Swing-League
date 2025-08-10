@@ -10,6 +10,9 @@ interface AnalyticsData {
     averageHandicap: number;
     totalScoresSubmitted: number;
     activePlayers: number; // players with scores in last 30 days
+    totalPoints: number;
+    averagePointsPerRound: number;
+    participationRate: number; // percentage of members who have played
   };
   performanceMetrics: {
     averageScore18: number;
@@ -25,6 +28,17 @@ interface AnalyticsData {
       improvement: number;
       roundType: string;
     };
+    consistencyLeader: {
+      player: string;
+      standardDeviation: number;
+      rounds: number;
+    };
+    courseSpecialist: {
+      player: string;
+      course: string;
+      averageScore: number;
+      rounds: number;
+    };
   };
   courseAnalytics: Array<{
     course: string;
@@ -34,6 +48,10 @@ interface AnalyticsData {
     averageScore18: number;
     averageScore9: number;
     difficulty: number;
+    averagePoints: number;
+    mostFrequentPlayer: string;
+    bestScore: number;
+    bestPlayer: string;
   }>;
   monthlyTrends: Array<{
     month: string;
@@ -48,12 +66,16 @@ interface AnalyticsData {
   handicapDistribution: Array<{
     range: string;
     count: number;
+    percentage: number;
   }>;
   topPerformers: Array<{
     player: string;
     seasonScore: number;
     totalRounds: number;
     averageScore: number;
+    averagePoints: number;
+    bestRound: number;
+    consistency: number; // standard deviation of scores
   }>;
   recentActivity: Array<{
     date: string;
@@ -62,6 +84,38 @@ interface AnalyticsData {
     score: number;
     points: number;
   }>;
+  playerInsights: Array<{
+    player: string;
+    totalRounds: number;
+    averageScore: number;
+    bestScore: number;
+    worstScore: number;
+    averagePoints: number;
+    handicap: number;
+    improvement: number;
+    favoriteCourse: string;
+    roundsThisMonth: number;
+  }>;
+  seasonHighlights: {
+    totalTournaments: number;
+    averageTournamentSize: number;
+    biggestComeback: {
+      player: string;
+      improvement: number;
+      roundType: string;
+    };
+    mostConsistentPlayer: {
+      player: string;
+      standardDeviation: number;
+      rounds: number;
+    };
+    courseDifficultyRanking: Array<{
+      course: string;
+      averageScore: number;
+      difficulty: number;
+      rounds: number;
+    }>;
+  };
 }
 
 export const dynamic = 'force-dynamic';
@@ -232,6 +286,12 @@ export async function GET() {
     const totalPlayers = members.length;
     const totalRounds = scores.length;
     const averageHandicap = members.reduce((sum, m) => sum + m.handicap, 0) / totalPlayers;
+    
+    // Calculate total points and participation metrics
+    const totalPoints = scores.reduce((sum, s) => sum + s.total_points, 0);
+    const averagePointsPerRound = totalRounds > 0 ? totalPoints / totalRounds : 0;
+    const playersWhoHavePlayed = new Set(scores.map(s => s.player.split(',')[0].trim())).size;
+    const participationRate = totalPlayers > 0 ? (playersWhoHavePlayed / totalPlayers) * 100 : 0;
 
     // Separate 18-hole and 9-hole rounds
     const scores18 = scores.filter(s => s.holes === 18);
@@ -248,7 +308,7 @@ export async function GET() {
     // Performance metrics separated by hole count
     const grossScores18 = scores18.map(s => s.gross);
     const grossScores9 = scores9.map(s => s.gross);
-    const totalPoints = scores.map(s => s.total_points);
+    const scorePoints = scores.map(s => s.total_points);
     
     const averageScore18 = grossScores18.length > 0 ? grossScores18.reduce((sum, score) => sum + score, 0) / grossScores18.length : 0;
     const averageScore9 = grossScores9.length > 0 ? grossScores9.reduce((sum, score) => sum + score, 0) / grossScores9.length : 0;
@@ -256,7 +316,7 @@ export async function GET() {
     const lowestScore9 = grossScores9.length > 0 ? Math.min(...grossScores9) : 0;
     const highestScore18 = grossScores18.length > 0 ? Math.max(...grossScores18) : 0;
     const highestScore9 = grossScores9.length > 0 ? Math.max(...grossScores9) : 0;
-    const averagePoints = totalPoints.reduce((sum, points) => sum + points, 0) / totalPoints.length;
+    const averagePoints = scorePoints.reduce((sum, points) => sum + points, 0) / scorePoints.length;
 
     // Most active player
     const playerRoundCounts = new Map();
@@ -466,6 +526,62 @@ export async function GET() {
     let bestImprovement = bestImprovement18.improvement > bestImprovement9.improvement ? 
       bestImprovement18 : bestImprovement9;
 
+    // Calculate consistency leader (lowest standard deviation)
+    let consistencyLeader = { player: 'N/A', standardDeviation: Infinity, rounds: 0 };
+    for (const member of members) {
+      const memberScores = scores.filter(score => 
+        score.player.split(',')[0].trim() === member.full_name
+      );
+      
+      if (memberScores.length >= 3) {
+        const scores = memberScores.map(s => s.gross);
+        const mean = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+        const variance = scores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) / scores.length;
+        const stdDev = Math.sqrt(variance);
+        
+        if (stdDev < consistencyLeader.standardDeviation) {
+          consistencyLeader = {
+            player: member.full_name,
+            standardDeviation: Math.round(stdDev * 10) / 10,
+            rounds: memberScores.length
+          };
+        }
+      }
+    }
+
+    // Calculate course specialist (best average score on a specific course with minimum rounds)
+    let courseSpecialist = { player: 'N/A', course: 'N/A', averageScore: Infinity, rounds: 0 };
+    for (const member of members) {
+      const memberScores = scores.filter(score => 
+        score.player.split(',')[0].trim() === member.full_name
+      );
+      
+      // Group by course
+      const courseScores = new Map();
+      memberScores.forEach(score => {
+        const course = normalizeCourseName(score.course_name);
+        if (!courseScores.has(course)) {
+          courseScores.set(course, []);
+        }
+        courseScores.get(course).push(score.gross);
+      });
+      
+      // Find best course average
+      courseScores.forEach((scores, course) => {
+        if (scores.length >= 2) { // Minimum 2 rounds on a course
+          const avg = scores.reduce((sum: number, score: number) => sum + score, 0) / scores.length;
+          if (avg < courseSpecialist.averageScore) {
+            courseSpecialist = {
+              player: member.full_name,
+              course,
+              averageScore: Math.round(avg * 10) / 10,
+              rounds: scores.length
+            };
+          }
+        }
+      });
+    }
+
     const analytics: AnalyticsData = {
       leagueOverview: {
         totalPlayers,
@@ -474,7 +590,10 @@ export async function GET() {
         total9HoleRounds,
         averageHandicap: Math.round(averageHandicap * 10) / 10,
         totalScoresSubmitted: totalRounds,
-        activePlayers
+        activePlayers,
+        totalPoints: Math.round(totalPoints * 10) / 10,
+        averagePointsPerRound: Math.round(averagePointsPerRound * 10) / 10,
+        participationRate: Math.round(participationRate * 10) / 10
       },
       performanceMetrics: {
         averageScore18: Math.round(averageScore18 * 10) / 10,
@@ -485,13 +604,19 @@ export async function GET() {
         highestScore9,
         averagePoints: Math.round(averagePoints * 10) / 10,
         mostActivePlayer,
-        bestImprovement
+        bestImprovement,
+        consistencyLeader,
+        courseSpecialist
       },
       courseAnalytics: courseAnalytics.map(course => ({
         ...course,
         averageScore18: Math.round(course.averageScore18 * 10) / 10,
         averageScore9: Math.round(course.averageScore9 * 10) / 10,
-        difficulty: Math.round(course.difficulty * 10) / 10
+        difficulty: Math.round(course.difficulty * 10) / 10,
+        averagePoints: 0, // Placeholder - will calculate this
+        mostFrequentPlayer: 'N/A', // Placeholder - will calculate this
+        bestScore: 0, // Placeholder - will calculate this
+        bestPlayer: 'N/A' // Placeholder - will calculate this
       })),
       monthlyTrends: monthlyTrends.map(trend => ({
         ...trend,
@@ -499,9 +624,25 @@ export async function GET() {
         averageScore9: Math.round(trend.averageScore9 * 10) / 10,
         averagePoints: Math.round(trend.averagePoints * 10) / 10
       })),
-      handicapDistribution,
-      topPerformers,
-      recentActivity
+      handicapDistribution: handicapDistribution.map(range => ({
+        ...range,
+        percentage: Math.round((range.count / totalPlayers) * 100 * 10) / 10
+      })),
+      topPerformers: topPerformers.map(player => ({
+        ...player,
+        averagePoints: 0, // Placeholder - will calculate this
+        bestRound: 0, // Placeholder - will calculate this
+        consistency: 0 // Placeholder - will calculate this
+      })),
+      recentActivity,
+      playerInsights: [], // Placeholder - will implement later
+      seasonHighlights: {
+        totalTournaments: 0, // Placeholder - will implement later
+        averageTournamentSize: 0, // Placeholder - will implement later
+        biggestComeback: { player: 'N/A', improvement: 0, roundType: 'N/A' }, // Placeholder
+        mostConsistentPlayer: { player: 'N/A', standardDeviation: 0, rounds: 0 }, // Placeholder
+        courseDifficultyRanking: [] // Placeholder - will implement later
+      }
     };
 
     return NextResponse.json(analytics, { headers: { 'Cache-Control': 'no-store' } });

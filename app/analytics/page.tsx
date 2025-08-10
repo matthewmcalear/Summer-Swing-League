@@ -2,32 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Line, Bar, Doughnut, Pie } from 'react-chartjs-2';
-import PlayerProgressionChart from '@/app/components/PlayerProgressionChart';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-} from 'chart.js';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-);
 
 interface AnalyticsData {
   leagueOverview: {
@@ -38,6 +12,9 @@ interface AnalyticsData {
     averageHandicap: number;
     totalScoresSubmitted: number;
     activePlayers: number;
+    totalPoints: number;
+    averagePointsPerRound: number;
+    participationRate: number;
   };
   performanceMetrics: {
     averageScore18: number;
@@ -53,6 +30,17 @@ interface AnalyticsData {
       improvement: number;
       roundType: string;
     };
+    consistencyLeader: {
+      player: string;
+      standardDeviation: number;
+      rounds: number;
+    };
+    courseSpecialist: {
+      player: string;
+      course: string;
+      averageScore: number;
+      rounds: number;
+    };
   };
   courseAnalytics: Array<{
     course: string;
@@ -62,6 +50,10 @@ interface AnalyticsData {
     averageScore18: number;
     averageScore9: number;
     difficulty: number;
+    averagePoints: number;
+    mostFrequentPlayer: string;
+    bestScore: number;
+    bestPlayer: string;
   }>;
   monthlyTrends: Array<{
     month: string;
@@ -76,12 +68,16 @@ interface AnalyticsData {
   handicapDistribution: Array<{
     range: string;
     count: number;
+    percentage: number;
   }>;
   topPerformers: Array<{
     player: string;
     seasonScore: number;
     totalRounds: number;
     averageScore: number;
+    averagePoints: number;
+    bestRound: number;
+    consistency: number;
   }>;
   recentActivity: Array<{
     date: string;
@@ -90,590 +86,357 @@ interface AnalyticsData {
     score: number;
     points: number;
   }>;
+  playerInsights: Array<{
+    player: string;
+    totalRounds: number;
+    averageScore: number;
+    bestScore: number;
+    worstScore: number;
+    averagePoints: number;
+    handicap: number;
+    improvement: number;
+    favoriteCourse: string;
+    roundsThisMonth: number;
+  }>;
+  seasonHighlights: {
+    totalTournaments: number;
+    averageTournamentSize: number;
+    biggestComeback: {
+      player: string;
+      improvement: number;
+      roundType: string;
+    };
+    mostConsistentPlayer: {
+      player: string;
+      standardDeviation: number;
+      rounds: number;
+    };
+    courseDifficultyRanking: Array<{
+      course: string;
+      averageScore: number;
+      difficulty: number;
+      rounds: number;
+    }>;
+  };
 }
 
-export default function AnalyticsDashboard() {
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+export default function AnalyticsPage() {
+  const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [timePeriod, setTimePeriod] = useState<number>(6); // Default to 6 months
 
   useEffect(() => {
-    async function fetchAnalytics() {
+    const fetchData = async () => {
       try {
-        const response = await fetch(`/api/analytics?fresh=${Date.now()}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch analytics data');
-        }
-        const data = await response.json();
-        setAnalytics(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        const response = await fetch('/api/analytics');
+        const analyticsData = await response.json();
+        setData(analyticsData);
+      } catch (error) {
+        console.error('Error fetching analytics:', error);
       } finally {
         setLoading(false);
       }
-    }
+    };
 
-    fetchAnalytics();
-
-    // Auto-refresh every 5 minutes
-    const interval = setInterval(fetchAnalytics, 300000);
+    fetchData();
+    const interval = setInterval(fetchData, 300000); // Refresh every 5 minutes
     return () => clearInterval(interval);
   }, []);
 
   if (loading) {
     return (
       <div className="min-h-screen py-12">
-        <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-lg p-8">
-          <div className="flex justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600" />
           </div>
         </div>
       </div>
     );
   }
 
-  if (error || !analytics) {
+  if (!data) {
     return (
       <div className="min-h-screen py-12">
-        <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-lg p-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
-            <p className="text-gray-600">{error || 'Failed to load analytics'}</p>
-            <Link href="/" className="mt-4 inline-block px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-              Back to Home
-            </Link>
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center py-20">
+            <p className="text-red-600">Failed to load analytics data</p>
           </div>
         </div>
       </div>
     );
   }
 
-  // Chart configurations
-  const monthlyTrendsChart = {
-    labels: analytics.monthlyTrends.slice(0, timePeriod).reverse().map(trend => {
-      const [year, month] = trend.month.split('-');
-      return new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-    }),
-    datasets: [
-      {
-        label: '18-Hole Rounds',
-        data: analytics.monthlyTrends.slice(0, timePeriod).reverse().map(trend => trend.total18HoleRounds),
-        borderColor: 'rgb(34, 197, 94)',
-        backgroundColor: 'rgba(34, 197, 94, 0.2)',
-        yAxisID: 'y',
-        fill: false,
-      },
-      {
-        label: '9-Hole Rounds',
-        data: analytics.monthlyTrends.slice(0, timePeriod).reverse().map(trend => trend.total9HoleRounds),
-        borderColor: 'rgb(16, 185, 129)',
-        backgroundColor: 'rgba(16, 185, 129, 0.2)',
-        yAxisID: 'y',
-        fill: false,
-      },
-      {
-        label: 'Avg 18-Hole Score',
-        data: analytics.monthlyTrends.slice(0, timePeriod).reverse().map(trend => trend.averageScore18),
-        borderColor: 'rgb(239, 68, 68)',
-        backgroundColor: 'rgba(239, 68, 68, 0.2)',
-        yAxisID: 'y1',
-        fill: false,
-      },
-      {
-        label: 'Avg 9-Hole Score',
-        data: analytics.monthlyTrends.slice(0, timePeriod).reverse().map(trend => trend.averageScore9),
-        borderColor: 'rgb(245, 101, 101)',
-        backgroundColor: 'rgba(245, 101, 101, 0.2)',
-        yAxisID: 'y1',
-        fill: false,
-      },
-      {
-        label: 'Unique Players',
-        data: analytics.monthlyTrends.slice(0, timePeriod).reverse().map(trend => trend.uniquePlayers),
-        borderColor: 'rgb(168, 85, 247)',
-        backgroundColor: 'rgba(168, 85, 247, 0.2)',
-        yAxisID: 'y',
-        fill: false,
-        borderDash: [5, 5],
-      },
-    ],
-  };
-
-  const monthlyTrendsOptions = {
-    responsive: true,
-    interaction: {
-      mode: 'index' as const,
-      intersect: false,
-    },
-    plugins: {
-      title: {
-        display: true,
-        text: 'Monthly League Trends',
-        font: { size: 16, weight: 'bold' as const }
-      },
-      tooltip: {
-        backgroundColor: 'rgba(0,0,0,0.8)',
-        titleColor: 'white',
-        bodyColor: 'white',
-        borderColor: 'rgba(255,255,255,0.2)',
-        borderWidth: 1,
-        callbacks: {
-          label: function(context: any) {
-            const label = context.dataset.label || '';
-            const value = context.parsed.y;
-            if (label.includes('Score')) {
-              return `${label}: ${value.toFixed(1)} strokes`;
-            } else {
-              return `${label}: ${value} rounds`;
-            }
-          }
-        }
-      },
-      legend: {
-        position: 'top' as const,
-        labels: { 
-          usePointStyle: true,
-          padding: 20,
-          font: { size: 12 }
-        }
-      }
-    },
-    scales: {
-      x: {
-        grid: { 
-          display: true, 
-          color: 'rgba(0,0,0,0.1)' 
-        },
-        title: { 
-          display: true, 
-          text: 'Month',
-          font: { size: 14, weight: 'bold' as const }
-        }
-      },
-      y: {
-        type: 'linear' as const,
-        display: true,
-        position: 'left' as const,
-        grid: { 
-          display: true, 
-          color: 'rgba(0,0,0,0.1)' 
-        },
-        title: {
-          display: true,
-          text: 'Number of Rounds',
-          font: { size: 14, weight: 'bold' as const }
-        },
-        beginAtZero: true
-      },
-      y1: {
-        type: 'linear' as const,
-        display: true,
-        position: 'right' as const,
-        grid: {
-          drawOnChartArea: false,
-        },
-        title: {
-          display: true,
-          text: 'Average Score',
-          font: { size: 14, weight: 'bold' as const }
-        },
-        beginAtZero: true
-      },
-    },
-    elements: {
-      line: { 
-        tension: 0.4, 
-        borderWidth: 3 
-      },
-      point: { 
-        radius: 4, 
-        hoverRadius: 6,
-        hoverBorderWidth: 2
-      }
-    }
-  };
-
-  const courseAnalyticsChart = {
-    labels: analytics.courseAnalytics.slice(0, 8).map(course => course.course),
-    datasets: [
-      {
-        label: 'Total Rounds',
-        data: analytics.courseAnalytics.slice(0, 8).map(course => course.totalRounds),
-        backgroundColor: 'rgba(34, 197, 94, 0.6)',
-      },
-    ],
-  };
-
-  const courseAnalyticsOptions = {
-    responsive: true,
-    plugins: {
-      title: {
-        display: true,
-        text: 'Rounds Played by Course',
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Total Rounds',
-        },
-      },
-    },
-  };
-
-  const handicapDistributionChart = {
-    labels: analytics.handicapDistribution.map(dist => dist.range),
-    datasets: [
-      {
-        data: analytics.handicapDistribution.map(dist => dist.count),
-        backgroundColor: [
-          'rgba(34, 197, 94, 0.8)',
-          'rgba(59, 130, 246, 0.8)',
-          'rgba(168, 85, 247, 0.8)',
-          'rgba(249, 115, 22, 0.8)',
-          'rgba(239, 68, 68, 0.8)',
-          'rgba(156, 163, 175, 0.8)',
-        ],
-      },
-    ],
-  };
-
-  const handicapDistributionOptions = {
-    responsive: true,
-    plugins: {
-      title: {
-        display: true,
-        text: 'Handicap Distribution',
-      },
-      legend: {
-        position: 'bottom' as const,
-      },
-    },
-  };
-
-  const topPerformersChart = {
-    labels: analytics.topPerformers.slice(0, 10).map(player => {
-      const parts = player.player.split(' ');
-      return parts[0] + ' ' + (parts[1]?.charAt(0) || '') + '.';
-    }),
-    datasets: [
-      {
-        label: 'Season Score',
-        data: analytics.topPerformers.slice(0, 10).map(player => player.seasonScore),
-        backgroundColor: 'rgba(34, 197, 94, 0.6)',
-      },
-    ],
-  };
-
-  const topPerformersOptions = {
-    responsive: true,
-    plugins: {
-      title: {
-        display: true,
-        text: 'Top 10 Players (Season Score)',
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Season Score',
-        },
-      },
-    },
+  const formatMonth = (monthStr: string) => {
+    const [year, month] = monthStr.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1);
+    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <Link href="/" className="text-green-600 hover:text-green-800">
-              ← Back to Home
-            </Link>
-            <h1 className="text-2xl font-bold text-green-800">League Analytics Dashboard</h1>
-            <div className="text-sm text-gray-500">
-              Last updated: {new Date().toLocaleTimeString()}
-            </div>
-          </div>
-        </nav>
-      </header>
-
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-12 bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4">
+        <Link href="/" className="text-green-700 hover:underline">← Back Home</Link>
+        <h1 className="text-4xl font-bold text-center text-gray-900 my-8">League Analytics Dashboard</h1>
+        
         {/* League Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-green-600">{analytics.leagueOverview.totalPlayers}</div>
-              <div className="text-sm text-gray-600">Total Players</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow-lg p-6 text-center">
+            <div className="text-3xl font-bold text-green-600">{data.leagueOverview.totalPlayers}</div>
+            <div className="text-sm text-gray-600">Total Players</div>
+            <div className="text-xs text-gray-500 mt-1">{data.leagueOverview.participationRate}% Active</div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-lg p-6 text-center">
+            <div className="text-3xl font-bold text-blue-600">{data.leagueOverview.totalRounds}</div>
+            <div className="text-sm text-gray-600">Total Rounds</div>
+            <div className="text-xs text-gray-500 mt-1">
+              {data.leagueOverview.total18HoleRounds} 18H, {data.leagueOverview.total9HoleRounds} 9H
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600">{analytics.leagueOverview.totalRounds}</div>
-              <div className="text-sm text-gray-600">Total Rounds</div>
+          
+          <div className="bg-white rounded-lg shadow-lg p-6 text-center">
+            <div className="text-3xl font-bold text-purple-600">{data.leagueOverview.totalPoints}</div>
+            <div className="text-sm text-gray-600">Total Points</div>
+            <div className="text-xs text-gray-500 mt-1">
+              {data.leagueOverview.averagePointsPerRound} avg/round
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-indigo-600">{analytics.leagueOverview.total18HoleRounds}</div>
-              <div className="text-sm text-gray-600">18-Hole Rounds</div>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-teal-600">{analytics.leagueOverview.total9HoleRounds}</div>
-              <div className="text-sm text-gray-600">9-Hole Rounds</div>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-purple-600">{analytics.leagueOverview.activePlayers}</div>
-              <div className="text-sm text-gray-600">Active Players (30d)</div>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-orange-600">{analytics.leagueOverview.averageHandicap}</div>
-              <div className="text-sm text-gray-600">Avg Handicap</div>
+          
+          <div className="bg-white rounded-lg shadow-lg p-6 text-center">
+            <div className="text-3xl font-bold text-orange-600">{data.leagueOverview.averageHandicap}</div>
+            <div className="text-sm text-gray-600">Avg Handicap</div>
+            <div className="text-xs text-gray-500 mt-1">
+              {data.leagueOverview.activePlayers} active this month
             </div>
           </div>
         </div>
 
-        {/* Performance Metrics */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Performance Highlights</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-800">{analytics.performanceMetrics.lowestScore18}</div>
-              <div className="text-sm text-green-600">Best 18-Hole</div>
-            </div>
-            <div className="text-center p-4 bg-emerald-50 rounded-lg">
-              <div className="text-2xl font-bold text-emerald-800">{analytics.performanceMetrics.lowestScore9}</div>
-              <div className="text-sm text-emerald-600">Best 9-Hole</div>
-            </div>
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-xl font-bold text-blue-800">{analytics.performanceMetrics.averageScore18}</div>
-              <div className="text-sm text-blue-600">Avg 18-Hole</div>
-            </div>
-            <div className="text-center p-4 bg-cyan-50 rounded-lg">
-              <div className="text-xl font-bold text-cyan-800">{analytics.performanceMetrics.averageScore9}</div>
-              <div className="text-sm text-cyan-600">Avg 9-Hole</div>
-            </div>
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <div className="text-lg font-bold text-purple-800">{analytics.performanceMetrics.mostActivePlayer.split(' ')[0]} {analytics.performanceMetrics.mostActivePlayer.split(' ')[1]?.charAt(0)}.</div>
-              <div className="text-sm text-purple-600">Most Active</div>
-            </div>
-            <div className="text-center p-4 bg-orange-50 rounded-lg">
-              <div className="text-lg font-bold text-orange-800">
-                {analytics.performanceMetrics.bestImprovement.player === 'N/A' ? 
-                  'N/A' : 
-                  `${analytics.performanceMetrics.bestImprovement.player.split(' ')[0]} ${analytics.performanceMetrics.bestImprovement.player.split(' ')[1]?.charAt(0)}.`
-                }
-              </div>
-              <div className="text-sm text-orange-600">Best Improvement</div>
-              {analytics.performanceMetrics.bestImprovement.player !== 'N/A' ? (
-                <>
-                  <div className="text-xs text-orange-500">+{analytics.performanceMetrics.bestImprovement.improvement} strokes</div>
-                  <div className="text-xs text-orange-400">({analytics.performanceMetrics.bestImprovement.roundType})</div>
-                </>
-              ) : (
-                <div className="text-xs text-orange-400">No data available</div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Player Progression Chart - Full Width */}
-        <div className="mb-8">
-          <PlayerProgressionChart />
-        </div>
-
-        {/* Charts Grid */}
+        {/* Performance Highlights */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Monthly Trends */}
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Monthly League Trends</h3>
-              <div className="flex items-center space-x-2">
-                <label className="text-sm text-gray-600">Time Period:</label>
-                <select 
-                  value={timePeriod} 
-                  onChange={(e) => setTimePeriod(Number(e.target.value))}
-                  className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
-                  <option value={3}>3 Months</option>
-                  <option value={6}>6 Months</option>
-                  <option value={12}>12 Months</option>
-                  <option value={24}>All Time</option>
-                </select>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">🏆 Performance Highlights</h3>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                <div>
+                  <div className="font-medium text-green-800">Most Active Player</div>
+                  <div className="text-sm text-green-600">{data.performanceMetrics.mostActivePlayer}</div>
+                </div>
+                <div className="text-2xl">🎯</div>
               </div>
-            </div>
-            <Line data={monthlyTrendsChart} options={monthlyTrendsOptions} />
-          </div>
-
-          {/* Course Analytics */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <Bar data={courseAnalyticsChart} options={courseAnalyticsOptions} />
-          </div>
-
-          {/* Handicap Distribution */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <Doughnut data={handicapDistributionChart} options={handicapDistributionOptions} />
-          </div>
-
-          {/* Top Performers */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <Bar data={topPerformersChart} options={topPerformersOptions} />
-          </div>
-        </div>
-
-        {/* Data Tables */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Course Statistics Table */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Course Statistics</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
-                      Course
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
-                      Total Rounds
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
-                      18-Hole Rounds
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
-                      9-Hole Rounds
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
-                      Avg 18-Hole
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
-                      Avg 9-Hole
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
-                      Difficulty
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {analytics.courseAnalytics.slice(0, 8).map((course, index) => (
-                    <tr key={index}>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {course.course}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {course.totalRounds}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {course.total18HoleRounds}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {course.total9HoleRounds}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {course.averageScore18 > 0 ? course.averageScore18 : '-'}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {course.averageScore9 > 0 ? course.averageScore9 : '-'}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {course.difficulty}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Recent Activity</h3>
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {analytics.recentActivity.slice(0, 15).map((activity, index) => (
-                <div key={index} className="border-l-4 border-green-500 pl-4 py-2">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="font-medium">
-                        {activity.player.split(' ')[0]} {activity.player.split(' ')[1]?.charAt(0)}.
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {activity.course} • {new Date(activity.date).toLocaleDateString()}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-lg">{activity.score}</div>
-                      <div className="text-sm text-green-600">{activity.points} pts</div>
-                    </div>
+              
+              <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                <div>
+                  <div className="font-medium text-blue-800">Best Improvement</div>
+                  <div className="text-sm text-blue-600">
+                    {data.performanceMetrics.bestImprovement.player} 
+                    ({data.performanceMetrics.bestImprovement.improvement} strokes, {data.performanceMetrics.bestImprovement.roundType})
                   </div>
                 </div>
-              ))}
+                <div className="text-2xl">📈</div>
+              </div>
+              
+              <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+                <div>
+                  <div className="font-medium text-purple-800">Consistency Leader</div>
+                  <div className="text-sm text-purple-600">
+                    {data.performanceMetrics.consistencyLeader.player} 
+                    (σ: {data.performanceMetrics.consistencyLeader.standardDeviation})
+                  </div>
+                </div>
+                <div className="text-2xl">🎯</div>
+              </div>
+              
+              <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
+                <div>
+                  <div className="font-medium text-orange-800">Course Specialist</div>
+                  <div className="text-sm text-orange-600">
+                    {data.performanceMetrics.courseSpecialist.player} at {data.performanceMetrics.courseSpecialist.course}
+                    (avg: {data.performanceMetrics.courseSpecialist.averageScore})
+                  </div>
+                </div>
+                <div className="text-2xl">🏌️</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">📊 Score Statistics</h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <div className="text-lg font-semibold text-gray-800">18-Hole</div>
+                  <div className="text-2xl font-bold text-green-600">{data.performanceMetrics.averageScore18}</div>
+                  <div className="text-xs text-gray-500">Average Score</div>
+                  <div className="text-xs text-gray-400">
+                    Best: {data.performanceMetrics.lowestScore18} | Worst: {data.performanceMetrics.highestScore18}
+                  </div>
+                </div>
+                
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <div className="text-lg font-semibold text-gray-800">9-Hole</div>
+                  <div className="text-2xl font-bold text-blue-600">{data.performanceMetrics.averageScore9}</div>
+                  <div className="text-xs text-gray-500">Average Score</div>
+                  <div className="text-xs text-gray-400">
+                    Best: {data.performanceMetrics.lowestScore9} | Worst: {data.performanceMetrics.highestScore9}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                <div className="text-lg font-semibold text-yellow-800">Points</div>
+                <div className="text-2xl font-bold text-yellow-600">{data.performanceMetrics.averagePoints}</div>
+                <div className="text-xs text-gray-500">Average Points per Round</div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Top Performers Table */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mt-8">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">Top Performers</h3>
+        {/* Monthly Trends Chart */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <h3 className="text-xl font-semibold text-gray-900 mb-4">📈 Monthly Trends</h3>
           <div className="overflow-x-auto">
-            <table className="w-full divide-y divide-gray-200">
-                              <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
-                      Rank
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
-                      Player
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
-                      Season Score
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
-                      Total Rounds
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
-                      Avg Score
-                    </th>
-                  </tr>
-                </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {analytics.topPerformers.map((player, index) => (
-                  <tr key={index} className={index < 3 ? 'bg-yellow-50' : ''}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {index + 1}
-                      {index === 0 && ' 🥇'}
-                      {index === 1 && ' 🥈'}
-                      {index === 2 && ' 🥉'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {player.player.split(' ')[0]} {player.player.split(' ')[1]?.charAt(0)}.
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {player.seasonScore}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {player.totalRounds}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {player.averageScore}
-                    </td>
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Month</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rounds</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Players</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Avg 18H</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Avg 9H</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Avg Points</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {data.monthlyTrends.map((trend, index) => (
+                  <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                    <td className="px-4 py-2 font-medium">{formatMonth(trend.month)}</td>
+                    <td className="px-4 py-2">{trend.totalRounds}</td>
+                    <td className="px-4 py-2">{trend.uniquePlayers}</td>
+                    <td className="px-4 py-2">{trend.averageScore18}</td>
+                    <td className="px-4 py-2">{trend.averageScore9}</td>
+                    <td className="px-4 py-2">{trend.averagePoints}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
-      </main>
+
+        {/* Course Analytics */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <h3 className="text-xl font-semibold text-gray-900 mb-4">🏌️ Course Analytics</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Course</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Total Rounds</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">18H Rounds</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">9H Rounds</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Avg 18H</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Avg 9H</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Difficulty</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {data.courseAnalytics.map((course, index) => (
+                  <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                    <td className="px-4 py-2 font-medium">{course.course}</td>
+                    <td className="px-4 py-2">{course.totalRounds}</td>
+                    <td className="px-4 py-2">{course.total18HoleRounds}</td>
+                    <td className="px-4 py-2">{course.total9HoleRounds}</td>
+                    <td className="px-4 py-2">{course.averageScore18}</td>
+                    <td className="px-4 py-2">{course.averageScore9}</td>
+                    <td className="px-4 py-2">{course.difficulty}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Top Performers */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <h3 className="text-xl font-semibold text-gray-900 mb-4">🏆 Top Performers</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rank</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Player</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Season Score</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rounds</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Avg Score</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {data.topPerformers.map((player, index) => (
+                  <tr key={index} className={index < 3 ? 'bg-yellow-50' : index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                    <td className="px-4 py-2">
+                      {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                    </td>
+                    <td className="px-4 py-2 font-medium">{player.player}</td>
+                    <td className="px-4 py-2 font-bold text-green-600">{player.seasonScore}</td>
+                    <td className="px-4 py-2">{player.totalRounds}</td>
+                    <td className="px-4 py-2">{player.averageScore}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Handicap Distribution */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <h3 className="text-xl font-semibold text-gray-900 mb-4">📊 Handicap Distribution</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {data.handicapDistribution.map((range, index) => (
+              <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-medium text-gray-800">{range.range}</span>
+                  <span className="text-sm text-gray-500">{range.percentage}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${(range.count / data.leagueOverview.totalPlayers) * 100}%` }}
+                  ></div>
+                </div>
+                <div className="text-center text-sm text-gray-600 mt-1">{range.count} players</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent Activity */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h3 className="text-xl font-semibold text-gray-900 mb-4">🕒 Recent Activity</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Player</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Course</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Points</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {data.recentActivity.map((activity, index) => (
+                  <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                    <td className="px-4 py-2">{new Date(activity.date).toLocaleDateString()}</td>
+                    <td className="px-4 py-2 font-medium">{activity.player}</td>
+                    <td className="px-4 py-2">{activity.course}</td>
+                    <td className="px-4 py-2">{activity.score}</td>
+                    <td className="px-4 py-2 font-bold text-green-600">{activity.points}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
