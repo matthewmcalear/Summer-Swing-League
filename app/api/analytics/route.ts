@@ -97,6 +97,17 @@ function normalizeCourseName(courseName: string): string {
     // Golf Des Iles variations
     'golf des iles back 9': 'Golf Des Iles',
     'golf des iles front 9': 'Golf Des Iles',
+    'golf des iles': 'Golf Des Iles',
+    'golf des isles': 'Golf Des Iles',
+    'golf des îles': 'Golf Des Iles',
+    'golf des isles de boucherville': 'Golf des Îles de Boucherville',
+    'golf des iles de boucherville': 'Golf des Îles de Boucherville',
+    'golf des îles de boucherville': 'Golf des Îles de Boucherville',
+    'boucherville': 'Golf des Îles de Boucherville',
+    'ile boucherville': 'Golf des Îles de Boucherville',
+    'îles boucherville': 'Golf des Îles de Boucherville',
+    'des iles': 'Golf des Îles de Boucherville',
+    'des îles': 'Golf des Îles de Boucherville',
     
     // Caughnawaga variations
     'caughnawaga': 'Caughnawaga',

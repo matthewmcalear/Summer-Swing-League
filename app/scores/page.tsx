@@ -55,7 +55,7 @@ export default function AllScoresPage() {
                 <tr>
                   <th className="px-4 py-2 text-left">Date</th>
                   <th className="px-4 py-2 text-left">Player</th>
-                  <th className="px-4 py-2 text-left">Played With</th>
+                  <th className="px-4 py-2 text-left w-48">Played With</th>
                   <th className="px-4 py-2 text-left">Course</th>
                   <th className="px-4 py-2 text-left">Holes</th>
                   <th className="px-4 py-2 text-left">Gross</th>
@@ -78,7 +78,7 @@ export default function AllScoresPage() {
                       const rest=rawNames.slice(1).map(shorten).join(', ');
                       const net=s.holes===9? s.gross - s.handicap/2 : s.gross - s.handicap;
                       const groupBonus= Math.max(rawNames.length - 1, 0);
-                      return (<><td className="px-4 py-2">{main}</td><td className="px-4 py-2">{rest}</td><td className="px-4 py-2">{s.course_name}</td><td className="px-4 py-2">{s.holes}</td><td className="px-4 py-2">{s.gross}</td><td className="px-4 py-2">{s.handicap}</td><td className="px-4 py-2">{net.toFixed(1)}</td><td className="px-4 py-2">{groupBonus}</td><td className="px-4 py-2">{s.additional_points}</td><td className="px-4 py-2">{s.difficulty}</td></>);
+                      return (<><td className="px-4 py-2">{main}</td><td className="px-4 py-2 whitespace-nowrap max-w-xs overflow-hidden text-ellipsis" title={rest}>{rest}</td><td className="px-4 py-2">{s.course_name}</td><td className="px-4 py-2">{s.holes}</td><td className="px-4 py-2">{s.gross}</td><td className="px-4 py-2">{s.handicap}</td><td className="px-4 py-2">{net.toFixed(1)}</td><td className="px-4 py-2">{groupBonus}</td><td className="px-4 py-2">{s.additional_points}</td><td className="px-4 py-2">{s.difficulty}</td></>);
                     })()}
                     <td className="px-4 py-2">{s.total_points.toFixed(1)}</td>
                   </tr>
