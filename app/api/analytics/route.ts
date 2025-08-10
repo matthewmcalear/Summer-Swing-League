@@ -130,7 +130,6 @@ function normalizeCourseName(courseName: string): string {
     'country club montréal': 'Country Club Montreal',
     
     // Golf des Îles de Boucherville
-    'golf des îles de boucherville': 'Golf des Îles de Boucherville',
     
     // Club de Golf Ste-Rose variations
     'club de golf ste-rose': 'Club de Golf Ste-Rose',
