@@ -49,8 +49,9 @@ export default function AllScoresPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600" />
           </div>
         ) : (
-          <div className="overflow-x-auto bg-white rounded shadow">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
+                  <div className="bg-white rounded shadow">
+          <div className="overflow-x-auto">
+            <table className="w-full divide-y divide-gray-200 text-sm">
               <thead className="sticky top-0 bg-white/90 backdrop-blur supports-backdrop-blur:bg-white/60">
                 <tr>
                   <th className="px-4 py-2 text-left">Date</th>
@@ -78,7 +79,15 @@ export default function AllScoresPage() {
                       const rest=rawNames.slice(1).map(shorten).join(', ');
                       const net=s.holes===9? s.gross - s.handicap/2 : s.gross - s.handicap;
                       const groupBonus= Math.max(rawNames.length - 1, 0);
-                      return (<><td className="px-4 py-2">{main}</td><td className="px-4 py-2 whitespace-nowrap max-w-xs overflow-hidden text-ellipsis" title={rest}>{rest}</td><td className="px-4 py-2">{s.course_name}</td><td className="px-4 py-2">{s.holes}</td><td className="px-4 py-2">{s.gross}</td><td className="px-4 py-2">{s.handicap}</td><td className="px-4 py-2">{net.toFixed(1)}</td><td className="px-4 py-2">{groupBonus}</td><td className="px-4 py-2">{s.additional_points}</td><td className="px-4 py-2">{s.difficulty}</td></>);
+                      return (<><td className="px-4 py-2">{main}</td><td className="px-4 py-2 max-w-xs">
+                        <div className="flex flex-col space-y-1">
+                          {rawNames.slice(1).map((name, idx) => (
+                            <div key={idx} className="text-xs text-gray-600 leading-tight">
+                              {shorten(name)}
+                            </div>
+                          ))}
+                        </div>
+                      </td><td className="px-4 py-2">{s.course_name}</td><td className="px-4 py-2">{s.holes}</td><td className="px-4 py-2">{s.gross}</td><td className="px-4 py-2">{s.handicap}</td><td className="px-4 py-2">{net.toFixed(1)}</td><td className="px-4 py-2">{groupBonus}</td><td className="px-4 py-2">{s.additional_points}</td><td className="px-4 py-2">{s.difficulty}</td></>);
                     })()}
                     <td className="px-4 py-2">{s.total_points.toFixed(1)}</td>
                   </tr>
