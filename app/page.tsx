@@ -34,43 +34,115 @@ export default function Home() {
           <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg shadow-lg p-6 mb-6 text-white">
             <div className="flex flex-col">
               <div className="flex-1">
-                <h2 className={`${pop.className} text-2xl md:text-3xl font-bold mb-2`}>🚀 SSL Golf Open 2025</h2>
-                <p className="text-yellow-100 mb-4">Thank you for reserving. The tournament will be held at Golf des Îles de Boucherville, Boucherville, Québec, J4B 5J6 with tee times at 11:33, 11:42, and 11:51 am on Sunday August 10th.</p>
+                <h2 className={`${pop.className} text-2xl md:text-3xl font-bold mb-2`}>🏆 SSL Golf Open 2025 - COMPLETED! 🏆</h2>
+                <div className="bg-white bg-opacity-20 rounded-lg p-4 mb-4">
+                  <h3 className="font-bold text-xl mb-2 text-center">🎉 CONGRATULATIONS THOMAS MCALEAR! 🎉</h3>
+                  <p className="text-center text-lg font-semibold">2025 SSL Open Champion</p>
+                  <p className="text-center text-sm mt-1">Winning Score: 69.0 Points (102 Gross, 62.0 Net)</p>
+                </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                   <div className="bg-white bg-opacity-20 rounded-lg p-4">
-                    <h3 className="font-bold text-lg mb-2">11:33 AM</h3>
+                    <h3 className="font-bold text-lg mb-2">🏅 Top 3 Finishers</h3>
                     <ul className="text-sm space-y-1">
-                      <li>• Tom</li>
-                      <li>• Evi</li>
-                      <li>• Kash</li>
-                      <li>• Rachel</li>
+                      <li>🥇 1st: Thomas McAlear - 69.0 pts</li>
+                      <li>🥈 2nd: Alex Sokaris - 53.0 pts</li>
+                      <li>🥉 3rd: Connor Peltz - 54.0 pts</li>
                     </ul>
                   </div>
                   <div className="bg-white bg-opacity-20 rounded-lg p-4">
-                    <h3 className="font-bold text-lg mb-2">11:42 AM</h3>
+                    <h3 className="font-bold text-lg mb-2">📊 Tournament Summary</h3>
                     <ul className="text-sm space-y-1">
-                      <li>• Jack</li>
-                      <li>• Dan</li>
-                      <li>• Karo</li>
-                      <li>• Nick C</li>
-                    </ul>
-                  </div>
-                  <div className="bg-white bg-opacity-20 rounded-lg p-4">
-                    <h3 className="font-bold text-lg mb-2">11:51 AM</h3>
-                    <ul className="text-sm space-y-1">
-                      <li>• Connor</li>
-                      <li>• Tibi</li>
-                      <li>• Alex</li>
-                      <li>• Matt</li>
+                      <li>• 11 Players Competed</li>
+                      <li>• All 18-hole rounds</li>
+                      <li>• Course: Golf des Îles de Boucherville</li>
+                      <li>• Date: August 10th, 2025</li>
                     </ul>
                   </div>
                 </div>
                 
                 <div className="bg-white bg-opacity-20 rounded-lg p-4">
-                  <h3 className="font-bold text-lg mb-2">Tournament Rules</h3>
-                  <p className="text-sm">Standard SSL rules will apply. One breakfast ball on the first shot (hole 1) if needed, and one mulligan per front and back 9 holes. Highest SSL score wins.</p>
-                  <p className="text-sm mt-2 text-yellow-200">Please change groups at your leisure.</p>
+                  <h3 className="font-bold text-lg mb-2">🏌️ Full Results</h3>
+                  <div className="text-xs overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-yellow-200">
+                          <th className="text-left py-1">Player</th>
+                          <th className="text-left py-1">Gross</th>
+                          <th className="text-left py-1">Net</th>
+                          <th className="text-left py-1">Points</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-b border-yellow-100">
+                          <td className="py-1 font-bold">Thomas McAlear</td>
+                          <td className="py-1">102</td>
+                          <td className="py-1">62.0</td>
+                          <td className="py-1 font-bold">69.0</td>
+                        </tr>
+                        <tr className="border-b border-yellow-100">
+                          <td className="py-1">Alex Sokaris</td>
+                          <td className="py-1">98</td>
+                          <td className="py-1">74.0</td>
+                          <td className="py-1">53.0</td>
+                        </tr>
+                        <tr className="border-b border-yellow-100">
+                          <td className="py-1">Connor Peltz</td>
+                          <td className="py-1">92</td>
+                          <td className="py-1">72.0</td>
+                          <td className="py-1">54.0</td>
+                        </tr>
+                        <tr className="border-b border-yellow-100">
+                          <td className="py-1">Nick Clarke</td>
+                          <td className="py-1">91</td>
+                          <td className="py-1">65.0</td>
+                          <td className="py-1">57.5</td>
+                        </tr>
+                        <tr className="border-b border-yellow-100">
+                          <td className="py-1">Tibi Mitran</td>
+                          <td className="py-1">102</td>
+                          <td className="py-1">69.0</td>
+                          <td className="py-1">55.5</td>
+                        </tr>
+                        <tr className="border-b border-yellow-100">
+                          <td className="py-1">Rachel Kuta</td>
+                          <td className="py-1">92</td>
+                          <td className="py-1">67.0</td>
+                          <td className="py-1">56.5</td>
+                        </tr>
+                        <tr className="border-b border-yellow-100">
+                          <td className="py-1">Daniel McAlear</td>
+                          <td className="py-1">91</td>
+                          <td className="py-1">67.0</td>
+                          <td className="py-1">56.5</td>
+                        </tr>
+                        <tr className="border-b border-yellow-100">
+                          <td className="py-1">Matthew McAlear</td>
+                          <td className="py-1">102</td>
+                          <td className="py-1">66.0</td>
+                          <td className="py-1">56.0</td>
+                        </tr>
+                        <tr className="border-b border-yellow-100">
+                          <td className="py-1">Jackson Shea</td>
+                          <td className="py-1">102</td>
+                          <td className="py-1">72.0</td>
+                          <td className="py-1">54.0</td>
+                        </tr>
+                        <tr className="border-b border-yellow-100">
+                          <td className="py-1">Eviatar Fields</td>
+                          <td className="py-1">99</td>
+                          <td className="py-1">71.0</td>
+                          <td className="py-1">54.5</td>
+                        </tr>
+                        <tr>
+                          <td className="py-1">Kashif Khan</td>
+                          <td className="py-1">125</td>
+                          <td className="py-1">92.0</td>
+                          <td className="py-1">32.0</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
