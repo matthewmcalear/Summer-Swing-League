@@ -116,6 +116,24 @@ interface AnalyticsData {
       rounds: number;
     }>;
   };
+  playerScoreData: Array<{
+    player: string;
+    scores: Array<{
+      date: string;
+      gross: number;
+      net: number;
+      points: number;
+      course: string;
+      holes: number;
+      handicap: number;
+    }>;
+    totalRounds: number;
+    averageScore: number;
+    bestScore: number;
+    worstScore: number;
+    averagePoints: number;
+    handicap: number;
+  }>;
 }
 
 export const dynamic = 'force-dynamic';
@@ -148,12 +166,12 @@ function normalizeCourseName(courseName: string): string {
     'oasis back 9': 'Oasis',
     'oasis white': 'Oasis',
     
-    // Golf Des Iles variations
-    'golf des iles back 9': 'Golf Des Iles',
-    'golf des iles front 9': 'Golf Des Iles',
-    'golf des iles': 'Golf Des Iles',
-    'golf des isles': 'Golf Des Iles',
-    'golf des îles': 'Golf Des Iles',
+    // Golf des Îles de Boucherville variations
+    'golf des iles back 9': 'Golf des Îles de Boucherville',
+    'golf des iles front 9': 'Golf des Îles de Boucherville',
+    'golf des iles': 'Golf des Îles de Boucherville',
+    'golf des isles': 'Golf des Îles de Boucherville',
+    'golf des îles': 'Golf des Îles de Boucherville',
     'golf des isles de boucherville': 'Golf des Îles de Boucherville',
     'golf des iles de boucherville': 'Golf des Îles de Boucherville',
     'golf des îles de boucherville': 'Golf des Îles de Boucherville',
@@ -202,11 +220,9 @@ function normalizeCourseName(courseName: string): string {
     'prescott golf course': 'Prescott',
     'prescott': 'Prescott',
     
-    // Club de l'île de Montréal
+    // Club de l'île de Montréal (same as Club de Golf Metropolitan)
     'club de l\'île de montréal - l\'ile': 'Club de l\'île de Montréal',
-    
-    // Club de golf metropolitan
-    'club de golf metropolitan': 'Club de Golf Metropolitan',
+    'club de golf metropolitan': 'Club de l\'île de Montréal',
     
     // Unicorn variations
     'unicorn golf course': 'Unicorn Golf',
@@ -236,6 +252,7 @@ function normalizeCourseName(courseName: string): string {
     
     // Club de Golf Rive-Sud
     'club de golf rive-sud': 'Club de Golf Rive-Sud',
+    'rive sud': 'Club de Golf Rive-Sud',
   };
   
   // Check for exact matches first
@@ -442,7 +459,7 @@ export async function GET() {
 
     // Recent activity
     const recentActivity = scores.slice(0, 20).map(score => ({
-      date: score.play_date.toISOString().split('T')[0],
+      date: new Date(score.play_date).toLocaleDateString('en-CA'), // YYYY-MM-DD format without timezone issues
       player: score.player.split(',')[0].trim(),
       course: normalizeCourseName(score.course_name),
       score: score.gross,
@@ -642,7 +659,39 @@ export async function GET() {
         biggestComeback: { player: 'N/A', improvement: 0, roundType: 'N/A' }, // Placeholder
         mostConsistentPlayer: { player: 'N/A', standardDeviation: 0, rounds: 0 }, // Placeholder
         courseDifficultyRanking: [] // Placeholder - will implement later
-      }
+      },
+      playerScoreData: members.map(member => {
+        const memberScores = scores.filter(score => 
+          score.player.split(',')[0].trim() === member.full_name
+        ).sort((a, b) => new Date(a.play_date).getTime() - new Date(b.play_date).getTime());
+        
+        const totalRounds = memberScores.length;
+        const averageScore = totalRounds > 0 ? 
+          Math.round(memberScores.reduce((sum, s) => sum + s.gross, 0) / totalRounds * 10) / 10 : 0;
+        const bestScore = totalRounds > 0 ? Math.min(...memberScores.map(s => s.gross)) : 0;
+        const worstScore = totalRounds > 0 ? Math.max(...memberScores.map(s => s.gross)) : 0;
+        const averagePoints = totalRounds > 0 ? 
+          Math.round(memberScores.reduce((sum, s) => sum + s.total_points, 0) / totalRounds * 10) / 10 : 0;
+        
+        return {
+          player: member.full_name,
+          scores: memberScores.map(score => ({
+            date: new Date(score.play_date).toLocaleDateString('en-CA'),
+            gross: score.gross,
+            net: score.holes === 9 ? score.gross - score.handicap / 2 : score.gross - score.handicap,
+            points: Math.round(score.total_points * 10) / 10,
+            course: normalizeCourseName(score.course_name),
+            holes: score.holes,
+            handicap: score.handicap
+          })),
+          totalRounds,
+          averageScore,
+          bestScore,
+          worstScore,
+          averagePoints,
+          handicap: member.handicap || 0
+        };
+      })
     };
 
     return NextResponse.json(analytics, { headers: { 'Cache-Control': 'no-store' } });

@@ -2,6 +2,28 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  ChartOptions
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 interface AnalyticsData {
   leagueOverview: {
@@ -118,11 +140,32 @@ interface AnalyticsData {
       rounds: number;
     }>;
   };
+  playerScoreData: Array<{
+    player: string;
+    scores: Array<{
+      date: string;
+      gross: number;
+      net: number;
+      points: number;
+      course: string;
+      holes: number;
+      handicap: number;
+    }>;
+    totalRounds: number;
+    averageScore: number;
+    bestScore: number;
+    worstScore: number;
+    averagePoints: number;
+    handicap: number;
+  }>;
 }
 
 export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedPlayer, setSelectedPlayer] = useState<string>('');
+  const [comparePlayer, setComparePlayer] = useState<string>('');
+  const [selectedMetric, setSelectedMetric] = useState<'gross' | 'net' | 'points'>('gross');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -170,6 +213,85 @@ export default function AnalyticsPage() {
     const [year, month] = monthStr.split('-');
     const date = new Date(parseInt(year), parseInt(month) - 1);
     return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  };
+
+  // Chart data calculation
+  const chartData = (() => {
+    if (!selectedPlayer || !data) return { labels: [], datasets: [] };
+    
+    const primaryPlayerData = data.playerScoreData.find(p => p.player === selectedPlayer);
+    const comparePlayerData = comparePlayer ? data.playerScoreData.find(p => p.player === comparePlayer) : null;
+    
+    if (!primaryPlayerData) return { labels: [], datasets: [] };
+    
+    const labels = primaryPlayerData.scores.map(s => s.date);
+    
+    const primaryDataset = {
+      label: `${selectedPlayer} (${selectedMetric})`,
+      data: primaryPlayerData.scores.map(s => s[selectedMetric]),
+      borderColor: 'rgb(34, 197, 94)',
+      backgroundColor: 'rgba(34, 197, 94, 0.1)',
+      tension: 0.1,
+      pointRadius: 4,
+      pointHoverRadius: 6
+    };
+    
+    const datasets = [primaryDataset];
+    
+    if (comparePlayerData) {
+      const compareDataset = {
+        label: `${comparePlayer} (${selectedMetric})`,
+        data: comparePlayerData.scores.map(s => s[selectedMetric]),
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        tension: 0.1,
+        pointRadius: 4,
+        pointHoverRadius: 6
+      };
+      datasets.push(compareDataset);
+    }
+    
+    return { labels, datasets };
+  })();
+
+  const chartOptions: ChartOptions<'line'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: `Score Trends - ${selectedMetric.charAt(0).toUpperCase() + selectedMetric.slice(1)}`
+      },
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+      }
+    },
+    scales: {
+      x: {
+        display: true,
+        title: {
+          display: true,
+          text: 'Date'
+        }
+      },
+      y: {
+        display: true,
+        title: {
+          display: true,
+          text: selectedMetric === 'points' ? 'Points' : 'Score'
+        },
+        reverse: selectedMetric !== 'points' // Lower scores are better for golf
+      }
+    },
+    interaction: {
+      mode: 'nearest',
+      axis: 'x',
+      intersect: false
+    }
   };
 
   return (
@@ -406,6 +528,106 @@ export default function AnalyticsPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Score Trends Graph */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <h3 className="text-xl font-semibold text-gray-900 mb-4">📈 Score Trends & Player Comparison</h3>
+          
+          {/* Player Selection Controls */}
+          <div className="mb-6 space-y-4">
+            <div className="flex flex-wrap gap-4 items-center">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Primary Player</label>
+                <select 
+                  value={selectedPlayer} 
+                  onChange={(e) => setSelectedPlayer(e.target.value)}
+                  className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="">Select a player</option>
+                  {data.playerScoreData.map((player) => (
+                    <option key={player.player} value={player.player}>
+                      {player.player} ({player.totalRounds} rounds)
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Compare With</label>
+                <select 
+                  value={comparePlayer} 
+                  onChange={(e) => setComparePlayer(e.target.value)}
+                  className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="">No comparison</option>
+                  {data.playerScoreData
+                    .filter(p => p.player !== selectedPlayer)
+                    .map((player) => (
+                      <option key={player.player} value={player.player}>
+                        {player.player} ({player.totalRounds} rounds)
+                      </option>
+                    ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Metric</label>
+                <select 
+                  value={selectedMetric} 
+                  onChange={(e) => setSelectedMetric(e.target.value as 'gross' | 'net' | 'points')}
+                  className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="gross">Gross Score</option>
+                  <option value="net">Net Score</option>
+                  <option value="points">Points</option>
+                </select>
+              </div>
+            </div>
+            
+            {selectedPlayer && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">
+                    {data.playerScoreData.find(p => p.player === selectedPlayer)?.totalRounds || 0}
+                  </div>
+                  <div className="text-sm text-gray-600">Total Rounds</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {data.playerScoreData.find(p => p.player === selectedPlayer)?.averageScore || 0}
+                  </div>
+                  <div className="text-sm text-gray-600">Avg Score</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {data.playerScoreData.find(p => p.player === selectedPlayer)?.bestScore || 0}
+                  </div>
+                  <div className="text-sm text-gray-600">Best Score</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-orange-600">
+                    {data.playerScoreData.find(p => p.player === selectedPlayer)?.averagePoints || 0}
+                  </div>
+                  <div className="text-sm text-gray-600">Avg Points</div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Chart */}
+          {selectedPlayer && (
+            <div className="h-96">
+              <Line data={chartData} options={chartOptions} />
+            </div>
+          )}
+          
+          {!selectedPlayer && (
+            <div className="text-center py-12 text-gray-500">
+              <div className="text-4xl mb-4">📊</div>
+              <p>Select a player above to view their score trends</p>
+            </div>
+          )}
         </div>
 
         {/* Recent Activity */}
