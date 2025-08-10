@@ -38,14 +38,15 @@ export default function Home() {
                 <div className="bg-white bg-opacity-20 rounded-lg p-4 mb-4">
                   <h3 className="font-bold text-xl mb-2 text-center">🎉 CONGRATULATIONS THOMAS MCALEAR! 🎉</h3>
                   <p className="text-center text-lg font-semibold">2025 SSL Open Champion</p>
-                  <p className="text-center text-sm mt-1">Winning Score: 69.0 Points (102 Gross, 62.0 Net)</p>
+                  <p className="text-center text-sm mt-1">Winning Score: 59.0 Round Points + 10.0 Tournament Win Bonus = 69.0 Total Points</p>
+                  <p className="text-center text-xs mt-1 text-yellow-100">(102 Gross, 62.0 Net)</p>
                 </div>
                 
                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                    <div className="bg-white bg-opacity-20 rounded-lg p-4">
                      <h3 className="font-bold text-lg mb-2">🏅 Top 3 Finishers</h3>
                      <ul className="text-sm space-y-1">
-                       <li>🥇 1st: Thomas McAlear - 69.0 pts</li>
+                       <li>🥇 1st: Thomas McAlear - 59.0 + 10.0 = 69.0 pts</li>
                        <li>🥈 2nd: Nick Clarke - 57.5 pts</li>
                        <li>🥉 3rd: Rachel Kuta - 56.5 pts</li>
                      </ul>
@@ -57,6 +58,7 @@ export default function Home() {
                        <li>• All 18-hole rounds</li>
                        <li>• Course: Golf des Îles de Boucherville</li>
                        <li>• Date: August 10th, 2025</li>
+                       <li>• Tournament Winner receives +10.0 bonus points</li>
                      </ul>
                    </div>
                  </div>
