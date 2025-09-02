@@ -83,9 +83,10 @@ export default function HandicapProjections() {
               // Calculate net scores using the correct formula
               // 9-hole: Net = Gross - (Handicap / 2)
               // 18-hole: Net = Gross - Handicap
+              // Use the handicap from the score record, not the current handicap
               const netScore = score.holes === 9 
-                ? grossScore - (currentHandicap / 2)
-                : grossScore - currentHandicap;
+                ? grossScore - (score.handicap / 2)
+                : grossScore - score.handicap;
               return {
                 netScore,
                 grossScore,
