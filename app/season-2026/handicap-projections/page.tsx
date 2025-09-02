@@ -126,11 +126,15 @@ export default function HandicapProjections() {
             const eighteenHoleRounds = topRounds.filter((r: any) => r.holes === 18);
             
             if (nineHoleRounds.length > eighteenHoleRounds.length) {
-              // Mostly 9-hole rounds: Handicap = (Net Score - Par) × 2
-              performanceHandicap = (averageNetScore - 36) * 2;
+              // Mostly 9-hole rounds: If net score is better than par, handicap should be lower
+              // Net score 32.6 vs par 36 = 3.4 strokes better than par
+              // So handicap should be 36 - (3.4 × 2) = 29.2
+              const strokesBetterThanPar = 36 - averageNetScore;
+              performanceHandicap = currentHandicap - (strokesBetterThanPar * 2);
             } else {
-              // Mostly 18-hole rounds: Handicap = Net Score - Par
-              performanceHandicap = averageNetScore - 72;
+              // Mostly 18-hole rounds: If net score is better than par, handicap should be lower
+              const strokesBetterThanPar = 72 - averageNetScore;
+              performanceHandicap = currentHandicap - strokesBetterThanPar;
             }
             
             // Calculate improvement factor as the difference between current and performance handicap
