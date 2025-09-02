@@ -71,20 +71,17 @@ export default function HandicapProjections() {
             
             if (playerScores.length === 0) continue;
             
-            // Calculate net scores for each round
+            // Calculate net scores for each round using the same logic as the scores page
             const netScores = playerScores.map((score: any) => {
               const grossScore = score.gross;
-              // Use the player's actual handicap and multiply by difficulty
-              // This should give us the proper course handicap
-              const courseHandicap = currentHandicap * score.difficulty;
-              const netScore = grossScore - courseHandicap;
+              // Use the same net score calculation as the scores page
+              const netScore = score.holes === 9 ? grossScore - currentHandicap/2 : grossScore - currentHandicap;
               return {
                 netScore,
                 grossScore,
                 holes: score.holes,
                 difficulty: score.difficulty,
                 date: score.play_date,
-                courseHandicap,
                 playerHandicap: currentHandicap
               };
             });
