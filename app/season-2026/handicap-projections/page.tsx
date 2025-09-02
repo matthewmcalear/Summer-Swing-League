@@ -164,7 +164,7 @@ export default function HandicapProjections() {
               <ul className="text-purple-700 text-sm space-y-1">
                 <li>• <strong>High:</strong> 15+ rounds</li>
                 <li>• <strong>Medium:</strong> 8-14 rounds</li>
-                <li>• <strong>Low:</strong> <8 rounds</li>
+                <li>• <strong>Low:</strong> &lt;8 rounds</li>
               </ul>
             </div>
           </div>
