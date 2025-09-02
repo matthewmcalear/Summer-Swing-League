@@ -189,13 +189,13 @@ export default function LeagueComplete() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                   <div>
                     <p className="text-2xl font-bold text-blue-600">
-                      {data?.seasonStats?.totalPlayers || 'Multiple'}
+                      {data && data.seasonStats ? data.seasonStats.totalPlayers : 'Multiple'}
                     </p>
                     <p className="text-blue-700">Players Participated</p>
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-blue-600">
-                      {data?.seasonStats?.totalRounds || 'Many'}
+                      {data && data.seasonStats ? data.seasonStats.totalRounds : 'Many'}
                     </p>
                     <p className="text-blue-700">Total Rounds Played</p>
                   </div>
@@ -212,7 +212,7 @@ export default function LeagueComplete() {
                   <div className="text-center">
                     <div className="text-3xl mb-2">🥇</div>
                     <p className="font-semibold text-green-800">1st Place</p>
-                    {data?.winners?.first ? (
+                    {data && data.winners && data.winners.first ? (
                       <>
                         <p className="text-green-700 font-medium">{data.winners.first.name}</p>
                         <p className="text-green-600 text-sm">Score: {data.winners.first.seasonScore.toFixed(2)}</p>
@@ -225,7 +225,7 @@ export default function LeagueComplete() {
                   <div className="text-center">
                     <div className="text-3xl mb-2">🥈</div>
                     <p className="font-semibold text-green-800">2nd Place</p>
-                    {data?.winners?.second ? (
+                    {data && data.winners && data.winners.second ? (
                       <>
                         <p className="text-green-700 font-medium">{data.winners.second.name}</p>
                         <p className="text-green-600 text-sm">Score: {data.winners.second.seasonScore.toFixed(2)}</p>
@@ -238,7 +238,7 @@ export default function LeagueComplete() {
                   <div className="text-center">
                     <div className="text-3xl mb-2">🥉</div>
                     <p className="font-semibold text-green-800">3rd Place</p>
-                    {data?.winners?.third ? (
+                    {data && data.winners && data.winners.third ? (
                       <>
                         <p className="text-green-700 font-medium">{data.winners.third.name}</p>
                         <p className="text-green-600 text-sm">Score: {data.winners.third.seasonScore.toFixed(2)}</p>
@@ -251,7 +251,7 @@ export default function LeagueComplete() {
                   <div className="text-center">
                     <div className="text-3xl mb-2">🏌️</div>
                     <p className="font-semibold text-green-800">Going the Distance</p>
-                    {data?.winners?.mostRounds ? (
+                    {data && data.winners && data.winners.mostRounds ? (
                       <>
                         <p className="text-green-700 font-medium">{data.winners.mostRounds.name}</p>
                         <p className="text-green-600 text-sm">{data.winners.mostRounds.totalRounds} rounds</p>
