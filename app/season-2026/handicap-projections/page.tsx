@@ -150,20 +150,22 @@ export default function HandicapProjections() {
               console.log(`  Top 5 net scores: ${topRounds.slice(0, 5).map((r: any) => r.netScore.toFixed(1)).join(', ')}`);
             }
             
-            // Cap the improvement to reasonable limits
-            improvementFactor = Math.max(-20, Math.min(20, improvementFactor));
+            // Only show improvement if handicap gets better (lower number)
+            // If performance handicap is worse than current, show no change
+            let projectedHandicap, improvement;
             
-            // Determine trend based on improvement factor
-            if (improvementFactor > 2) {
+            if (performanceHandicap < currentHandicap) {
+              // Handicap is getting better (lower number)
+              improvementFactor = Math.max(0, Math.min(20, improvementFactor)); // Cap at 20 improvement max
+              projectedHandicap = Math.max(5, currentHandicap - improvementFactor);
+              improvement = currentHandicap - projectedHandicap;
               trend = 'improving';
-            } else if (improvementFactor < -2) {
-              trend = 'declining';
             } else {
+              // Handicap is getting worse or staying same - show no change
+              projectedHandicap = currentHandicap;
+              improvement = 0;
               trend = 'stable';
             }
-            
-            const projectedHandicap = Math.max(5, Math.min(45, currentHandicap - improvementFactor));
-            const improvement = currentHandicap - projectedHandicap;
 
             calculatedProjections.push({
               name: playerData.name,
