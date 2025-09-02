@@ -49,6 +49,12 @@ export default function Home() {
                   >
                     Final Standings
                   </Link>
+                  <Link 
+                    href="/download-data" 
+                    className="px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-400 transition-colors"
+                  >
+                    📊 Download Data
+                  </Link>
                 </div>
               </div>
             </div>
@@ -119,6 +125,11 @@ export default function Home() {
                   <li>
                     <Link href="/league-complete" className="text-green-600 hover:text-green-800 font-semibold">
                       🏆 League Completion Results
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/download-data" className="text-green-600 hover:text-green-800 font-semibold">
+                      📊 Download League Data
                     </Link>
                   </li>
                 </ul>
