@@ -98,7 +98,7 @@ export default function HandicapProjections() {
             // Debug logging for Matthew and Thomas
             if (playerData.name === 'Matthew McAlear' || playerData.name === 'Thomas McAlear') {
               console.log(`${playerData.name} - Current Handicap: ${currentHandicap}, Total Rounds: ${playerScores.length}`);
-              console.log('Top 5 net scores:', netScores.slice(0, 5).map((s: any) => ({ net: s.netScore, gross: s.grossScore, holes: s.holes })));
+              console.log('Top 5 net scores:', netScores.slice(0, 5).map((s: any) => ({ net: s.netScore, gross: s.grossScore, holes: s.holes, ssl: s.sslPoints })));
             }
             
             // Sort by net score (best first) and take top 12 rounds
@@ -117,17 +117,26 @@ export default function HandicapProjections() {
             }, 0) / roundsToUse;
             
             // Calculate what the handicap should be based on performance
+            // Handle mixed 9-hole and 18-hole rounds properly
             let performanceHandicap;
-            if (topRounds[0].holes === 9) {
-              // 9-hole rounds: Handicap = (Net Score - Par) × 2
+            const nineHoleRounds = topRounds.filter((r: any) => r.holes === 9);
+            const eighteenHoleRounds = topRounds.filter((r: any) => r.holes === 18);
+            
+            if (nineHoleRounds.length > eighteenHoleRounds.length) {
+              // Mostly 9-hole rounds: Handicap = (Net Score - Par) × 2
               performanceHandicap = (averageNetScore - 36) * 2;
             } else {
-              // 18-hole rounds: Handicap = Net Score - Par
+              // Mostly 18-hole rounds: Handicap = Net Score - Par
               performanceHandicap = averageNetScore - 72;
             }
             
             // Calculate improvement factor as the difference between current and performance handicap
             improvementFactor = currentHandicap - performanceHandicap;
+            
+            // Debug logging for Matthew and Thomas
+            if (playerData.name === 'Matthew McAlear' || playerData.name === 'Thomas McAlear') {
+              console.log(`${playerData.name} - Average Net Score: ${averageNetScore.toFixed(1)}, Performance Handicap: ${performanceHandicap.toFixed(1)}, Improvement: ${improvementFactor.toFixed(1)}`);
+            }
             
             // Cap the improvement to reasonable limits
             improvementFactor = Math.max(-10, Math.min(10, improvementFactor));
