@@ -41,16 +41,67 @@ export default function LeagueComplete() {
   useEffect(() => {
     async function fetchCompletionData() {
       try {
-        const response = await fetch('/api/standings');
-        
-        if (!response.ok) {
+        // Try to fetch raw data from members and scores APIs
+        const [membersResponse, scoresResponse] = await Promise.all([
+          fetch('/api/members'),
+          fetch('/api/scores')
+        ]);
+
+        if (!membersResponse.ok || !scoresResponse.ok) {
           // Database is not available (likely removed for off-season)
           setData(null);
           setLoading(false);
           return;
         }
+
+        const [members, scores] = await Promise.all([
+          membersResponse.json(),
+          scoresResponse.json()
+        ]);
+
+        // Filter out test members
+        const realMembers = members.filter((member: any) => !member.is_test);
         
-        const standings = await response.json();
+        // Calculate standings for each member
+        const standings: Player[] = realMembers.map((member: any) => {
+          // Find scores where the player field starts with the member's name
+          const memberScores = scores.filter((score: any) => {
+            const players = score.player.split(',');
+            return players[0].trim() === member.full_name;
+          });
+
+          const totalRounds = memberScores.length;
+          
+          // Calculate total points
+          const sortedScores = [...memberScores].sort((a: any, b: any) => Number(b.total_points ?? 0) - Number(a.total_points ?? 0));
+          const bestScores = sortedScores.slice(0, 5);
+          
+          // Sum of best 5 (or fewer) rounds
+          const totalPoints = bestScores.reduce((sum: number, score: any) => sum + Number(score.total_points ?? 0), 0);
+
+          // Season score multiplier based on number of rounds played
+          let multiplier = 1;
+          if (totalRounds < 5) {
+            multiplier = [0.2, 0.4, 0.6, 0.8][totalRounds - 1] || 1;
+          }
+
+          const seasonScore = totalPoints * multiplier;
+
+          const topScores = bestScores.map((s: any) => Number(s.total_points ?? 0));
+
+          return {
+            id: member.id,
+            name: member.full_name,
+            handicap: member.handicap,
+            totalRounds,
+            totalPoints,
+            seasonScore,
+            topScores,
+          };
+        });
+
+        // Sort by season score
+        standings.sort((a, b) => b.seasonScore - a.seasonScore);
         
         // Calculate winners
         const first = standings[0] || null;
@@ -137,16 +188,20 @@ export default function LeagueComplete() {
                 <h3 className="text-lg font-semibold text-blue-800 mb-3">📊 Season Summary</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                   <div>
-                    <p className="text-2xl font-bold text-blue-600">Multiple</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {data ? data.seasonStats.totalPlayers : 'Multiple'}
+                    </p>
                     <p className="text-blue-700">Players Participated</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {data ? data.seasonStats.totalRounds : 'Many'}
+                    </p>
+                    <p className="text-blue-700">Total Rounds Played</p>
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-blue-600">$550</p>
                     <p className="text-blue-700">Total Prize Pool</p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-blue-600">4 Months</p>
-                    <p className="text-blue-700">Season Duration</p>
                   </div>
                 </div>
               </div>
@@ -157,22 +212,54 @@ export default function LeagueComplete() {
                   <div className="text-center">
                     <div className="text-3xl mb-2">🥇</div>
                     <p className="font-semibold text-green-800">1st Place</p>
-                    <p className="text-green-600">$250</p>
+                    {data && data.winners.first ? (
+                      <>
+                        <p className="text-green-700 font-medium">{data.winners.first.name}</p>
+                        <p className="text-green-600 text-sm">Score: {data.winners.first.seasonScore.toFixed(2)}</p>
+                        <p className="text-green-600">$250</p>
+                      </>
+                    ) : (
+                      <p className="text-green-600">$250</p>
+                    )}
                   </div>
                   <div className="text-center">
                     <div className="text-3xl mb-2">🥈</div>
                     <p className="font-semibold text-green-800">2nd Place</p>
-                    <p className="text-green-600">$150</p>
+                    {data && data.winners.second ? (
+                      <>
+                        <p className="text-green-700 font-medium">{data.winners.second.name}</p>
+                        <p className="text-green-600 text-sm">Score: {data.winners.second.seasonScore.toFixed(2)}</p>
+                        <p className="text-green-600">$150</p>
+                      </>
+                    ) : (
+                      <p className="text-green-600">$150</p>
+                    )}
                   </div>
                   <div className="text-center">
                     <div className="text-3xl mb-2">🥉</div>
                     <p className="font-semibold text-green-800">3rd Place</p>
-                    <p className="text-green-600">$75</p>
+                    {data && data.winners.third ? (
+                      <>
+                        <p className="text-green-700 font-medium">{data.winners.third.name}</p>
+                        <p className="text-green-600 text-sm">Score: {data.winners.third.seasonScore.toFixed(2)}</p>
+                        <p className="text-green-600">$75</p>
+                      </>
+                    ) : (
+                      <p className="text-green-600">$75</p>
+                    )}
                   </div>
                   <div className="text-center">
                     <div className="text-3xl mb-2">🏌️</div>
                     <p className="font-semibold text-green-800">Going the Distance</p>
-                    <p className="text-green-600">$75</p>
+                    {data && data.winners.mostRounds ? (
+                      <>
+                        <p className="text-green-700 font-medium">{data.winners.mostRounds.name}</p>
+                        <p className="text-green-600 text-sm">{data.winners.mostRounds.totalRounds} rounds</p>
+                        <p className="text-green-600">$75</p>
+                      </>
+                    ) : (
+                      <p className="text-green-600">$75</p>
+                    )}
                   </div>
                 </div>
               </div>
