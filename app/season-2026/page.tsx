@@ -132,36 +132,7 @@ export default function Season2026() {
           </div>
         </div>
 
-        {/* Stay Connected */}
-        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Stay Connected</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <h3 className="font-semibold text-blue-800 mb-3">📧 Get Notified</h3>
-              <p className="text-blue-700 mb-4">
-                Want to be the first to know when registration opens? Contact us to be added to our notification list.
-              </p>
-              <div className="bg-white border border-blue-200 rounded-lg p-3">
-                <p className="text-sm text-blue-800">
-                  <strong>Contact:</strong> [Your contact information here]
-                </p>
-              </div>
-            </div>
 
-            <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-              <h3 className="font-semibold text-green-800 mb-3">💡 Have Suggestions?</h3>
-              <p className="text-green-700 mb-4">
-                We're always looking to improve the league experience. Share your ideas and feedback with us.
-              </p>
-              <div className="bg-white border border-green-200 rounded-lg p-3">
-                <p className="text-sm text-green-800">
-                  <strong>Feedback:</strong> [Your contact information here]
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Footer */}
         <div className="text-center">
