@@ -188,7 +188,7 @@ export default function HandicapProjections() {
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
-              <p className="text-sm text-gray-500">{progress}% complete</p>
+              <p className="text-sm text-gray-500">{Math.round(progress)}% complete</p>
             </div>
           </div>
         </div>
