@@ -134,6 +134,39 @@ export default function Season2026() {
 
 
 
+        {/* Handicap Projections */}
+        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">🎯 2026 Handicap Projections</h2>
+          <div className="text-center mb-6">
+            <p className="text-lg text-gray-600 mb-4">
+              Based on 2025 performance analysis, see projected handicaps for the upcoming season.
+            </p>
+            <Link 
+              href="/season-2026/handicap-projections" 
+              className="inline-block px-8 py-4 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-blue-700 transition-all transform hover:scale-105 shadow-lg"
+            >
+              View Handicap Projections
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="text-2xl mb-2">📊</div>
+              <h3 className="font-semibold text-green-800 mb-1">Data-Driven</h3>
+              <p className="text-green-700 text-sm">Based on 2025 performance metrics</p>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="text-2xl mb-2">🎯</div>
+              <h3 className="font-semibold text-blue-800 mb-1">Accurate</h3>
+              <p className="text-blue-700 text-sm">Statistical analysis and trends</p>
+            </div>
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <div className="text-2xl mb-2">📈</div>
+              <h3 className="font-semibold text-purple-800 mb-1">Predictive</h3>
+              <p className="text-purple-700 text-sm">Improvement projections included</p>
+            </div>
+          </div>
+        </div>
+
         {/* Footer */}
         <div className="text-center">
           <p className="text-lg text-gray-600 mb-4">
