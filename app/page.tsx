@@ -30,6 +30,30 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
+          {/* League Completion Banner */}
+          <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-lg shadow-lg p-6 mb-6 text-white">
+            <div className="flex flex-col">
+              <div className="flex-1">
+                <h2 className={`${pop.className} text-2xl md:text-3xl font-bold mb-2`}>🏆 SUMMER SWING LEAGUE 2025 - COMPLETED! 🏆</h2>
+                <p className="text-lg mb-4">The 2025 season has officially ended. Check out the final results and winners!</p>
+                <div className="flex flex-wrap gap-3">
+                  <Link 
+                    href="/league-complete" 
+                    className="px-6 py-3 bg-white text-green-700 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+                  >
+                    View Final Results & Winners
+                  </Link>
+                  <Link 
+                    href="/standings" 
+                    className="px-6 py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-400 transition-colors"
+                  >
+                    Final Standings
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* SSL Open Event Banner */}
           <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg shadow-lg p-6 mb-6 text-white">
             <div className="flex flex-col">
@@ -220,6 +244,11 @@ export default function Home() {
                   <li>
                     <Link href="/admin" className="text-green-600 hover:text-green-800">
                       Admin Dashboard
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/league-complete" className="text-green-600 hover:text-green-800 font-semibold">
+                      🏆 League Completion Results
                     </Link>
                   </li>
                 </ul>
