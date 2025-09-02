@@ -189,13 +189,13 @@ export default function LeagueComplete() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                   <div>
                     <p className="text-2xl font-bold text-blue-600">
-                      {data && data.seasonStats ? data.seasonStats.totalPlayers : 'Multiple'}
+                      Multiple
                     </p>
                     <p className="text-blue-700">Players Participated</p>
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-blue-600">
-                      {data && data.seasonStats ? data.seasonStats.totalRounds : 'Many'}
+                      Many
                     </p>
                     <p className="text-blue-700">Total Rounds Played</p>
                   </div>
@@ -212,54 +212,22 @@ export default function LeagueComplete() {
                   <div className="text-center">
                     <div className="text-3xl mb-2">🥇</div>
                     <p className="font-semibold text-green-800">1st Place</p>
-                    {data && data.winners && data.winners.first ? (
-                      <>
-                        <p className="text-green-700 font-medium">{data.winners.first.name}</p>
-                        <p className="text-green-600 text-sm">Score: {data.winners.first.seasonScore.toFixed(2)}</p>
-                        <p className="text-green-600">$250</p>
-                      </>
-                    ) : (
-                      <p className="text-green-600">$250</p>
-                    )}
+                    <p className="text-green-600">$250</p>
                   </div>
                   <div className="text-center">
                     <div className="text-3xl mb-2">🥈</div>
                     <p className="font-semibold text-green-800">2nd Place</p>
-                    {data && data.winners && data.winners.second ? (
-                      <>
-                        <p className="text-green-700 font-medium">{data.winners.second.name}</p>
-                        <p className="text-green-600 text-sm">Score: {data.winners.second.seasonScore.toFixed(2)}</p>
-                        <p className="text-green-600">$150</p>
-                      </>
-                    ) : (
-                      <p className="text-green-600">$150</p>
-                    )}
+                    <p className="text-green-600">$150</p>
                   </div>
                   <div className="text-center">
                     <div className="text-3xl mb-2">🥉</div>
                     <p className="font-semibold text-green-800">3rd Place</p>
-                    {data && data.winners && data.winners.third ? (
-                      <>
-                        <p className="text-green-700 font-medium">{data.winners.third.name}</p>
-                        <p className="text-green-600 text-sm">Score: {data.winners.third.seasonScore.toFixed(2)}</p>
-                        <p className="text-green-600">$75</p>
-                      </>
-                    ) : (
-                      <p className="text-green-600">$75</p>
-                    )}
+                    <p className="text-green-600">$75</p>
                   </div>
                   <div className="text-center">
                     <div className="text-3xl mb-2">🏌️</div>
                     <p className="font-semibold text-green-800">Going the Distance</p>
-                    {data && data.winners && data.winners.mostRounds ? (
-                      <>
-                        <p className="text-green-700 font-medium">{data.winners.mostRounds.name}</p>
-                        <p className="text-green-600 text-sm">{data.winners.mostRounds.totalRounds} rounds</p>
-                        <p className="text-green-600">$75</p>
-                      </>
-                    ) : (
-                      <p className="text-green-600">$75</p>
-                    )}
+                    <p className="text-green-600">$75</p>
                   </div>
                 </div>
               </div>
