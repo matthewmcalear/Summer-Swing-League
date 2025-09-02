@@ -16,20 +16,26 @@ interface PlayerProjection {
 export default function HandicapProjections() {
   const [projections, setProjections] = useState<PlayerProjection[]>([]);
   const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const fetchProjections = async () => {
       try {
         // Fetch individual player data to get detailed score information
+        setProgress(10);
         let response = await fetch('/api/members');
         if (!response.ok) {
           throw new Error('Failed to fetch members');
         }
         const members = await response.json();
 
+        setProgress(20);
         const calculatedProjections: PlayerProjection[] = [];
+        const totalMembers = members.length;
 
-        for (const member of members) {
+        for (let i = 0; i < members.length; i++) {
+          const member = members[i];
+          setProgress(20 + (i / totalMembers) * 70); // 20-90% progress
           try {
             // Get detailed player data including all scores
             const playerResponse = await fetch(`/api/players/${member.id}`);
@@ -109,15 +115,15 @@ export default function HandicapProjections() {
             const handicapDifferential = averageNetScore - averagePar;
             
             // Calculate improvement factor based on performance vs current handicap
-            // If playing better than handicap suggests, reduce handicap
-            // If playing worse than handicap suggests, increase handicap
+            // If playing better than handicap suggests, reduce handicap (negative improvement)
+            // If playing worse than handicap suggests, increase handicap (positive improvement)
             // Use a simpler approach: if net scores are better than par, reduce handicap
             if (handicapDifferential < 0) {
-              // Playing better than par, reduce handicap
-              improvementFactor = Math.abs(handicapDifferential) * 0.5;
+              // Playing better than par, reduce handicap (negative improvement)
+              improvementFactor = -Math.abs(handicapDifferential) * 0.5;
             } else {
-              // Playing worse than par, increase handicap
-              improvementFactor = -handicapDifferential * 0.3;
+              // Playing worse than par, increase handicap (positive improvement)
+              improvementFactor = handicapDifferential * 0.3;
             }
             
             // Cap the improvement to reasonable limits
@@ -152,7 +158,9 @@ export default function HandicapProjections() {
 
         // Sort by projected handicap (best first)
         calculatedProjections.sort((a, b) => a.projectedHandicap - b.projectedHandicap);
+        setProgress(95);
         setProjections(calculatedProjections);
+        setProgress(100);
       } catch (error) {
         console.error('Error fetching projections:', error);
       } finally {
@@ -168,7 +176,17 @@ export default function HandicapProjections() {
       <div className="min-h-screen py-12">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600" />
+            <div className="text-center max-w-md">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4" />
+              <p className="text-gray-600 mb-4">Calculating handicap projections...</p>
+              <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                <div 
+                  className="bg-green-600 h-2 rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+              <p className="text-sm text-gray-500">{progress}% complete</p>
+            </div>
           </div>
         </div>
       </div>
