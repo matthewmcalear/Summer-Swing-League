@@ -137,11 +137,16 @@ export default function HandicapProjections() {
             
             // Debug logging for Matthew and Thomas
             if (playerData.name === 'Matthew McAlear' || playerData.name === 'Thomas McAlear') {
-              console.log(`${playerData.name} - Average Net Score: ${averageNetScore.toFixed(1)}, Performance Handicap: ${performanceHandicap.toFixed(1)}, Improvement: ${improvementFactor.toFixed(1)}`);
+              console.log(`${playerData.name} - Current Handicap: ${currentHandicap}`);
+              console.log(`  Average Net Score: ${averageNetScore.toFixed(1)}`);
+              console.log(`  Performance Handicap: ${performanceHandicap.toFixed(1)}`);
+              console.log(`  Improvement (before cap): ${improvementFactor.toFixed(1)}`);
+              console.log(`  Nine-hole rounds: ${nineHoleRounds.length}, Eighteen-hole rounds: ${eighteenHoleRounds.length}`);
+              console.log(`  Top 5 net scores: ${topRounds.slice(0, 5).map((r: any) => r.netScore.toFixed(1)).join(', ')}`);
             }
             
             // Cap the improvement to reasonable limits
-            improvementFactor = Math.max(-10, Math.min(10, improvementFactor));
+            improvementFactor = Math.max(-20, Math.min(20, improvementFactor));
             
             // Determine trend based on improvement factor
             if (improvementFactor > 2) {
