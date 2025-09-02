@@ -77,17 +77,19 @@ export default function HandicapProjections() {
             
             if (playerScores.length === 0) continue;
             
-            // Calculate net scores from SSL points using the SSL scoring formula
+            // Calculate net scores from gross scores and handicaps
             const netScores = playerScores.map((score: any) => {
-              const sslPoints = score.total_points;
-              // Use SSL points to calculate net scores
-              // 9-hole: SSL = 75 - Net, so Net = 75 - SSL
-              // 18-hole: SSL = (150 - Net) / 2, so Net = 150 - (2 × SSL)
-              const netScore = score.holes === 9 ? 75 - sslPoints : 150 - (2 * sslPoints);
+              const grossScore = score.gross;
+              // Calculate net scores using the correct formula
+              // 9-hole: Net = Gross - (Handicap / 2)
+              // 18-hole: Net = Gross - Handicap
+              const netScore = score.holes === 9 
+                ? grossScore - (currentHandicap / 2)
+                : grossScore - currentHandicap;
               return {
                 netScore,
-                grossScore: score.gross,
-                sslPoints,
+                grossScore,
+                sslPoints: score.total_points,
                 holes: score.holes,
                 difficulty: score.difficulty,
                 date: score.play_date,
