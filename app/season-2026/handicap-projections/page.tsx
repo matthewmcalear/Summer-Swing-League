@@ -57,28 +57,38 @@ export default function HandicapProjections() {
               confidence = 'low';
             }
             
-            // Calculate average of top rounds for handicap projection
-            // For now, we'll use the season score as a proxy for performance
-            // In a real implementation, we'd calculate differentials from gross scores
-            const averageTopRounds = playerData.seasonScore / Math.min(5, totalRounds);
+            // Calculate improvement based on activity and performance
+            // More realistic approach: active players with similar handicaps should have similar projections
             
-            // Determine trend based on performance
-            if (averageTopRounds > 35) {
-              trend = 'improving';
-              improvementFactor = Math.min(3, totalRounds * 0.15);
-            } else if (averageTopRounds < 25) {
-              trend = 'declining';
-              improvementFactor = Math.min(1, totalRounds * 0.05);
+            // Base improvement based on activity level (this is the main factor)
+            if (totalRounds >= 50) {
+              improvementFactor = 2.5; // Very active players (50+ rounds)
+            } else if (totalRounds >= 30) {
+              improvementFactor = 2.0; // Active players (30+ rounds)
+            } else if (totalRounds >= 15) {
+              improvementFactor = 1.5; // Regular players (15+ rounds)
+            } else if (totalRounds >= 8) {
+              improvementFactor = 1.0; // Occasional players (8+ rounds)
             } else {
-              trend = 'stable';
-              improvementFactor = Math.min(2, totalRounds * 0.1);
+              improvementFactor = 0.5; // Limited players (<8 rounds)
             }
             
-            // Additional improvement based on activity level
-            if (totalRounds >= 20) {
-              improvementFactor += 0.5; // Very active players tend to improve more
-            } else if (totalRounds >= 10) {
-              improvementFactor += 0.3; // Active players show improvement
+            // Small adjustment based on performance relative to handicap
+            // Use average points as a proxy for performance vs handicap
+            const averagePoints = playerData.seasonScore / totalRounds;
+            if (averagePoints > 45) {
+              improvementFactor += 0.5; // Playing better than handicap suggests
+            } else if (averagePoints < 35) {
+              improvementFactor -= 0.5; // Playing worse than handicap suggests
+            }
+            
+            // Determine trend based on performance
+            if (averagePoints > 45) {
+              trend = 'improving';
+            } else if (averagePoints < 35) {
+              trend = 'declining';
+            } else {
+              trend = 'stable';
             }
             
             const projectedHandicap = Math.max(5, Math.min(45, currentHandicap - improvementFactor));
