@@ -17,11 +17,11 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center py-2">
             <h1 className={`${pop.className} text-2xl font-bold text-green-800 tracking-wide`}>Summer Swing League</h1>
             <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
-              <Link href="/submit-score" className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 text-sm">
-                Submit Score
+              <Link href="/league-complete" className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 text-sm">
+                View Results
               </Link>
-              <Link href="/register" className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 text-sm">
-                Register
+              <Link href="/download-data" className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 text-sm">
+                Download Data
               </Link>
             </div>
           </div>
@@ -83,48 +83,8 @@ export default function Home() {
                 <h3 className="text-xl font-semibold text-green-800 mb-2">Quick Links</h3>
                 <ul className="space-y-2">
                   <li>
-                    <Link href="/rules" className="text-green-600 hover:text-green-800">
-                      View League Rules
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/standings" className="text-green-600 hover:text-green-800">
-                      Current Standings
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/members" className="text-green-600 hover:text-green-800">
-                      View Members
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/scores" className="text-green-600 hover:text-green-800">
-                      All Scores
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/submit-score" className="text-green-600 hover:text-green-800">
-                      Submit Score
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/register" className="text-green-600 hover:text-green-800">
-                      Register Now
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/analytics" className="text-green-600 hover:text-green-800">
-                      Analytics Dashboard
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/admin" className="text-green-600 hover:text-green-800">
-                      Admin Dashboard
-                    </Link>
-                  </li>
-                  <li>
                     <Link href="/league-complete" className="text-green-600 hover:text-green-800 font-semibold">
-                      🏆 League Completion Results
+                      🏆 2025 Season Results
                     </Link>
                   </li>
                   <li>
@@ -132,7 +92,28 @@ export default function Home() {
                       📊 Download League Data
                     </Link>
                   </li>
+                  <li>
+                    <Link href="/rules" className="text-green-600 hover:text-green-800">
+                      View League Rules
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/admin" className="text-green-600 hover:text-green-800">
+                      Admin Dashboard
+                    </Link>
+                  </li>
                 </ul>
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800 mb-2">
+                    <strong>Next Season:</strong> Summer Swing League 2026 starts May 1st!
+                  </p>
+                  <Link 
+                    href="/season-2026" 
+                    className="text-sm text-yellow-700 hover:text-yellow-900 underline"
+                  >
+                    Learn more about 2026 season →
+                  </Link>
+                </div>
               </div>
             </div>
 

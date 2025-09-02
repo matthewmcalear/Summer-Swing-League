@@ -24,8 +24,10 @@ export default function RootLayout({
         <nav className="bg-green-700 text-white">
           <div className="max-w-7xl mx-auto px-4 py-3 flex space-x-6 text-sm">
             <Link href="/" className="hover:underline">Home</Link>
-            <Link href="/scores" className="hover:underline">Scores</Link>
-            <Link href="/standings" className="hover:underline">Standings</Link>
+            <Link href="/league-complete" className="hover:underline">2025 Results</Link>
+            <Link href="/download-data" className="hover:underline">Download Data</Link>
+            <Link href="/season-2026" className="hover:underline">2026 Season</Link>
+            <Link href="/about" className="hover:underline">About</Link>
             <Link href="/admin" className="hover:underline ml-auto">Admin</Link>
           </div>
         </nav>
