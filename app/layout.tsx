@@ -26,6 +26,7 @@ export default function RootLayout({
             <Link href="/" className="hover:underline">Home</Link>
             <Link href="/league-complete" className="hover:underline">2025 Results</Link>
             <Link href="/download-data" className="hover:underline">Download Data</Link>
+            <Link href="/raw-data" className="hover:underline">Raw Data</Link>
             <Link href="/season-2026" className="hover:underline">2026 Season</Link>
             <Link href="/about" className="hover:underline">About</Link>
             <Link href="/admin" className="hover:underline ml-auto">Admin</Link>

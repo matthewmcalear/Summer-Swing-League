@@ -161,6 +161,12 @@ export default function DownloadData() {
               Back to Home
             </Link>
             <Link 
+              href="/raw-data" 
+              className="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              View Raw Data
+            </Link>
+            <Link 
               href="/league-complete" 
               className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >

@@ -93,6 +93,11 @@ export default function Home() {
                     </Link>
                   </li>
                   <li>
+                    <Link href="/raw-data" className="text-green-600 hover:text-green-800">
+                      📋 View Raw Data
+                    </Link>
+                  </li>
+                  <li>
                     <Link href="/rules" className="text-green-600 hover:text-green-800">
                       View League Rules
                     </Link>
