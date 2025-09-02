@@ -111,7 +111,14 @@ export default function HandicapProjections() {
             // Calculate improvement factor based on performance vs current handicap
             // If playing better than handicap suggests, reduce handicap
             // If playing worse than handicap suggests, increase handicap
-            improvementFactor = -handicapDifferential * 0.8; // 80% of differential as improvement
+            // Use a simpler approach: if net scores are better than par, reduce handicap
+            if (handicapDifferential < 0) {
+              // Playing better than par, reduce handicap
+              improvementFactor = Math.abs(handicapDifferential) * 0.5;
+            } else {
+              // Playing worse than par, increase handicap
+              improvementFactor = -handicapDifferential * 0.3;
+            }
             
             // Cap the improvement to reasonable limits
             improvementFactor = Math.max(-5, Math.min(5, improvementFactor));
