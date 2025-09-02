@@ -170,7 +170,11 @@ export default function AnalyticsPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/analytics');
+        // Try static data first, fallback to database API
+        let response = await fetch('/api/analytics-static');
+        if (!response.ok) {
+          response = await fetch('/api/analytics');
+        }
         const analyticsData = await response.json();
         setData(analyticsData);
       } catch (error) {
@@ -181,8 +185,7 @@ export default function AnalyticsPage() {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 300000); // Refresh every 5 minutes
-    return () => clearInterval(interval);
+    // No need to refresh static data
   }, []);
 
   if (loading) {

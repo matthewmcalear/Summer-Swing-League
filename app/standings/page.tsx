@@ -19,7 +19,11 @@ export default function Standings() {
   useEffect(() => {
     async function fetchStandings() {
       try {
-        const response = await fetch(`/api/standings?fresh=${Date.now()}`);
+        // Try static data first, fallback to database API
+        let response = await fetch('/api/standings-static');
+        if (!response.ok) {
+          response = await fetch(`/api/standings?fresh=${Date.now()}`);
+        }
         const data = await response.json();
         setPlayers(data);
       } catch (error) {
@@ -30,14 +34,7 @@ export default function Standings() {
     }
 
     fetchStandings();
-
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        fetchStandings();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-    return () => document.removeEventListener('visibilitychange', handleVisibility);
+    // No need to refresh static data
   }, []);
 
   if (loading) {

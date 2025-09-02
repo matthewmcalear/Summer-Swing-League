@@ -1,0 +1,48 @@
+{
+  "export_date": "2025-09-02T18:40:00Z",
+  "season": "2025",
+  "description": "Summer Swing League 2025 - Complete Data Export",
+  "files": {
+    "members": {
+      "csv": "/members.csv",
+      "json": "/members.json",
+      "description": "All league members with handicaps and contact info",
+      "count": 31
+    },
+    "scores": {
+      "csv": "/scores.csv", 
+      "json": "/scores.json",
+      "description": "All golf scores from the 2025 season",
+      "count": 190
+    },
+    "player_stats": {
+      "json": "/player_stats.json",
+      "description": "Processed player statistics and standings",
+      "includes": ["total_rounds", "total_points", "avg_points", "best_round", "courses_played"]
+    },
+    "season_summary": {
+      "json": "/season_summary.json", 
+      "description": "Overall season statistics and summary",
+      "includes": ["total_players", "total_rounds", "season_dates", "courses_played"]
+    }
+  },
+  "season_dates": {
+    "start": "2025-05-01",
+    "end": "2025-08-30"
+  },
+  "courses": [
+    "Oasis",
+    "Club de Golf Rive-Sud", 
+    "Rivière Rouge",
+    "Mystic Pines",
+    "St Lambert",
+    "Verchères",
+    "Goreway Golf Club",
+    "Western Turnpike"
+  ],
+  "usage": {
+    "note": "This data export allows full offline access to all league analytics",
+    "database_required": false,
+    "last_updated": "2025-09-02T18:40:00Z"
+  }
+}
