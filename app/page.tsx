@@ -55,6 +55,12 @@ export default function Home() {
                   >
                     📊 Download Data
                   </Link>
+                  <Link 
+                    href="/season-2026/handicap-projections" 
+                    className="px-6 py-3 bg-purple-500 text-white rounded-lg font-semibold hover:bg-purple-400 transition-colors"
+                  >
+                    🎯 2026 Projections
+                  </Link>
                 </div>
               </div>
             </div>
@@ -90,6 +96,11 @@ export default function Home() {
                   <li>
                     <Link href="/download-data" className="text-green-600 hover:text-green-800 font-semibold">
                       📊 Download League Data
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/season-2026/handicap-projections" className="text-green-600 hover:text-green-800 font-semibold">
+                      🎯 2026 Handicap Projections
                     </Link>
                   </li>
                   <li>
