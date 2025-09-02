@@ -58,12 +58,21 @@ export default function HandicapProjections() {
               confidence = 'low';
             }
             
-            // Get individual scores to calculate net scores
-            const recentScores = playerData.recentScores || [];
-            if (recentScores.length === 0) continue;
+            // Get all scores for this player from the scores API
+            const scoresResponse = await fetch('/api/scores');
+            if (!scoresResponse.ok) continue;
+            const allScores = await scoresResponse.json();
+            
+            // Filter scores for this specific player
+            const playerScores = allScores.filter((score: any) => {
+              const players = score.player.split(',');
+              return players[0].trim() === playerData.name;
+            });
+            
+            if (playerScores.length === 0) continue;
             
             // Calculate net scores for each round
-            const netScores = recentScores.map((score: any) => {
+            const netScores = playerScores.map((score: any) => {
               const grossScore = score.gross;
               const courseHandicap = currentHandicap * score.difficulty;
               const netScore = grossScore - courseHandicap;
@@ -72,9 +81,15 @@ export default function HandicapProjections() {
                 grossScore,
                 holes: score.holes,
                 difficulty: score.difficulty,
-                date: score.date
+                date: score.play_date
               };
             });
+            
+            // Debug logging for Matthew and Thomas
+            if (playerData.name === 'Matthew McAlear' || playerData.name === 'Thomas McAlear') {
+              console.log(`${playerData.name} - Current Handicap: ${currentHandicap}, Total Rounds: ${playerScores.length}`);
+              console.log('Top 5 net scores:', netScores.slice(0, 5).map((s: any) => ({ net: s.netScore, gross: s.grossScore, holes: s.holes })));
+            }
             
             // Sort by net score (best first) and take top 12 rounds
             const sortedNetScores = netScores.sort((a: any, b: any) => a.netScore - b.netScore);
