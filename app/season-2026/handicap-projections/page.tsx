@@ -42,8 +42,9 @@ export default function HandicapProjections() {
             const currentHandicap = playerData.handicap;
             const totalRounds = playerData.totalRounds;
             
-            // Calculate handicap based on top rounds (similar to official handicap calculation)
-            let roundsToUse = Math.min(12, totalRounds); // Use top 12 rounds or fewer
+            // Calculate handicap projection based on net scores from top rounds
+            // This is the proper way to calculate handicap changes
+            
             let improvementFactor = 0;
             let trend: 'improving' | 'stable' | 'declining' = 'stable';
             let confidence: 'high' | 'medium' | 'low' = 'medium';
@@ -57,35 +58,52 @@ export default function HandicapProjections() {
               confidence = 'low';
             }
             
-            // Calculate improvement based on activity and performance
-            // More realistic approach: active players with similar handicaps should have similar projections
+            // Get individual scores to calculate net scores
+            const recentScores = playerData.recentScores || [];
+            if (recentScores.length === 0) continue;
             
-            // Base improvement based on activity level (this is the main factor)
-            if (totalRounds >= 50) {
-              improvementFactor = 2.5; // Very active players (50+ rounds)
-            } else if (totalRounds >= 30) {
-              improvementFactor = 2.0; // Active players (30+ rounds)
-            } else if (totalRounds >= 15) {
-              improvementFactor = 1.5; // Regular players (15+ rounds)
-            } else if (totalRounds >= 8) {
-              improvementFactor = 1.0; // Occasional players (8+ rounds)
-            } else {
-              improvementFactor = 0.5; // Limited players (<8 rounds)
-            }
+            // Calculate net scores for each round
+            const netScores = recentScores.map((score: any) => {
+              const grossScore = score.gross;
+              const courseHandicap = currentHandicap * score.difficulty;
+              const netScore = grossScore - courseHandicap;
+              return {
+                netScore,
+                grossScore,
+                holes: score.holes,
+                difficulty: score.difficulty,
+                date: score.date
+              };
+            });
             
-            // Small adjustment based on performance relative to handicap
-            // Use average points as a proxy for performance vs handicap
-            const averagePoints = playerData.seasonScore / totalRounds;
-            if (averagePoints > 45) {
-              improvementFactor += 0.5; // Playing better than handicap suggests
-            } else if (averagePoints < 35) {
-              improvementFactor -= 0.5; // Playing worse than handicap suggests
-            }
+            // Sort by net score (best first) and take top 12 rounds
+            const sortedNetScores = netScores.sort((a: any, b: any) => a.netScore - b.netScore);
+            const roundsToUse = Math.min(12, sortedNetScores.length);
+            const topRounds = sortedNetScores.slice(0, roundsToUse);
             
-            // Determine trend based on performance
-            if (averagePoints > 45) {
+            // Calculate average net score from top rounds
+            const averageNetScore = topRounds.reduce((sum: number, round: any) => sum + round.netScore, 0) / roundsToUse;
+            
+            // Calculate handicap differential (how much better/worse than par)
+            // For 18-hole rounds, par is typically 72, for 9-hole it's 36
+            const averagePar = topRounds.reduce((sum: number, round: any) => {
+              return sum + (round.holes === 18 ? 72 : 36);
+            }, 0) / roundsToUse;
+            
+            const handicapDifferential = averageNetScore - averagePar;
+            
+            // Calculate improvement factor based on performance vs current handicap
+            // If playing better than handicap suggests, reduce handicap
+            // If playing worse than handicap suggests, increase handicap
+            improvementFactor = -handicapDifferential * 0.8; // 80% of differential as improvement
+            
+            // Cap the improvement to reasonable limits
+            improvementFactor = Math.max(-5, Math.min(5, improvementFactor));
+            
+            // Determine trend based on net score performance
+            if (handicapDifferential < -2) {
               trend = 'improving';
-            } else if (averagePoints < 35) {
+            } else if (handicapDifferential > 2) {
               trend = 'declining';
             } else {
               trend = 'stable';
@@ -152,21 +170,21 @@ export default function HandicapProjections() {
           <h2 className="text-2xl font-bold text-gray-900 mb-6">📊 Projection Methodology</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <h3 className="font-semibold text-blue-800 mb-3">📈 Top Rounds Analysis</h3>
+              <h3 className="font-semibold text-blue-800 mb-3">📈 Net Score Analysis</h3>
               <ul className="text-blue-700 text-sm space-y-1">
                 <li>• Uses top 12 rounds (or fewer if less data)</li>
+                <li>• Calculates net scores (gross - course handicap)</li>
+                <li>• Accounts for course difficulty and slope</li>
                 <li>• Similar to official handicap calculation</li>
-                <li>• Focuses on best performances</li>
-                <li>• Accounts for course difficulty</li>
               </ul>
             </div>
             <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-              <h3 className="font-semibold text-green-800 mb-3">🎯 Improvement Factors</h3>
+              <h3 className="font-semibold text-green-800 mb-3">🎯 Handicap Calculation</h3>
               <ul className="text-green-700 text-sm space-y-1">
-                <li>• Activity level (more rounds = more reliable)</li>
-                <li>• Performance trend analysis</li>
-                <li>• Season score averages</li>
-                <li>• Statistical improvement patterns</li>
+                <li>• Compares net scores to par (72 for 18-hole, 36 for 9-hole)</li>
+                <li>• Calculates handicap differential from top rounds</li>
+                <li>• 80% of differential applied as handicap change</li>
+                <li>• Capped at ±5 strokes for reasonable projections</li>
               </ul>
             </div>
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
@@ -181,9 +199,10 @@ export default function HandicapProjections() {
           <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <h4 className="font-semibold text-yellow-800 mb-2">🎯 Handicap Calculation Method</h4>
             <p className="text-yellow-700 text-sm">
-              Projections are based on the average of your top 12 rounds (or fewer if you have less data), 
-              similar to how official handicaps are calculated. This focuses on your best performances 
-              rather than including all rounds, giving a more accurate representation of your potential.
+              Projections are based on your top 12 rounds (or fewer if you have less data) using net scores. 
+              We calculate net scores by subtracting your course handicap from your gross score, then compare 
+              the average of your best net scores to par. This gives a true measure of your potential performance 
+              and is similar to how official handicaps are calculated.
             </p>
           </div>
         </div>
