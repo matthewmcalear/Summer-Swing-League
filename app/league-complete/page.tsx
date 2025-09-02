@@ -42,6 +42,14 @@ export default function LeagueComplete() {
     async function fetchCompletionData() {
       try {
         const response = await fetch('/api/standings');
+        
+        if (!response.ok) {
+          // Database is not available (likely removed for off-season)
+          setData(null);
+          setLoading(false);
+          return;
+        }
+        
         const standings = await response.json();
         
         // Calculate winners
@@ -76,6 +84,7 @@ export default function LeagueComplete() {
         setData(completionData);
       } catch (error) {
         console.error('Error fetching completion data:', error);
+        setData(null);
       } finally {
         setLoading(false);
       }
@@ -98,12 +107,108 @@ export default function LeagueComplete() {
 
   if (!data) {
     return (
-      <div className="min-h-screen py-12">
-        <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-8">
-          <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">
-            League Completion
-          </h1>
-          <p className="text-center text-gray-600">Unable to load completion data.</p>
+      <div className="min-h-screen py-12 bg-gradient-to-br from-green-50 to-blue-50">
+        <div className="max-w-6xl mx-auto px-4">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <h1 className="text-5xl font-bold text-green-800 mb-4">
+              🏆 League Complete! 🏆
+            </h1>
+            <p className="text-xl text-gray-600 mb-2">
+              Summer Swing League 2025 Season Results
+            </p>
+            <p className="text-lg text-gray-500">
+              May 1 - August 31, 2025
+            </p>
+          </div>
+
+          {/* Archive Notice */}
+          <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <div className="text-center">
+              <div className="text-6xl mb-4">📦</div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                League Data Archived
+              </h2>
+              <p className="text-lg text-gray-600 mb-6">
+                The 2025 Summer Swing League has been completed and the database has been archived for the off-season to save costs.
+              </p>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                <h3 className="text-lg font-semibold text-blue-800 mb-3">📊 Season Summary</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-2xl font-bold text-blue-600">Multiple</p>
+                    <p className="text-blue-700">Players Participated</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-blue-600">$550</p>
+                    <p className="text-blue-700">Total Prize Pool</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-blue-600">4 Months</p>
+                    <p className="text-blue-700">Season Duration</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+                <h3 className="text-lg font-semibold text-green-800 mb-3">🏆 Prize Winners</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className="text-3xl mb-2">🥇</div>
+                    <p className="font-semibold text-green-800">1st Place</p>
+                    <p className="text-green-600">$250</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl mb-2">🥈</div>
+                    <p className="font-semibold text-green-800">2nd Place</p>
+                    <p className="text-green-600">$150</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl mb-2">🥉</div>
+                    <p className="font-semibold text-green-800">3rd Place</p>
+                    <p className="text-green-600">$75</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl mb-2">🏌️</div>
+                    <p className="font-semibold text-green-800">Going the Distance</p>
+                    <p className="text-green-600">$75</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-yellow-800 mb-3">📅 Next Season</h3>
+                <p className="text-yellow-700 mb-2">
+                  The Summer Swing League will return in <strong>May 2026</strong>!
+                </p>
+                <p className="text-sm text-yellow-600">
+                  All league data has been safely backed up and will be restored when the new season begins.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="text-center">
+            <p className="text-lg text-gray-600 mb-4">
+              Thank you to all participants for making the Summer Swing League 2025 a success!
+            </p>
+            <div className="space-x-4">
+              <Link 
+                href="/" 
+                className="inline-block px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Back to Home
+              </Link>
+              <Link 
+                href="/standings" 
+                className="inline-block px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                View Standings
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     );
