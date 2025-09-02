@@ -109,33 +109,33 @@ export default function HandicapProjections() {
             // Calculate average net score from top rounds
             const averageNetScore = topRounds.reduce((sum: number, round: any) => sum + round.netScore, 0) / roundsToUse;
             
-            // Calculate handicap differential (how much better/worse than par)
-            // For 18-hole rounds, par is typically 72, for 9-hole it's 36
+            // Calculate the actual handicap based on top 12 rounds performance
+            // For 9-hole: Handicap = (Net Score - Par) × 2
+            // For 18-hole: Handicap = Net Score - Par
             const averagePar = topRounds.reduce((sum: number, round: any) => {
               return sum + (round.holes === 18 ? 72 : 36);
             }, 0) / roundsToUse;
             
-            const handicapDifferential = averageNetScore - averagePar;
-            
-            // Calculate improvement factor based on performance vs current handicap
-            // If playing better than handicap suggests, reduce handicap (negative improvement)
-            // If playing worse than handicap suggests, increase handicap (positive improvement)
-            // Use a simpler approach: if net scores are better than par, reduce handicap
-            if (handicapDifferential < 0) {
-              // Playing better than par, reduce handicap (negative improvement)
-              improvementFactor = -Math.abs(handicapDifferential) * 0.5;
+            // Calculate what the handicap should be based on performance
+            let performanceHandicap;
+            if (topRounds[0].holes === 9) {
+              // 9-hole rounds: Handicap = (Net Score - Par) × 2
+              performanceHandicap = (averageNetScore - 36) * 2;
             } else {
-              // Playing worse than par, increase handicap (positive improvement)
-              improvementFactor = handicapDifferential * 0.3;
+              // 18-hole rounds: Handicap = Net Score - Par
+              performanceHandicap = averageNetScore - 72;
             }
             
-            // Cap the improvement to reasonable limits
-            improvementFactor = Math.max(-5, Math.min(5, improvementFactor));
+            // Calculate improvement factor as the difference between current and performance handicap
+            improvementFactor = currentHandicap - performanceHandicap;
             
-            // Determine trend based on net score performance
-            if (handicapDifferential < -2) {
+            // Cap the improvement to reasonable limits
+            improvementFactor = Math.max(-10, Math.min(10, improvementFactor));
+            
+            // Determine trend based on improvement factor
+            if (improvementFactor > 2) {
               trend = 'improving';
-            } else if (handicapDifferential > 2) {
+            } else if (improvementFactor < -2) {
               trend = 'declining';
             } else {
               trend = 'stable';
