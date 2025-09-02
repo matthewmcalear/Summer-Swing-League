@@ -56,7 +56,7 @@ export async function GET() {
     });
 
     // Sort by season score
-    standings.sort((a, b) => b.seasonScore - a.seasonScore);
+    standings.sort((a: any, b: any) => b.seasonScore - a.seasonScore);
 
     return NextResponse.json(standings);
   } catch (error) {
