@@ -11,30 +11,6 @@ interface StandingEntry {
   topScores: number[]; // best 5 or fewer round points
 }
 
-interface DBMember {
-  id: number;
-  full_name: string;
-  handicap: number;
-  email: string;
-  created_at: Date;
-  updated_at: Date;
-  is_test: boolean;
-}
-
-interface DBScore {
-  id: number;
-  player: string;
-  holes: number;
-  gross: number;
-  handicap: number;
-  difficulty: number;
-  group_members: string;
-  total_points: number;
-  play_date: Date;
-  course_name: string;
-  created_at: Date;
-}
-
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
@@ -44,18 +20,17 @@ export async function GET() {
       where: {
         is_test: false
       }
-    }) as DBMember[];
+    });
 
-    // Get all scores
-    const scores = await prisma.score.findMany() as DBScore[];
+    // Get all scores with player relation
+    const scores = await prisma.score.findMany({
+      include: { player: true }
+    });
 
     // Calculate standings for each member
     const standings: StandingEntry[] = members.map((member) => {
-      // Find scores where the player field starts with the member's name
-      const memberScores = scores.filter(score => {
-        const players = score.player.split(',');
-        return players[0].trim() === member.full_name;
-      });
+      // Find scores for this member by playerId
+      const memberScores = scores.filter(score => score.playerId === member.id);
 
       const totalRounds = memberScores.length;
       

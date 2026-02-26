@@ -297,7 +297,8 @@ export async function GET() {
     });
     
     const scores = await prisma.score.findMany({
-      orderBy: { play_date: 'desc' }
+      orderBy: { play_date: 'desc' },
+      include: { player: true }
     });
 
     const totalPlayers = members.length;
@@ -307,7 +308,7 @@ export async function GET() {
     // Calculate total points and participation metrics
     const totalPoints = scores.reduce((sum, s) => sum + s.total_points, 0);
     const averagePointsPerRound = totalRounds > 0 ? totalPoints / totalRounds : 0;
-    const playersWhoHavePlayed = new Set(scores.map(s => s.player.split(',')[0].trim())).size;
+    const playersWhoHavePlayed = new Set(scores.map(s => s.player.full_name)).size;
     const participationRate = totalPlayers > 0 ? (playersWhoHavePlayed / totalPlayers) * 100 : 0;
 
     // Separate 18-hole and 9-hole rounds
@@ -320,7 +321,7 @@ export async function GET() {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const recentScores = scores.filter(s => s.play_date >= thirtyDaysAgo);
-    const activePlayers = new Set(recentScores.map(s => s.player.split(',')[0].trim())).size;
+    const activePlayers = new Set(recentScores.map(s => s.player.full_name)).size;
 
     // Performance metrics separated by hole count
     const grossScores18 = scores18.map(s => s.gross);
@@ -338,7 +339,7 @@ export async function GET() {
     // Most active player
     const playerRoundCounts = new Map();
     scores.forEach(score => {
-      const player = score.player.split(',')[0].trim();
+      const player = score.player.full_name;
       playerRoundCounts.set(player, (playerRoundCounts.get(player) || 0) + 1);
     });
     const mostActivePlayer = Array.from(playerRoundCounts.entries())
@@ -391,7 +392,7 @@ export async function GET() {
         monthlyMap.get(month).scores9.push(score.gross);
       }
       monthlyMap.get(month).points.push(score.total_points);
-      monthlyMap.get(month).players.add(score.player.split(',')[0].trim());
+      monthlyMap.get(month).players.add(score.player.full_name);
     });
 
     const monthlyTrends = Array.from(monthlyMap.entries()).map(([month, data]) => ({
@@ -424,7 +425,7 @@ export async function GET() {
     const playerStats = new Map();
     members.forEach(member => {
       const memberScores = scores.filter(score => 
-        score.player.split(',')[0].trim() === member.full_name
+        score.player.full_name === member.full_name
       );
       
       if (memberScores.length > 0) {
@@ -460,7 +461,7 @@ export async function GET() {
     // Recent activity
     const recentActivity = scores.slice(0, 20).map(score => ({
       date: new Date(score.play_date).toLocaleDateString('en-CA'), // YYYY-MM-DD format without timezone issues
-      player: score.player.split(',')[0].trim(),
+      player: score.player.full_name,
       course: normalizeCourseName(score.course_name),
       score: score.gross,
       points: Math.round(score.total_points * 10) / 10
@@ -473,11 +474,11 @@ export async function GET() {
     for (const member of members) {
       // Separate scores by round type
       const memberScores18 = scores
-        .filter(score => score.player.split(',')[0].trim() === member.full_name && score.holes === 18)
+        .filter(score => score.player.full_name === member.full_name && score.holes === 18)
         .sort((a, b) => new Date(a.play_date).getTime() - new Date(b.play_date).getTime());
       
       const memberScores9 = scores
-        .filter(score => score.player.split(',')[0].trim() === member.full_name && score.holes === 9)
+        .filter(score => score.player.full_name === member.full_name && score.holes === 9)
         .sort((a, b) => new Date(a.play_date).getTime() - new Date(b.play_date).getTime());
       
       // Calculate 18-hole improvement
@@ -547,7 +548,7 @@ export async function GET() {
     let consistencyLeader = { player: 'N/A', standardDeviation: Infinity, rounds: 0 };
     for (const member of members) {
       const memberScores = scores.filter(score => 
-        score.player.split(',')[0].trim() === member.full_name
+        score.player.full_name === member.full_name
       );
       
       if (memberScores.length >= 3) {
@@ -570,7 +571,7 @@ export async function GET() {
     let courseSpecialist = { player: 'N/A', course: 'N/A', averageScore: Infinity, rounds: 0 };
     for (const member of members) {
       const memberScores = scores.filter(score => 
-        score.player.split(',')[0].trim() === member.full_name
+        score.player.full_name === member.full_name
       );
       
       // Group by course
@@ -662,7 +663,7 @@ export async function GET() {
       },
       playerScoreData: members.map(member => {
         const memberScores = scores.filter(score => 
-          score.player.split(',')[0].trim() === member.full_name
+          score.player.full_name === member.full_name
         ).sort((a, b) => new Date(a.play_date).getTime() - new Date(b.play_date).getTime());
         
         const totalRounds = memberScores.length;
