@@ -48,6 +48,7 @@ interface PlayerProfile {
     bestScore18: number;
     bestScore9: number;
   }>;
+  achievements: string[];
 }
 
 export const dynamic = 'force-dynamic';
@@ -204,6 +205,14 @@ export async function GET(
       bestScore18: data.scores18.length > 0 ? Math.min(...data.scores18) : 0,
       bestScore9: data.scores9.length > 0 ? Math.min(...data.scores9) : 0
     })).sort((a, b) => b.rounds - a.rounds);
+
+  let achievements = [];
+  if (totalRounds >= 10) achievements.push('Seasoned Golfer');
+  if (totalRounds >= 25) achievements.push('Dedicated Player');
+  if (bestScore18 > 0 && bestScore18 <= 80) achievements.push('Under 80 Club');
+  if (bestScore9 > 0 && bestScore9 <= 40) achievements.push('Under 40 Club');
+  if (totalPoints >= 100) achievements.push('Century Points');
+  if (averagePoints >= 5) achievements.push('Consistent Performer');
 
     // Handicap progression (simplified - using current handicap for now)
     const handicapProgression = [
