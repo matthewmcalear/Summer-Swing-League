@@ -242,7 +242,8 @@ export async function GET(
       handicapProgression,
       recentScores,
       monthlyStats,
-      courseStats
+      courseStats,
+      achievements
     };
 
     return NextResponse.json(profile, { headers: { 'Cache-Control': 'no-store' } });
