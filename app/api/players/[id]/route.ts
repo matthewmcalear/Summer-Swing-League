@@ -82,9 +82,7 @@ export async function GET(
     // Get all scores for this player
     const scores = await prisma.score.findMany({
       where: {
-        player: {
-          startsWith: player.full_name
-        }
+        playerId: player.id
       },
       orderBy: {
         play_date: 'desc'
