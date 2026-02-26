@@ -101,8 +101,7 @@ export async function GET(request: Request) {
       orderBy: {
         play_date: 'asc',
       },
-      include: { player: true },
-    });
+      });
 
     console.log('API: Found scores count:', scores.length);
     if (scores.length > 0) {
@@ -113,7 +112,7 @@ export async function GET(request: Request) {
     const playerData: { [key: string]: PlayerProgressionData } = {};
 
     scores.forEach((score) => {
-      const playerName = score.player.full_name;
+      const playerName = score.player.split(',')[0].trim();
       
       // Use the holes field to determine round type
       const detectedRoundType = detectRoundType(score.holes);
@@ -182,7 +181,7 @@ export async function GET(request: Request) {
     const uniqueCourses = Array.from(new Set(scores.map((score: any) => score.course_name))).sort();
 
     // Debug: Show what player names are actually in the database
-    const uniquePlayerNames = Array.from(new Set(scores.map((score: any) => score.player?.full_name ?? score.playerId))).sort();
+    const uniquePlayerNames = Array.from(new Set(scores.map((score: any) => score.player.split(',')[0].trim()))).sort();
     console.log('API: Unique player names in database:', uniquePlayerNames);
     console.log('API: Total scores found:', scores.length);
     console.log('API: Date range used:', { startDate: startDate.toISOString(), endDate: endDate.toISOString() });

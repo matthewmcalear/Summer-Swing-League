@@ -16,14 +16,12 @@ model Member {
   updated_at DateTime @updatedAt
   is_test    Boolean  @default(false) @map("is_test_data")
 
-  scores     Score[]  @relation("MemberToScore")
-
   @@map("members")
 }
 
 model Score {
   id                Int      @id @default(autoincrement())
-  playerId          Int
+  player            String
   holes             Int
   gross             Int
   handicap          Float
@@ -33,9 +31,7 @@ model Score {
   additional_points Float    @default(0)
   play_date         DateTime
   course_name       String
-  created_at        DateTime  @default(now())
-
-  player            Member   @relation("MemberToScore", fields: [playerId], references: [id])
+  created_at        DateTime @default(now())
 
   @@map("scores")
-} 
+}
