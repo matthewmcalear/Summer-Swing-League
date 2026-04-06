@@ -85,21 +85,21 @@ export default function Home() {
       </div>
 
       {/* ── PRIZE CARDS ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="prize-gold card-hover border-2 text-center py-6">
-          <div className="text-4xl mb-2">🥇</div>
-          <div className="text-sm text-yellow-700 font-semibold uppercase tracking-wide">1st Place</div>
-          <div className="text-3xl font-extrabold text-yellow-800 mt-1">$250</div>
+      <div className="grid grid-cols-3 gap-3">
+        <div className="prize-gold card-hover border-2 text-center py-3 px-2">
+          <div className="text-2xl">🥇</div>
+          <div className="text-xs text-yellow-700 font-semibold mt-1">1st Place</div>
+          <div className="text-xl font-extrabold text-yellow-800">$250</div>
         </div>
-        <div className="prize-silver card-hover border-2 text-center py-6">
-          <div className="text-4xl mb-2">🥈</div>
-          <div className="text-sm text-gray-600 font-semibold uppercase tracking-wide">2nd Place</div>
-          <div className="text-3xl font-extrabold text-gray-700 mt-1">$150</div>
+        <div className="prize-silver card-hover border-2 text-center py-3 px-2">
+          <div className="text-2xl">🥈</div>
+          <div className="text-xs text-gray-600 font-semibold mt-1">2nd Place</div>
+          <div className="text-xl font-extrabold text-gray-700">$150</div>
         </div>
-        <div className="prize-bronze card-hover border-2 text-center py-6">
-          <div className="text-4xl mb-2">🥉</div>
-          <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#92400e' }}>3rd Place</div>
-          <div className="text-3xl font-extrabold mt-1" style={{ color: '#92400e' }}>$75</div>
+        <div className="prize-bronze card-hover border-2 text-center py-3 px-2">
+          <div className="text-2xl">🥉</div>
+          <div className="text-xs font-semibold mt-1" style={{ color: '#92400e' }}>3rd Place</div>
+          <div className="text-xl font-extrabold" style={{ color: '#92400e' }}>$75</div>
         </div>
       </div>
 
