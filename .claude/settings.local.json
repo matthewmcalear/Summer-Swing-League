@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Matthew/desktop/software/ssl2025//**)",
+      "Read(//c/Users/Matthew/OneDrive/Desktop/Software/**)",
+      "Bash(git init:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx next:*)",
+      "Read(//c/Users/Matthew/.claude/projects/C--Users-Matthew/memory//**)",
+      "Read(//c/Users/Matthew/.claude/projects/C--Users-Matthew/memory/**)",
+      "Bash(npx prisma:*)",
+      "Bash(npm run:*)",
+      "Bash(git remote:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit -m ':*)"
+    ]
+  }
+}

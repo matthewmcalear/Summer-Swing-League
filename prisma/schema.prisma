@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Member {
+  id               String   @id @default(uuid())
+  full_name        String
+  email            String   @unique
+  current_handicap Float    @default(0)
+  is_active        Boolean  @default(true)
+  created_at       DateTime @default(now())
+
+  scores           Score[]
+  handicap_history HandicapHistory[]
+
+  @@map("members")
+}
+
+model Score {
+  id                    String   @id @default(uuid())
+  member_id             String?
+  player_name           String
+  holes                 Int
+  gross_score           Int
+  handicap_used         Float
+  course_name           String
+  course_difficulty     String   @default("average")
+  difficulty_multiplier Float    @default(1.0)
+  group_member_ids      String[] @default([])
+  group_member_names    String   @default("")
+  group_size            Int      @default(1)
+  base_points           Float?
+  group_bonus           Float    @default(0)
+  additional_points     Float    @default(0)
+  total_points          Float?
+  play_date             DateTime
+  notes                 String?
+  created_at            DateTime @default(now())
+
+  member           Member?          @relation(fields: [member_id], references: [id], onDelete: SetNull)
+  handicap_history HandicapHistory[]
+
+  @@map("scores")
+}
+
+model HandicapHistory {
+  id          String   @id @default(uuid())
+  member_id   String
+  handicap    Float
+  score_id    String?
+  recorded_at DateTime @default(now())
+
+  member Member  @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  score  Score?  @relation(fields: [score_id], references: [id], onDelete: SetNull)
+
+  @@map("handicap_history")
+}
