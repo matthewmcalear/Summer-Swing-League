@@ -23,7 +23,8 @@
       "Bash(git commit -m 'Fix photo credit position to bottom-right of hero:*)",
       "Bash(git commit -m 'Fix TypeScript type error on course_difficulty in admin edit:*)",
       "Bash(git commit -m 'Shrink prize cards — compact 3-column layout on all screen sizes:*)",
-      "Bash(git commit -m 'Make SSL 2026 logo larger on mobile:*)"
+      "Bash(git commit -m 'Make SSL 2026 logo larger on mobile:*)",
+      "Bash(git commit -m 'Standings: responsive columns — mobile shows Rank, Player, Score only:*)"
     ]
   }
 }
