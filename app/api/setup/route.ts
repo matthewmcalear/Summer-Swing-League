@@ -16,10 +16,15 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Create tables using raw SQL (safe with IF NOT EXISTS)
+    // Drop old 2025 tables (CASCADE removes dependent foreign keys automatically)
+    await prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS handicap_history CASCADE`)
+    await prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS scores CASCADE`)
+    await prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS members CASCADE`)
+
+    // Create members table
     await prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS members (
-        id               TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      CREATE TABLE members (
+        id               UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
         full_name        TEXT         NOT NULL,
         email            TEXT         NOT NULL UNIQUE,
         current_handicap NUMERIC(5,1) NOT NULL DEFAULT 0,
@@ -28,10 +33,11 @@ export async function GET(request: Request) {
       )
     `)
 
+    // Create scores table
     await prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS scores (
-        id                    TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
-        member_id             TEXT         REFERENCES members(id) ON DELETE SET NULL,
+      CREATE TABLE scores (
+        id                    UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+        member_id             UUID         REFERENCES members(id) ON DELETE SET NULL,
         player_name           TEXT         NOT NULL,
         holes                 INTEGER      NOT NULL CHECK (holes IN (9, 18)),
         gross_score           INTEGER      NOT NULL,
@@ -53,28 +59,30 @@ export async function GET(request: Request) {
       )
     `)
 
+    // Create handicap_history table
     await prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS handicap_history (
-        id          TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
-        member_id   TEXT         NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+      CREATE TABLE handicap_history (
+        id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+        member_id   UUID         NOT NULL REFERENCES members(id) ON DELETE CASCADE,
         handicap    NUMERIC(5,1) NOT NULL,
-        score_id    TEXT         REFERENCES scores(id) ON DELETE SET NULL,
+        score_id    UUID         REFERENCES scores(id) ON DELETE SET NULL,
         recorded_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
       )
     `)
 
-    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS idx_scores_member_id ON scores(member_id)`)
-    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS idx_scores_play_date ON scores(play_date DESC)`)
-    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS idx_hh_member_id     ON handicap_history(member_id)`)
+    // Indexes
+    await prisma.$executeRawUnsafe(`CREATE INDEX idx_scores_member_id ON scores(member_id)`)
+    await prisma.$executeRawUnsafe(`CREATE INDEX idx_scores_play_date ON scores(play_date DESC)`)
+    await prisma.$executeRawUnsafe(`CREATE INDEX idx_hh_member_id     ON handicap_history(member_id)`)
 
-    // Verify tables exist
+    // Verify
     const tables = await prisma.$queryRawUnsafe<{ tablename: string }[]>(
       `SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename IN ('members','scores','handicap_history') ORDER BY tablename`
     )
 
     return NextResponse.json({
       success: true,
-      message: 'Database setup complete!',
+      message: 'Database setup complete! 2026 tables created.',
       tables_created: tables.map((t) => t.tablename),
     })
   } catch (e: any) {

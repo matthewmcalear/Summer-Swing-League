@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Member {
-  id               String   @id @default(uuid())
+  id               String   @id @default(uuid()) @db.Uuid
   full_name        String
   email            String   @unique
   current_handicap Float    @default(0)
@@ -22,8 +22,8 @@ model Member {
 }
 
 model Score {
-  id                    String   @id @default(uuid())
-  member_id             String?
+  id                    String   @id @default(uuid()) @db.Uuid
+  member_id             String?  @db.Uuid
   player_name           String
   holes                 Int
   gross_score           Int
@@ -49,10 +49,10 @@ model Score {
 }
 
 model HandicapHistory {
-  id          String   @id @default(uuid())
-  member_id   String
+  id          String   @id @default(uuid()) @db.Uuid
+  member_id   String   @db.Uuid
   handicap    Float
-  score_id    String?
+  score_id    String?  @db.Uuid
   recorded_at DateTime @default(now())
 
   member Member  @relation(fields: [member_id], references: [id], onDelete: Cascade)
