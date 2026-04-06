@@ -88,9 +88,9 @@ export default function AnalyticsPage() {
   const activePlayers = data.playerTimelines.filter((p) => selected.includes(p.id))
 
   // ── 1. Cumulative points over time ────────────────────────────────────────
-  const allDates = [...new Set(
+  const allDates = Array.from(new Set(
     data.playerTimelines.flatMap((p) => p.scores.map((s) => s.date.slice(0, 10)))
-  )].sort()
+  )).sort()
 
   const cumulativeData = {
     labels:   allDates,

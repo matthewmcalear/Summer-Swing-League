@@ -2,19 +2,11 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
-import type { StandingEntry } from '@/types'
+import dynamic from 'next/dynamic'
+
+const StandingsChart = dynamic(() => import('@/components/StandingsChart'), { ssr: false })
 
 export default function Home() {
-  const [standings, setStandings] = useState<StandingEntry[]>([])
-  const [loading, setLoading]     = useState(true)
-
-  useEffect(() => {
-    fetch('/api/standings')
-      .then((r) => r.json())
-      .then((data) => { setStandings(data.slice(0, 5)); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [])
 
   return (
     <div className="space-y-8">
@@ -103,7 +95,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── STANDINGS PREVIEW ── */}
+      {/* ── STANDINGS VISUAL ── */}
       <div className="card">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -113,53 +105,7 @@ export default function Home() {
             Full standings →
           </Link>
         </div>
-
-        {loading ? (
-          <div className="flex justify-center py-10">
-            <div className="w-8 h-8 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : standings.length === 0 ? (
-          <div className="text-center py-10">
-            <div className="text-5xl mb-3">🏌️</div>
-            <p className="text-gray-500 font-medium">No scores yet — be the first to tee off!</p>
-            <Link href="/submit-score" className="btn-primary mt-4 inline-flex">Submit First Round</Link>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full table-base">
-              <thead>
-                <tr>
-                  <th>Rank</th>
-                  <th>Player</th>
-                  <th>Handicap</th>
-                  <th>Rounds</th>
-                  <th>Season Score</th>
-                </tr>
-              </thead>
-              <tbody>
-                {standings.map((p, i) => (
-                  <tr
-                    key={p.id}
-                    style={
-                      i === 0 ? { background: 'rgba(255,215,0,0.12)' }
-                      : i === 1 ? { background: 'rgba(192,192,192,0.12)' }
-                      : i === 2 ? { background: 'rgba(205,127,50,0.12)' }
-                      : {}
-                    }
-                  >
-                    <td className="font-bold text-base">
-                      {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
-                    </td>
-                    <td className="font-semibold">{p.name}</td>
-                    <td className="text-gray-500">{p.currentHandicap}</td>
-                    <td className="text-gray-500">{p.totalRounds}</td>
-                    <td className="font-bold text-green-700 text-base">{p.seasonScore.toFixed(1)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <StandingsChart />
       </div>
 
       {/* ── TOM'S MUD MOMENT ── */}
