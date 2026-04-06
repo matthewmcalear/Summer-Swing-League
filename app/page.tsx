@@ -178,9 +178,10 @@ export default function Home() {
             <div className="text-2xl mb-2">💀</div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">The Incident — 2025</h3>
             <p className="text-gray-600 text-sm leading-relaxed mb-3">
-              Somewhere between the 14th tee and the 15th green, Tom McAlear discovered
-              that <em>not all water hazards are marked on the scorecard.</em> His ball was unplayable.
-              So was he. Legend has it his shoes are still somewhere in that lake.
+              On hole 9 — lucky it was the last one — Tom McAlear stepped onto what he was
+              confident were leaves. They were not leaves. They were water.
+              He kept his shoes, which is more than can be said for his dignity.
+              He drove home in a <strong>garbage bag</strong>.
             </p>
             <p className="text-xs text-gray-400 italic">
               📸 Tom McAlear · Season 1 · 2025 — a moment that will not be forgotten
