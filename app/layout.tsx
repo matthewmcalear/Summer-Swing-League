@@ -8,6 +8,27 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Summer Swing League 2026',
   description: 'Competitive and social golf league — April 15 to October 10, 2026',
+  openGraph: {
+    title: 'Summer Swing League 2026',
+    description: 'Competitive group golf all summer long. Any course. Any skill level. Play more, earn more, win cash.',
+    url: 'https://www.sslgolf.com',
+    siteName: 'Summer Swing League',
+    images: [
+      {
+        url: 'https://www.sslgolf.com/IMG_1002.jpeg',
+        width: 1200,
+        height: 630,
+        alt: 'Carling Lake Golf Course',
+      },
+    ],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Summer Swing League 2026',
+    description: 'Competitive group golf all summer long. Any course. Any skill level.',
+    images: ['https://www.sslgolf.com/IMG_1002.jpeg'],
+  },
 }
 
 export const viewport: Viewport = {
