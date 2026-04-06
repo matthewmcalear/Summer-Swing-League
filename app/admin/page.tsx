@@ -138,7 +138,7 @@ function ScoreRow({ score, onSave, onDelete }: {
         </td>
         <td className="px-4 py-2">
           <select className="form-input py-1 text-xs" value={form.course_difficulty}
-            onChange={e => setForm(f => ({ ...f, course_difficulty: e.target.value }))}>
+            onChange={e => setForm(f => ({ ...f, course_difficulty: e.target.value as 'easy' | 'average' | 'tough' }))}>
             <option value="easy">Easy</option>
             <option value="average">Average</option>
             <option value="tough">Tough</option>
