@@ -30,11 +30,11 @@ export default function NavBar() {
         <div className="flex items-center justify-between h-14">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 font-extrabold text-lg tracking-wide whitespace-nowrap">
-            <span className="text-xl">⛳</span>
-            <span className="hidden sm:inline text-white">Summer Swing League</span>
-            <span className="sm:hidden text-white">SSL</span>
-            <span className="text-green-400 font-bold text-sm ml-0.5">2026</span>
+          <Link href="/" className="flex items-center gap-2 font-extrabold tracking-wide whitespace-nowrap">
+            <span className="text-2xl">⛳</span>
+            <span className="hidden sm:inline text-white text-lg">Summer Swing League</span>
+            <span className="sm:hidden text-white text-xl">SSL</span>
+            <span className="text-green-400 font-bold text-xl sm:text-sm ml-0.5">2026</span>
           </Link>
 
           {/* Desktop links */}
