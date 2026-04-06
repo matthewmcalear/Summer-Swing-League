@@ -17,59 +17,101 @@ export default function Home() {
 
   return (
     <div className="space-y-8">
-      {/* Hero */}
-      <div className="bg-gradient-to-br from-green-700 to-green-900 rounded-2xl shadow-lg p-8 text-white">
-        <h1 className="text-3xl sm:text-4xl font-bold mb-2">Summer Swing League 2026</h1>
-        <p className="text-green-200 text-lg mb-6">
-          April 15 – October 10 · Group play · Any course · Cash prizes
-        </p>
-        <div className="flex flex-wrap gap-3">
-          <Link href="/submit-score" className="px-5 py-2.5 bg-white text-green-800 rounded-lg font-semibold text-sm hover:bg-green-50 transition-colors">
-            Submit a Round
-          </Link>
-          <Link href="/register" className="px-5 py-2.5 bg-green-600 text-white rounded-lg font-semibold text-sm hover:bg-green-500 transition-colors">
-            Join the League
-          </Link>
-          <Link href="/standings" className="px-5 py-2.5 bg-green-800 text-white rounded-lg font-semibold text-sm hover:bg-green-700 border border-green-600 transition-colors">
-            View Standings
-          </Link>
+
+      {/* ── HERO ── */}
+      <div className="hero p-8 sm:p-12 text-white relative">
+        <div className="relative z-10 max-w-3xl">
+
+          {/* Season badge */}
+          <div className="mb-4 flex flex-wrap gap-2">
+            <span className="season-badge">🌿 Season 4 · 2026</span>
+            <span className="season-badge">📅 Apr 15 – Oct 10</span>
+            <span className="season-badge">💰 $475 in prizes</span>
+          </div>
+
+          {/* Title */}
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-3 drop-shadow-lg">
+            Summer Swing<br />
+            <span style={{ color: '#86efac' }}>League</span>{' '}
+            <span className="text-white/70">2026</span>
+          </h1>
+
+          <p className="text-green-200 text-lg sm:text-xl mb-8 max-w-xl leading-relaxed">
+            Competitive group golf all summer long. Any course. Any skill level.
+            Play more, earn more, win cash.
+          </p>
+
+          {/* CTA buttons */}
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/submit-score"
+              className="px-6 py-3 bg-white text-green-900 rounded-xl font-bold text-sm hover:bg-green-50 transition-all shadow-lg hover:shadow-xl"
+            >
+              ⛳ Submit a Round
+            </Link>
+            <Link
+              href="/register"
+              className="px-6 py-3 rounded-xl font-bold text-sm transition-all shadow border border-white/30 hover:border-white/60"
+              style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
+            >
+              Join the League →
+            </Link>
+            <Link
+              href="/standings"
+              className="px-6 py-3 rounded-xl font-bold text-sm transition-all shadow border border-white/20 hover:border-white/50"
+              style={{ background: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(8px)' }}
+            >
+              📊 Standings
+            </Link>
+          </div>
+        </div>
+
+        {/* Decorative flag pin — hidden on small screens */}
+        <div className="absolute right-10 top-1/2 -translate-y-1/2 hidden lg:block select-none pointer-events-none">
+          <div className="flag-pin">⛳</div>
         </div>
       </div>
 
-      {/* Info grid */}
+      {/* ── PRIZE CARDS ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="card text-center">
-          <div className="text-3xl font-bold text-green-700">🏆</div>
-          <div className="mt-2 font-semibold">1st Place</div>
-          <div className="text-green-600 text-xl font-bold">$250</div>
+        <div className="prize-gold card-hover border-2 text-center py-6">
+          <div className="text-4xl mb-2">🥇</div>
+          <div className="text-sm text-yellow-700 font-semibold uppercase tracking-wide">1st Place</div>
+          <div className="text-3xl font-extrabold text-yellow-800 mt-1">$250</div>
         </div>
-        <div className="card text-center">
-          <div className="text-3xl font-bold text-gray-400">🥈</div>
-          <div className="mt-2 font-semibold">2nd Place</div>
-          <div className="text-gray-600 text-xl font-bold">$150</div>
+        <div className="prize-silver card-hover border-2 text-center py-6">
+          <div className="text-4xl mb-2">🥈</div>
+          <div className="text-sm text-gray-600 font-semibold uppercase tracking-wide">2nd Place</div>
+          <div className="text-3xl font-extrabold text-gray-700 mt-1">$150</div>
         </div>
-        <div className="card text-center">
-          <div className="text-3xl font-bold" style={{ color: '#cd7f32' }}>🥉</div>
-          <div className="mt-2 font-semibold">3rd Place</div>
-          <div className="text-xl font-bold" style={{ color: '#cd7f32' }}>$75</div>
+        <div className="prize-bronze card-hover border-2 text-center py-6">
+          <div className="text-4xl mb-2">🥉</div>
+          <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#92400e' }}>3rd Place</div>
+          <div className="text-3xl font-extrabold mt-1" style={{ color: '#92400e' }}>$75</div>
         </div>
       </div>
 
-      {/* Top 5 leaderboard preview */}
+      {/* ── STANDINGS PREVIEW ── */}
       <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900">Current Standings</h2>
-          <Link href="/standings" className="text-green-700 text-sm font-medium hover:underline">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <span className="text-2xl">📊</span> Current Standings
+          </h2>
+          <Link href="/standings" className="text-green-700 text-sm font-semibold hover:underline">
             Full standings →
           </Link>
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-8">
+          <div className="flex justify-center py-10">
             <div className="w-8 h-8 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : standings.length === 0 ? (
-          <p className="text-gray-500 text-sm text-center py-8">No scores yet — be the first to submit a round!</p>
+          <div className="text-center py-10">
+            <div className="text-5xl mb-3">🏌️</div>
+            <p className="text-gray-500 font-medium">No scores yet — be the first to tee off!</p>
+            <Link href="/submit-score" className="btn-primary mt-4 inline-flex">Submit First Round</Link>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full table-base">
@@ -87,19 +129,19 @@ export default function Home() {
                   <tr
                     key={p.id}
                     style={
-                      i === 0 ? { background: '#ffd70030' }
-                      : i === 1 ? { background: '#c0c0c030' }
-                      : i === 2 ? { background: '#cd7f3230' }
+                      i === 0 ? { background: 'rgba(255,215,0,0.12)' }
+                      : i === 1 ? { background: 'rgba(192,192,192,0.12)' }
+                      : i === 2 ? { background: 'rgba(205,127,50,0.12)' }
                       : {}
                     }
                   >
-                    <td className="font-semibold">
+                    <td className="font-bold text-base">
                       {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
                     </td>
-                    <td className="font-medium">{p.name}</td>
-                    <td>{p.currentHandicap}</td>
-                    <td>{p.totalRounds}</td>
-                    <td className="font-semibold text-green-700">{p.seasonScore.toFixed(1)}</td>
+                    <td className="font-semibold">{p.name}</td>
+                    <td className="text-gray-500">{p.currentHandicap}</td>
+                    <td className="text-gray-500">{p.totalRounds}</td>
+                    <td className="font-bold text-green-700 text-base">{p.seasonScore.toFixed(1)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -108,45 +150,52 @@ export default function Home() {
         )}
       </div>
 
-      {/* How it works */}
+      {/* ── HOW IT WORKS ── */}
       <div className="card">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">How It Works</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700">
-          <div className="space-y-3">
-            <div className="flex gap-3">
-              <span className="text-green-600 font-bold shrink-0">1.</span>
-              <span><strong>Register</strong> to join the league (free).</span>
+        <h2 className="text-xl font-bold text-gray-900 mb-5 flex items-center gap-2">
+          <span className="text-2xl">📋</span> How It Works
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
+          {[
+            ['Register', 'Join the league for free. No signup fees.'],
+            ['Book a round', 'Play any course with at least one other league member.'],
+            ['Submit your score', 'Enter your gross score and current handicap — it auto-updates your profile.'],
+            ['Earn points', 'Points based on net score, course difficulty, and group size.'],
+            ['Top 5 count', 'Your best 5 rounds determine your season score.'],
+            ['Win cash', 'Top 3 players split $475 after October 10.'],
+          ].map(([title, desc], i) => (
+            <div key={i} className="flex gap-3 p-3 rounded-xl hover:bg-green-50 transition-colors">
+              <span className="step-num">{i + 1}</span>
+              <span><strong>{title}</strong> — {desc}</span>
             </div>
-            <div className="flex gap-3">
-              <span className="text-green-600 font-bold shrink-0">2.</span>
-              <span><strong>Play any course</strong> with at least one other registered member.</span>
-            </div>
-            <div className="flex gap-3">
-              <span className="text-green-600 font-bold shrink-0">3.</span>
-              <span><strong>Submit your score</strong> with your current handicap — it updates automatically.</span>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <div className="flex gap-3">
-              <span className="text-green-600 font-bold shrink-0">4.</span>
-              <span><strong>Earn points</strong> based on net score, course difficulty, and group size.</span>
-            </div>
-            <div className="flex gap-3">
-              <span className="text-green-600 font-bold shrink-0">5.</span>
-              <span><strong>Top 5 rounds</strong> count toward your season score.</span>
-            </div>
-            <div className="flex gap-3">
-              <span className="text-green-600 font-bold shrink-0">6.</span>
-              <span><strong>Cash prizes</strong> paid out after October 10.</span>
-            </div>
-          </div>
+          ))}
         </div>
-        <div className="mt-4">
-          <Link href="/rules" className="text-green-700 text-sm font-medium hover:underline">
-            Read full rules →
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <Link href="/rules" className="text-green-700 text-sm font-semibold hover:underline">
+            Read the full rules →
           </Link>
         </div>
       </div>
+
+      {/* ── QUICK LINKS ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { href: '/submit-score', icon: '⛳', label: 'Submit Score' },
+          { href: '/standings',    icon: '📊', label: 'Standings'    },
+          { href: '/scores',       icon: '📋', label: 'All Scores'   },
+          { href: '/members',      icon: '👥', label: 'Members'      },
+        ].map(({ href, icon, label }) => (
+          <Link
+            key={href}
+            href={href}
+            className="card-hover flex flex-col items-center gap-2 py-5 text-center hover:border-green-300 transition-colors"
+          >
+            <span className="text-3xl">{icon}</span>
+            <span className="text-sm font-semibold text-gray-700">{label}</span>
+          </Link>
+        ))}
+      </div>
+
     </div>
   )
 }

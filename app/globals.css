@@ -6,35 +6,46 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ── Site background: subtle golf-green linen texture ── */
 body {
-  @apply bg-gray-50 text-gray-900;
+  @apply text-gray-900;
+  background-color: #f4f8f4;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(34,85,34,0.07) 1px, transparent 0);
+  background-size: 24px 24px;
 }
 
-/* Form inputs */
+/* ── Form inputs ── */
 .form-input {
-  @apply mt-1 block w-full rounded-md border-gray-300 shadow-sm
+  @apply mt-1 block w-full rounded-lg border-gray-300 shadow-sm
          focus:border-green-500 focus:ring-green-500 text-sm
-         px-3 py-2 border;
+         px-3 py-2 border bg-white;
 }
 
-/* Cards */
+/* ── Cards ── */
 .card {
-  @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6;
+  @apply bg-white rounded-2xl shadow-md border border-gray-100 p-6;
 }
 
-/* Buttons */
+.card-hover {
+  @apply card transition-shadow hover:shadow-lg;
+}
+
+/* ── Buttons ── */
 .btn-primary {
-  @apply inline-flex items-center justify-center px-5 py-2.5 rounded-lg
+  @apply inline-flex items-center justify-center px-5 py-2.5 rounded-xl
          bg-green-700 text-white font-semibold text-sm
          hover:bg-green-800 active:bg-green-900
-         transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+         transition-all shadow-sm hover:shadow
+         disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
 .btn-secondary {
-  @apply inline-flex items-center justify-center px-5 py-2.5 rounded-lg
+  @apply inline-flex items-center justify-center px-5 py-2.5 rounded-xl
          bg-white text-green-700 font-semibold text-sm border border-green-700
          hover:bg-green-50 active:bg-green-100
-         transition-colors disabled:opacity-50;
+         transition-all shadow-sm
+         disabled:opacity-50;
 }
 
 .btn-danger {
@@ -43,9 +54,9 @@ body {
          hover:bg-red-100 transition-colors;
 }
 
-/* Table */
+/* ── Tables ── */
 .table-base thead {
-  @apply bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider;
+  @apply bg-green-50 text-xs font-semibold text-green-800 uppercase tracking-wider;
 }
 .table-base th {
   @apply px-4 py-3 text-left;
@@ -54,5 +65,81 @@ body {
   @apply px-4 py-3 text-sm;
 }
 .table-base tbody tr {
-  @apply border-t border-gray-100 hover:bg-green-50 transition-colors;
+  @apply border-t border-gray-100 hover:bg-green-50/50 transition-colors;
+}
+
+/* ── Hero section ── */
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background:
+    /* fairway diagonal stripes */
+    repeating-linear-gradient(
+      135deg,
+      rgba(255,255,255,0.03) 0px,
+      rgba(255,255,255,0.03) 2px,
+      transparent 2px,
+      transparent 32px
+    ),
+    /* main gradient */
+    linear-gradient(145deg, #0f3d1a 0%, #1a5c2a 35%, #2d8a3e 65%, #1e6b2e 100%);
+}
+
+/* Sun glow */
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, rgba(255,220,80,0.18) 0%, rgba(255,180,0,0.06) 50%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Bottom grass fade */
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(to top, rgba(0,0,0,0.15), transparent);
+  pointer-events: none;
+}
+
+/* ── Flag pin decoration ── */
+.flag-pin {
+  display: inline-block;
+  font-size: 4rem;
+  filter: drop-shadow(0 4px 16px rgba(0,0,0,0.4));
+  animation: sway 4s ease-in-out infinite;
+}
+
+@keyframes sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50%       { transform: rotate(3deg);  }
+}
+
+/* ── Season badge ── */
+.season-badge {
+  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  backdrop-filter: blur(4px);
+  color: white;
+}
+
+/* ── Prize card styles ── */
+.prize-gold   { background: linear-gradient(135deg, #fffbeb, #fef3c7); border-color: #f59e0b; }
+.prize-silver { background: linear-gradient(135deg, #f9fafb, #f3f4f6); border-color: #9ca3af; }
+.prize-bronze { background: linear-gradient(135deg, #fff7ed, #ffedd5); border-color: #cd7f32; }
+
+/* ── Step number circles ── */
+.step-num {
+  @apply flex-shrink-0 w-7 h-7 rounded-full bg-green-100 text-green-800
+         text-sm font-bold flex items-center justify-center;
 }
