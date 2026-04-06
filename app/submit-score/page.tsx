@@ -286,6 +286,25 @@ export default function SubmitScore() {
           </div>
         )}
 
+        {/* Commissioner Bonus */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Commissioner Bonus <span className="text-gray-400 font-normal">(optional)</span>
+          </label>
+          <input
+            type="number"
+            step="0.5"
+            min="0"
+            placeholder="0"
+            className="form-input"
+            value={form.additional_points}
+            onChange={(e) => setForm({ ...form, additional_points: e.target.value })}
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Extra points awarded by the commissioner — e.g. for winning a special tournament. Leave at 0 if none.
+          </p>
+        </div>
+
         {/* Notes */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
@@ -306,6 +325,7 @@ export default function SubmitScore() {
             <p className="text-xs text-gray-500 mt-1">
               Group bonus: +{groupIds.length} · Difficulty: ×
               {({ easy: '0.95', average: '1.00', tough: '1.05' })[form.course_difficulty]}
+              {Number(form.additional_points) > 0 && ` · Commissioner bonus: +${form.additional_points}`}
             </p>
           </div>
         )}

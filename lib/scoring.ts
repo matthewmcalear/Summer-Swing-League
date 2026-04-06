@@ -16,7 +16,8 @@ export const SEASON_END   = '2026-10-10'
  *
  * adjusted = base × difficultyMultiplier
  * groupBonus = number of OTHER league members in the group (not counting self)
- * total = adjusted + groupBonus + additionalPoints
+ * commissionerBonus = extra points awarded by the commissioner (special tournaments, etc.)
+ * total = adjusted + groupBonus + commissionerBonus
  */
 export function calculatePoints({
   holes,

@@ -341,7 +341,7 @@ export default function AdminPage() {
               <tr>
                 <th>Date</th><th>Player</th><th>Course</th><th>Holes</th>
                 <th>Gross</th><th>Handicap</th><th>Difficulty</th>
-                <th>Bonus Pts</th><th>Total Pts</th><th>Notes</th><th>Actions</th>
+                <th>⭐ Commissioner Bonus</th><th>Total Pts</th><th>Notes</th><th>Actions</th>
               </tr>
             </thead>
             <tbody>

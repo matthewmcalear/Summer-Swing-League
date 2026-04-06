@@ -56,6 +56,7 @@ export default function ScoresPage() {
                 <th>Handicap</th>
                 <th>Difficulty</th>
                 <th>Group Bonus</th>
+                <th>⭐ Bonus</th>
                 <th>Points</th>
                 <th>Group</th>
               </tr>
@@ -75,6 +76,9 @@ export default function ScoresPage() {
                   <td>{s.handicap_used}</td>
                   <td className="capitalize">{s.course_difficulty}</td>
                   <td>+{s.group_bonus}</td>
+                  <td className={Number(s.additional_points) > 0 ? 'font-semibold text-yellow-600' : 'text-gray-400'}>
+                    {Number(s.additional_points) > 0 ? `+${s.additional_points}` : '—'}
+                  </td>
                   <td className="font-semibold text-green-700">{Number(s.total_points).toFixed(1)}</td>
                   <td className="text-xs text-gray-500 max-w-xs truncate">
                     {s.group_member_names || '—'}

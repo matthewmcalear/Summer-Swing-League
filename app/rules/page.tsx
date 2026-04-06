@@ -47,7 +47,7 @@ export default function Rules() {
                   <span className="font-semibold">Adjusted</span> = Base × Difficulty Multiplier
                 </div>
                 <div>
-                  <span className="font-semibold">Total</span> = Adjusted + Group Bonus
+                  <span className="font-semibold">Total</span> = Adjusted + Group Bonus + Commissioner Bonus
                 </div>
               </div>
             </div>
@@ -69,6 +69,15 @@ export default function Rules() {
             <div>
               <h3 className="font-semibold text-gray-800">5. Group Bonus</h3>
               <p>+1 point per additional verified league member in your group (not counting yourself).</p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-800">6. Commissioner Bonus</h3>
+              <p>
+                The commissioner may award additional bonus points to any round at their discretion —
+                for example, for winning a special one-day tournament, a closest-to-the-pin contest,
+                or any other event. These points are added directly to that round's total and are
+                visible on the Scores page.
+              </p>
             </div>
           </div>
         </section>
