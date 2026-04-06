@@ -9,6 +9,7 @@ const links = [
   { href: '/standings',    label: 'Standings'    },
   { href: '/scores',       label: 'Scores'       },
   { href: '/submit-score', label: 'Submit Score' },
+  { href: '/analytics',    label: 'Analytics'    },
   { href: '/members',      label: 'Members'      },
   { href: '/rules',        label: 'Rules'        },
   { href: '/about',        label: 'About'        },
