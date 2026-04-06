@@ -18,7 +18,9 @@
       "Bash(git commit -m ':*)",
       "Bash(heroku:*)",
       "Bash(git commit -m 'Fix image loading: disable Next.js image optimization for Heroku:*)",
-      "Bash(git commit -m 'Update Tom'\\\\''s incident story with accurate details:*)"
+      "Bash(git commit -m 'Update Tom'\\\\''s incident story with accurate details:*)",
+      "Bash(git push:*)",
+      "Bash(git commit -m 'Fix photo credit position to bottom-right of hero:*)"
     ]
   }
 }
