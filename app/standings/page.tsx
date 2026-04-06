@@ -29,20 +29,6 @@ export default function Standings() {
         </p>
       </div>
 
-      {/* Scoring explanation */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="card bg-green-50 border-green-200 text-sm text-green-800">
-          <strong>Participation multiplier</strong><br />
-          1 round = 20% · 2 = 40% · 3 = 60% · 4 = 80% · 5+ = 100%
-          of your top-5 total.
-        </div>
-        <div className="card bg-blue-50 border-blue-200 text-sm text-blue-800">
-          <strong>Improvement bonus ✨</strong><br />
-          Every stroke your handicap drops from your first round earns
-          +3 bonus points to your season score.
-        </div>
-      </div>
-
       {loading ? (
         <div className="flex justify-center py-16">
           <div className="w-10 h-10 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
@@ -71,11 +57,11 @@ export default function Standings() {
                   <td className="px-3 py-3">
                     <div className="font-semibold">{p.name}</div>
                     {/* Mobile: show key stats under name */}
-                    <div className="sm:hidden text-xs text-gray-400 mt-0.5 space-x-2">
+                    <div className="sm:hidden text-xs text-gray-400 mt-0.5 flex flex-wrap gap-x-2">
                       <span>Hdcp {p.currentHandicap}</span>
                       <span>· {p.totalRounds} {p.totalRounds === 1 ? 'round' : 'rounds'}</span>
                       {p.handicapImprovement > 0 && (
-                        <span className="text-blue-600 font-medium">· ✨ −{p.handicapImprovement}</span>
+                        <span className="text-blue-600 font-medium">· ✨ −{p.handicapImprovement} hdcp</span>
                       )}
                     </div>
                   </td>
@@ -103,6 +89,20 @@ export default function Standings() {
           </table>
         </div>
       )}
+
+      {/* Scoring explanation */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="card bg-green-50 border-green-200 text-sm text-green-800">
+          <strong>Participation multiplier</strong><br />
+          1 round = 20% · 2 = 40% · 3 = 60% · 4 = 80% · 5+ = 100%
+          of your top-5 total.
+        </div>
+        <div className="card bg-blue-50 border-blue-200 text-sm text-blue-800">
+          <strong>Improvement bonus ✨</strong><br />
+          Every stroke your handicap drops from your first round earns
+          +3 bonus points to your season score.
+        </div>
+      </div>
     </div>
   )
 }
