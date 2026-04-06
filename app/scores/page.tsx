@@ -17,7 +17,7 @@ function ScoreCard({ s }: { s: Score }) {
   const base         = Number(s.base_points ?? 0)
   const adjusted     = Math.round(base * s.difficulty_multiplier * 100) / 100
   const total        = Number(s.total_points ?? 0)
-  const date         = new Date(s.play_date + 'T12:00:00').toLocaleDateString('en-US', {
+  const date         = new Date(s.play_date.slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', {
     weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
   })
 
