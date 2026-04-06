@@ -76,9 +76,14 @@ export default function Rules() {
         <section>
           <h2 className="text-xl font-semibold text-green-800 mb-2">Season Score</h2>
           <p className="text-sm text-gray-600 mb-2">
-            Your <strong>season score</strong> is based on your top 5 rounds, multiplied by a participation factor:
+            Your <strong>season score</strong> is based on your top 5 rounds, multiplied by a participation factor,
+            plus an improvement bonus:
           </p>
-          <div className="grid grid-cols-5 gap-2 text-center text-sm">
+          <div className="bg-gray-50 rounded-lg p-4 font-mono text-xs mb-4 space-y-1">
+            <div>Season Score = (Top 5 Points × Participation Multiplier) + Improvement Bonus</div>
+          </div>
+          <p className="text-sm font-medium text-gray-700 mb-2">Participation multiplier:</p>
+          <div className="grid grid-cols-5 gap-2 text-center text-sm mb-4">
             {[
               { rounds: '1', mult: '×0.20' },
               { rounds: '2', mult: '×0.40' },
@@ -92,6 +97,23 @@ export default function Rules() {
                 <div className="font-bold text-green-700 mt-1">{mult}</div>
               </div>
             ))}
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900">
+            <h3 className="font-semibold mb-1">✨ Improvement Bonus (New for 2026)</h3>
+            <p className="mb-2">
+              Your handicap is tracked live throughout the season. Your <strong>first round</strong> locks
+              in your starting handicap. For every stroke your handicap drops from that starting point,
+              you earn <strong>+3 bonus points</strong> added directly to your season score.
+            </p>
+            <div className="bg-white rounded-lg p-3 font-mono text-xs">
+              <div>Improvement = Starting Handicap − Current Handicap</div>
+              <div>Bonus = Improvement × 3 pts &nbsp;(minimum 0)</div>
+            </div>
+            <p className="text-xs text-blue-700 mt-2">
+              Example: You start the season at handicap 18 and finish at 15 — that's 3 strokes improved
+              = +9 bonus points on your season score. There is no penalty if your handicap goes up.
+            </p>
           </div>
         </section>
 
