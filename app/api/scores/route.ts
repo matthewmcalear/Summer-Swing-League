@@ -109,7 +109,12 @@ export async function POST(request: Request) {
       },
     })
     await prisma.handicapHistory.create({
-      data: { member_id, handicap: handicapNum, score_id: score.id },
+      data: {
+        member_id,
+        handicap:    handicapNum,
+        score_id:    score.id,
+        recorded_at: new Date(play_date + 'T12:00:00'),  // use round date, not submission date
+      },
     })
 
     return NextResponse.json({ success: true, score }, { status: 201 })
