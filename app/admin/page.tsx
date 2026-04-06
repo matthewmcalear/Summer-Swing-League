@@ -167,7 +167,7 @@ function ScoreRow({ score, onSave, onDelete }: {
   return (
     <tr>
       <td className="px-4 py-3 whitespace-nowrap text-xs">
-        {new Date(score.play_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+        {new Date(score.play_date.slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
       </td>
       <td className="px-4 py-3 font-medium">{score.player_name}</td>
       <td className="px-4 py-3">{score.course_name}</td>
