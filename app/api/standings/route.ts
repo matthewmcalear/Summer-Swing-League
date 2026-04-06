@@ -17,13 +17,21 @@ export async function GET() {
         .filter((s) => s.member_id === member.id)
         .map((s)  => Number(s.total_points ?? 0))
 
-      const { seasonScore, totalPoints, topScores } = computeSeasonScore(memberPoints)
+      const { seasonScore, totalPoints, topScores, improvementBonus, handicapImprovement } =
+        computeSeasonScore(
+          memberPoints,
+          member.starting_handicap,
+          Number(member.current_handicap),
+        )
 
       return {
-        id:              member.id,
-        name:            member.full_name,
-        currentHandicap: Number(member.current_handicap),
-        totalRounds:     memberPoints.length,
+        id:                  member.id,
+        name:                member.full_name,
+        currentHandicap:     Number(member.current_handicap),
+        startingHandicap:    member.starting_handicap ?? null,
+        handicapImprovement,
+        improvementBonus,
+        totalRounds:         memberPoints.length,
         totalPoints,
         seasonScore,
         topScores,

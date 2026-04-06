@@ -98,10 +98,15 @@ export async function POST(request: Request) {
       },
     })
 
-    // Update member's current handicap + record history
+    // Update member's current handicap.
+    // If this is their first round, also lock in starting_handicap for improvement tracking.
+    const memberFresh = await prisma.member.findUnique({ where: { id: member_id } })
     await prisma.member.update({
       where: { id: member_id },
-      data:  { current_handicap: handicapNum },
+      data: {
+        current_handicap:  handicapNum,
+        ...(memberFresh?.starting_handicap == null ? { starting_handicap: handicapNum } : {}),
+      },
     })
     await prisma.handicapHistory.create({
       data: { member_id, handicap: handicapNum, score_id: score.id },

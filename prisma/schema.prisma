@@ -11,8 +11,9 @@ model Member {
   id               String   @id @default(uuid()) @db.Uuid
   full_name        String
   email            String   @unique
-  current_handicap Float    @default(0)
-  is_active        Boolean  @default(true)
+  current_handicap  Float    @default(0)
+  starting_handicap Float?           // Set on first score submission — used for improvement bonus
+  is_active         Boolean  @default(true)
   created_at       DateTime @default(now())
 
   scores           Score[]

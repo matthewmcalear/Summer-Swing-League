@@ -41,6 +41,9 @@ export interface StandingEntry {
   id: string
   name: string
   currentHandicap: number
+  startingHandicap: number | null
+  handicapImprovement: number
+  improvementBonus: number
   totalRounds: number
   totalPoints: number
   seasonScore: number

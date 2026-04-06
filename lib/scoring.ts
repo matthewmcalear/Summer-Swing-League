@@ -60,28 +60,50 @@ export function calculatePoints({
 }
 
 /**
- * Season standings algorithm (same as 2025):
+ * Season standings algorithm:
  * - Take each player's top 5 scores by total_points
  * - Sum them for totalPoints
- * - Apply a multiplier if they have fewer than 5 rounds:
+ * - Apply a participation multiplier if fewer than 5 rounds:
  *     1 round → ×0.2 | 2 → ×0.4 | 3 → ×0.6 | 4 → ×0.8 | 5+ → ×1.0
- * - seasonScore = totalPoints × multiplier
+ * - Add improvement bonus: (startingHandicap − currentHandicap) × 3
+ *   (minimum 0 — no penalty for getting worse)
+ * - seasonScore = (totalPoints × multiplier) + improvementBonus
  */
-export function computeSeasonScore(scores: number[]): {
-  seasonScore: number
-  totalPoints: number
-  topScores: number[]
+export const IMPROVEMENT_BONUS_PER_STROKE = 3
+
+export function computeSeasonScore(
+  scores: number[],
+  startingHandicap?: number | null,
+  currentHandicap?: number,
+): {
+  seasonScore:      number
+  totalPoints:      number
+  topScores:        number[]
+  improvementBonus: number
+  handicapImprovement: number
 } {
-  const sorted    = [...scores].sort((a, b) => b - a)
-  const best5     = sorted.slice(0, 5)
+  const sorted      = [...scores].sort((a, b) => b - a)
+  const best5       = sorted.slice(0, 5)
   const totalPoints = best5.reduce((s, v) => s + v, 0)
 
   const multipliers: Record<number, number> = { 1: 0.2, 2: 0.4, 3: 0.6, 4: 0.8 }
-  const multiplier = best5.length < 5 ? (multipliers[best5.length] ?? 0) : 1.0
+  const multiplier  = best5.length < 5 ? (multipliers[best5.length] ?? 0) : 1.0
+
+  const baseScore   = totalPoints * multiplier
+
+  // Improvement bonus — only applies once starting_handicap is set (after first round)
+  const improvement =
+    startingHandicap != null && currentHandicap != null
+      ? Math.max(0, startingHandicap - currentHandicap)
+      : 0
+
+  const improvementBonus = Math.round(improvement * IMPROVEMENT_BONUS_PER_STROKE * 100) / 100
 
   return {
-    seasonScore:  Math.round(totalPoints * multiplier * 100) / 100,
-    totalPoints:  Math.round(totalPoints * 100) / 100,
-    topScores:    best5,
+    seasonScore:         Math.round((baseScore + improvementBonus) * 100) / 100,
+    totalPoints:         Math.round(totalPoints * 100) / 100,
+    topScores:           best5,
+    improvementBonus,
+    handicapImprovement: Math.round(improvement * 10) / 10,
   }
 }
