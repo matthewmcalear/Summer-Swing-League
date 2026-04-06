@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import type { StandingEntry } from '@/types'
 
@@ -18,30 +19,40 @@ export default function Home() {
   return (
     <div className="space-y-8">
 
-      {/* ── HERO ── */}
-      <div className="hero p-8 sm:p-12 text-white relative">
-        <div className="relative z-10 max-w-3xl">
+      {/* ── HERO with Carling Lake background ── */}
+      <div className="relative rounded-2xl overflow-hidden shadow-xl" style={{ minHeight: '420px' }}>
+        {/* Background photo */}
+        <Image
+          src="/IMG_1002.jpeg"
+          alt="Carling Lake Golf Course"
+          fill
+          style={{ objectFit: 'cover', objectPosition: 'center' }}
+          priority
+        />
+        {/* Dark green overlay for readability */}
+        <div className="absolute inset-0" style={{
+          background: 'linear-gradient(135deg, rgba(10,40,15,0.82) 0%, rgba(15,60,25,0.65) 60%, rgba(0,0,0,0.3) 100%)'
+        }} />
 
-          {/* Season badge */}
+        {/* Content */}
+        <div className="relative z-10 p-8 sm:p-12 text-white max-w-3xl">
           <div className="mb-4 flex flex-wrap gap-2">
-            <span className="season-badge">🌿 Season 4 · 2026</span>
+            <span className="season-badge">🌿 Season 2 · 2026</span>
             <span className="season-badge">📅 Apr 15 – Oct 10</span>
             <span className="season-badge">💰 $475 in prizes</span>
           </div>
 
-          {/* Title */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-3 drop-shadow-lg">
             Summer Swing<br />
             <span style={{ color: '#86efac' }}>League</span>{' '}
             <span className="text-white/70">2026</span>
           </h1>
 
-          <p className="text-green-200 text-lg sm:text-xl mb-8 max-w-xl leading-relaxed">
+          <p className="text-green-100 text-lg sm:text-xl mb-8 max-w-xl leading-relaxed drop-shadow">
             Competitive group golf all summer long. Any course. Any skill level.
             Play more, earn more, win cash.
           </p>
 
-          {/* CTA buttons */}
           <div className="flex flex-wrap gap-3">
             <Link
               href="/submit-score"
@@ -59,16 +70,16 @@ export default function Home() {
             <Link
               href="/standings"
               className="px-6 py-3 rounded-xl font-bold text-sm transition-all shadow border border-white/20 hover:border-white/50"
-              style={{ background: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(8px)' }}
+              style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(8px)' }}
             >
               📊 Standings
             </Link>
           </div>
-        </div>
 
-        {/* Decorative flag pin — hidden on small screens */}
-        <div className="absolute right-10 top-1/2 -translate-y-1/2 hidden lg:block select-none pointer-events-none">
-          <div className="flag-pin">⛳</div>
+          {/* Photo credit */}
+          <p className="absolute bottom-3 right-4 text-white/40 text-xs italic">
+            Carling Lake Golf Club · 2025
+          </p>
         </div>
       </div>
 
@@ -148,6 +159,34 @@ export default function Home() {
             </table>
           </div>
         )}
+      </div>
+
+      {/* ── TOM'S MUD MOMENT ── */}
+      <div className="card overflow-hidden p-0">
+        <div className="flex flex-col sm:flex-row">
+          {/* Photo */}
+          <div className="relative sm:w-64 shrink-0" style={{ minHeight: '260px' }}>
+            <Image
+              src="/IMG_4202.jpeg"
+              alt="Tom McAlear after his famous lake incident"
+              fill
+              style={{ objectFit: 'cover', objectPosition: 'center top' }}
+            />
+          </div>
+          {/* Text */}
+          <div className="p-6 flex flex-col justify-center">
+            <div className="text-2xl mb-2">💀</div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">The Incident — 2025</h3>
+            <p className="text-gray-600 text-sm leading-relaxed mb-3">
+              Somewhere between the 14th tee and the 15th green, Tom McAlear discovered
+              that <em>not all water hazards are marked on the scorecard.</em> His ball was unplayable.
+              So was he. Legend has it his shoes are still somewhere in that lake.
+            </p>
+            <p className="text-xs text-gray-400 italic">
+              📸 Tom McAlear · Season 1 · 2025 — a moment that will not be forgotten
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* ── HOW IT WORKS ── */}
