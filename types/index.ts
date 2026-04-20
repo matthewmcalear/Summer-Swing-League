@@ -3,6 +3,7 @@ export interface Member {
   full_name: string
   email: string
   current_handicap: number
+  starting_handicap: number | null
   is_active: boolean
   created_at: string
 }

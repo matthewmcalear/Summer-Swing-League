@@ -62,7 +62,34 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
   if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
+    const existing = await prisma.score.findUnique({ where: { id: params.id } })
+    if (!existing) return NextResponse.json({ error: 'Score not found' }, { status: 404 })
+
     await prisma.score.delete({ where: { id: params.id } })
+
+    // After deletion, re-sync the member's handicap fields from remaining history
+    if (existing.member_id) {
+      const remaining = await prisma.handicapHistory.findMany({
+        where: { member_id: existing.member_id, score_id: { not: params.id } },
+        orderBy: { recorded_at: 'asc' },
+      })
+
+      if (remaining.length === 0) {
+        // No rounds left — reset handicap tracking entirely
+        await prisma.member.update({
+          where: { id: existing.member_id },
+          data: { starting_handicap: null, current_handicap: 0 },
+        })
+      } else {
+        // Restore current_handicap to the most recent remaining entry
+        const latest = remaining[remaining.length - 1]
+        await prisma.member.update({
+          where: { id: existing.member_id },
+          data: { current_handicap: latest.handicap },
+        })
+      }
+    }
+
     return NextResponse.json({ success: true })
   } catch (e) {
     console.error(e)

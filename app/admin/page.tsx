@@ -12,18 +12,20 @@ function MemberRow({ member, onSave, onDelete }: {
 }) {
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({
-    full_name:        member.full_name,
-    email:            member.email,
-    current_handicap: String(member.current_handicap),
+    full_name:          member.full_name,
+    email:              member.email,
+    current_handicap:   String(member.current_handicap),
+    starting_handicap:  member.starting_handicap != null ? String(member.starting_handicap) : '',
   })
   const [saving, setSaving] = useState(false)
 
   const save = async () => {
     setSaving(true)
     await onSave(member.id, {
-      full_name:        form.full_name,
-      email:            form.email,
-      current_handicap: Number(form.current_handicap),
+      full_name:         form.full_name,
+      email:             form.email,
+      current_handicap:  Number(form.current_handicap),
+      starting_handicap: form.starting_handicap === '' ? null : Number(form.starting_handicap),
     })
     setSaving(false)
     setEditing(false)
@@ -44,7 +46,12 @@ function MemberRow({ member, onSave, onDelete }: {
           <input className="form-input py-1 text-xs w-24" type="number" step="0.1" value={form.current_handicap}
             onChange={e => setForm(f => ({ ...f, current_handicap: e.target.value }))} />
         </td>
-        <td className="px-4 py-2 text-xs text-gray-400">—</td>
+        <td className="px-4 py-2">
+          <input className="form-input py-1 text-xs w-24" type="number" step="0.1" placeholder="(none)"
+            value={form.starting_handicap}
+            onChange={e => setForm(f => ({ ...f, starting_handicap: e.target.value }))} />
+          <div className="text-xs text-gray-400 mt-0.5">clear = no bonus</div>
+        </td>
         <td className="px-4 py-2 flex gap-2">
           <button onClick={save} disabled={saving} className="btn-primary text-xs px-3 py-1">
             {saving ? '…' : 'Save'}
@@ -60,6 +67,9 @@ function MemberRow({ member, onSave, onDelete }: {
       <td className="px-4 py-3 font-medium">{member.full_name}</td>
       <td className="px-4 py-3">{member.email}</td>
       <td className="px-4 py-3">{member.current_handicap}</td>
+      <td className="px-4 py-3 text-xs text-gray-400">
+        {member.starting_handicap != null ? member.starting_handicap : '—'}
+      </td>
       <td className="px-4 py-3 text-xs text-gray-400">
         {new Date(member.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
       </td>
@@ -260,6 +270,9 @@ export default function AdminPage() {
     if (!confirm('Delete this score?')) return
     await fetch(`/api/scores/${id}`, { method: 'DELETE' })
     setScores(prev => prev.filter(s => s.id !== id))
+    // Refresh members so handicap changes from the delete are reflected
+    const m = await fetch('/api/members').then(r => r.json())
+    setMembers(m)
   }
 
   if (!authed) {
@@ -324,7 +337,7 @@ export default function AdminPage() {
           <table className="w-full table-base">
             <thead>
               <tr>
-                <th>Name</th><th>Email</th><th>Handicap</th><th>Joined</th><th>Actions</th>
+                <th>Name</th><th>Email</th><th>Current HC</th><th>Starting HC</th><th>Joined</th><th>Actions</th>
               </tr>
             </thead>
             <tbody>

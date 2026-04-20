@@ -12,9 +12,10 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   try {
     const body = await request.json()
     const updates: Record<string, unknown> = {}
-    if (body.full_name        !== undefined) updates.full_name        = body.full_name
-    if (body.email            !== undefined) updates.email            = body.email.toLowerCase()
-    if (body.current_handicap !== undefined) updates.current_handicap = Number(body.current_handicap)
+    if (body.full_name          !== undefined) updates.full_name          = body.full_name
+    if (body.email              !== undefined) updates.email              = body.email.toLowerCase()
+    if (body.current_handicap   !== undefined) updates.current_handicap   = Number(body.current_handicap)
+    if (body.starting_handicap  !== undefined) updates.starting_handicap  = body.starting_handicap === null ? null : Number(body.starting_handicap)
 
     const member = await prisma.member.update({ where: { id: params.id }, data: updates })
     return NextResponse.json(member)
