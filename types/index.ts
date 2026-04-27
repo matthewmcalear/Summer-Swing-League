@@ -1,7 +1,7 @@
 export interface Member {
   id: string
   full_name: string
-  email: string
+  email?: string
   current_handicap: number
   starting_handicap: number | null
   is_active: boolean

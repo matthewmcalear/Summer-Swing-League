@@ -7,6 +7,14 @@ export async function GET() {
   try {
     const members = await prisma.member.findMany({
       orderBy: { full_name: 'asc' },
+      select: {
+        id: true,
+        full_name: true,
+        current_handicap: true,
+        starting_handicap: true,
+        is_active: true,
+        created_at: true,
+      },
     })
     return NextResponse.json(members)
   } catch (e) {

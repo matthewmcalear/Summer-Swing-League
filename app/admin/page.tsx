@@ -228,7 +228,7 @@ export default function AdminPage() {
   const fetchAll = async () => {
     setLoading(true)
     const [m, s] = await Promise.all([
-      fetch('/api/members').then(r => r.json()),
+      fetch('/api/admin/members').then(r => r.json()),
       fetch('/api/scores').then(r => r.json()),
     ])
     setMembers(m)
@@ -271,7 +271,7 @@ export default function AdminPage() {
     await fetch(`/api/scores/${id}`, { method: 'DELETE' })
     setScores(prev => prev.filter(s => s.id !== id))
     // Refresh members so handicap changes from the delete are reflected
-    const m = await fetch('/api/members').then(r => r.json())
+    const m = await fetch('/api/admin/members').then(r => r.json())
     setMembers(m)
   }
 
