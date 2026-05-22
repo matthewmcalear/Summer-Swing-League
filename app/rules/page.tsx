@@ -89,7 +89,7 @@ export default function Rules() {
             plus an improvement bonus:
           </p>
           <div className="bg-gray-50 rounded-lg p-4 font-mono text-xs mb-4 space-y-1">
-            <div>Season Score = (Top 5 Points × Participation Multiplier) + Improvement Bonus</div>
+            <div>Season Score = (Top 5 Points × Participation Multiplier) + Improvement Bonus + Event Bonuses</div>
           </div>
           <p className="text-sm font-medium text-gray-700 mb-2">Participation multiplier:</p>
           <div className="grid grid-cols-5 gap-2 text-center text-sm mb-4">
@@ -123,6 +123,33 @@ export default function Rules() {
               Example: You start the season at handicap 18 and finish at 15 — that's 3 strokes improved
               = +9 bonus points on your season score. There is no penalty if your handicap goes up.
             </p>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-900">
+            <h3 className="font-semibold mb-1">🏆 Tournament & Event Bonuses</h3>
+            <p className="mb-2">
+              Throughout the season the commissioner may organize special events — scrambles, invitationals,
+              or other formats that don't produce a regular individual score. Top finishers in these events
+              earn <strong>bonus points added directly to their SSL season score</strong>, bypassing the
+              normal round formula.
+            </p>
+            <p className="mb-3">
+              Bonus amounts are set by the commissioner before each event and announced in advance. All
+              awarded bonuses are listed on the <strong>Standings</strong> and <strong>Scores</strong> pages
+              with the player's name, point value, and reason — fully transparent to everyone in the league.
+            </p>
+            <div className="bg-white rounded-lg p-3 font-mono text-xs mb-3">
+              <div>Season Score = (Top 5 × Multiplier) + Improvement Bonus + Event Bonuses</div>
+            </div>
+            <div className="bg-amber-100 rounded-lg p-3 text-xs text-amber-800">
+              <p className="font-semibold mb-1">Example — Dan's Birthday Tournament 2026 (July 3rd)</p>
+              <p>Two-man scramble at Carling Lake. SSL season points awarded to the top three teams:</p>
+              <div className="flex gap-4 mt-1 font-semibold">
+                <span>🥇 1st — +5 pts</span>
+                <span>🥈 2nd — +3 pts</span>
+                <span>🥉 3rd — +1 pt</span>
+              </div>
+            </div>
           </div>
         </section>
 
