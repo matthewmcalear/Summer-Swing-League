@@ -25,7 +25,7 @@ export default function Standings() {
       <div>
         <h1 className="text-3xl font-bold text-gray-900">League Standings</h1>
         <p className="text-gray-500 mt-1 text-sm">
-          Season score = sum of best 5 rounds × participation multiplier + improvement bonus
+          Season score = sum of best 5 rounds × participation multiplier + improvement bonus + tournament bonuses
         </p>
       </div>
 
@@ -46,6 +46,7 @@ export default function Standings() {
                 <th className="px-3 py-3 text-left hidden sm:table-cell">Rnds</th>
                 <th className="px-3 py-3 text-left hidden md:table-cell">Top Pts</th>
                 <th className="px-3 py-3 text-left hidden md:table-cell">Improve ✨</th>
+                <th className="px-3 py-3 text-left hidden md:table-cell">Bonuses 🏆</th>
                 <th className="px-3 py-3 text-left">Score</th>
                 <th className="px-3 py-3 text-left hidden lg:table-cell">Best Rounds</th>
               </tr>
@@ -70,6 +71,9 @@ export default function Standings() {
                       {p.handicapImprovement > 0 && (
                         <div className="text-xs text-blue-600 font-medium">✨ −{p.handicapImprovement} hdcp improvement</div>
                       )}
+                      {p.seasonBonusPoints > 0 && (
+                        <div className="text-xs text-amber-600 font-medium">🏆 +{p.seasonBonusPoints.toFixed(1)} tournament bonus</div>
+                      )}
                     </div>
                   </td>
                   <td className="px-3 py-3 hidden sm:table-cell text-gray-600">{p.currentHandicap}</td>
@@ -82,6 +86,19 @@ export default function Standings() {
                       </span>
                     ) : p.startingHandicap == null ? (
                       <span className="text-gray-300 text-xs">no rounds yet</span>
+                    ) : (
+                      <span className="text-gray-300">—</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-3 hidden md:table-cell">
+                    {p.seasonBonuses.length > 0 ? (
+                      <div className="space-y-0.5">
+                        {p.seasonBonuses.map((b) => (
+                          <div key={b.id} className="text-amber-700 font-semibold text-xs">
+                            +{b.points} <span className="font-normal text-gray-500">{b.reason}</span>
+                          </div>
+                        ))}
+                      </div>
                     ) : (
                       <span className="text-gray-300">—</span>
                     )}
@@ -108,6 +125,11 @@ export default function Standings() {
           <strong>Improvement bonus ✨</strong><br />
           Every stroke your handicap drops from your first round earns
           +3 bonus points to your season score.
+        </div>
+        <div className="card bg-amber-50 border-amber-200 text-sm text-amber-800 sm:col-span-2">
+          <strong>Tournament bonuses 🏆</strong><br />
+          Special events (scrambles, invitationals, etc.) may award direct season bonus points
+          decided by the commissioner — shown individually on the standings for full transparency.
         </div>
       </div>
     </div>

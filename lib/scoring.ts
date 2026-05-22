@@ -76,12 +76,14 @@ export function computeSeasonScore(
   scores: number[],
   startingHandicap?: number | null,
   currentHandicap?: number,
+  seasonBonusPoints = 0,
 ): {
-  seasonScore:      number
-  totalPoints:      number
-  topScores:        number[]
-  improvementBonus: number
+  seasonScore:        number
+  totalPoints:        number
+  topScores:          number[]
+  improvementBonus:   number
   handicapImprovement: number
+  seasonBonusPoints:  number
 } {
   const sorted      = [...scores].sort((a, b) => b - a)
   const best5       = sorted.slice(0, 5)
@@ -99,12 +101,14 @@ export function computeSeasonScore(
       : 0
 
   const improvementBonus = Math.round(improvement * IMPROVEMENT_BONUS_PER_STROKE * 100) / 100
+  const bonusRounded     = Math.round(seasonBonusPoints * 100) / 100
 
   return {
-    seasonScore:         Math.round((baseScore + improvementBonus) * 100) / 100,
-    totalPoints:         Math.round(totalPoints * 100) / 100,
-    topScores:           best5,
+    seasonScore:          Math.round((baseScore + improvementBonus + bonusRounded) * 100) / 100,
+    totalPoints:          Math.round(totalPoints * 100) / 100,
+    topScores:            best5,
     improvementBonus,
-    handicapImprovement: Math.round(improvement * 10) / 10,
+    handicapImprovement:  Math.round(improvement * 10) / 10,
+    seasonBonusPoints:    bonusRounded,
   }
 }

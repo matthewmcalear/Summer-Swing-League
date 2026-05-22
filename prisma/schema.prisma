@@ -18,6 +18,7 @@ model Member {
 
   scores           Score[]
   handicap_history HandicapHistory[]
+  season_bonuses   SeasonBonus[]
 
   @@map("members")
 }
@@ -47,6 +48,19 @@ model Score {
   handicap_history HandicapHistory[]
 
   @@map("scores")
+}
+
+model SeasonBonus {
+  id           String   @id @default(uuid()) @db.Uuid
+  member_id    String   @db.Uuid
+  points       Float
+  reason       String
+  awarded_date DateTime @db.Date
+  created_at   DateTime @default(now())
+
+  member Member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+
+  @@map("season_bonuses")
 }
 
 model HandicapHistory {

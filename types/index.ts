@@ -38,6 +38,13 @@ export interface HandicapHistory {
   recorded_at: string
 }
 
+export interface SeasonBonus {
+  id: string
+  points: number
+  reason: string
+  awarded_date: string
+}
+
 export interface StandingEntry {
   id: string
   name: string
@@ -49,4 +56,6 @@ export interface StandingEntry {
   totalPoints: number
   seasonScore: number
   topScores: number[]
+  seasonBonusPoints: number
+  seasonBonuses: SeasonBonus[]
 }
