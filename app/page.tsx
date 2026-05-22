@@ -17,7 +17,7 @@ function TournamentBanner() {
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-0.5">
             <span className="text-xs font-bold uppercase tracking-wider text-amber-600 bg-amber-100 border border-amber-200 rounded-full px-2 py-0.5">Special Event</span>
-            <span className="text-xs text-amber-700 font-medium">July 1st Weekend · Carling Lake</span>
+            <span className="text-xs text-amber-700 font-medium">July 3rd · Carling Lake</span>
           </div>
           <p className="font-bold text-gray-900">Dan's Annual Birthday Golf Tournament</p>
           <p className="text-sm text-gray-600 mt-0.5">Two-man scramble · Hot Dog Rule · Shotgun Mulligans · SSL season points on the line</p>
