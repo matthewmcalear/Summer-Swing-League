@@ -18,6 +18,7 @@ export default function SubmitScore() {
   const [submitting, setSubmitting]       = useState(false)
   const [error, setError]                 = useState('')
   const [previewPoints, setPreviewPoints] = useState<number | null>(null)
+  const [courseSuggestions, setCourseSuggestions] = useState<string[]>([])
 
   const [form, setForm] = useState({
     member_id:        '',
@@ -35,6 +36,10 @@ export default function SubmitScore() {
     fetch('/api/members')
       .then((r) => r.json())
       .then((d: Member[]) => setMembers(d.filter((m) => m.is_active)))
+      .catch(() => {})
+    fetch('/api/courses')
+      .then((r) => r.json())
+      .then((d: string[]) => setCourseSuggestions(d))
       .catch(() => {})
   }, [])
 
@@ -203,13 +208,22 @@ export default function SubmitScore() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Course Name *</label>
           <input
+            list="course-suggestions"
             type="text"
             required
-            placeholder="e.g. Pebble Beach Golf Links"
+            placeholder="e.g. Carling Lake Golf Club"
             className="form-input"
             value={form.course_name}
             onChange={(e) => setForm({ ...form, course_name: e.target.value })}
           />
+          {courseSuggestions.length > 0 && (
+            <datalist id="course-suggestions">
+              {courseSuggestions.map((name) => <option key={name} value={name} />)}
+            </datalist>
+          )}
+          <p className="text-xs text-gray-400 mt-1">
+            Previously played courses will appear as suggestions.
+          </p>
         </div>
 
         {/* Difficulty */}

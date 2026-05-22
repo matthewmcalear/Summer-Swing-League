@@ -76,9 +76,9 @@ export default function NavBar() {
           </button>
         </div>
 
-        {/* Mobile menu */}
-        {open && (
-          <div className="md:hidden pb-3 space-y-0.5 border-t border-green-800 pt-2">
+        {/* Mobile menu — always rendered, animated via max-height */}
+        <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${open ? 'max-h-[30rem]' : 'max-h-0'}`}>
+          <div className="pb-3 space-y-0.5 border-t border-green-800 pt-2">
             {links.map(({ href, label }) => (
               <Link
                 key={href}
@@ -101,7 +101,7 @@ export default function NavBar() {
               Admin
             </Link>
           </div>
-        )}
+        </div>
       </div>
     </nav>
   )

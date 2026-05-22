@@ -4,6 +4,10 @@ import { calculatePoints } from '@/lib/scoring'
 
 export const dynamic = 'force-dynamic'
 
+function toTitleCase(str: string): string {
+  return str.trim().split(/\s+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
+}
+
 export async function GET() {
   try {
     const scores = await prisma.score.findMany({
@@ -83,7 +87,7 @@ export async function POST(request: Request) {
         holes:                 holesNum,
         gross_score:           grossNum,
         handicap_used:         handicapNum,
-        course_name:           course_name.trim(),
+        course_name:           toTitleCase(course_name),
         course_difficulty,
         difficulty_multiplier: difficultyMultiplier,
         group_member_ids:      otherIds,

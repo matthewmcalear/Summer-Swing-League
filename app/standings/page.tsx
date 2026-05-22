@@ -56,12 +56,19 @@ export default function Standings() {
                   <td className="px-3 py-3 font-bold text-base">{medalFor(i)}</td>
                   <td className="px-3 py-3">
                     <div className="font-semibold">{p.name}</div>
-                    {/* Mobile: show key stats under name */}
-                    <div className="sm:hidden text-xs text-gray-400 mt-0.5 flex flex-wrap gap-x-2">
-                      <span>Hdcp {p.currentHandicap}</span>
-                      <span>· {p.totalRounds} {p.totalRounds === 1 ? 'round' : 'rounds'}</span>
+                    {/* Mobile: key stats under name */}
+                    <div className="sm:hidden mt-1 space-y-0.5">
+                      <div className="text-xs text-gray-400 flex flex-wrap gap-x-2">
+                        <span>Hdcp {p.currentHandicap}</span>
+                        <span>· {p.totalRounds} {p.totalRounds === 1 ? 'round' : 'rounds'}</span>
+                      </div>
+                      {p.topScores.length > 0 && (
+                        <div className="text-xs text-gray-300">
+                          Top: {p.topScores.map((s) => s.toFixed(1)).join(' · ')}
+                        </div>
+                      )}
                       {p.handicapImprovement > 0 && (
-                        <span className="text-blue-600 font-medium">· ✨ −{p.handicapImprovement} hdcp</span>
+                        <div className="text-xs text-blue-600 font-medium">✨ −{p.handicapImprovement} hdcp improvement</div>
                       )}
                     </div>
                   </td>
