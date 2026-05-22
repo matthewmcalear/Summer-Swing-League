@@ -19,6 +19,7 @@ export default function SubmitScore() {
   const [error, setError]                 = useState('')
   const [previewPoints, setPreviewPoints] = useState<number | null>(null)
   const [courseSuggestions, setCourseSuggestions] = useState<string[]>([])
+  const [courseMode, setCourseMode] = useState<'select' | 'new'>('select')
 
   const [form, setForm] = useState({
     member_id:        '',
@@ -207,23 +208,46 @@ export default function SubmitScore() {
         {/* Course name */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Course Name *</label>
-          <input
-            list="course-suggestions"
-            type="text"
-            required
-            placeholder="e.g. Carling Lake Golf Club"
-            className="form-input"
-            value={form.course_name}
-            onChange={(e) => setForm({ ...form, course_name: e.target.value })}
-          />
-          {courseSuggestions.length > 0 && (
-            <datalist id="course-suggestions">
-              {courseSuggestions.map((name) => <option key={name} value={name} />)}
-            </datalist>
+          {courseMode === 'select' ? (
+            <select
+              required
+              className="form-input"
+              value={form.course_name}
+              onChange={(e) => {
+                if (e.target.value === '__new__') {
+                  setCourseMode('new')
+                  setForm({ ...form, course_name: '' })
+                } else {
+                  setForm({ ...form, course_name: e.target.value })
+                }
+              }}
+            >
+              <option value="">Select a course…</option>
+              {courseSuggestions.map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+              <option value="__new__">+ Add new course…</option>
+            </select>
+          ) : (
+            <div className="space-y-2">
+              <input
+                type="text"
+                required
+                autoFocus
+                placeholder="Enter new course name"
+                className="form-input"
+                value={form.course_name}
+                onChange={(e) => setForm({ ...form, course_name: e.target.value })}
+              />
+              <button
+                type="button"
+                className="text-sm text-green-700 hover:underline"
+                onClick={() => { setCourseMode('select'); setForm({ ...form, course_name: '' }) }}
+              >
+                ← Back to course list
+              </button>
+            </div>
           )}
-          <p className="text-xs text-gray-400 mt-1">
-            Previously played courses will appear as suggestions.
-          </p>
         </div>
 
         {/* Difficulty */}

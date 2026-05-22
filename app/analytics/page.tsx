@@ -63,16 +63,19 @@ interface Analytics {
 
 const lineOpts = {
   responsive: true,
+  aspectRatio: 1.4,
   plugins: { legend: { position: 'bottom' as const } },
   scales: { y: { beginAtZero: false } },
 }
 const barOpts = {
   responsive: true,
+  aspectRatio: 1.4,
   plugins: { legend: { position: 'bottom' as const } },
   scales: { y: { beginAtZero: true } },
 }
 const donutOpts = {
   responsive: true,
+  aspectRatio: 1.2,
   plugins: { legend: { position: 'bottom' as const } },
 }
 
@@ -250,7 +253,7 @@ function OverviewTab({ data, selected, setSelected }: {
 
         <div className="card">
           <h2 className="text-base font-bold text-gray-900 mb-4">📊 Round Breakdown</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
               <p className="text-xs text-center text-gray-500 mb-2">9 vs 18 Holes</p>
               <Doughnut data={holesData} options={donutOpts} />
