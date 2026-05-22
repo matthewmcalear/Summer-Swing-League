@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { Score } from '@/types'
+import type { Score, SeasonBonus } from '@/types'
 
 const DIFF_LABEL: Record<string, string> = { easy: 'Easy', average: 'Average', tough: 'Tough' }
 const DIFF_COLOR: Record<string, string> = {
@@ -155,46 +155,102 @@ function ScoreCard({ s }: { s: Score }) {
   )
 }
 
+function BonusCard({ b }: { b: SeasonBonus & { member_name: string } }) {
+  const date = new Date(b.awarded_date + 'T12:00:00').toLocaleDateString('en-US', {
+    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
+  })
+  return (
+    <div className="card p-0 overflow-hidden border-amber-200">
+      <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-amber-50/60">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="shrink-0 w-14 h-14 rounded-xl bg-amber-500 flex flex-col items-center justify-center shadow-sm">
+            <span className="text-white text-lg font-extrabold leading-none">+{b.points}</span>
+            <span className="text-amber-200 text-[10px] font-medium">pts</span>
+          </div>
+          <div className="min-w-0">
+            <div className="font-bold text-gray-900 truncate">{b.member_name}</div>
+            <div className="text-sm text-amber-700 font-medium truncate">🏆 {b.reason}</div>
+            <div className="text-xs text-gray-400 mt-0.5">{date}</div>
+          </div>
+        </div>
+        <span className="shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+          Season Bonus
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export default function ScoresPage() {
   const [scores, setScores]   = useState<Score[]>([])
+  const [bonuses, setBonuses] = useState<(SeasonBonus & { member_name: string })[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch]   = useState('')
   const [sortBy, setSortBy]   = useState<'date' | 'points' | 'player'>('date')
   const [playerFilter, setPlayerFilter] = useState<string>('all')
 
   useEffect(() => {
-    fetch('/api/scores')
-      .then((r) => r.json())
-      .then((d) => { setScores(d); setLoading(false) })
+    Promise.all([
+      fetch('/api/scores').then((r) => r.json()),
+      fetch('/api/season-bonuses').then((r) => r.json()),
+    ])
+      .then(([s, b]) => { setScores(s); setBonuses(b); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
 
-  // Unique player names for the filter
-  const players = Array.from(new Set(scores.map((s) => s.player_name))).sort()
+  // Unique player names for the filter (scores + bonuses)
+  const players = Array.from(new Set([
+    ...scores.map((s) => s.player_name),
+    ...bonuses.map((b) => b.member_name),
+  ])).sort()
 
-  const filtered = scores
-    .filter((s) => {
-      const q = search.toLowerCase()
-      const matchSearch =
-        !q ||
-        s.player_name.toLowerCase().includes(q) ||
-        s.course_name.toLowerCase().includes(q) ||
-        (s.notes ?? '').toLowerCase().includes(q)
-      const matchPlayer = playerFilter === 'all' || s.player_name === playerFilter
-      return matchSearch && matchPlayer
-    })
-    .sort((a, b) => {
-      if (sortBy === 'date')   return new Date(b.play_date).getTime() - new Date(a.play_date).getTime()
-      if (sortBy === 'points') return Number(b.total_points) - Number(a.total_points)
-      if (sortBy === 'player') return a.player_name.localeCompare(b.player_name)
-      return 0
-    })
+  const filteredScores = scores.filter((s) => {
+    const q = search.toLowerCase()
+    const matchSearch =
+      !q ||
+      s.player_name.toLowerCase().includes(q) ||
+      s.course_name.toLowerCase().includes(q) ||
+      (s.notes ?? '').toLowerCase().includes(q)
+    const matchPlayer = playerFilter === 'all' || s.player_name === playerFilter
+    return matchSearch && matchPlayer
+  })
 
-  // Summary stats for filtered set
-  const totalRounds   = filtered.length
-  const avgPts        = totalRounds ? Math.round(filtered.reduce((s, r) => s + Number(r.total_points), 0) / totalRounds * 10) / 10 : 0
-  const bestRound     = totalRounds ? Math.max(...filtered.map((r) => Number(r.total_points))) : 0
-  const withBonus     = filtered.filter((r) => Number(r.additional_points) > 0).length
+  const filteredBonuses = bonuses.filter((b) => {
+    const q = search.toLowerCase()
+    const matchSearch = !q || b.member_name.toLowerCase().includes(q) || b.reason.toLowerCase().includes(q)
+    const matchPlayer = playerFilter === 'all' || b.member_name === playerFilter
+    return matchSearch && matchPlayer
+  })
+
+  type ScoreItem = { kind: 'score'; data: Score; sortDate: number; sortPoints: number; sortPlayer: string }
+  type BonusItem = { kind: 'bonus'; data: SeasonBonus & { member_name: string }; sortDate: number; sortPoints: number; sortPlayer: string }
+  type Item = ScoreItem | BonusItem
+
+  const items: Item[] = [
+    ...filteredScores.map((s): ScoreItem => ({
+      kind: 'score', data: s,
+      sortDate:   new Date(s.play_date).getTime(),
+      sortPoints: Number(s.total_points),
+      sortPlayer: s.player_name,
+    })),
+    ...filteredBonuses.map((b): BonusItem => ({
+      kind: 'bonus', data: b,
+      sortDate:   new Date(b.awarded_date).getTime(),
+      sortPoints: b.points,
+      sortPlayer: b.member_name,
+    })),
+  ].sort((a, b) => {
+    if (sortBy === 'date')   return b.sortDate - a.sortDate
+    if (sortBy === 'points') return b.sortPoints - a.sortPoints
+    if (sortBy === 'player') return a.sortPlayer.localeCompare(b.sortPlayer)
+    return 0
+  })
+
+  // Summary stats
+  const totalRounds   = scores.length
+  const avgPts        = totalRounds ? Math.round(scores.reduce((s, r) => s + Number(r.total_points), 0) / totalRounds * 10) / 10 : 0
+  const bestRound     = totalRounds ? Math.max(...scores.map((r) => Number(r.total_points))) : 0
+  const withBonus     = scores.filter((r) => Number(r.additional_points) > 0).length
 
   return (
     <div className="space-y-6">
@@ -255,7 +311,7 @@ export default function ScoresPage() {
       {/* Results count when filtering */}
       {(search || playerFilter !== 'all') && (
         <p className="text-sm text-gray-500">
-          Showing {filtered.length} of {scores.length} rounds
+          Showing {items.length} of {scores.length + bonuses.length} entries
           {playerFilter !== 'all' && ` for ${playerFilter}`}
         </p>
       )}
@@ -265,13 +321,17 @@ export default function ScoresPage() {
         <div className="flex justify-center py-16">
           <div className="w-10 h-10 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
         </div>
-      ) : filtered.length === 0 ? (
+      ) : items.length === 0 ? (
         <div className="card text-center text-gray-500 py-16">
           {scores.length === 0 ? 'No rounds submitted yet.' : 'No rounds match your search.'}
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((s) => <ScoreCard key={s.id} s={s} />)}
+          {items.map((item) =>
+            item.kind === 'score'
+              ? <ScoreCard key={item.data.id} s={item.data} />
+              : <BonusCard key={item.data.id} b={item.data} />
+          )}
         </div>
       )}
     </div>
