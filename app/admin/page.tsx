@@ -198,14 +198,69 @@ function ScoreRow({ score, onSave, onDelete }: {
   )
 }
 
+// ── Course rename row ─────────────────────────────────────────────────────────
+function CourseRow({ name, count, onRename }: {
+  name: string
+  count: number
+  onRename: (oldName: string, newName: string) => Promise<void>
+}) {
+  const [editing, setEditing] = useState(false)
+  const [newName, setNewName] = useState(name)
+  const [saving, setSaving]   = useState(false)
+
+  const save = async () => {
+    if (!newName.trim()) return
+    setSaving(true)
+    await onRename(name, newName.trim())
+    setSaving(false)
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <tr className="bg-green-50">
+        <td className="px-4 py-2" colSpan={2}>
+          <input
+            autoFocus
+            className="form-input py-1 text-sm w-full"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && save()}
+          />
+        </td>
+        <td className="px-4 py-2 text-xs text-gray-400">{count} round{count !== 1 ? 's' : ''}</td>
+        <td className="px-4 py-2 flex gap-2">
+          <button onClick={save} disabled={saving} className="btn-primary text-xs px-3 py-1">
+            {saving ? '…' : `Rename all ${count}`}
+          </button>
+          <button onClick={() => { setEditing(false); setNewName(name) }} className="btn-secondary text-xs px-3 py-1">
+            Cancel
+          </button>
+        </td>
+      </tr>
+    )
+  }
+
+  return (
+    <tr>
+      <td className="px-4 py-3 font-medium">{name}</td>
+      <td className="px-4 py-3 text-gray-500 text-sm">{count} round{count !== 1 ? 's' : ''}</td>
+      <td className="px-4 py-3">
+        <button onClick={() => setEditing(true)} className="btn-secondary text-xs px-3 py-1">Rename</button>
+      </td>
+    </tr>
+  )
+}
+
 // ── Main admin page ────────────────────────────────────────────────────────────
 export default function AdminPage() {
   const [authed, setAuthed]   = useState(false)
   const [pw, setPw]           = useState('')
   const [pwErr, setPwErr]     = useState('')
-  const [tab, setTab]         = useState<'members' | 'scores'>('members')
+  const [tab, setTab]         = useState<'members' | 'scores' | 'courses'>('members')
   const [members, setMembers] = useState<Member[]>([])
   const [scores, setScores]   = useState<Score[]>([])
+  const [courses, setCourses] = useState<{ name: string; count: number }[]>([])
   const [loading, setLoading] = useState(false)
 
   const login = async (e: React.FormEvent) => {
@@ -227,13 +282,24 @@ export default function AdminPage() {
 
   const fetchAll = async () => {
     setLoading(true)
-    const [m, s] = await Promise.all([
+    const [m, s, c] = await Promise.all([
       fetch('/api/admin/members').then(r => r.json()),
       fetch('/api/scores').then(r => r.json()),
+      fetch('/api/admin/courses').then(r => r.json()),
     ])
     setMembers(m)
     setScores(s)
+    setCourses(Array.isArray(c) ? c : [])
     setLoading(false)
+  }
+
+  const renameCourse = async (oldName: string, newName: string) => {
+    await fetch('/api/admin/courses', {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ old_name: oldName, new_name: newName }),
+    })
+    await fetchAll()
   }
 
   const saveMember = async (id: string, data: Partial<Member>) => {
@@ -317,13 +383,17 @@ export default function AdminPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2">
-        {(['members', 'scores'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
-              tab === t ? 'bg-green-700 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+      <div className="flex gap-2 flex-wrap">
+        {([
+          { key: 'members', label: `Members (${members.length})` },
+          { key: 'scores',  label: `Scores (${scores.length})`  },
+          { key: 'courses', label: `Courses (${courses.length})` },
+        ] as const).map(({ key, label }) => (
+          <button key={key} onClick={() => setTab(key)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              tab === key ? 'bg-green-700 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
             }`}>
-            {t === 'members' ? `Members (${members.length})` : `Scores (${scores.length})`}
+            {label}
           </button>
         ))}
       </div>
@@ -347,7 +417,7 @@ export default function AdminPage() {
             </tbody>
           </table>
         </div>
-      ) : (
+      ) : tab === 'scores' ? (
         <div className="card overflow-x-auto p-0">
           <table className="w-full table-base">
             <thead>
@@ -363,6 +433,28 @@ export default function AdminPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm text-gray-500">
+            Rename a course to fix spelling variants — updates every score that uses that name at once.
+          </p>
+          <div className="card overflow-x-auto p-0">
+            <table className="w-full table-base">
+              <thead>
+                <tr>
+                  <th>Course Name</th><th>Rounds</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {courses.length === 0 ? (
+                  <tr><td colSpan={3} className="px-4 py-8 text-center text-gray-400">No rounds submitted yet.</td></tr>
+                ) : courses.map((c) => (
+                  <CourseRow key={c.name} name={c.name} count={c.count} onRename={renameCourse} />
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
