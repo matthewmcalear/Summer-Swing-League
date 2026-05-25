@@ -206,9 +206,9 @@ export default function MyBagClient({ members }: { members: Member[] }) {
         <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800">
           <p className="font-semibold mb-1">📐 How dispersion is calculated</p>
           <p className="text-xs leading-relaxed text-amber-700">
-            The ellipse is wider left/right than long/short — lateral spread dominates for most golfers.
-            Lateral semi-axis = distance × (0.06 + hdcp/54 × 0.18) × 1.5. At 150 yards: scratch ≈ ±12 yd L/R,
-            hdcp 20 ≈ ±25 yd L/R, hdcp 36 ≈ ±38 yd L/R. Shows roughly one standard deviation.
+            Calibrated to Arccos tracking data. Ellipse is wider left/right than long/short.
+            At 150 yards: scratch ≈ ±8 yd L/R / ±6 yd depth · hdcp 15 ≈ ±20 yd L/R / ±15 yd depth · hdcp 36 ≈ ±30 yd L/R / ±22 yd depth.
+            Direction misses dominate over distance misses for most golfers.
           </p>
         </div>
 

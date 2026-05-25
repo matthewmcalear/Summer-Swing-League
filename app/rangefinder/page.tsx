@@ -74,7 +74,7 @@ export default async function RangeFinderPage() {
             { icon: '🎯', title: 'Club recommendation', body: 'Set up your bag on the My Bag page with each club\'s stock yardage. Once saved, the rangefinder shows your best-fit club every time you drop a pin — using slope-adjusted distance when elevation is available.' },
             { icon: '◎', title: 'Dispersion circle', body: 'Tap "Dispersion OFF" below the info card to overlay a circle on the map showing your statistical shot spread. Drag the slider from tighter (low handicap) to wider to explore different skill scenarios.' },
             { icon: '⛰️', title: 'Play as yardage', body: 'When the target is uphill or downhill by more than 2 ft, a purple "play as" number appears. This is the slope-adjusted distance — the yardage you should actually club for, not the flat distance.' },
-            { icon: '📐', title: 'How dispersion is sized', body: 'Ellipse is wider left/right than long/short. Lateral semi-axis = distance × (0.06 + hdcp/54 × 0.18) × 1.5. At 150 yds: scratch ≈ ±12 yd L/R, hdcp 20 ≈ ±25 yd L/R, hdcp 36 ≈ ±38 yd L/R. Shows ~one standard deviation.' },
+            { icon: '📐', title: 'How dispersion is sized', body: 'Calibrated to Arccos tracking data. At 150 yds: scratch ≈ ±8 yd L/R / ±6 yd depth, hdcp 15 ≈ ±20 yd L/R / ±15 yd depth, hdcp 36 ≈ ±30 yd L/R / ±22 yd depth. Ellipse is wider left/right than long/short — direction misses dominate over distance misses for most golfers.' },
           ].map(({ icon, title, body }) => (
             <div key={title} className="flex gap-3 p-3 rounded-xl bg-gray-50">
               <span className="text-xl shrink-0">{icon}</span>

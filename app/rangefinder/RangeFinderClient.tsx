@@ -53,10 +53,6 @@ function offsetLatLon(lat: number, lon: number, br: number, distM: number): [num
   return [(lat2 * 180) / Math.PI, (lon2 * 180) / Math.PI]
 }
 
-// Dispersion is wider left/right than long/short for most golfers.
-// LATERAL = perpendicular to shot line (major axis), DISTANCE = along shot (minor axis).
-const DISP_LATERAL  = 1.5   // left/right spread multiplier
-const DISP_DISTANCE = 0.65  // long/short spread multiplier
 
 function ellipsePoints(
   centerLat: number, centerLon: number,
@@ -129,12 +125,14 @@ function recommendClub(targetYards: number, clubs: Club[]): { club: Club; diff: 
   return { club: best, diff: Math.round(targetYards - best.yards) }
 }
 
-// Base dispersion radius. Lateral semi-axis = this × DISP_LATERAL.
-// Calibrated so scratch at 150 yd → ±12 yd L/R (24 yd total);
-// hdcp 20 at 150 yd → ±25 yd L/R (50 yd total).
-function dispersionYards(yards: number, handicap: number): number {
-  const factor = 0.06 + (Math.min(Math.max(handicap, 0), 54) / 54) * 0.18
-  return yards * factor
+// Calibrated to Arccos tracking data. Semi-axes at 150 yd:
+//   scratch → lateral 7.5 yd, depth 6 yd
+//   hdcp 15 → lateral 20 yd, depth 15 yd
+function dispersionLateralYd(yards: number, hdcp: number): number {
+  return yards * (0.05 + (Math.min(Math.max(hdcp, 0), 54) / 54) * 0.30)
+}
+function dispersionDepthYd(yards: number, hdcp: number): number {
+  return yards * (0.04 + (Math.min(Math.max(hdcp, 0), 54) / 54) * 0.22)
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -310,19 +308,18 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
                 pathOptions={{ color: '#16a34a', weight: 2, dashArray: '8 6', opacity: 0.75 }}
               />
               {showDispersion && yards !== null && (() => {
-                const baseYd     = dispersionYards(yards, dispersionHcap)
-                const lateralYd  = baseYd * DISP_LATERAL   // wider axis, left/right
-                const distanceYd = baseYd * DISP_DISTANCE  // tighter axis, long/short
-                const lateralM   = lateralYd  * 0.9144
-                const distanceM  = distanceYd * 0.9144
+                const lateralYd  = dispersionLateralYd(yards, dispersionHcap)
+                const depthYd    = dispersionDepthYd(yards, dispersionHcap)
+                const lateralM   = lateralYd * 0.9144
+                const depthM     = depthYd   * 0.9144
                 const br         = bearingRad(userPos.lat, userPos.lon, targetPos.lat, targetPos.lon)
-                // br + π/2 rotates major axis to be perpendicular to shot (wider left/right)
-                const ellipsePts = ellipsePoints(targetPos.lat, targetPos.lon, lateralM, distanceM, br + Math.PI / 2)
-                // Labels sit at the shot-line (distance) axis ends
-                const shortPt  = offsetLatLon(targetPos.lat, targetPos.lon, br + Math.PI, distanceM)
-                const longPt   = offsetLatLon(targetPos.lat, targetPos.lon, br, distanceM)
-                const shortYd  = Math.max(0, Math.round(yards - distanceYd))
-                const longYd   = Math.round(yards + distanceYd)
+                // br + π/2 → major axis perpendicular to shot (wider left/right)
+                const ellipsePts = ellipsePoints(targetPos.lat, targetPos.lon, lateralM, depthM, br + Math.PI / 2)
+                // Labels at the depth (along-shot) axis ends
+                const shortPt  = offsetLatLon(targetPos.lat, targetPos.lon, br + Math.PI, depthM)
+                const longPt   = offsetLatLon(targetPos.lat, targetPos.lon, br, depthM)
+                const shortYd  = Math.max(0, Math.round(yards - depthYd))
+                const longYd   = Math.round(yards + depthYd)
                 return (
                   <>
                     <Polygon
@@ -481,7 +478,7 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
               <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-0.5 tabular-nums ml-auto">
                 {dispersionHcap === 0 ? 'Scratch' : `Hdcp ${dispersionHcap}`}
                 <span className="text-amber-500 font-normal hidden sm:inline">
-                  {' · ±'}{Math.round(dispersionYards(yards, dispersionHcap) * DISP_LATERAL)} yd L/R
+                  {' · ±'}{Math.round(dispersionLateralYd(yards, dispersionHcap))} yd L/R · ±{Math.round(dispersionDepthYd(yards, dispersionHcap))} yd depth
                 </span>
               </span>
             )}
