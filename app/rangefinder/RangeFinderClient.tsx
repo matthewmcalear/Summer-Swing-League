@@ -252,109 +252,6 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
         </div>
       )}
 
-      {/* ── Info card ─────────────────────────────────────────────────────── */}
-      {yards !== null ? (
-        <div className="card py-3">
-          <div className="flex items-center justify-between gap-3">
-            {/* Stats row — wraps freely without displacing the button */}
-            <div className="flex flex-wrap items-center gap-4 sm:gap-8 flex-1 min-w-0">
-
-              <div className="text-center">
-                <div className="text-5xl font-extrabold text-green-700 tabular-nums">{Math.round(yards)}</div>
-                <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">yards</div>
-              </div>
-
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-700 tabular-nums">{Math.round(yards * 0.9144)}</div>
-                <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">meters</div>
-              </div>
-
-              {elevDiff !== null && (
-                <>
-                  <div className="text-center">
-                    <div className={`text-2xl font-bold tabular-nums ${elevDiff > 2 ? 'text-red-500' : elevDiff < -2 ? 'text-blue-500' : 'text-gray-500'}`}>
-                      {elevDiff > 2 ? '↑' : elevDiff < -2 ? '↓' : '→'} {Math.abs(Math.round(elevDiff))} ft
-                    </div>
-                    <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">
-                      {elevDiff > 2 ? 'uphill' : elevDiff < -2 ? 'downhill' : 'flat'}
-                    </div>
-                  </div>
-                  {Math.abs(elevDiff) > 2 && (
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-purple-600 tabular-nums">
-                        {Math.round(yards + elevDiff / 3)}
-                      </div>
-                      <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">play as (yd)</div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {clubRec && (
-                <div className="text-center">
-                  <div className="text-lg font-extrabold text-green-800 leading-tight">{clubRec.club.club_name}</div>
-                  <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mt-0.5">
-                    {clubRec.diff === 0 ? 'perfect' : clubRec.diff > 0 ? `+${clubRec.diff} over` : `${clubRec.diff} under`}
-                  </div>
-                </div>
-              )}
-
-              {elevLoading && (
-                <div className="text-xs text-gray-400 flex items-center gap-1.5">
-                  <div className="w-3 h-3 border border-gray-300 border-t-gray-500 rounded-full animate-spin" />
-                  elevation…
-                </div>
-              )}
-            </div>
-
-            {/* Clear button — always pinned to the right, never pushed to a new line */}
-            <button onClick={clearPin} className="shrink-0 btn-secondary text-xs px-3 py-1.5">
-              ✕ Clear
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="rounded-2xl border border-dashed border-gray-300 bg-white/60 py-3 text-sm text-gray-400 text-center">
-          Tap anywhere on the map to drop a pin and measure distance
-        </div>
-      )}
-
-      {/* ── Dispersion control bar ────────────────────────────────────────── */}
-      {yards !== null && (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-2.5 space-y-2">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowDispersion((d) => !d)}
-              className={`flex items-center gap-1.5 font-semibold text-xs px-2.5 py-1.5 rounded-lg transition-colors shrink-0 ${
-                showDispersion ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'text-gray-500 hover:bg-gray-100 border border-transparent'
-              }`}
-            >
-              ◎ Dispersion {showDispersion ? 'ON' : 'OFF'}
-            </button>
-            {showDispersion && (
-              <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-0.5 tabular-nums ml-auto">
-                {dispersionHcap === 0 ? 'Scratch' : `Hdcp ${dispersionHcap}`}
-                <span className="text-amber-500 font-normal hidden sm:inline"> · ≈{Math.round(dispersionYards(yards, dispersionHcap))} yd</span>
-              </span>
-            )}
-          </div>
-          {showDispersion && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400 shrink-0">Tighter</span>
-              <input
-                type="range"
-                min={0}
-                max={54}
-                value={dispersionHcap}
-                onChange={(e) => setDispersionHcap(Number(e.target.value))}
-                className="flex-1 accent-amber-500"
-              />
-              <span className="text-xs text-gray-400 shrink-0">Wider</span>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* ── Map ───────────────────────────────────────────────────────────── */}
       <div
         className="relative rounded-2xl overflow-hidden shadow-md border border-gray-200"
@@ -471,6 +368,107 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
         {userElev != null && ` · Your elevation ${Math.round(userElev * 3.28084)} ft`}
         {gpsError && <span className="text-amber-500 ml-2">⚠ {gpsError}</span>}
       </p>
+
+      {/* ── Info card ─────────────────────────────────────────────────────── */}
+      {yards !== null ? (
+        <div className="card py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-4 sm:gap-8 flex-1 min-w-0">
+
+              <div className="text-center">
+                <div className="text-5xl font-extrabold text-green-700 tabular-nums">{Math.round(yards)}</div>
+                <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">yards</div>
+              </div>
+
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-700 tabular-nums">{Math.round(yards * 0.9144)}</div>
+                <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">meters</div>
+              </div>
+
+              {elevDiff !== null && (
+                <>
+                  <div className="text-center">
+                    <div className={`text-2xl font-bold tabular-nums ${elevDiff > 2 ? 'text-red-500' : elevDiff < -2 ? 'text-blue-500' : 'text-gray-500'}`}>
+                      {elevDiff > 2 ? '↑' : elevDiff < -2 ? '↓' : '→'} {Math.abs(Math.round(elevDiff))} ft
+                    </div>
+                    <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">
+                      {elevDiff > 2 ? 'uphill' : elevDiff < -2 ? 'downhill' : 'flat'}
+                    </div>
+                  </div>
+                  {Math.abs(elevDiff) > 2 && (
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600 tabular-nums">
+                        {Math.round(yards + elevDiff / 3)}
+                      </div>
+                      <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">play as (yd)</div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {clubRec && (
+                <div className="text-center">
+                  <div className="text-lg font-extrabold text-green-800 leading-tight">{clubRec.club.club_name}</div>
+                  <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mt-0.5">
+                    {clubRec.diff === 0 ? 'perfect' : clubRec.diff > 0 ? `+${clubRec.diff} over` : `${clubRec.diff} under`}
+                  </div>
+                </div>
+              )}
+
+              {elevLoading && (
+                <div className="text-xs text-gray-400 flex items-center gap-1.5">
+                  <div className="w-3 h-3 border border-gray-300 border-t-gray-500 rounded-full animate-spin" />
+                  elevation…
+                </div>
+              )}
+            </div>
+
+            <button onClick={clearPin} className="shrink-0 btn-secondary text-xs px-3 py-1.5">
+              ✕ Clear
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-gray-300 bg-white/60 py-3 text-sm text-gray-400 text-center">
+          Tap anywhere on the map to drop a pin and measure distance
+        </div>
+      )}
+
+      {/* ── Dispersion control bar ────────────────────────────────────────── */}
+      {yards !== null && (
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-2.5 space-y-2">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowDispersion((d) => !d)}
+              className={`flex items-center gap-1.5 font-semibold text-xs px-2.5 py-1.5 rounded-lg transition-colors shrink-0 ${
+                showDispersion ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'text-gray-500 hover:bg-gray-100 border border-transparent'
+              }`}
+            >
+              ◎ Dispersion {showDispersion ? 'ON' : 'OFF'}
+            </button>
+            {showDispersion && (
+              <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-0.5 tabular-nums ml-auto">
+                {dispersionHcap === 0 ? 'Scratch' : `Hdcp ${dispersionHcap}`}
+                <span className="text-amber-500 font-normal hidden sm:inline"> · ≈{Math.round(dispersionYards(yards, dispersionHcap))} yd</span>
+              </span>
+            )}
+          </div>
+          {showDispersion && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400 shrink-0">Tighter</span>
+              <input
+                type="range"
+                min={0}
+                max={54}
+                value={dispersionHcap}
+                onChange={(e) => setDispersionHcap(Number(e.target.value))}
+                className="flex-1 accent-amber-500"
+              />
+              <span className="text-xs text-gray-400 shrink-0">Wider</span>
+            </div>
+          )}
+        </div>
+      )}
     </>
   )
 }
