@@ -273,7 +273,7 @@ export default function ScoresClient({ scores, bonuses }: Props) {
           placeholder="Search player, course, notes…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="form-input flex-1"
+          className="form-input flex-1 sm:text-base sm:py-3 sm:px-4"
         />
         <select
           value={playerFilter}
