@@ -393,9 +393,12 @@ function OverviewTab({ data, selected, setSelected }: {
 }
 
 // ── Player Profile Tab ─────────────────────────────────────────────────────────
-function PlayerTab({ data }: { data: Analytics }) {
+function PlayerTab({ data, initialPlayerId }: { data: Analytics; initialPlayerId?: string }) {
   const withScores = data.playerTimelines.filter((p) => p.scores.length > 0)
-  const [selectedId, setSelectedId] = useState(withScores[0]?.id ?? '')
+  const defaultId  = (initialPlayerId && withScores.find((p) => p.id === initialPlayerId))
+    ? initialPlayerId
+    : withScores[0]?.id ?? ''
+  const [selectedId, setSelectedId] = useState(defaultId)
 
   const player = data.playerTimelines.find((p) => p.id === selectedId)
   if (!player || player.scores.length === 0) return (
@@ -753,8 +756,17 @@ function CompareTab({ data }: { data: Analytics }) {
 }
 
 // ── Main Client Shell ──────────────────────────────────────────────────────────
-export default function AnalyticsClient({ data }: { data: Analytics }) {
-  const [tab, setTab]         = useState<Tab>('overview')
+export default function AnalyticsClient({
+  data,
+  initialTab,
+  initialPlayerId,
+}: {
+  data: Analytics
+  initialTab?: string
+  initialPlayerId?: string
+}) {
+  const validTabs: Tab[] = ['overview', 'player', 'compare']
+  const [tab, setTab]           = useState<Tab>(validTabs.includes(initialTab as Tab) ? (initialTab as Tab) : 'overview')
   const [selected, setSelected] = useState<string[]>(() => data.playerTimelines.map((p) => p.id))
 
   const withScores = data.playerTimelines.filter((p) => p.scores.length > 0)
@@ -792,7 +804,7 @@ export default function AnalyticsClient({ data }: { data: Analytics }) {
       </div>
 
       {tab === 'overview' && <OverviewTab data={data} selected={selected} setSelected={setSelected} />}
-      {tab === 'player'   && <PlayerTab   data={data} />}
+      {tab === 'player'   && <PlayerTab   data={data} initialPlayerId={initialPlayerId} />}
       {tab === 'compare'  && <CompareTab  data={data} />}
     </div>
   )

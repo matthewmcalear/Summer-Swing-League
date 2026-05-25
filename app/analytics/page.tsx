@@ -4,7 +4,11 @@ import AnalyticsClient, { type Analytics } from './AnalyticsClient'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AnalyticsPage() {
+export default async function AnalyticsPage({
+  searchParams,
+}: {
+  searchParams: Record<string, string>
+}) {
   const [members, scores] = await Promise.all([
     prisma.member.findMany({ where: { is_active: true }, orderBy: { full_name: 'asc' } }),
     prisma.score.findMany({ orderBy: { play_date: 'asc' } }),
@@ -113,5 +117,5 @@ export default async function AnalyticsPage() {
     maxPoints:   Math.round(maxPoints * 10) / 10,
   }
 
-  return <AnalyticsClient data={data} />
+  return <AnalyticsClient data={data} initialTab={searchParams.tab} initialPlayerId={searchParams.id} />
 }

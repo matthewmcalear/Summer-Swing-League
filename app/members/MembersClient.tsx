@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import type { Member, HandicapHistory } from '@/types'
 
 export default function MembersClient({ members }: { members: Member[] }) {
@@ -28,7 +29,12 @@ export default function MembersClient({ members }: { members: Member[] }) {
           <div key={m.id} className="card space-y-3">
             <div className="flex items-start justify-between">
               <div>
-                <div className="font-semibold text-gray-900">{m.full_name}</div>
+                <Link
+                  href={`/analytics?tab=player&id=${m.id}`}
+                  className="font-semibold text-gray-900 hover:text-green-700 hover:underline transition-colors"
+                >
+                  {m.full_name}
+                </Link>
               </div>
               <div className="text-right">
                 <div className="text-xs text-gray-400">Handicap</div>
