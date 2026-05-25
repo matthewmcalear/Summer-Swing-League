@@ -185,10 +185,11 @@ function OverviewTab({ data, selected, setSelected }: {
   data: Analytics; selected: string[]; setSelected: (ids: string[]) => void
 }) {
   // sorted by season standing so bar charts mirror the leaderboard
-  const active      = data.playerTimelines
+  const active           = data.playerTimelines
     .filter((p) => selected.includes(p.id))
     .sort((a, b) => b.seasonScore - a.seasonScore)
-  const withScores  = data.playerTimelines.filter((p) => p.scores.length > 0)
+  const activeWithScores = active.filter((p) => p.scores.length > 0)
+  const withScores       = data.playerTimelines.filter((p) => p.scores.length > 0)
   const withScoresByStanding = [...withScores].sort((a, b) => b.seasonScore - a.seasonScore)
 
   const allDates = Array.from(new Set(
@@ -197,7 +198,7 @@ function OverviewTab({ data, selected, setSelected }: {
 
   const cumulativeData = {
     labels: allDates,
-    datasets: active.map((p) => {
+    datasets: activeWithScores.map((p) => {
       let running = 0
       const byDate: Record<string, number> = {}
       p.scores.forEach((s) => { byDate[s.date.slice(0, 10)] = s.totalPoints })
@@ -226,16 +227,16 @@ function OverviewTab({ data, selected, setSelected }: {
   }
 
   const roundBarData = {
-    labels: active.map((p) => p.name.split(' ')[0]),
+    labels: activeWithScores.map((p) => p.name.split(' ')[0]),
     datasets: [
       {
         label: 'Best Round',
-        data:  active.map((p) => p.scores.length ? Math.max(...p.scores.map((s) => s.totalPoints)) : 0),
+        data:  activeWithScores.map((p) => Math.max(...p.scores.map((s) => s.totalPoints))),
         backgroundColor: '#15803d',
       },
       {
         label: 'Avg Round',
-        data:  active.map((p) => p.avgPoints || 0),
+        data:  activeWithScores.map((p) => p.avgPoints),
         backgroundColor: '#86efac',
       },
     ],
