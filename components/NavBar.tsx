@@ -12,6 +12,7 @@ const links = [
   { href: '/analytics',    label: 'Analytics'    },
   { href: '/members',      label: 'Members'      },
   { href: '/rangefinder',  label: 'Rangefinder' },
+  { href: '/my-bag',       label: 'My Bag'      },
   { href: '/rules',        label: 'Rules'        },
   { href: '/about',        label: 'About'        },
 ]

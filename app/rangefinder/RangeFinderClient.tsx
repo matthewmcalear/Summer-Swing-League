@@ -67,6 +67,21 @@ function ClickHandler({ onMapClick }: { onMapClick: (lat: number, lon: number) =
   return null
 }
 
+// ── Club recommendation ────────────────────────────────────────────────────────
+
+interface Club { id: string; club_name: string; yards: number }
+
+function recommendClub(targetYards: number, clubs: Club[]): { club: Club; diff: number } | null {
+  if (!clubs.length) return null
+  let best = clubs[0]
+  let bestDiff = Math.abs(clubs[0].yards - targetYards)
+  for (const c of clubs) {
+    const d = Math.abs(c.yards - targetYards)
+    if (d < bestDiff) { bestDiff = d; best = c }
+  }
+  return { club: best, diff: Math.round(targetYards - best.yards) }
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 
 type Pos = { lat: number; lon: number }
@@ -79,6 +94,17 @@ export default function RangeFinderClient() {
   const [targetElev, setTargetElev] = useState<number | null>(null)
   const [gpsError,   setGpsError]   = useState<string | null>(null)
   const [elevLoading, setElevLoading] = useState(false)
+  const [bagClubs,   setBagClubs]   = useState<Club[]>([])
+
+  // Load bag clubs from localStorage member selection
+  useEffect(() => {
+    const memberId = localStorage.getItem('ssl_member_id')
+    if (!memberId) return
+    fetch(`/api/my-bag?memberId=${memberId}`)
+      .then((r) => r.json())
+      .then((clubs) => { if (Array.isArray(clubs)) setBagClubs(clubs) })
+      .catch(() => {})
+  }, [])
 
   // GPS watch
   useEffect(() => {
@@ -118,6 +144,10 @@ export default function RangeFinderClient() {
   const yards    = userPos && targetPos ? haversineYards(userPos.lat, userPos.lon, targetPos.lat, targetPos.lon) : null
   const deg      = userPos && targetPos ? bearingDeg(userPos.lat, userPos.lon, targetPos.lat, targetPos.lon) : null
   const elevDiff = userElev != null && targetElev != null ? (targetElev - userElev) * 3.28084 : null
+  const playAs   = yards != null && elevDiff != null && Math.abs(elevDiff) > 2
+    ? Math.round(yards + elevDiff / 3)
+    : yards != null ? Math.round(yards) : null
+  const clubRec  = playAs != null ? recommendClub(playAs, bagClubs) : null
 
   // ── Loading / error states ─────────────────────────────────────────────────
 
@@ -201,6 +231,15 @@ export default function RangeFinderClient() {
                     </div>
                   )}
                 </>
+              )}
+
+              {clubRec && (
+                <div className="text-center">
+                  <div className="text-lg font-extrabold text-green-800 leading-tight">{clubRec.club.club_name}</div>
+                  <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mt-0.5">
+                    {clubRec.diff === 0 ? 'perfect' : clubRec.diff > 0 ? `+${clubRec.diff} over` : `${clubRec.diff} under`}
+                  </div>
+                </div>
               )}
 
               {elevLoading && (

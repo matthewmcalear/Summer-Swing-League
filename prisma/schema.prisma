@@ -19,6 +19,7 @@ model Member {
   scores           Score[]
   handicap_history HandicapHistory[]
   season_bonuses   SeasonBonus[]
+  club_yardages    ClubYardage[]
 
   @@map("members")
 }
@@ -74,4 +75,17 @@ model HandicapHistory {
   score  Score?  @relation(fields: [score_id], references: [id], onDelete: SetNull)
 
   @@map("handicap_history")
+}
+
+model ClubYardage {
+  id         String   @id @default(uuid()) @db.Uuid
+  member_id  String   @db.Uuid
+  club_name  String
+  yards      Int
+  created_at DateTime @default(now())
+
+  member Member @relation(fields: [member_id], references: [id], onDelete: Cascade)
+
+  @@unique([member_id, club_name])
+  @@map("club_yardages")
 }

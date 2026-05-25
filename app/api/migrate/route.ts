@@ -21,5 +21,18 @@ export async function GET(request: Request) {
   `)
   applied.push('members.starting_handicap (nullable)')
 
+  // Create club_yardages table for My Bag feature
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS club_yardages (
+      id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      member_id  UUID NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+      club_name  TEXT NOT NULL,
+      yards      INTEGER NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      UNIQUE (member_id, club_name)
+    )
+  `)
+  applied.push('club_yardages table')
+
   return NextResponse.json({ success: true, applied })
 }

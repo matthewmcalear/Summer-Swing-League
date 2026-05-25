@@ -129,7 +129,7 @@ export default function Home() {
         }} />
 
         {/* Content */}
-        <div className="relative z-10 p-8 pb-20 sm:pb-12 sm:p-12 text-white max-w-3xl">
+        <div className="relative z-10 p-8 sm:p-12 text-white max-w-3xl">
           <div className="mb-4 flex flex-wrap gap-2">
             <span className="season-badge">🌿 Season 2 · 2026</span>
             <span className="season-badge">📅 Apr 15 – Oct 10</span>
@@ -147,7 +147,7 @@ export default function Home() {
             Play more, earn more, win cash.
           </p>
 
-          <div className="flex flex-wrap gap-3 pr-28 sm:pr-0">
+          <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/submit-score"
               className="px-6 py-3 bg-white text-green-900 rounded-xl font-bold text-sm hover:bg-green-50 transition-all shadow-lg hover:shadow-xl"
@@ -168,27 +168,23 @@ export default function Home() {
             >
               📊 Standings
             </Link>
+            <span className="hidden sm:block w-px h-6 bg-white/20" />
+            <Link
+              href="/rangefinder"
+              className="flex items-center gap-1.5 text-white/60 hover:text-white text-sm font-semibold transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <circle cx="12" cy="12" r="7"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
+                <line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>
+                <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+              </svg>
+              Rangefinder
+            </Link>
           </div>
 
         </div>
 
-        {/* GPS rangefinder quick-access — top-right */}
-        <Link
-          href="/rangefinder"
-          className="absolute bottom-4 right-4 z-10 flex flex-col items-center gap-1 bg-black/35 hover:bg-black/55 backdrop-blur rounded-2xl px-4 py-3 text-white border border-white/20 hover:border-white/40 transition-all"
-        >
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-            <circle cx="12" cy="12" r="7"/>
-            <line x1="12" y1="2" x2="12" y2="5"/>
-            <line x1="12" y1="19" x2="12" y2="22"/>
-            <line x1="2" y1="12" x2="5" y2="12"/>
-            <line x1="19" y1="12" x2="22" y2="12"/>
-            <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
-          </svg>
-          <span className="text-xs font-semibold tracking-wide">Rangefinder</span>
-        </Link>
-
-        {/* Photo credit — pinned to bottom-right of the hero container */}
+        {/* Photo credit — pinned to bottom-left of the hero container */}
         <p className="absolute bottom-3 left-4 z-10 text-white/40 text-xs italic">
           Carling Lake Golf Club · 2025
         </p>
