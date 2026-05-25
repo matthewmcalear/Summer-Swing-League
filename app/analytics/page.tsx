@@ -9,9 +9,10 @@ export default async function AnalyticsPage({
 }: {
   searchParams: Record<string, string>
 }) {
-  const [members, scores] = await Promise.all([
+  const [members, scores, allClubs] = await Promise.all([
     prisma.member.findMany({ where: { is_active: true }, orderBy: { full_name: 'asc' } }),
     prisma.score.findMany({ orderBy: { play_date: 'asc' } }),
+    prisma.clubYardage.findMany({ orderBy: { yards: 'desc' } }),
   ])
 
   if (scores.length === 0) {
@@ -105,6 +106,16 @@ export default async function AnalyticsPage({
   const avgPoints = allPoints.length ? allPoints.reduce((a, b) => a + b, 0) / allPoints.length : 0
   const maxPoints = allPoints.length ? Math.max(...allPoints) : 0
 
+  const bags = members
+    .map((m) => ({
+      memberId:   m.id,
+      memberName: m.full_name,
+      clubs: allClubs
+        .filter((c) => c.member_id === m.id)
+        .map((c) => ({ club_name: c.club_name, yards: c.yards })),
+    }))
+    .filter((b) => b.clubs.length > 0)
+
   const data: Analytics = {
     playerTimelines,
     activityByDate,
@@ -115,6 +126,7 @@ export default async function AnalyticsPage({
     totalRounds: scores.length,
     avgPoints:   Math.round(avgPoints * 10) / 10,
     maxPoints:   Math.round(maxPoints * 10) / 10,
+    bags,
   }
 
   return <AnalyticsClient data={data} initialTab={searchParams.tab} initialPlayerId={searchParams.id} />
