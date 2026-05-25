@@ -413,12 +413,13 @@ function PlayerTab({ data }: { data: Analytics }) {
     datasets: [{ label: 'Points', data: sorted.map((s) => s.totalPoints), backgroundColor: color }],
   }
 
-  const netScores = sorted.map((s) =>
-    Math.round((s.holes === 9 ? s.gross - s.handicap / 2 : s.gross - s.handicap) * 10) / 10
-  )
+  const netScores = sorted.map((s) => {
+    const net = s.holes === 9 ? s.gross - s.handicap / 2 : s.gross - s.handicap
+    return Math.round((s.holes === 9 ? net * 2 : net) * 10) / 10
+  })
   const netTrendData = {
-    labels: sorted.map((s) => dateLabel(s.date)),
-    datasets: [{ label: 'Net Score', data: netScores, borderColor: color, fill: true }],
+    labels: sorted.map((s) => `${dateLabel(s.date)} (${s.holes}H)`),
+    datasets: [{ label: 'Net Score (18H equiv)', data: netScores, borderColor: color, fill: true }],
   }
 
   const totalComp = player.pointsBreakdown.base + player.pointsBreakdown.groupBonus + player.pointsBreakdown.commBonus
@@ -494,7 +495,7 @@ function PlayerTab({ data }: { data: Analytics }) {
 
         <div className="card">
           <h2 className="text-base font-bold text-gray-900 mb-1">📉 Net Score Trend</h2>
-          <p className="text-xs text-gray-400 mb-3">Gross minus handicap — lower is better</p>
+          <p className="text-xs text-gray-400 mb-3">Normalized to 18H equivalent · 9H rounds doubled · lower is better</p>
           <Line data={netTrendData} options={lineOptsNoLegend} />
         </div>
 
