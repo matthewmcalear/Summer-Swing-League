@@ -155,11 +155,11 @@ export default function Home() {
               ⛳ Submit a Round
             </Link>
             <Link
-              href="/register"
-              className="px-6 py-3 rounded-xl font-bold text-sm transition-all shadow border border-white/30 hover:border-white/60"
+              href="/rangefinder"
+              className="px-6 py-3 rounded-xl font-bold text-sm transition-all shadow border border-white/30 hover:border-white/60 flex items-center gap-2"
               style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
             >
-              Join the League →
+              📡 Rangefinder
             </Link>
             <Link
               href="/standings"
@@ -264,6 +264,7 @@ export default function Home() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { href: '/submit-score', icon: '⛳', label: 'Submit Score' },
+          { href: '/rangefinder',  icon: '📡', label: 'Rangefinder'  },
           { href: '/standings',    icon: '📊', label: 'Standings'    },
           { href: '/scores',       icon: '📋', label: 'All Scores'   },
           { href: '/members',      icon: '👥', label: 'Members'      },
