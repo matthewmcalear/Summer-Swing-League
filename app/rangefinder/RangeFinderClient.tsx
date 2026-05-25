@@ -28,6 +28,40 @@ async function fetchElevation(lat: number, lon: number): Promise<number | null> 
   }
 }
 
+// ── Geo helpers ───────────────────────────────────────────────────────────────
+
+function bearingRad(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const φ1 = (lat1 * Math.PI) / 180
+  const φ2 = (lat2 * Math.PI) / 180
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180
+  return Math.atan2(
+    Math.sin(Δλ) * Math.cos(φ2),
+    Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ),
+  )
+}
+
+function offsetLatLon(lat: number, lon: number, br: number, distM: number): [number, number] {
+  const R    = 6371000
+  const lat2 = Math.asin(
+    Math.sin((lat * Math.PI) / 180) * Math.cos(distM / R) +
+    Math.cos((lat * Math.PI) / 180) * Math.sin(distM / R) * Math.cos(br),
+  )
+  const lon2 = (lon * Math.PI) / 180 + Math.atan2(
+    Math.sin(br) * Math.sin(distM / R) * Math.cos((lat * Math.PI) / 180),
+    Math.cos(distM / R) - Math.sin((lat * Math.PI) / 180) * Math.sin(lat2),
+  )
+  return [(lat2 * 180) / Math.PI, (lon2 * 180) / Math.PI]
+}
+
+function makeTextIcon(text: string) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="pointer-events:none;color:#fff;font-size:11px;font-weight:700;line-height:1;white-space:nowrap;transform:translate(-50%,-50%);text-shadow:0 1px 4px rgba(0,0,0,1),0 0 8px rgba(0,0,0,0.9)">${text}</div>`,
+    iconSize:   [0, 0],
+    iconAnchor: [0, 0],
+  })
+}
+
 // ── Custom map markers ─────────────────────────────────────────────────────────
 
 const userIcon = L.divIcon({
@@ -352,13 +386,26 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
                 positions={[[userPos.lat, userPos.lon], [targetPos.lat, targetPos.lon]]}
                 pathOptions={{ color: '#16a34a', weight: 2, dashArray: '8 6', opacity: 0.75 }}
               />
-              {showDispersion && yards !== null && (
-                <Circle
-                  center={[targetPos.lat, targetPos.lon]}
-                  radius={dispersionYards(yards, dispersionHcap) * 0.9144}
-                  pathOptions={{ color: '#f59e0b', fillColor: '#fcd34d', fillOpacity: 0.18, weight: 1.5, dashArray: '6 4' }}
-                />
-              )}
+              {showDispersion && yards !== null && (() => {
+                const radYd = dispersionYards(yards, dispersionHcap)
+                const radM  = radYd * 0.9144
+                const br    = bearingRad(userPos.lat, userPos.lon, targetPos.lat, targetPos.lon)
+                const shortPt = offsetLatLon(targetPos.lat, targetPos.lon, br + Math.PI, radM)
+                const longPt  = offsetLatLon(targetPos.lat, targetPos.lon, br, radM)
+                const shortYd = Math.max(0, Math.round(yards - radYd))
+                const longYd  = Math.round(yards + radYd)
+                return (
+                  <>
+                    <Circle
+                      center={[targetPos.lat, targetPos.lon]}
+                      radius={radM}
+                      pathOptions={{ color: '#f59e0b', fillColor: '#fcd34d', fillOpacity: 0.18, weight: 1.5, dashArray: '6 4' }}
+                    />
+                    <Marker position={shortPt} icon={makeTextIcon(`${shortYd} yd`)} interactive={false} />
+                    <Marker position={longPt}  icon={makeTextIcon(`${longYd} yd`)}  interactive={false} />
+                  </>
+                )
+              })()}
             </>
           )}
         </MapContainer>
