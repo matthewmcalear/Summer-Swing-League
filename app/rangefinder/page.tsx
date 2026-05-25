@@ -1,4 +1,5 @@
 import dynamic from 'next/dynamic'
+import { prisma } from '@/lib/prisma'
 
 const RangeFinderClient = dynamic(() => import('./RangeFinderClient'), {
   ssr: false,
@@ -10,7 +11,12 @@ const RangeFinderClient = dynamic(() => import('./RangeFinderClient'), {
   ),
 })
 
-export default function RangeFinderPage() {
+export default async function RangeFinderPage() {
+  const members = await prisma.member.findMany({
+    where:   { is_active: true },
+    select:  { id: true, full_name: true },
+    orderBy: { full_name: 'asc' },
+  })
   return (
     <div className="space-y-6">
 
@@ -23,7 +29,7 @@ export default function RangeFinderPage() {
       </div>
 
       {/* ── Live map — first thing you see ── */}
-      <RangeFinderClient />
+      <RangeFinderClient members={members} />
 
       {/* ── How it works ── */}
       <div className="card">

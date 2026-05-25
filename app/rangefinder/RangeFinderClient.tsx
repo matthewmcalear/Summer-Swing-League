@@ -91,8 +91,9 @@ function dispersionYards(yards: number, handicap: number): number {
 // ── Main component ─────────────────────────────────────────────────────────────
 
 type Pos = { lat: number; lon: number }
+interface Member { id: string; full_name: string }
 
-export default function RangeFinderClient() {
+export default function RangeFinderClient({ members = [] }: { members?: Member[] }) {
   const mapRef                      = useRef<L.Map | null>(null)
   const [userPos,    setUserPos]    = useState<(Pos & { accuracy: number }) | null>(null)
   const [targetPos,  setTargetPos]  = useState<Pos | null>(null)
@@ -101,13 +102,22 @@ export default function RangeFinderClient() {
   const [gpsError,   setGpsError]   = useState<string | null>(null)
   const [elevLoading, setElevLoading] = useState(false)
   const [bagClubs,      setBagClubs]      = useState<Club[]>([])
-  const [showDispersion, setShowDispersion] = useState(false)
+  const [showDispersion, setShowDispersion] = useState(true)
   const [dispersionHcap, setDispersionHcap] = useState(20)
+  const [memberId,      setMemberId]      = useState<string>('')
 
-  // Load bag clubs + handicap from localStorage member selection
+  // Load persisted member from localStorage, then fetch their bag
   useEffect(() => {
-    const memberId = localStorage.getItem('ssl_member_id')
-    if (!memberId) return
+    const saved = localStorage.getItem('ssl_member_id')
+    if (saved && members.find((m) => m.id === saved)) {
+      setMemberId(saved)
+    }
+  }, [members])
+
+  // Reload bag + handicap whenever selected member changes
+  useEffect(() => {
+    if (!memberId) { setBagClubs([]); return }
+    localStorage.setItem('ssl_member_id', memberId)
     fetch(`/api/my-bag?memberId=${memberId}`)
       .then((r) => r.json())
       .then(({ clubs, handicap }) => {
@@ -115,7 +125,7 @@ export default function RangeFinderClient() {
         if (typeof handicap === 'number') setDispersionHcap(Math.round(handicap))
       })
       .catch(() => {})
-  }, [])
+  }, [memberId])
 
   // GPS watch
   useEffect(() => {
@@ -198,6 +208,27 @@ export default function RangeFinderClient() {
           font-size: 16px !important; color: #374151 !important;
         }
       `}</style>
+
+      {/* ── Player selector ───────────────────────────────────────────────── */}
+      {members.length > 0 && (
+        <div className="flex items-center gap-3 bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-2.5">
+          <span className="text-sm font-semibold text-gray-600 shrink-0">👤 Player</span>
+          <select
+            value={memberId}
+            onChange={(e) => setMemberId(e.target.value)}
+            className="form-input flex-1 py-1.5 text-sm"
+          >
+            <option value="">Select player…</option>
+            {members.map((m) => <option key={m.id} value={m.id}>{m.full_name}</option>)}
+          </select>
+          {memberId && bagClubs.length === 0 && (
+            <span className="text-xs text-gray-400 shrink-0">No bag set up</span>
+          )}
+          {memberId && bagClubs.length > 0 && (
+            <span className="text-xs text-green-600 font-medium shrink-0">{bagClubs.length} clubs</span>
+          )}
+        </div>
+      )}
 
       {/* ── Info card ─────────────────────────────────────────────────────── */}
       {yards !== null && deg !== null ? (
