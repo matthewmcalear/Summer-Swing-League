@@ -175,10 +175,17 @@ export default function Home() {
         {/* GPS rangefinder quick-access — top-right */}
         <Link
           href="/rangefinder"
-          className="absolute top-4 right-4 z-10 flex items-center gap-1 text-white/60 hover:text-white text-xs font-medium transition-colors"
+          className="absolute top-4 right-4 z-10 flex flex-col items-center gap-1 bg-black/35 hover:bg-black/55 backdrop-blur rounded-2xl px-4 py-3 text-white border border-white/20 hover:border-white/40 transition-all"
         >
-          <span>📡</span>
-          <span>Rangefinder</span>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <circle cx="12" cy="12" r="7"/>
+            <line x1="12" y1="2" x2="12" y2="5"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+            <line x1="2" y1="12" x2="5" y2="12"/>
+            <line x1="19" y1="12" x2="22" y2="12"/>
+            <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+          </svg>
+          <span className="text-xs font-semibold tracking-wide">Rangefinder</span>
         </Link>
 
         {/* Photo credit — pinned to bottom-right of the hero container */}
