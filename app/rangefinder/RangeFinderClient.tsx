@@ -160,46 +160,60 @@ export default function RangeFinderClient() {
 
       {/* ── Info card ─────────────────────────────────────────────────────── */}
       {yards !== null && deg !== null ? (
-        <div className="card py-4">
-          <div className="flex flex-wrap items-center gap-5 sm:gap-8">
+        <div className="card py-3">
+          <div className="flex items-center justify-between gap-3">
+            {/* Stats row — wraps freely without displacing the button */}
+            <div className="flex flex-wrap items-center gap-4 sm:gap-8 flex-1 min-w-0">
 
-            <div className="text-center">
-              <div className="text-5xl font-extrabold text-green-700 tabular-nums">{Math.round(yards)}</div>
-              <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">yards</div>
-            </div>
-
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-700 tabular-nums">{Math.round(yards * 3)}</div>
-              <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">feet</div>
-            </div>
-
-            <div className="h-10 w-px bg-gray-100 hidden sm:block" />
-
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-700">{compassDir(deg)}</div>
-              <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">{Math.round(deg)}°</div>
-            </div>
-
-            {elevDiff !== null && (
               <div className="text-center">
-                <div className={`text-2xl font-bold tabular-nums ${elevDiff > 2 ? 'text-red-500' : elevDiff < -2 ? 'text-blue-500' : 'text-gray-500'}`}>
-                  {elevDiff > 2 ? '↑' : elevDiff < -2 ? '↓' : '→'} {Math.abs(Math.round(elevDiff))} ft
-                </div>
-                <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">
-                  {elevDiff > 2 ? 'uphill' : elevDiff < -2 ? 'downhill' : 'flat'}
-                </div>
+                <div className="text-5xl font-extrabold text-green-700 tabular-nums">{Math.round(yards)}</div>
+                <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">yards</div>
               </div>
-            )}
 
-            {elevLoading && (
-              <div className="text-xs text-gray-400 flex items-center gap-1.5">
-                <div className="w-3 h-3 border border-gray-300 border-t-gray-500 rounded-full animate-spin" />
-                elevation…
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-700 tabular-nums">{Math.round(yards * 0.9144)}</div>
+                <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">meters</div>
               </div>
-            )}
 
-            <button onClick={clearPin} className="ml-auto btn-secondary text-xs px-3 py-1.5">
-              ✕ Clear pin
+              <div className="h-10 w-px bg-gray-100 hidden sm:block" />
+
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-700">{compassDir(deg)}</div>
+                <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">{Math.round(deg)}°</div>
+              </div>
+
+              {elevDiff !== null && (
+                <>
+                  <div className="text-center">
+                    <div className={`text-2xl font-bold tabular-nums ${elevDiff > 2 ? 'text-red-500' : elevDiff < -2 ? 'text-blue-500' : 'text-gray-500'}`}>
+                      {elevDiff > 2 ? '↑' : elevDiff < -2 ? '↓' : '→'} {Math.abs(Math.round(elevDiff))} ft
+                    </div>
+                    <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">
+                      {elevDiff > 2 ? 'uphill' : elevDiff < -2 ? 'downhill' : 'flat'}
+                    </div>
+                  </div>
+                  {Math.abs(elevDiff) > 2 && (
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600 tabular-nums">
+                        {Math.round(yards + elevDiff / 3)}
+                      </div>
+                      <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">play as (yd)</div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {elevLoading && (
+                <div className="text-xs text-gray-400 flex items-center gap-1.5">
+                  <div className="w-3 h-3 border border-gray-300 border-t-gray-500 rounded-full animate-spin" />
+                  elevation…
+                </div>
+              )}
+            </div>
+
+            {/* Clear button — always pinned to the right, never pushed to a new line */}
+            <button onClick={clearPin} className="shrink-0 btn-secondary text-xs px-3 py-1.5">
+              ✕ Clear
             </button>
           </div>
         </div>

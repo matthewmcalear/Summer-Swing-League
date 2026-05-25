@@ -147,7 +147,7 @@ export default function Home() {
             Play more, earn more, win cash.
           </p>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 pr-28 sm:pr-0">
             <Link
               href="/submit-score"
               className="px-6 py-3 bg-white text-green-900 rounded-xl font-bold text-sm hover:bg-green-50 transition-all shadow-lg hover:shadow-xl"
