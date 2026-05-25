@@ -60,6 +60,27 @@ export default function RangeFinderPage() {
         </div>
       </div>
 
+      {/* ── My Bag integration ── */}
+      <div className="card space-y-3">
+        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2"><span>🎒</span> Club Recommendations &amp; Dispersion</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
+          {[
+            { icon: '🎯', title: 'Club recommendation', body: 'Set up your bag on the My Bag page with each club\'s stock yardage. Once saved, the rangefinder shows your best-fit club every time you drop a pin — using slope-adjusted distance when elevation is available.' },
+            { icon: '◎', title: 'Dispersion circle', body: 'Tap "Dispersion OFF" below the info card to overlay a circle on the map showing your statistical shot spread. Drag the slider from tighter (low handicap) to wider to explore different skill scenarios.' },
+            { icon: '⛰️', title: 'Play as yardage', body: 'When the target is uphill or downhill by more than 2 ft, a purple "play as" number appears. This is the slope-adjusted distance — the yardage you should actually club for, not the flat distance.' },
+            { icon: '📐', title: 'How dispersion is sized', body: 'Based on Arccos/Shot Scope data: radius ≈ distance × (0.10 + hdcp/54 × 0.35). Scratch at 150 yds → ~15 yd radius. Hdcp 30 → ~50 yd radius. Circle shows roughly one standard deviation.' },
+          ].map(({ icon, title, body }) => (
+            <div key={title} className="flex gap-3 p-3 rounded-xl bg-gray-50">
+              <span className="text-xl shrink-0">{icon}</span>
+              <span><strong>{title}</strong> — {body}</span>
+            </div>
+          ))}
+        </div>
+        <a href="/my-bag" className="inline-flex items-center gap-2 text-sm font-semibold text-green-700 hover:underline">
+          🎒 Set up your bag →
+        </a>
+      </div>
+
       {/* ── Tips ── */}
       <div className="rounded-2xl border border-green-200 bg-green-50 px-5 py-4">
         <p className="text-sm font-semibold text-green-800 mb-2">💡 Tips for best results</p>
@@ -69,6 +90,7 @@ export default function RangeFinderPage() {
           <li>Pinch to zoom on mobile, scroll wheel on desktop.</li>
           <li>The elevation fetch takes 1–2 seconds after you drop the pin — wait for the uphill/downhill reading.</li>
           <li>Tap <strong>Re-center</strong> if the map has drifted away from your position.</li>
+          <li>Set up your bag on <a href="/my-bag" className="underline font-medium">My Bag</a> to get club recommendations and personalised dispersion circles.</li>
         </ul>
       </div>
 

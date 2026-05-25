@@ -186,14 +186,35 @@ export default function MyBagClient({ members }: { members: Member[] }) {
       )}
 
       {/* How it works */}
-      <div className="rounded-2xl border border-green-200 bg-green-50 px-5 py-4">
-        <p className="text-sm font-semibold text-green-800 mb-2">💡 How club recommendations work</p>
-        <ul className="text-sm text-green-700 space-y-1 list-disc list-inside">
-          <li>Open the <a href="/rangefinder" className="underline font-medium">Rangefinder</a>, drop a pin on the course.</li>
-          <li>The rangefinder finds the club in your bag closest to the target distance.</li>
-          <li>When elevation data is available, it uses the slope-adjusted "play as" distance for the recommendation.</li>
-          <li>Your bag selection is remembered in this browser — no login required.</li>
-        </ul>
+      <div className="card space-y-4">
+        <h2 className="text-base font-bold text-gray-900">How My Bag works with the Rangefinder</h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+          {[
+            { icon: '🎯', title: 'Club recommendation', body: 'Drop a pin on the map and the rangefinder automatically shows your best-fit club — the one in your bag closest to the target distance.' },
+            { icon: '⛰️', title: 'Slope-adjusted', body: 'When elevation data loads, the recommendation uses the "play as" yardage (flat distance ± elevation ÷ 3), not just the raw distance.' },
+            { icon: '◎', title: 'Dispersion circle', body: 'Toggle dispersion in the rangefinder to see a circle on the map showing where your ball statistically could end up. Drag the slider to explore tighter or wider windows.' },
+          ].map(({ icon, title, body }) => (
+            <div key={title} className="rounded-xl bg-gray-50 border border-gray-100 p-4">
+              <div className="text-2xl mb-2">{icon}</div>
+              <p className="font-semibold text-gray-800 text-sm mb-1">{title}</p>
+              <p className="text-xs text-gray-500 leading-relaxed">{body}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800">
+          <p className="font-semibold mb-1">📐 How dispersion is calculated</p>
+          <p className="text-xs leading-relaxed text-amber-700">
+            Dispersion radius = distance × (0.10 + handicap/54 × 0.35). Based on published Arccos and Shot Scope data:
+            a scratch player at 150 yards has roughly a 15-yard radius, while a 30-handicapper has roughly a 50-yard radius.
+            The circle shows one standard deviation — statistically, most shots will land inside it, but not all.
+          </p>
+        </div>
+
+        <p className="text-xs text-gray-400">
+          Your name selection is saved in this browser — the rangefinder loads your clubs automatically. No login required.
+        </p>
       </div>
     </div>
   )
