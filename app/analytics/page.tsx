@@ -532,18 +532,30 @@ function CompareTab({ data }: { data: Analytics }) {
   const cumulativeData = {
     labels: allDates,
     datasets: [p1, p2].map((p, i) => {
-      let running = 0
-      const byDate: Record<string, number> = {}
-      p.scores.forEach((s) => { byDate[s.date.slice(0, 10)] = s.totalPoints })
+      const sorted = [...p.scores].sort((a, b) => a.date.localeCompare(b.date))
+      const firstDate = sorted[0]?.date.slice(0, 10)
       const c = i === 0 ? c1 : c2
       return {
         label:           p.name.split(' ')[0],
-        data:            allDates.map((d) => { running += byDate[d] ?? 0; return running }),
+        data: allDates.map((d) => {
+          if (!firstDate || d < firstDate) return null
+          const upTo = sorted.filter((s) => s.date.slice(0, 10) <= d)
+          if (upTo.length === 0) return null
+          const pts = upTo.map((s) => s.totalPoints)
+          const top5 = [...pts].sort((a, b) => b - a).slice(0, 5)
+          const total = top5.reduce((s, v) => s + v, 0)
+          const multipliers: Record<number, number> = { 1: 0.2, 2: 0.4, 3: 0.6, 4: 0.8 }
+          const multiplier = top5.length < 5 ? (multipliers[top5.length] ?? 0) : 1.0
+          const latestHcap = upTo[upTo.length - 1].handicap
+          const improvement = p.startingHandicap != null ? Math.max(0, p.startingHandicap - latestHcap) : 0
+          return Math.round((total * multiplier + improvement * 3) * 10) / 10
+        }),
         borderColor:     c,
         backgroundColor: c + '20',
         tension:         0.3,
         fill:            false,
         pointRadius:     4,
+        spanGaps:        false,
       }
     }),
   }
@@ -633,7 +645,8 @@ function CompareTab({ data }: { data: Analytics }) {
 
           {/* Cumulative race */}
           <div className="card">
-            <h2 className="text-base font-bold text-gray-900 mb-4">📈 Points Race</h2>
+            <h2 className="text-base font-bold text-gray-900 mb-1">📈 Season Score Progression</h2>
+            <p className="text-xs text-gray-400 mb-4">Top 5 rounds × participation multiplier + improvement bonus — matches the standings</p>
             <Line data={cumulativeData} options={lineOpts} />
           </div>
 
