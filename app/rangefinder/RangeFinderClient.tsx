@@ -53,10 +53,10 @@ function offsetLatLon(lat: number, lon: number, br: number, distM: number): [num
   return [(lat2 * 180) / Math.PI, (lon2 * 180) / Math.PI]
 }
 
-// Real shot dispersion is elliptical: ~1.5× more long/short variance than lateral.
-// semiMajor = along shot line, semiMinor = perpendicular (left/right).
-const DISP_MAJOR = 1.5   // multiplier along shot line
-const DISP_MINOR = 0.65  // multiplier lateral
+// Dispersion is wider left/right than long/short for most golfers.
+// LATERAL = perpendicular to shot line (major axis), DISTANCE = along shot (minor axis).
+const DISP_LATERAL  = 1.5   // left/right spread multiplier
+const DISP_DISTANCE = 0.65  // long/short spread multiplier
 
 function ellipsePoints(
   centerLat: number, centerLon: number,
@@ -308,17 +308,19 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
                 pathOptions={{ color: '#16a34a', weight: 2, dashArray: '8 6', opacity: 0.75 }}
               />
               {showDispersion && yards !== null && (() => {
-                const baseYd    = dispersionYards(yards, dispersionHcap)
-                const majorYd   = baseYd * DISP_MAJOR
-                const minorYd   = baseYd * DISP_MINOR
-                const majorM    = majorYd * 0.9144
-                const minorM    = minorYd * 0.9144
-                const br        = bearingRad(userPos.lat, userPos.lon, targetPos.lat, targetPos.lon)
-                const shortPt   = offsetLatLon(targetPos.lat, targetPos.lon, br + Math.PI, majorM)
-                const longPt    = offsetLatLon(targetPos.lat, targetPos.lon, br, majorM)
-                const shortYd   = Math.max(0, Math.round(yards - majorYd))
-                const longYd    = Math.round(yards + majorYd)
-                const ellipsePts = ellipsePoints(targetPos.lat, targetPos.lon, majorM, minorM, br)
+                const baseYd     = dispersionYards(yards, dispersionHcap)
+                const lateralYd  = baseYd * DISP_LATERAL   // wider axis, left/right
+                const distanceYd = baseYd * DISP_DISTANCE  // tighter axis, long/short
+                const lateralM   = lateralYd  * 0.9144
+                const distanceM  = distanceYd * 0.9144
+                const br         = bearingRad(userPos.lat, userPos.lon, targetPos.lat, targetPos.lon)
+                // br + π/2 rotates major axis to be perpendicular to shot (wider left/right)
+                const ellipsePts = ellipsePoints(targetPos.lat, targetPos.lon, lateralM, distanceM, br + Math.PI / 2)
+                // Labels sit at the shot-line (distance) axis ends
+                const shortPt  = offsetLatLon(targetPos.lat, targetPos.lon, br + Math.PI, distanceM)
+                const longPt   = offsetLatLon(targetPos.lat, targetPos.lon, br, distanceM)
+                const shortYd  = Math.max(0, Math.round(yards - distanceYd))
+                const longYd   = Math.round(yards + distanceYd)
                 return (
                   <>
                     <Polygon
@@ -477,7 +479,7 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
               <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-0.5 tabular-nums ml-auto">
                 {dispersionHcap === 0 ? 'Scratch' : `Hdcp ${dispersionHcap}`}
                 <span className="text-amber-500 font-normal hidden sm:inline">
-                  {' · ±'}{Math.round(dispersionYards(yards, dispersionHcap) * DISP_MAJOR)} yd / ±{Math.round(dispersionYards(yards, dispersionHcap) * DISP_MINOR)} yd
+                  {' · ±'}{Math.round(dispersionYards(yards, dispersionHcap) * DISP_LATERAL)} yd L/R
                 </span>
               </span>
             )}
