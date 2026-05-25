@@ -208,7 +208,7 @@ export default function Home() {
       <div className="card overflow-hidden p-0">
         <div className="flex flex-col sm:flex-row">
           {/* Photo */}
-          <div className="relative sm:w-64 shrink-0" style={{ minHeight: '260px' }}>
+          <div className="relative sm:w-64 shrink-0 min-h-[360px] sm:min-h-[260px]">
             <Image
               src="/IMG_4202.jpeg"
               alt="Tom McAlear after his famous lake incident"
