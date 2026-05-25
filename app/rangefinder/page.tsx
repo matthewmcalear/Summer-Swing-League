@@ -12,14 +12,69 @@ const RangeFinderClient = dynamic(() => import('./RangeFinderClient'), {
 
 export default function RangeFinderPage() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+
+      {/* ── Header ── */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">📡 Rangefinder</h1>
+        <h1 className="text-3xl font-bold text-gray-900">📡 GPS Rangefinder</h1>
         <p className="text-gray-500 mt-1 text-sm">
-          Tap anywhere on the satellite map to measure distance from your position.
+          Satellite map + live GPS — measure any distance on the course in real time.
         </p>
       </div>
-      <RangeFinderClient />
+
+      {/* ── How it works ── */}
+      <div className="card">
+        <h2 className="text-lg font-bold text-gray-900 mb-4">How it works</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
+          {[
+            ['📍 Your position',      'A blue pulsing dot shows your live GPS location, updated continuously as you move around the course.'],
+            ['🛰️ Satellite map',      'Uses Esri World Imagery — real satellite photos so you can see fairways, greens, bunkers, and water hazards clearly.'],
+            ['📌 Drop a pin',         'Tap anywhere on the map — the flag, front of green, a bunker, a tree — to drop a red pin at that spot.'],
+            ['📏 Instant distance',   'The moment you drop a pin, you get the distance in yards and feet, plus the compass bearing from your current position.'],
+            ['⛰️ Elevation change',   'Automatically fetches the elevation at both your position and the pin. Shows uphill (↑) or downhill (↓) in feet.'],
+            ['🔄 Keep measuring',     'Clear the pin and tap somewhere new to re-measure. Your GPS dot keeps updating as you move.'],
+          ].map(([title, desc], i) => (
+            <div key={i} className="flex gap-3 p-3 rounded-xl bg-gray-50">
+              <span className="step-num shrink-0">{i + 1}</span>
+              <span><strong>{title}</strong> — {desc}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-500">
+          <div className="flex items-start gap-2">
+            <span className="text-green-600 font-bold shrink-0">✓</span>
+            <span><strong>No account needed</strong> — works for anyone with the link, even non-members.</span>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="text-green-600 font-bold shrink-0">✓</span>
+            <span><strong>No API key</strong> — satellite tiles and elevation data are fully free and open.</span>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="text-amber-500 font-bold shrink-0">⚠</span>
+            <span><strong>Best outdoors</strong> — GPS accuracy is ±3–10 m outside, much worse indoors or on desktop.</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Tips ── */}
+      <div className="rounded-2xl border border-green-200 bg-green-50 px-5 py-4">
+        <p className="text-sm font-semibold text-green-800 mb-2">💡 Tips for best results</p>
+        <ul className="text-sm text-green-700 space-y-1 list-disc list-inside">
+          <li>Allow browser location access when prompted — this is required for the blue dot to appear.</li>
+          <li>Zoom in on the satellite map to precisely place your pin on the flag or target.</li>
+          <li>Pinch to zoom on mobile, scroll wheel on desktop.</li>
+          <li>The elevation fetch takes 1–2 seconds after you drop the pin — wait for the uphill/downhill reading.</li>
+          <li>Tap <strong>Re-center</strong> if the map has drifted away from your position.</li>
+        </ul>
+      </div>
+
+      {/* ── Live map ── */}
+      <div>
+        <h2 className="text-lg font-bold text-gray-900 mb-3">Live map</h2>
+        <RangeFinderClient />
+      </div>
+
     </div>
   )
 }

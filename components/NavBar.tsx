@@ -11,6 +11,7 @@ const links = [
   { href: '/submit-score', label: 'Submit Score' },
   { href: '/analytics',    label: 'Analytics'    },
   { href: '/members',      label: 'Members'      },
+  { href: '/rangefinder',  label: '📡 Rangefinder' },
   { href: '/rules',        label: 'Rules'        },
   { href: '/about',        label: 'About'        },
 ]
