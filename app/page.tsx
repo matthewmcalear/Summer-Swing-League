@@ -162,13 +162,6 @@ export default function Home() {
               Join the League →
             </Link>
             <Link
-              href="/rangefinder"
-              className="px-6 py-3 rounded-xl font-bold text-sm transition-all shadow border border-white/20 hover:border-white/50"
-              style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(8px)' }}
-            >
-              📡 Rangefinder
-            </Link>
-            <Link
               href="/standings"
               className="px-6 py-3 rounded-xl font-bold text-sm transition-all shadow border border-white/20 hover:border-white/50"
               style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(8px)' }}
@@ -178,6 +171,15 @@ export default function Home() {
           </div>
 
         </div>
+
+        {/* GPS rangefinder quick-access — top-right */}
+        <Link
+          href="/rangefinder"
+          className="absolute top-4 right-4 z-10 flex items-center gap-1 text-white/60 hover:text-white text-xs font-medium transition-colors"
+        >
+          <span>📡</span>
+          <span>Rangefinder</span>
+        </Link>
 
         {/* Photo credit — pinned to bottom-right of the hero container */}
         <p className="absolute bottom-3 right-4 z-10 text-white/40 text-xs italic">
