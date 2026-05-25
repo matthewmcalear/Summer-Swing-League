@@ -26,7 +26,7 @@ export default function MembersClient({ members }: { members: Member[] }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {members.map((m) => (
-          <div key={m.id} className="card space-y-3">
+          <div key={m.id} className="card p-4 space-y-2">
             <div className="flex items-start justify-between">
               <div>
                 <Link

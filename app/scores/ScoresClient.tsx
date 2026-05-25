@@ -26,11 +26,11 @@ function ScoreCard({ s }: { s: Score }) {
     <div className="card p-0 overflow-hidden">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full text-left px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 hover:bg-gray-50 transition-colors"
+        className="w-full text-left px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 hover:bg-gray-50 transition-colors"
       >
         <div className="flex items-center gap-3 min-w-0">
-          <div className="shrink-0 w-14 h-14 rounded-xl bg-green-700 flex flex-col items-center justify-center shadow-sm">
-            <span className="text-white text-lg font-extrabold leading-none">{total.toFixed(1)}</span>
+          <div className="shrink-0 w-12 h-12 rounded-xl bg-green-700 flex flex-col items-center justify-center shadow-sm">
+            <span className="text-white text-base font-extrabold leading-none">{total.toFixed(1)}</span>
             <span className="text-green-300 text-[10px] font-medium">pts</span>
           </div>
           <div className="min-w-0">
@@ -74,7 +74,7 @@ function ScoreCard({ s }: { s: Score }) {
 
       <div className={`grid transition-all duration-300 ease-in-out ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
         <div className="overflow-hidden">
-          <div className="border-t border-gray-100 px-5 py-4 space-y-4 bg-gray-50/50">
+          <div className="border-t border-gray-100 px-4 py-3 space-y-3 bg-gray-50/50">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
                 { label: 'Gross Score',  value: s.gross_score },
@@ -155,9 +155,9 @@ function BonusCard({ b }: { b: SeasonBonus & { member_name: string; member_id: s
   })
   return (
     <div className="card p-0 overflow-hidden border-amber-200">
-      <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-amber-50/60">
+      <div className="px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-amber-50/60">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="shrink-0 w-14 h-14 rounded-xl bg-amber-500 flex flex-col items-center justify-center shadow-sm">
+          <div className="shrink-0 w-12 h-12 rounded-xl bg-amber-500 flex flex-col items-center justify-center shadow-sm">
             <span className="text-white text-lg font-extrabold leading-none">+{b.points}</span>
             <span className="text-amber-200 text-[10px] font-medium">pts</span>
           </div>
