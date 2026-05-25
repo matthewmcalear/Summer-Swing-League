@@ -99,7 +99,7 @@ export default function MyBagClient({ members }: { members: Member[] }) {
               <div className="flex-1">
                 {!useCustom ? (
                   <select
-                    className="form-input w-full"
+                    className="form-input w-full !text-base !py-3"
                     value={selectedClub}
                     onChange={(e) => {
                       if (e.target.value === '__custom__') { setUseCustom(true); setSelectedClub('') }
@@ -111,16 +111,16 @@ export default function MyBagClient({ members }: { members: Member[] }) {
                     <option value="__custom__">+ Add custom club…</option>
                   </select>
                 ) : (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
                     <input
-                      className="form-input flex-1"
+                      className="form-input flex-1 !text-base !py-3"
                       placeholder="Club name (e.g. 60° Wedge)"
                       value={customName}
                       onChange={(e) => setCustomName(e.target.value)}
                     />
                     <button
                       onClick={() => { setUseCustom(false); setCustomName('') }}
-                      className="text-xs text-gray-400 hover:text-gray-600"
+                      className="text-xs text-gray-400 hover:text-gray-600 shrink-0"
                     >Cancel</button>
                   </div>
                 )}
@@ -129,7 +129,7 @@ export default function MyBagClient({ members }: { members: Member[] }) {
               {/* Yards */}
               <input
                 type="number"
-                className="form-input sm:w-32"
+                className="form-input !text-base !py-3 sm:w-36"
                 placeholder="Yards"
                 min={1}
                 max={400}
@@ -141,7 +141,7 @@ export default function MyBagClient({ members }: { members: Member[] }) {
               <button
                 onClick={saveClub}
                 disabled={saving || !effectiveClubName || !yards}
-                className="btn-primary px-5 py-2 text-sm disabled:opacity-40"
+                className="btn-primary px-6 py-3 text-base disabled:opacity-40"
               >
                 {saving ? 'Saving…' : 'Save'}
               </button>
