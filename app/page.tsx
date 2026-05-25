@@ -188,10 +188,6 @@ export default function Home() {
 
         </div>
 
-        {/* Photo credit — pinned to bottom-left of the hero container */}
-        <p className="absolute bottom-3 left-4 z-10 text-white/40 text-xs italic">
-          Carling Lake Golf Club · 2025
-        </p>
       </div>
 
       {/* ── TOURNAMENT BANNER ── */}
