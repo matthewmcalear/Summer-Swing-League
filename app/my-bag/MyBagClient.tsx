@@ -33,7 +33,9 @@ export default function MyBagClient({ members }: { members: Member[] }) {
   useEffect(() => {
     if (!memberId) { setClubs([]); return }
     localStorage.setItem(LS_KEY, memberId)
-    fetch(`/api/my-bag?memberId=${memberId}`).then((r) => r.json()).then(setClubs)
+    fetch(`/api/my-bag?memberId=${memberId}`)
+      .then((r) => r.json())
+      .then(({ clubs }) => setClubs(clubs ?? []))
   }, [memberId])
 
   const effectiveClubName = useCustom ? customName.trim() : selectedClub

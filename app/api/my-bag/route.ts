@@ -9,13 +9,13 @@ export async function GET(request: Request) {
   if (!memberId) return NextResponse.json([])
 
   try {
-    const clubs = await prisma.clubYardage.findMany({
-      where:   { member_id: memberId },
-      orderBy: { yards: 'desc' },
-    })
-    return NextResponse.json(clubs)
+    const [clubs, member] = await Promise.all([
+      prisma.clubYardage.findMany({ where: { member_id: memberId }, orderBy: { yards: 'desc' } }),
+      prisma.member.findUnique({ where: { id: memberId }, select: { current_handicap: true } }),
+    ])
+    return NextResponse.json({ clubs, handicap: member?.current_handicap ?? null })
   } catch {
-    return NextResponse.json([])
+    return NextResponse.json({ clubs: [], handicap: null })
   }
 }
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { MapContainer, TileLayer, Marker, Polyline, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Polyline, Circle, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -82,6 +82,12 @@ function recommendClub(targetYards: number, clubs: Club[]): { club: Club; diff: 
   return { club: best, diff: Math.round(targetYards - best.yards) }
 }
 
+// dispersionYards: scales with distance and handicap (based on Arccos/Shot Scope data)
+function dispersionYards(yards: number, handicap: number): number {
+  const factor = 0.10 + (Math.min(Math.max(handicap, 0), 54) / 54) * 0.35
+  return yards * factor
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 
 type Pos = { lat: number; lon: number }
@@ -94,15 +100,20 @@ export default function RangeFinderClient() {
   const [targetElev, setTargetElev] = useState<number | null>(null)
   const [gpsError,   setGpsError]   = useState<string | null>(null)
   const [elevLoading, setElevLoading] = useState(false)
-  const [bagClubs,   setBagClubs]   = useState<Club[]>([])
+  const [bagClubs,      setBagClubs]      = useState<Club[]>([])
+  const [showDispersion, setShowDispersion] = useState(false)
+  const [dispersionHcap, setDispersionHcap] = useState(20)
 
-  // Load bag clubs from localStorage member selection
+  // Load bag clubs + handicap from localStorage member selection
   useEffect(() => {
     const memberId = localStorage.getItem('ssl_member_id')
     if (!memberId) return
     fetch(`/api/my-bag?memberId=${memberId}`)
       .then((r) => r.json())
-      .then((clubs) => { if (Array.isArray(clubs)) setBagClubs(clubs) })
+      .then(({ clubs, handicap }) => {
+        if (Array.isArray(clubs)) setBagClubs(clubs)
+        if (typeof handicap === 'number') setDispersionHcap(Math.round(handicap))
+      })
       .catch(() => {})
   }, [])
 
@@ -262,6 +273,42 @@ export default function RangeFinderClient() {
         </div>
       )}
 
+      {/* ── Dispersion control bar ────────────────────────────────────────── */}
+      {yards !== null && (
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-white rounded-2xl border border-gray-200 shadow-sm text-sm">
+          <button
+            onClick={() => setShowDispersion((d) => !d)}
+            className={`flex items-center gap-1.5 font-semibold text-xs px-2.5 py-1.5 rounded-lg transition-colors shrink-0 ${
+              showDispersion ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'text-gray-500 hover:bg-gray-100 border border-transparent'
+            }`}
+          >
+            ◎ Dispersion {showDispersion ? 'ON' : 'OFF'}
+          </button>
+
+          {showDispersion && (
+            <>
+              <span className="w-px h-4 bg-gray-200 shrink-0" />
+              <span className="text-xs text-gray-500 shrink-0">Tighter</span>
+              <input
+                type="range"
+                min={0}
+                max={54}
+                value={dispersionHcap}
+                onChange={(e) => setDispersionHcap(Number(e.target.value))}
+                className="flex-1 accent-amber-500"
+              />
+              <span className="text-xs text-gray-500 shrink-0">Wider</span>
+              <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-0.5 tabular-nums shrink-0">
+                {dispersionHcap === 0 ? 'Scratch' : `Hdcp ${dispersionHcap}`}
+              </span>
+              <span className="text-xs text-gray-400 shrink-0 hidden sm:block">
+                ≈ {Math.round(dispersionYards(yards, dispersionHcap))} yd radius
+              </span>
+            </>
+          )}
+        </div>
+      )}
+
       {/* ── Map ───────────────────────────────────────────────────────────── */}
       <div
         className="relative rounded-2xl overflow-hidden shadow-md border border-gray-200"
@@ -285,7 +332,7 @@ export default function RangeFinderClient() {
           {/* User position */}
           <Marker position={[userPos.lat, userPos.lon]} icon={userIcon} />
 
-          {/* Target pin + shot line */}
+          {/* Target pin + shot line + dispersion */}
           {targetPos && (
             <>
               <Marker position={[targetPos.lat, targetPos.lon]} icon={pinIcon} />
@@ -293,6 +340,13 @@ export default function RangeFinderClient() {
                 positions={[[userPos.lat, userPos.lon], [targetPos.lat, targetPos.lon]]}
                 pathOptions={{ color: '#16a34a', weight: 2, dashArray: '8 6', opacity: 0.75 }}
               />
+              {showDispersion && yards !== null && (
+                <Circle
+                  center={[targetPos.lat, targetPos.lon]}
+                  radius={dispersionYards(yards, dispersionHcap) * 0.9144}
+                  pathOptions={{ color: '#f59e0b', fillColor: '#fcd34d', fillOpacity: 0.18, weight: 1.5, dashArray: '6 4' }}
+                />
+              )}
             </>
           )}
         </MapContainer>
