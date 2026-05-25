@@ -328,18 +328,19 @@ export default function ScoresClient({ scores, bonuses }: Props) {
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row gap-3">
+      {/* grid: search fills spare space, two selects fixed, toggle auto */}
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-[1fr_14rem_13rem_auto]">
         <input
           type="search"
           placeholder="Search player, course, notes…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="form-input flex-1 min-w-0 !text-base !py-3 !px-4"
+          className="w-full h-12 px-4 text-base rounded-lg border border-gray-300 bg-white shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
         />
         <select
           value={playerFilter}
           onChange={(e) => setPlayerFilter(e.target.value)}
-          className="form-input !text-base !py-3 sm:w-56"
+          className="w-full h-12 px-4 text-base rounded-lg border border-gray-300 bg-white shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
         >
           <option value="all">All Players</option>
           {players.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -347,7 +348,7 @@ export default function ScoresClient({ scores, bonuses }: Props) {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as 'date' | 'points' | 'player')}
-          className="form-input !text-base !py-3 sm:w-52"
+          className="w-full h-12 px-4 text-base rounded-lg border border-gray-300 bg-white shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
         >
           <option value="date">Sort: Newest First</option>
           <option value="points">Sort: Most Points</option>

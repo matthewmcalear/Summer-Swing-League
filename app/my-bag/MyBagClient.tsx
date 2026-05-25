@@ -94,42 +94,41 @@ export default function MyBagClient({ members }: { members: Member[] }) {
           {/* Add / update club */}
           <div className="card">
             <h2 className="text-base font-bold text-gray-900 mb-4">Add or update a club</h2>
-            <div className="flex flex-col sm:flex-row gap-3">
+            {/* grid: club name fills all spare space, yards fixed, button auto */}
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-[1fr_8rem_auto]">
               {/* Club name */}
-              <div className="flex-1">
-                {!useCustom ? (
-                  <select
-                    className="form-input w-full !text-base !py-3"
-                    value={selectedClub}
-                    onChange={(e) => {
-                      if (e.target.value === '__custom__') { setUseCustom(true); setSelectedClub('') }
-                      else setSelectedClub(e.target.value)
-                    }}
-                  >
-                    <option value="">Select club…</option>
-                    {clubNames.map((n) => <option key={n} value={n}>{n}</option>)}
-                    <option value="__custom__">+ Add custom club…</option>
-                  </select>
-                ) : (
-                  <div className="flex gap-2 items-center">
-                    <input
-                      className="form-input flex-1 !text-base !py-3"
-                      placeholder="Club name (e.g. 60° Wedge)"
-                      value={customName}
-                      onChange={(e) => setCustomName(e.target.value)}
-                    />
-                    <button
-                      onClick={() => { setUseCustom(false); setCustomName('') }}
-                      className="text-xs text-gray-400 hover:text-gray-600 shrink-0"
-                    >Cancel</button>
-                  </div>
-                )}
-              </div>
+              {!useCustom ? (
+                <select
+                  className="w-full h-12 px-4 text-base rounded-lg border border-gray-300 bg-white shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  value={selectedClub}
+                  onChange={(e) => {
+                    if (e.target.value === '__custom__') { setUseCustom(true); setSelectedClub('') }
+                    else setSelectedClub(e.target.value)
+                  }}
+                >
+                  <option value="">Select club…</option>
+                  {clubNames.map((n) => <option key={n} value={n}>{n}</option>)}
+                  <option value="__custom__">+ Add custom club…</option>
+                </select>
+              ) : (
+                <div className="flex gap-2 items-center">
+                  <input
+                    className="flex-1 h-12 px-4 text-base rounded-lg border border-gray-300 bg-white shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="Club name (e.g. 60° Wedge)"
+                    value={customName}
+                    onChange={(e) => setCustomName(e.target.value)}
+                  />
+                  <button
+                    onClick={() => { setUseCustom(false); setCustomName('') }}
+                    className="text-xs text-gray-400 hover:text-gray-600 shrink-0"
+                  >Cancel</button>
+                </div>
+              )}
 
               {/* Yards */}
               <input
                 type="number"
-                className="form-input !text-base !py-3 sm:w-36"
+                className="w-full h-12 px-4 text-base rounded-lg border border-gray-300 bg-white shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
                 placeholder="Yards"
                 min={1}
                 max={400}
@@ -141,7 +140,7 @@ export default function MyBagClient({ members }: { members: Member[] }) {
               <button
                 onClick={saveClub}
                 disabled={saving || !effectiveClubName || !yards}
-                className="btn-primary px-6 py-3 text-base disabled:opacity-40"
+                className="btn-primary h-12 px-6 text-base disabled:opacity-40 whitespace-nowrap"
               >
                 {saving ? 'Saving…' : 'Save'}
               </button>
