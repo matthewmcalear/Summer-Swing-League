@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import type { Score, SeasonBonus } from '@/types'
 
 const DIFF_LABEL: Record<string, string> = { easy: 'Easy', average: 'Average', tough: 'Tough' }
@@ -33,7 +34,13 @@ function ScoreCard({ s }: { s: Score }) {
             <span className="text-green-300 text-[10px] font-medium">pts</span>
           </div>
           <div className="min-w-0">
-            <div className="font-bold text-gray-900 truncate">{s.player_name}</div>
+            <Link
+              href={`/analytics?tab=player&id=${s.member_id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="font-bold text-gray-900 hover:text-green-700 hover:underline transition-colors truncate block"
+            >
+              {s.player_name}
+            </Link>
             <div className="text-sm text-gray-500 truncate">{s.course_name}</div>
             <div className="text-xs text-gray-400 mt-0.5">{date}</div>
           </div>
@@ -142,7 +149,7 @@ function ScoreCard({ s }: { s: Score }) {
   )
 }
 
-function BonusCard({ b }: { b: SeasonBonus & { member_name: string } }) {
+function BonusCard({ b }: { b: SeasonBonus & { member_name: string; member_id: string } }) {
   const date = new Date(b.awarded_date + 'T12:00:00').toLocaleDateString('en-US', {
     weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
   })
@@ -155,7 +162,12 @@ function BonusCard({ b }: { b: SeasonBonus & { member_name: string } }) {
             <span className="text-amber-200 text-[10px] font-medium">pts</span>
           </div>
           <div className="min-w-0">
-            <div className="font-bold text-gray-900 truncate">{b.member_name}</div>
+            <Link
+              href={`/analytics?tab=player&id=${b.member_id}`}
+              className="font-bold text-gray-900 hover:text-green-700 hover:underline transition-colors truncate block"
+            >
+              {b.member_name}
+            </Link>
             <div className="text-sm text-amber-700 font-medium truncate">🏆 {b.reason}</div>
             <div className="text-xs text-gray-400 mt-0.5">{date}</div>
           </div>
@@ -170,7 +182,7 @@ function BonusCard({ b }: { b: SeasonBonus & { member_name: string } }) {
 
 interface Props {
   scores: Score[]
-  bonuses: (SeasonBonus & { member_name: string })[]
+  bonuses: (SeasonBonus & { member_name: string; member_id: string })[]
 }
 
 export default function ScoresClient({ scores, bonuses }: Props) {
@@ -202,7 +214,7 @@ export default function ScoresClient({ scores, bonuses }: Props) {
   })
 
   type ScoreItem = { kind: 'score'; data: Score; sortDate: number; sortPoints: number; sortPlayer: string }
-  type BonusItem = { kind: 'bonus'; data: SeasonBonus & { member_name: string }; sortDate: number; sortPoints: number; sortPlayer: string }
+  type BonusItem = { kind: 'bonus'; data: SeasonBonus & { member_name: string; member_id: string }; sortDate: number; sortPoints: number; sortPlayer: string }
   type Item = ScoreItem | BonusItem
 
   const items: Item[] = [

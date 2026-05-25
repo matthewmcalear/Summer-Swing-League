@@ -35,8 +35,9 @@ export default async function ScoresPage() {
     created_at:            s.created_at.toISOString(),
   }))
 
-  const bonuses: (SeasonBonus & { member_name: string })[] = rawBonuses.map((b) => ({
+  const bonuses: (SeasonBonus & { member_name: string; member_id: string })[] = rawBonuses.map((b) => ({
     id:           b.id,
+    member_id:    b.member_id,
     member_name:  b.member.full_name,
     points:       b.points,
     reason:       b.reason,
