@@ -155,9 +155,16 @@ export default function Home() {
               ⛳ Submit a Round
             </Link>
             <Link
-              href="/rangefinder"
-              className="px-6 py-3 rounded-xl font-bold text-sm transition-all shadow border border-white/30 hover:border-white/60 flex items-center gap-2"
+              href="/register"
+              className="px-6 py-3 rounded-xl font-bold text-sm transition-all shadow border border-white/30 hover:border-white/60"
               style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
+            >
+              Join the League →
+            </Link>
+            <Link
+              href="/rangefinder"
+              className="px-6 py-3 rounded-xl font-bold text-sm transition-all shadow border border-white/20 hover:border-white/50"
+              style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(8px)' }}
             >
               📡 Rangefinder
             </Link>
