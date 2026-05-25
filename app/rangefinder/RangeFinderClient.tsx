@@ -218,14 +218,41 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
 
   // ── Loading / error states ─────────────────────────────────────────────────
 
-  if (gpsError && !userPos) return (
-    <div className="card text-center py-20 space-y-2">
-      <div className="text-4xl">📍</div>
-      <p className="font-semibold text-gray-800">GPS access required</p>
-      <p className="text-sm text-gray-500">{gpsError}</p>
-      <p className="text-xs text-gray-400">Allow location access in your browser to use the rangefinder.</p>
-    </div>
-  )
+  if (gpsError && !userPos) {
+    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:'
+    return (
+      <div className="card text-center py-16 space-y-3">
+        <div className="text-4xl">📍</div>
+        <p className="font-semibold text-gray-800">GPS access required</p>
+        {!isHttps ? (
+          <>
+            <p className="text-sm text-red-600 font-medium">You're on an insecure connection (HTTP).</p>
+            <p className="text-sm text-gray-600">
+              Browsers block GPS on non-secure pages. Open the site using{' '}
+              <a href={`https://${window.location.host}${window.location.pathname}`} className="text-green-700 font-semibold underline">
+                https://sslgolf.com/rangefinder
+              </a>{' '}
+              instead.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-gray-500">{gpsError}</p>
+            <p className="text-sm text-gray-600">
+              Tap the <strong>lock icon</strong> in your browser address bar, then tap{' '}
+              <strong>Site settings → Location → Allow</strong> and reload.
+            </p>
+          </>
+        )}
+        <a
+          href={`https://${typeof window !== 'undefined' ? window.location.host : 'sslgolf.com'}/rangefinder`}
+          className="inline-block mt-2 px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700"
+        >
+          Open on HTTPS →
+        </a>
+      </div>
+    )
+  }
 
   if (!userPos) return (
     <div className="card text-center py-20 space-y-3">
