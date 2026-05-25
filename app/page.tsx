@@ -36,8 +36,9 @@ function TournamentBanner() {
         </button>
       </div>
 
-      {/* Expanded details */}
-      {open && (
+      {/* Expanded details — CSS grid-height transition for smooth open/close */}
+      <div className={`grid transition-all duration-300 ease-in-out ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+      <div className="overflow-hidden">
         <div className="border-t border-amber-200 px-5 py-5 space-y-5 bg-white/60">
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -101,7 +102,8 @@ function TournamentBanner() {
             📋 Sign up — Golf &amp; Staying Over
           </a>
         </div>
-      )}
+      </div>
+      </div>
     </div>
   )
 }

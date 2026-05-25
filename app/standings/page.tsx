@@ -1,24 +1,60 @@
-'use client'
-
-import { useEffect, useState } from 'react'
+import { prisma } from '@/lib/prisma'
+import { computeSeasonScore } from '@/lib/scoring'
 import type { StandingEntry } from '@/types'
 
-export default function Standings() {
-  const [players, setPlayers] = useState<StandingEntry[]>([])
-  const [loading, setLoading] = useState(true)
+export const dynamic = 'force-dynamic'
 
-  useEffect(() => {
-    fetch('/api/standings')
-      .then((r) => r.json())
-      .then((d) => { setPlayers(d); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [])
+const medalFor = (i: number) =>
+  i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`
 
-  const medalFor = (i: number) =>
-    i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`
+const rowBg = (i: number) =>
+  i === 0 ? 'bg-yellow-50' : i === 1 ? 'bg-gray-50' : i === 2 ? 'bg-orange-50' : ''
 
-  const rowBg = (i: number) =>
-    i === 0 ? 'bg-yellow-50' : i === 1 ? 'bg-gray-50' : i === 2 ? 'bg-orange-50' : ''
+export default async function Standings() {
+  const [members, scores, bonuses] = await Promise.all([
+    prisma.member.findMany({ where: { is_active: true } }),
+    prisma.score.findMany({ select: { member_id: true, total_points: true } }),
+    prisma.seasonBonus.findMany({ orderBy: { awarded_date: 'asc' } }),
+  ])
+
+  const standings: StandingEntry[] = members.map((member) => {
+    const memberPoints = scores
+      .filter((s) => s.member_id === member.id)
+      .map((s) => Number(s.total_points ?? 0))
+
+    const memberBonuses = bonuses.filter((b) => b.member_id === member.id)
+    const bonusTotal    = memberBonuses.reduce((sum, b) => sum + b.points, 0)
+
+    const { seasonScore, totalPoints, topScores, improvementBonus, handicapImprovement, seasonBonusPoints } =
+      computeSeasonScore(
+        memberPoints,
+        member.starting_handicap,
+        Number(member.current_handicap),
+        bonusTotal,
+      )
+
+    return {
+      id:                  member.id,
+      name:                member.full_name,
+      currentHandicap:     Number(member.current_handicap),
+      startingHandicap:    member.starting_handicap ?? null,
+      handicapImprovement,
+      improvementBonus,
+      totalRounds:         memberPoints.length,
+      totalPoints,
+      seasonScore,
+      topScores,
+      seasonBonusPoints,
+      seasonBonuses: memberBonuses.map((b) => ({
+        id:           b.id,
+        points:       b.points,
+        reason:       b.reason,
+        awarded_date: b.awarded_date.toISOString().slice(0, 10),
+      })),
+    }
+  })
+
+  standings.sort((a, b) => b.seasonScore - a.seasonScore)
 
   return (
     <div className="space-y-6">
@@ -29,11 +65,7 @@ export default function Standings() {
         </p>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="w-10 h-10 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : players.length === 0 ? (
+      {standings.length === 0 ? (
         <div className="card text-center text-gray-500 py-16">No scores submitted yet.</div>
       ) : (
         <div className="card p-0 overflow-hidden">
@@ -52,12 +84,11 @@ export default function Standings() {
               </tr>
             </thead>
             <tbody>
-              {players.map((p, i) => (
+              {standings.map((p, i) => (
                 <tr key={p.id} className={`border-t border-gray-100 ${rowBg(i)}`}>
                   <td className="px-3 py-3 font-bold text-base">{medalFor(i)}</td>
                   <td className="px-3 py-3">
                     <div className="font-semibold">{p.name}</div>
-                    {/* Mobile: key stats under name */}
                     <div className="sm:hidden mt-1 space-y-0.5">
                       <div className="text-xs text-gray-400 flex flex-wrap gap-x-2">
                         <span>Hdcp {p.currentHandicap}</span>
@@ -114,7 +145,6 @@ export default function Standings() {
         </div>
       )}
 
-      {/* Scoring explanation */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="card bg-green-50 border-green-200 text-sm text-green-800">
           <strong>Participation multiplier</strong><br />

@@ -1,339 +1,47 @@
-'use client'
-
-import { useEffect, useState } from 'react'
+import { prisma } from '@/lib/prisma'
+import ScoresClient from './ScoresClient'
 import type { Score, SeasonBonus } from '@/types'
 
-const DIFF_LABEL: Record<string, string> = { easy: 'Easy', average: 'Average', tough: 'Tough' }
-const DIFF_COLOR: Record<string, string> = {
-  easy:    'bg-blue-50 text-blue-700 border-blue-200',
-  average: 'bg-gray-50 text-gray-600 border-gray-200',
-  tough:   'bg-red-50 text-red-700 border-red-200',
-}
+export const dynamic = 'force-dynamic'
 
-function ScoreCard({ s }: { s: Score }) {
-  const [open, setOpen] = useState(false)
+export default async function ScoresPage() {
+  const [rawScores, rawBonuses] = await Promise.all([
+    prisma.score.findMany({ orderBy: [{ play_date: 'desc' }, { created_at: 'desc' }] }),
+    prisma.seasonBonus.findMany({
+      include: { member: { select: { full_name: true } } },
+      orderBy: { awarded_date: 'desc' },
+    }),
+  ])
 
-  const commBonus    = Number(s.additional_points ?? 0)
-  const base         = Number(s.base_points ?? 0)
-  const adjusted     = Math.round(base * s.difficulty_multiplier * 100) / 100
-  const total        = Number(s.total_points ?? 0)
-  const date         = new Date(s.play_date.slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', {
-    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
-  })
+  const scores: Score[] = rawScores.map((s) => ({
+    id:                    s.id,
+    member_id:             s.member_id,
+    player_name:           s.player_name,
+    holes:                 s.holes as 9 | 18,
+    gross_score:           s.gross_score,
+    handicap_used:         Number(s.handicap_used),
+    course_name:           s.course_name,
+    course_difficulty:     s.course_difficulty as 'easy' | 'average' | 'tough',
+    difficulty_multiplier: Number(s.difficulty_multiplier),
+    group_member_ids:      s.group_member_ids as string[],
+    group_member_names:    s.group_member_names,
+    group_size:            s.group_size,
+    base_points:           Number(s.base_points),
+    group_bonus:           Number(s.group_bonus),
+    additional_points:     Number(s.additional_points),
+    total_points:          Number(s.total_points),
+    play_date:             s.play_date.toISOString(),
+    notes:                 s.notes,
+    created_at:            s.created_at.toISOString(),
+  }))
 
-  return (
-    <div className="card p-0 overflow-hidden">
-      {/* ── Card header (always visible) ── */}
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full text-left px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 hover:bg-gray-50 transition-colors"
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          {/* Points bubble */}
-          <div className="shrink-0 w-14 h-14 rounded-xl bg-green-700 flex flex-col items-center justify-center shadow-sm">
-            <span className="text-white text-lg font-extrabold leading-none">{total.toFixed(1)}</span>
-            <span className="text-green-300 text-[10px] font-medium">pts</span>
-          </div>
+  const bonuses: (SeasonBonus & { member_name: string })[] = rawBonuses.map((b) => ({
+    id:           b.id,
+    member_name:  b.member.full_name,
+    points:       b.points,
+    reason:       b.reason,
+    awarded_date: b.awarded_date.toISOString().slice(0, 10),
+  }))
 
-          <div className="min-w-0">
-            <div className="font-bold text-gray-900 truncate">{s.player_name}</div>
-            <div className="text-sm text-gray-500 truncate">{s.course_name}</div>
-            <div className="text-xs text-gray-400 mt-0.5">{date}</div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0 flex-wrap">
-          {/* Holes badge */}
-          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-            {s.holes}H
-          </span>
-          {/* Difficulty badge */}
-          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${DIFF_COLOR[s.course_difficulty] ?? ''}`}>
-            {DIFF_LABEL[s.course_difficulty]}
-          </span>
-          {/* Commissioner bonus badge */}
-          {commBonus > 0 && (
-            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">
-              ⭐ +{commBonus}
-            </span>
-          )}
-          {/* Group size */}
-          {s.group_size > 1 && (
-            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
-              👥 {s.group_size}
-            </span>
-          )}
-          {/* Expand indicator */}
-          <svg
-            className={`w-4 h-4 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
-            fill="none" stroke="currentColor" viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
-      </button>
-
-      {/* ── Expanded detail ── */}
-      {open && (
-        <div className="border-t border-gray-100 px-5 py-4 space-y-4 bg-gray-50/50">
-
-          {/* Two-column stat grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { label: 'Gross Score',  value: s.gross_score },
-              { label: 'Handicap',     value: s.handicap_used },
-              { label: 'Holes',        value: `${s.holes} holes` },
-              { label: 'Difficulty',   value: `${DIFF_LABEL[s.course_difficulty]} ×${s.difficulty_multiplier.toFixed(2)}` },
-            ].map(({ label, value }) => (
-              <div key={label} className="bg-white rounded-lg p-3 border border-gray-100 text-center">
-                <div className="text-xs text-gray-500 mb-0.5">{label}</div>
-                <div className="font-bold text-gray-800">{value}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Scoring breakdown */}
-          <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Scoring Breakdown</p>
-            <div className="bg-white rounded-lg border border-gray-100 divide-y divide-gray-50 text-sm">
-              <div className="flex justify-between px-4 py-2">
-                <span className="text-gray-600">Base points</span>
-                <span className="font-medium text-gray-800">{base.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between px-4 py-2">
-                <span className="text-gray-600">Difficulty multiplier</span>
-                <span className="font-medium text-gray-800">×{s.difficulty_multiplier.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between px-4 py-2">
-                <span className="text-gray-600">Adjusted points</span>
-                <span className="font-medium text-gray-800">{adjusted.toFixed(2)}</span>
-              </div>
-              {Number(s.group_bonus) > 0 && (
-                <div className="flex justify-between px-4 py-2">
-                  <span className="text-gray-600">Group bonus</span>
-                  <span className="font-medium text-purple-700">+{s.group_bonus}</span>
-                </div>
-              )}
-              {commBonus > 0 && (
-                <div className="flex justify-between px-4 py-2">
-                  <span className="text-gray-600">⭐ Commissioner bonus</span>
-                  <span className="font-semibold text-yellow-600">+{commBonus}</span>
-                </div>
-              )}
-              <div className="flex justify-between px-4 py-2.5 bg-green-50 rounded-b-lg">
-                <span className="font-bold text-gray-800">Total Points</span>
-                <span className="font-extrabold text-green-700 text-base">{total.toFixed(1)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Group members */}
-          {s.group_member_names && (
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Group Members</p>
-              <p className="text-sm text-gray-700">{s.group_member_names}</p>
-            </div>
-          )}
-
-          {/* Notes */}
-          {s.notes && (
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Notes</p>
-              <p className="text-sm text-gray-700 italic">{s.notes}</p>
-            </div>
-          )}
-
-          {/* Submitted timestamp */}
-          <p className="text-xs text-gray-400">
-            Submitted {new Date(s.created_at).toLocaleDateString('en-US', {
-              month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
-            })}
-          </p>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function BonusCard({ b }: { b: SeasonBonus & { member_name: string } }) {
-  const date = new Date(b.awarded_date + 'T12:00:00').toLocaleDateString('en-US', {
-    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
-  })
-  return (
-    <div className="card p-0 overflow-hidden border-amber-200">
-      <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-amber-50/60">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="shrink-0 w-14 h-14 rounded-xl bg-amber-500 flex flex-col items-center justify-center shadow-sm">
-            <span className="text-white text-lg font-extrabold leading-none">+{b.points}</span>
-            <span className="text-amber-200 text-[10px] font-medium">pts</span>
-          </div>
-          <div className="min-w-0">
-            <div className="font-bold text-gray-900 truncate">{b.member_name}</div>
-            <div className="text-sm text-amber-700 font-medium truncate">🏆 {b.reason}</div>
-            <div className="text-xs text-gray-400 mt-0.5">{date}</div>
-          </div>
-        </div>
-        <span className="shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
-          Season Bonus
-        </span>
-      </div>
-    </div>
-  )
-}
-
-export default function ScoresPage() {
-  const [scores, setScores]   = useState<Score[]>([])
-  const [bonuses, setBonuses] = useState<(SeasonBonus & { member_name: string })[]>([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch]   = useState('')
-  const [sortBy, setSortBy]   = useState<'date' | 'points' | 'player'>('date')
-  const [playerFilter, setPlayerFilter] = useState<string>('all')
-
-  useEffect(() => {
-    Promise.all([
-      fetch('/api/scores').then((r) => r.json()),
-      fetch('/api/season-bonuses').then((r) => r.json()),
-    ])
-      .then(([s, b]) => { setScores(s); setBonuses(b); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [])
-
-  // Unique player names for the filter (scores + bonuses)
-  const players = Array.from(new Set([
-    ...scores.map((s) => s.player_name),
-    ...bonuses.map((b) => b.member_name),
-  ])).sort()
-
-  const filteredScores = scores.filter((s) => {
-    const q = search.toLowerCase()
-    const matchSearch =
-      !q ||
-      s.player_name.toLowerCase().includes(q) ||
-      s.course_name.toLowerCase().includes(q) ||
-      (s.notes ?? '').toLowerCase().includes(q)
-    const matchPlayer = playerFilter === 'all' || s.player_name === playerFilter
-    return matchSearch && matchPlayer
-  })
-
-  const filteredBonuses = bonuses.filter((b) => {
-    const q = search.toLowerCase()
-    const matchSearch = !q || b.member_name.toLowerCase().includes(q) || b.reason.toLowerCase().includes(q)
-    const matchPlayer = playerFilter === 'all' || b.member_name === playerFilter
-    return matchSearch && matchPlayer
-  })
-
-  type ScoreItem = { kind: 'score'; data: Score; sortDate: number; sortPoints: number; sortPlayer: string }
-  type BonusItem = { kind: 'bonus'; data: SeasonBonus & { member_name: string }; sortDate: number; sortPoints: number; sortPlayer: string }
-  type Item = ScoreItem | BonusItem
-
-  const items: Item[] = [
-    ...filteredScores.map((s): ScoreItem => ({
-      kind: 'score', data: s,
-      sortDate:   new Date(s.play_date).getTime(),
-      sortPoints: Number(s.total_points),
-      sortPlayer: s.player_name,
-    })),
-    ...filteredBonuses.map((b): BonusItem => ({
-      kind: 'bonus', data: b,
-      sortDate:   new Date(b.awarded_date).getTime(),
-      sortPoints: b.points,
-      sortPlayer: b.member_name,
-    })),
-  ].sort((a, b) => {
-    if (sortBy === 'date')   return b.sortDate - a.sortDate
-    if (sortBy === 'points') return b.sortPoints - a.sortPoints
-    if (sortBy === 'player') return a.sortPlayer.localeCompare(b.sortPlayer)
-    return 0
-  })
-
-  // Summary stats
-  const totalRounds   = scores.length
-  const avgPts        = totalRounds ? Math.round(scores.reduce((s, r) => s + Number(r.total_points), 0) / totalRounds * 10) / 10 : 0
-  const bestRound     = totalRounds ? Math.max(...scores.map((r) => Number(r.total_points))) : 0
-  const withBonus     = scores.filter((r) => Number(r.additional_points) > 0).length
-
-  return (
-    <div className="space-y-6">
-
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Round Details</h1>
-        <p className="text-gray-500 mt-1 text-sm">
-          {scores.length} rounds submitted this season — tap any round to see the full scoring breakdown.
-        </p>
-      </div>
-
-      {/* Summary stats */}
-      {!loading && scores.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { label: 'Rounds',      value: scores.length },
-            { label: 'Avg Points',  value: avgPts || '—' },
-            { label: 'Best Round',  value: bestRound > 0 ? bestRound.toFixed(1) : '—' },
-            { label: '⭐ Bonus Rounds', value: withBonus },
-          ].map(({ label, value }) => (
-            <div key={label} className="card text-center py-3">
-              <div className="text-2xl font-bold text-green-700">{value}</div>
-              <div className="text-xs text-gray-500 mt-0.5">{label}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <input
-          type="search"
-          placeholder="Search player, course, notes…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="form-input flex-1"
-        />
-        <select
-          value={playerFilter}
-          onChange={(e) => setPlayerFilter(e.target.value)}
-          className="form-input sm:w-48"
-        >
-          <option value="all">All Players</option>
-          {players.map((p) => <option key={p} value={p}>{p}</option>)}
-        </select>
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as 'date' | 'points' | 'player')}
-          className="form-input sm:w-44"
-        >
-          <option value="date">Sort: Newest First</option>
-          <option value="points">Sort: Most Points</option>
-          <option value="player">Sort: Player A–Z</option>
-        </select>
-      </div>
-
-      {/* Results count when filtering */}
-      {(search || playerFilter !== 'all') && (
-        <p className="text-sm text-gray-500">
-          Showing {items.length} of {scores.length + bonuses.length} entries
-          {playerFilter !== 'all' && ` for ${playerFilter}`}
-        </p>
-      )}
-
-      {/* Cards */}
-      {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="w-10 h-10 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : items.length === 0 ? (
-        <div className="card text-center text-gray-500 py-16">
-          {scores.length === 0 ? 'No rounds submitted yet.' : 'No rounds match your search.'}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {items.map((item) =>
-            item.kind === 'score'
-              ? <ScoreCard key={item.data.id} s={item.data} />
-              : <BonusCard key={item.data.id} b={item.data} />
-          )}
-        </div>
-      )}
-    </div>
-  )
+  return <ScoresClient scores={scores} bonuses={bonuses} />
 }
