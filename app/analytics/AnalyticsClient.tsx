@@ -660,6 +660,30 @@ function CompareTab({ data }: { data: Analytics }) {
     }),
   }
 
+  // Shared rounds: same date + same course
+  const sharedRounds = p1.scores
+    .flatMap((s1) => {
+      const d1 = s1.date.slice(0, 10)
+      return p2.scores
+        .filter((s2) => s2.date.slice(0, 10) === d1 && s2.course === s1.course)
+        .map((s2) => ({ date: d1, course: s1.course, s1, s2 }))
+    })
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  const h2hWins1 = sharedRounds.filter((r) => r.s1.totalPoints > r.s2.totalPoints).length
+  const h2hWins2 = sharedRounds.filter((r) => r.s2.totalPoints > r.s1.totalPoints).length
+  const h2hTies  = sharedRounds.filter((r) => r.s1.totalPoints === r.s2.totalPoints).length
+
+  const h2hBarData = {
+    labels: sharedRounds.map((r) =>
+      new Date(r.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    ),
+    datasets: [
+      { label: p1.name.split(' ')[0], data: sharedRounds.map((r) => r.s1.totalPoints), backgroundColor: c1 + 'cc' },
+      { label: p2.name.split(' ')[0], data: sharedRounds.map((r) => r.s2.totalPoints), backgroundColor: c2 + 'cc' },
+    ],
+  }
+
   const best1 = p1.scores.length ? Math.max(...p1.scores.map((s) => s.totalPoints)) : 0
   const best2 = p2.scores.length ? Math.max(...p2.scores.map((s) => s.totalPoints)) : 0
   const hd1 = p1.startingHandicap != null ? p1.startingHandicap - p1.currentHandicap : null
@@ -746,6 +770,85 @@ function CompareTab({ data }: { data: Analytics }) {
             <p className="text-xs text-gray-400 mb-4">Top 5 rounds × participation multiplier + improvement bonus — matches the standings</p>
             <Line data={cumulativeData} options={lineOpts} />
           </div>
+
+          {/* ── Head-to-head shared rounds ── */}
+          {sharedRounds.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 py-8 text-center text-sm text-gray-400">
+              No rounds found where {p1.name.split(' ')[0]} and {p2.name.split(' ')[0]} played the same course on the same day.
+            </div>
+          ) : (
+            <>
+              {/* H2H record banner */}
+              <div className="card p-0 overflow-hidden">
+                <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
+                  <h2 className="text-base font-bold text-gray-900">⚔️ Head-to-Head — {sharedRounds.length} shared round{sharedRounds.length !== 1 ? 's' : ''}</h2>
+                  <p className="text-xs text-gray-400 mt-0.5">Rounds played on the same course on the same day</p>
+                </div>
+                <div className="grid grid-cols-3 divide-x divide-gray-100">
+                  {[
+                    { label: p1.name.split(' ')[0], value: h2hWins1, color: c1, suffix: h2hWins1 === 1 ? 'win' : 'wins' },
+                    { label: 'Ties',                value: h2hTies,  color: '#9ca3af', suffix: h2hTies === 1 ? 'tie' : 'ties' },
+                    { label: p2.name.split(' ')[0], value: h2hWins2, color: c2, suffix: h2hWins2 === 1 ? 'win' : 'wins' },
+                  ].map(({ label, value, color, suffix }) => (
+                    <div key={label} className="flex flex-col items-center py-5 gap-0.5">
+                      <span className="text-4xl font-extrabold tabular-nums" style={{ color }}>{value}</span>
+                      <span className="text-xs font-semibold text-gray-500">{suffix}</span>
+                      <span className="text-xs text-gray-400 mt-0.5">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Points per shared round — grouped bar */}
+              <div className="card">
+                <h2 className="text-base font-bold text-gray-900 mb-1">📊 Points in Shared Rounds</h2>
+                <p className="text-xs text-gray-400 mb-4">Side-by-side points each time they played together</p>
+                <Bar data={h2hBarData} options={{ ...barOpts, aspectRatio: Math.max(1.4, sharedRounds.length * 0.6) }} />
+              </div>
+
+              {/* Round-by-round table */}
+              <div className="card p-0 overflow-hidden">
+                <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
+                  <h2 className="text-base font-bold text-gray-900">📋 Shared Round Results</h2>
+                </div>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wide">
+                      <th className="px-4 py-2 text-left">Date · Course</th>
+                      <th className="px-4 py-2 text-center font-semibold" style={{ color: c1 }}>{p1.name.split(' ')[0]}</th>
+                      <th className="px-4 py-2 text-center font-semibold" style={{ color: c2 }}>{p2.name.split(' ')[0]}</th>
+                      <th className="px-4 py-2 text-center">Winner</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {sharedRounds.map((r, i) => {
+                      const p1Won = r.s1.totalPoints > r.s2.totalPoints
+                      const p2Won = r.s2.totalPoints > r.s1.totalPoints
+                      const tie   = !p1Won && !p2Won
+                      const dateStr = new Date(r.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                      return (
+                        <tr key={i} className="hover:bg-gray-50">
+                          <td className="px-4 py-3">
+                            <div className="font-medium text-gray-800">{dateStr}</div>
+                            <div className="text-xs text-gray-400 truncate max-w-[180px]">{r.course}</div>
+                          </td>
+                          <td className={`px-4 py-3 text-center font-bold tabular-nums ${p1Won ? '' : 'text-gray-400'}`} style={p1Won ? { color: c1 } : {}}>
+                            {p1Won && '✓ '}{r.s1.totalPoints.toFixed(1)}
+                          </td>
+                          <td className={`px-4 py-3 text-center font-bold tabular-nums ${p2Won ? '' : 'text-gray-400'}`} style={p2Won ? { color: c2 } : {}}>
+                            {p2Won && '✓ '}{r.s2.totalPoints.toFixed(1)}
+                          </td>
+                          <td className="px-4 py-3 text-center text-xs font-semibold text-gray-500">
+                            {tie ? 'Tie' : p1Won ? p1.name.split(' ')[0] : p2.name.split(' ')[0]}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             {[{ p: p1, c: c1 }, { p: p2, c: c2 }].map(({ p, c }) => (
