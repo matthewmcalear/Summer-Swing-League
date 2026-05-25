@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { MapContainer, TileLayer, Marker, Polyline, Circle, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Polyline, Polygon, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -51,6 +51,30 @@ function offsetLatLon(lat: number, lon: number, br: number, distM: number): [num
     Math.cos(distM / R) - Math.sin((lat * Math.PI) / 180) * Math.sin(lat2),
   )
   return [(lat2 * 180) / Math.PI, (lon2 * 180) / Math.PI]
+}
+
+// Real shot dispersion is elliptical: ~1.5× more long/short variance than lateral.
+// semiMajor = along shot line, semiMinor = perpendicular (left/right).
+const DISP_MAJOR = 1.5   // multiplier along shot line
+const DISP_MINOR = 0.65  // multiplier lateral
+
+function ellipsePoints(
+  centerLat: number, centerLon: number,
+  semiMajorM: number, semiMinorM: number,
+  br: number,
+  n = 72,
+): [number, number][] {
+  const pts: [number, number][] = []
+  for (let i = 0; i < n; i++) {
+    const a     = (i / n) * 2 * Math.PI
+    const northM = semiMajorM * Math.cos(a) * Math.cos(br) - semiMinorM * Math.sin(a) * Math.sin(br)
+    const eastM  = semiMajorM * Math.cos(a) * Math.sin(br) + semiMinorM * Math.sin(a) * Math.cos(br)
+    pts.push([
+      centerLat + northM / 111320,
+      centerLon + eastM  / (111320 * Math.cos((centerLat * Math.PI) / 180)),
+    ])
+  }
+  return pts
 }
 
 function makeTextIcon(text: string) {
@@ -284,18 +308,21 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
                 pathOptions={{ color: '#16a34a', weight: 2, dashArray: '8 6', opacity: 0.75 }}
               />
               {showDispersion && yards !== null && (() => {
-                const radYd = dispersionYards(yards, dispersionHcap)
-                const radM  = radYd * 0.9144
-                const br    = bearingRad(userPos.lat, userPos.lon, targetPos.lat, targetPos.lon)
-                const shortPt = offsetLatLon(targetPos.lat, targetPos.lon, br + Math.PI, radM)
-                const longPt  = offsetLatLon(targetPos.lat, targetPos.lon, br, radM)
-                const shortYd = Math.max(0, Math.round(yards - radYd))
-                const longYd  = Math.round(yards + radYd)
+                const baseYd    = dispersionYards(yards, dispersionHcap)
+                const majorYd   = baseYd * DISP_MAJOR
+                const minorYd   = baseYd * DISP_MINOR
+                const majorM    = majorYd * 0.9144
+                const minorM    = minorYd * 0.9144
+                const br        = bearingRad(userPos.lat, userPos.lon, targetPos.lat, targetPos.lon)
+                const shortPt   = offsetLatLon(targetPos.lat, targetPos.lon, br + Math.PI, majorM)
+                const longPt    = offsetLatLon(targetPos.lat, targetPos.lon, br, majorM)
+                const shortYd   = Math.max(0, Math.round(yards - majorYd))
+                const longYd    = Math.round(yards + majorYd)
+                const ellipsePts = ellipsePoints(targetPos.lat, targetPos.lon, majorM, minorM, br)
                 return (
                   <>
-                    <Circle
-                      center={[targetPos.lat, targetPos.lon]}
-                      radius={radM}
+                    <Polygon
+                      positions={ellipsePts}
                       pathOptions={{ color: '#f59e0b', fillColor: '#fcd34d', fillOpacity: 0.18, weight: 1.5, dashArray: '6 4' }}
                     />
                     <Marker position={shortPt} icon={makeTextIcon(`${shortYd} yd`)} interactive={false} />
@@ -449,7 +476,9 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
             {showDispersion && (
               <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-0.5 tabular-nums ml-auto">
                 {dispersionHcap === 0 ? 'Scratch' : `Hdcp ${dispersionHcap}`}
-                <span className="text-amber-500 font-normal hidden sm:inline"> · ≈{Math.round(dispersionYards(yards, dispersionHcap))} yd</span>
+                <span className="text-amber-500 font-normal hidden sm:inline">
+                  {' · ±'}{Math.round(dispersionYards(yards, dispersionHcap) * DISP_MAJOR)} yd / ±{Math.round(dispersionYards(yards, dispersionHcap) * DISP_MINOR)} yd
+                </span>
               </span>
             )}
           </div>
