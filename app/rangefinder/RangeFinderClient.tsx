@@ -275,20 +275,26 @@ export default function RangeFinderClient() {
 
       {/* ── Dispersion control bar ────────────────────────────────────────── */}
       {yards !== null && (
-        <div className="flex items-center gap-3 px-4 py-2.5 bg-white rounded-2xl border border-gray-200 shadow-sm text-sm">
-          <button
-            onClick={() => setShowDispersion((d) => !d)}
-            className={`flex items-center gap-1.5 font-semibold text-xs px-2.5 py-1.5 rounded-lg transition-colors shrink-0 ${
-              showDispersion ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'text-gray-500 hover:bg-gray-100 border border-transparent'
-            }`}
-          >
-            ◎ Dispersion {showDispersion ? 'ON' : 'OFF'}
-          </button>
-
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-2.5 space-y-2">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowDispersion((d) => !d)}
+              className={`flex items-center gap-1.5 font-semibold text-xs px-2.5 py-1.5 rounded-lg transition-colors shrink-0 ${
+                showDispersion ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'text-gray-500 hover:bg-gray-100 border border-transparent'
+              }`}
+            >
+              ◎ Dispersion {showDispersion ? 'ON' : 'OFF'}
+            </button>
+            {showDispersion && (
+              <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-0.5 tabular-nums ml-auto">
+                {dispersionHcap === 0 ? 'Scratch' : `Hdcp ${dispersionHcap}`}
+                <span className="text-amber-500 font-normal hidden sm:inline"> · ≈{Math.round(dispersionYards(yards, dispersionHcap))} yd</span>
+              </span>
+            )}
+          </div>
           {showDispersion && (
-            <>
-              <span className="w-px h-4 bg-gray-200 shrink-0" />
-              <span className="text-xs text-gray-500 shrink-0">Tighter</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400 shrink-0">Tighter</span>
               <input
                 type="range"
                 min={0}
@@ -297,14 +303,8 @@ export default function RangeFinderClient() {
                 onChange={(e) => setDispersionHcap(Number(e.target.value))}
                 className="flex-1 accent-amber-500"
               />
-              <span className="text-xs text-gray-500 shrink-0">Wider</span>
-              <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-0.5 tabular-nums shrink-0">
-                {dispersionHcap === 0 ? 'Scratch' : `Hdcp ${dispersionHcap}`}
-              </span>
-              <span className="text-xs text-gray-400 shrink-0 hidden sm:block">
-                ≈ {Math.round(dispersionYards(yards, dispersionHcap))} yd radius
-              </span>
-            </>
+              <span className="text-xs text-gray-400 shrink-0">Wider</span>
+            </div>
           )}
         </div>
       )}

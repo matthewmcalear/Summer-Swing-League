@@ -147,7 +147,7 @@ export default function Home() {
             Play more, earn more, win cash.
           </p>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap gap-3">
             <Link
               href="/submit-score"
               className="px-6 py-3 bg-white text-green-900 rounded-xl font-bold text-sm hover:bg-green-50 transition-all shadow-lg hover:shadow-xl"
@@ -168,12 +168,12 @@ export default function Home() {
             >
               📊 Standings
             </Link>
-            <span className="hidden sm:block w-px h-6 bg-white/20" />
             <Link
               href="/rangefinder"
-              className="flex items-center gap-1.5 text-white/60 hover:text-white text-sm font-semibold transition-colors"
+              className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all shadow border border-white/20 hover:border-white/50"
+              style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(8px)' }}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
                 <circle cx="12" cy="12" r="7"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
                 <line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>
                 <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
