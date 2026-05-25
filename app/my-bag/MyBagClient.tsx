@@ -206,9 +206,9 @@ export default function MyBagClient({ members }: { members: Member[] }) {
         <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800">
           <p className="font-semibold mb-1">📐 How dispersion is calculated</p>
           <p className="text-xs leading-relaxed text-amber-700">
-            Dispersion radius = distance × (0.10 + handicap/54 × 0.35). Based on published Arccos and Shot Scope data:
-            a scratch player at 150 yards has roughly a 15-yard radius, while a 30-handicapper has roughly a 50-yard radius.
-            The circle shows one standard deviation — statistically, most shots will land inside it, but not all.
+            The ellipse is wider left/right than long/short — lateral spread dominates for most golfers.
+            Lateral semi-axis = distance × (0.06 + hdcp/54 × 0.18) × 1.5. At 150 yards: scratch ≈ ±12 yd L/R,
+            hdcp 20 ≈ ±25 yd L/R, hdcp 36 ≈ ±38 yd L/R. Shows roughly one standard deviation.
           </p>
         </div>
 

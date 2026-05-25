@@ -129,9 +129,11 @@ function recommendClub(targetYards: number, clubs: Club[]): { club: Club; diff: 
   return { club: best, diff: Math.round(targetYards - best.yards) }
 }
 
-// dispersionYards: scales with distance and handicap (based on Arccos/Shot Scope data)
+// Base dispersion radius. Lateral semi-axis = this × DISP_LATERAL.
+// Calibrated so scratch at 150 yd → ±12 yd L/R (24 yd total);
+// hdcp 20 at 150 yd → ±25 yd L/R (50 yd total).
 function dispersionYards(yards: number, handicap: number): number {
-  const factor = 0.10 + (Math.min(Math.max(handicap, 0), 54) / 54) * 0.35
+  const factor = 0.06 + (Math.min(Math.max(handicap, 0), 54) / 54) * 0.18
   return yards * factor
 }
 
