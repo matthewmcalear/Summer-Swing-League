@@ -17,17 +17,6 @@ function haversineYards(lat1: number, lon1: number, lat2: number, lon2: number) 
   return 2 * R * Math.asin(Math.sqrt(a)) * 1.09361
 }
 
-function bearingDeg(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const φ1 = (lat1 * Math.PI) / 180
-  const φ2 = (lat2 * Math.PI) / 180
-  const Δλ = ((lon2 - lon1) * Math.PI) / 180
-  const y  = Math.sin(Δλ) * Math.cos(φ2)
-  const x  = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ)
-  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360
-}
-
-const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
-const compassDir = (deg: number) => COMPASS[Math.round(deg / 45) % 8]
 
 async function fetchElevation(lat: number, lon: number): Promise<number | null> {
   try {
@@ -163,7 +152,6 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
 
   // Computed stats
   const yards    = userPos && targetPos ? haversineYards(userPos.lat, userPos.lon, targetPos.lat, targetPos.lon) : null
-  const deg      = userPos && targetPos ? bearingDeg(userPos.lat, userPos.lon, targetPos.lat, targetPos.lon) : null
   const elevDiff = userElev != null && targetElev != null ? (targetElev - userElev) * 3.28084 : null
   const playAs   = yards != null && elevDiff != null && Math.abs(elevDiff) > 2
     ? Math.round(yards + elevDiff / 3)
@@ -231,7 +219,7 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
       )}
 
       {/* ── Info card ─────────────────────────────────────────────────────── */}
-      {yards !== null && deg !== null ? (
+      {yards !== null ? (
         <div className="card py-3">
           <div className="flex items-center justify-between gap-3">
             {/* Stats row — wraps freely without displacing the button */}
@@ -245,13 +233,6 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
               <div className="text-center">
                 <div className="text-2xl font-bold text-gray-700 tabular-nums">{Math.round(yards * 0.9144)}</div>
                 <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">meters</div>
-              </div>
-
-              <div className="h-10 w-px bg-gray-100 hidden sm:block" />
-
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-700">{compassDir(deg)}</div>
-                <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">{Math.round(deg)}°</div>
               </div>
 
               {elevDiff !== null && (
