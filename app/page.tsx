@@ -175,7 +175,7 @@ export default function Home() {
         {/* GPS rangefinder quick-access — top-right */}
         <Link
           href="/rangefinder"
-          className="absolute top-4 right-4 z-10 flex flex-col items-center gap-1 bg-black/35 hover:bg-black/55 backdrop-blur rounded-2xl px-4 py-3 text-white border border-white/20 hover:border-white/40 transition-all"
+          className="absolute bottom-4 right-4 z-10 flex flex-col items-center gap-1 bg-black/35 hover:bg-black/55 backdrop-blur rounded-2xl px-4 py-3 text-white border border-white/20 hover:border-white/40 transition-all"
         >
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
             <circle cx="12" cy="12" r="7"/>
@@ -189,7 +189,7 @@ export default function Home() {
         </Link>
 
         {/* Photo credit — pinned to bottom-right of the hero container */}
-        <p className="absolute bottom-3 right-4 z-10 text-white/40 text-xs italic">
+        <p className="absolute bottom-3 left-4 z-10 text-white/40 text-xs italic">
           Carling Lake Golf Club · 2025
         </p>
       </div>
