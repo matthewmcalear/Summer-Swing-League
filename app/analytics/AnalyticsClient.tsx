@@ -221,6 +221,7 @@ function OverviewTab({ data, selected, setSelected }: {
         current: p.currentHandicap,
       }
     })
+    .filter((p) => p.delta !== 0)
     .sort((a, b) => b.delta - a.delta)
 
   const hcapChangeData = {
@@ -346,7 +347,10 @@ function OverviewTab({ data, selected, setSelected }: {
         <div className="card lg:col-span-2">
           <h2 className="text-base font-bold text-gray-900 mb-1">🎯 Handicap Improvement</h2>
           <p className="text-xs text-gray-400 mb-4">Strokes dropped since season start · green = improved · earns +3 pts per stroke</p>
-          <Bar data={hcapChangeData} options={hcapChangeOpts} />
+          {hcapChangePlayers.length > 0
+            ? <Bar data={hcapChangeData} options={hcapChangeOpts} />
+            : <p className="text-sm text-gray-400 py-4">No handicap changes yet this season.</p>
+          }
         </div>
 
         <div className="card">
