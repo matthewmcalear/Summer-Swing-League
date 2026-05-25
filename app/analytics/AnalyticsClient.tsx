@@ -236,9 +236,9 @@ function OverviewTab({ data, selected, setSelected }: {
   }
 
   const hcapChangeOpts = {
-    responsive:  true,
-    indexAxis:   'y' as const,
-    aspectRatio: 2,
+    responsive:          true,
+    maintainAspectRatio: false,
+    indexAxis:           'y' as const,
     interaction: { mode: 'index' as const, intersect: false },
     plugins: {
       legend:  noLegend,
@@ -348,7 +348,11 @@ function OverviewTab({ data, selected, setSelected }: {
           <h2 className="text-base font-bold text-gray-900 mb-1">🎯 Handicap Improvement</h2>
           <p className="text-xs text-gray-400 mb-4">Strokes dropped since season start · green = improved · earns +3 pts per stroke</p>
           {hcapChangePlayers.length > 0
-            ? <Bar data={hcapChangeData} options={hcapChangeOpts} />
+            ? (
+              <div style={{ height: `${Math.max(80, hcapChangePlayers.length * 52)}px` }}>
+                <Bar data={hcapChangeData} options={hcapChangeOpts} />
+              </div>
+            )
             : <p className="text-sm text-gray-400 py-4">No handicap changes yet this season.</p>
           }
         </div>
