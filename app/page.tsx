@@ -129,7 +129,7 @@ export default function Home() {
         }} />
 
         {/* Content */}
-        <div className="relative z-10 p-8 sm:p-12 text-white max-w-3xl">
+        <div className="relative z-10 p-8 pb-20 sm:pb-12 sm:p-12 text-white max-w-3xl">
           <div className="mb-4 flex flex-wrap gap-2">
             <span className="season-badge">🌿 Season 2 · 2026</span>
             <span className="season-badge">📅 Apr 15 – Oct 10</span>
