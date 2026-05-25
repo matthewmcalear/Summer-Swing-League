@@ -363,6 +363,50 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
           )}
         </MapContainer>
 
+        {/* ── Map data overlay ───────────────────────────────────────────── */}
+        {yards !== null && (
+          <div className="absolute top-3 right-3 z-[1000] bg-black/65 backdrop-blur-sm rounded-xl px-3 py-2.5 text-white shadow-xl max-w-[200px]">
+            {/* Distance */}
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-extrabold tabular-nums leading-none">{Math.round(yards)}</span>
+              <span className="text-xs text-white/60 font-semibold">yd</span>
+              <span className="text-sm font-bold tabular-nums text-white/70">{Math.round(yards * 0.9144)}</span>
+              <span className="text-xs text-white/50 font-semibold">m</span>
+            </div>
+
+            {/* Elevation */}
+            {elevDiff !== null && Math.abs(elevDiff) > 2 && (
+              <div className="mt-1 flex items-center gap-1.5 text-xs">
+                <span className={elevDiff > 0 ? 'text-red-300' : 'text-blue-300'}>
+                  {elevDiff > 0 ? '↑' : '↓'} {Math.abs(Math.round(elevDiff))} ft
+                </span>
+                <span className="text-white/40">·</span>
+                <span className="text-purple-300 font-semibold tabular-nums">play {Math.round(yards + elevDiff / 3)} yd</span>
+              </div>
+            )}
+
+            {/* Club recommendation */}
+            {clubRec && (
+              <div className="mt-1.5 pt-1.5 border-t border-white/15 flex items-center gap-1.5">
+                <span className="text-green-300 text-xs">🏌</span>
+                <span className="text-sm font-bold text-green-200 leading-tight">{clubRec.club.club_name}</span>
+                {clubRec.diff !== 0 && (
+                  <span className="text-[10px] text-white/50 ml-auto tabular-nums">
+                    {clubRec.diff > 0 ? `+${clubRec.diff}` : clubRec.diff}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {elevLoading && (
+              <div className="mt-1 flex items-center gap-1 text-[10px] text-white/40">
+                <div className="w-2.5 h-2.5 border border-white/30 border-t-white/70 rounded-full animate-spin" />
+                elevation…
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Overlaid map buttons */}
         <div className="absolute bottom-4 left-3 z-[1000] flex gap-2">
           <button
