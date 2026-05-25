@@ -212,7 +212,7 @@ export default function RangeFinderClient() {
       {/* ── Map ───────────────────────────────────────────────────────────── */}
       <div
         className="relative rounded-2xl overflow-hidden shadow-md border border-gray-200"
-        style={{ height: 'clamp(420px, calc(100svh - 300px), 740px)' }}
+        style={{ height: 'clamp(500px, calc(100svh - 200px), 860px)' }}
       >
         <MapContainer
           center={center}

@@ -22,6 +22,9 @@ export default function RangeFinderPage() {
         </p>
       </div>
 
+      {/* ── Live map — first thing you see ── */}
+      <RangeFinderClient />
+
       {/* ── How it works ── */}
       <div className="card">
         <h2 className="text-lg font-bold text-gray-900 mb-4">How it works</h2>
@@ -67,12 +70,6 @@ export default function RangeFinderPage() {
           <li>The elevation fetch takes 1–2 seconds after you drop the pin — wait for the uphill/downhill reading.</li>
           <li>Tap <strong>Re-center</strong> if the map has drifted away from your position.</li>
         </ul>
-      </div>
-
-      {/* ── Live map ── */}
-      <div>
-        <h2 className="text-lg font-bold text-gray-900 mb-3">Live map</h2>
-        <RangeFinderClient />
       </div>
 
     </div>
