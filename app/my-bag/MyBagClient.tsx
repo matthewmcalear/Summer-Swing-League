@@ -75,7 +75,7 @@ export default function MyBagClient({ members }: { members: Member[] }) {
       <div className="card">
         <label className="block text-sm font-semibold text-gray-700 mb-2">Who are you?</label>
         <select
-          className="form-input sm:max-w-xs"
+          className="form-input !text-base !py-3 sm:max-w-sm"
           value={memberId}
           onChange={(e) => setMemberId(e.target.value)}
         >

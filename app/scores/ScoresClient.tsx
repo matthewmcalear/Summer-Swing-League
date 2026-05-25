@@ -334,12 +334,12 @@ export default function ScoresClient({ scores, bonuses }: Props) {
           placeholder="Search player, course, notes…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="form-input flex-1 sm:text-base sm:py-3 sm:px-4"
+          className="form-input flex-1 min-w-0 !text-base !py-3 !px-4"
         />
         <select
           value={playerFilter}
           onChange={(e) => setPlayerFilter(e.target.value)}
-          className="form-input sm:w-48"
+          className="form-input !text-base !py-3 sm:w-56"
         >
           <option value="all">All Players</option>
           {players.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -347,7 +347,7 @@ export default function ScoresClient({ scores, bonuses }: Props) {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as 'date' | 'points' | 'player')}
-          className="form-input sm:w-44"
+          className="form-input !text-base !py-3 sm:w-52"
         >
           <option value="date">Sort: Newest First</option>
           <option value="points">Sort: Most Points</option>
