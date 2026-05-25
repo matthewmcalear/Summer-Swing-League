@@ -211,19 +211,51 @@ function OverviewTab({ data, selected, setSelected }: {
     }),
   }
 
-  const hcapData = {
-    labels: allDates,
-    datasets: active.filter((p) => p.scores.length > 0).map((p) => {
-      const byDate: Record<string, number> = {}
-      p.scores.forEach((s) => { byDate[s.date.slice(0, 10)] = s.handicap })
-      let last = p.startingHandicap ?? p.scores[0]?.handicap ?? 0
-      const c = playerColor(data.playerTimelines, p.id)
+  const hcapChangePlayers = activeWithScores
+    .map((p) => {
+      const start = p.startingHandicap ?? p.scores[0]?.handicap ?? p.currentHandicap
       return {
-        label: p.name.split(' ')[0],
-        data:  allDates.map((d) => { if (byDate[d] !== undefined) last = byDate[d]; return last }),
-        borderColor: c, fill: false,
+        name:    p.name.split(' ')[0],
+        delta:   Number((start - p.currentHandicap).toFixed(1)),
+        start,
+        current: p.currentHandicap,
       }
-    }),
+    })
+    .sort((a, b) => b.delta - a.delta)
+
+  const hcapChangeData = {
+    labels: hcapChangePlayers.map((p) => p.name),
+    datasets: [{
+      label: 'Strokes Improved',
+      data:  hcapChangePlayers.map((p) => p.delta),
+      backgroundColor: hcapChangePlayers.map((p) =>
+        p.delta > 0 ? '#16a34a' : p.delta < 0 ? '#dc2626' : '#d1d5db'
+      ),
+    }],
+  }
+
+  const hcapChangeOpts = {
+    responsive:  true,
+    indexAxis:   'y' as const,
+    aspectRatio: 2,
+    interaction: { mode: 'index' as const, intersect: false },
+    plugins: {
+      legend:  noLegend,
+      tooltip: {
+        ...tooltipCfg,
+        callbacks: {
+          label: (ctx: any) => {
+            const p    = hcapChangePlayers[ctx.dataIndex]
+            const sign = p.delta > 0 ? '↓ improved' : p.delta < 0 ? '↑ worsened' : 'no change'
+            return `  ${p.start} → ${p.current}   (${p.delta > 0 ? '+' : ''}${p.delta} strokes ${sign})`
+          },
+        },
+      },
+    },
+    scales: {
+      x: { ...scaleBase, beginAtZero: true },
+      y: scaleBase,
+    },
   }
 
   const roundBarData = {
@@ -312,9 +344,9 @@ function OverviewTab({ data, selected, setSelected }: {
         </div>
 
         <div className="card lg:col-span-2">
-          <h2 className="text-base font-bold text-gray-900 mb-1">🎯 Handicap Progression</h2>
-          <p className="text-xs text-gray-400 mb-4">Lower = improved</p>
-          <Line data={hcapData} options={lineOptsRev} />
+          <h2 className="text-base font-bold text-gray-900 mb-1">🎯 Handicap Improvement</h2>
+          <p className="text-xs text-gray-400 mb-4">Strokes dropped since season start · green = improved · earns +3 pts per stroke</p>
+          <Bar data={hcapChangeData} options={hcapChangeOpts} />
         </div>
 
         <div className="card">
