@@ -126,6 +126,13 @@ const barOptsNoLegend = {
   plugins: { legend: noLegend, tooltip: tooltipCfg },
 }
 
+// For charts where data is far from 0 — auto-scales to the data range
+const barOptsAutoScale = {
+  ...barOpts,
+  plugins: { legend: noLegend, tooltip: tooltipCfg },
+  scales:  { x: scaleBase, y: { ...scaleBase, beginAtZero: false } },
+}
+
 const lineOptsNoLegend = {
   ...lineOpts,
   plugins: { legend: noLegend, tooltip: tooltipCfg },
@@ -359,7 +366,7 @@ function OverviewTab({ data, selected, setSelected }: {
 
         <div className="card">
           <h2 className="text-base font-bold text-gray-900 mb-4">⛳ Best vs Avg Round</h2>
-          <Bar data={roundBarData} options={barOpts} />
+          <Bar data={roundBarData} options={{ ...barOpts, scales: { x: scaleBase, y: { ...scaleBase, beginAtZero: false } } }} />
         </div>
 
         <div className="card">
@@ -497,7 +504,7 @@ function PlayerTab({ data, initialPlayerId }: { data: Analytics; initialPlayerId
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card">
           <h2 className="text-base font-bold text-gray-900 mb-4">📊 Points Per Round</h2>
-          <Bar data={pointsBarData} options={barOptsNoLegend} />
+          <Bar data={pointsBarData} options={barOptsAutoScale} />
         </div>
 
         <div className="card">
