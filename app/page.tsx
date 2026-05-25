@@ -181,23 +181,14 @@ export default function Home() {
       {/* ── TOURNAMENT BANNER ── */}
       <TournamentBanner />
 
-      {/* ── PRIZE CARDS ── */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="prize-gold card-hover border-2 text-center py-3 px-2">
-          <div className="text-2xl">🥇</div>
-          <div className="text-xs text-yellow-700 font-semibold mt-1">1st Place</div>
-          <div className="text-xl font-extrabold text-yellow-800">$250</div>
-        </div>
-        <div className="prize-silver card-hover border-2 text-center py-3 px-2">
-          <div className="text-2xl">🥈</div>
-          <div className="text-xs text-gray-600 font-semibold mt-1">2nd Place</div>
-          <div className="text-xl font-extrabold text-gray-700">$150</div>
-        </div>
-        <div className="prize-bronze card-hover border-2 text-center py-3 px-2">
-          <div className="text-2xl">🥉</div>
-          <div className="text-xs font-semibold mt-1" style={{ color: '#92400e' }}>3rd Place</div>
-          <div className="text-xl font-extrabold" style={{ color: '#92400e' }}>$75</div>
-        </div>
+      {/* ── PRIZE STRIP ── */}
+      <div className="flex items-center gap-4 bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-3">
+        <span className="text-sm font-bold text-yellow-700">🥇 1st — $250</span>
+        <span className="text-gray-200 select-none">|</span>
+        <span className="text-sm font-bold text-gray-500">🥈 2nd — $150</span>
+        <span className="text-gray-200 select-none">|</span>
+        <span className="text-sm font-bold" style={{ color: '#92400e' }}>🥉 3rd — $75</span>
+        <span className="ml-auto text-xs text-gray-400 font-medium">$475 prize pool · Oct 10</span>
       </div>
 
       {/* ── STANDINGS VISUAL ── */}

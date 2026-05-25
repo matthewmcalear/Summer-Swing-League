@@ -1,19 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Bar } from 'react-chartjs-2'
-import {
-  Chart as ChartJS,
-  CategoryScale, LinearScale, BarElement,
-  Title, Tooltip, Legend,
-} from 'chart.js'
 import type { StandingEntry } from '@/types'
-
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
-
-const PODIUM_COLORS = ['#f59e0b', '#9ca3af', '#cd7f32']  // gold, silver, bronze
-const PODIUM_HEIGHTS = ['h-28', 'h-20', 'h-14']          // visual podium heights
-const PODIUM_LABELS  = ['1st', '2nd', '3rd']
 
 export default function StandingsChart() {
   const [players, setPlayers] = useState<StandingEntry[]>([])
@@ -27,130 +15,66 @@ export default function StandingsChart() {
   }, [])
 
   if (loading) return (
-    <div className="flex justify-center py-10">
-      <div className="w-7 h-7 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+    <div className="flex justify-center py-8">
+      <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
     </div>
   )
 
   const active = players.filter((p) => p.totalRounds > 0)
 
   if (active.length === 0) return (
-    <div className="text-center py-8 text-gray-400 text-sm">
+    <div className="text-center py-6 text-gray-400 text-sm">
       No scores yet — standings will appear here once rounds are submitted.
     </div>
   )
 
-  const top3    = active.slice(0, 3)
-  // Reorder for podium display: 2nd | 1st | 3rd
-  const podium  = [top3[1], top3[0], top3[2]].filter(Boolean)
-  const podiumOrder = top3.length === 1 ? [top3[0]] : top3.length === 2 ? [top3[1], top3[0]] : podium
-  const podiumColorIdx = top3.length === 1 ? [0] : top3.length === 2 ? [1, 0] : [1, 0, 2]
-
-  // Bar chart data for all players
-  const barData = {
-    labels:   active.map((p) => p.name.split(' ')[0]),
-    datasets: [
-      {
-        label:           'Season Score',
-        data:            active.map((p) => p.seasonScore),
-        backgroundColor: active.map((_, i) =>
-          i === 0 ? '#f59e0b' : i === 1 ? '#9ca3af' : i === 2 ? '#cd7f32' : '#16a34a'
-        ),
-        borderRadius:    6,
-        borderSkipped:   false as const,
-      },
-    ],
-  }
-
-  const barOptions = {
-    indexAxis: 'y' as const,
-    responsive: true,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: (ctx: any) => {
-            const p = active[ctx.dataIndex]
-            return [
-              ` Score: ${ctx.parsed.x.toFixed(1)}`,
-              ` Rounds: ${p.totalRounds}`,
-              ` Handicap: ${p.currentHandicap}`,
-              ...(p.improvementBonus > 0 ? [` Improvement bonus: +${p.improvementBonus.toFixed(1)}`] : []),
-            ]
-          },
-        },
-      },
-    },
-    scales: {
-      x: { beginAtZero: true, grid: { color: '#f0fdf4' } },
-      y: { grid: { display: false } },
-    },
-  }
+  const maxScore = active[0]?.seasonScore ?? 1
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-1">
+      {active.map((p, i) => {
+        const pct    = Math.round((p.seasonScore / maxScore) * 100)
+        const isGold = i === 0
+        const isSilv = i === 1
+        const isBron = i === 2
 
-      {/* ── PODIUM ── */}
-      {top3.length > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4 text-center">
-            Top of the Leaderboard
-          </h3>
-          <div className="flex items-end justify-center gap-3">
-            {podiumOrder.map((p, idx) => {
-              const rank      = active.indexOf(p)
-              const colorIdx  = podiumColorIdx[idx]
-              const heights   = ['h-20', 'h-28', 'h-14']  // 2nd | 1st | 3rd visual heights
-              const barH      = top3.length === 1 ? 'h-28' : top3.length === 2 ? heights[idx] : heights[idx]
+        const barColor = isGold ? '#f59e0b' : isSilv ? '#9ca3af' : isBron ? '#cd7f32' : '#16a34a'
+        const rankBg   = isGold ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                       : isSilv ? 'bg-gray-100 text-gray-600 border-gray-200'
+                       : isBron ? 'bg-orange-50 text-orange-700 border-orange-200'
+                       :          'bg-gray-50 text-gray-500 border-gray-100'
 
-              return (
-                <div key={p.id} className="flex flex-col items-center gap-1" style={{ minWidth: '90px' }}>
-                  {/* Score bubble */}
-                  <div
-                    className="text-white text-sm font-bold px-3 py-1 rounded-full shadow"
-                    style={{ background: PODIUM_COLORS[colorIdx] }}
-                  >
-                    {p.seasonScore.toFixed(1)}
-                  </div>
+        return (
+          <div key={p.id} className="flex items-center gap-3 py-1.5 group">
+            {/* Rank */}
+            <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold shrink-0 ${rankBg}`}>
+              {i + 1}
+            </div>
 
-                  {/* Name */}
-                  <div className="text-xs font-semibold text-gray-700 text-center leading-tight">
-                    {p.name.split(' ')[0]}
-                  </div>
-
-                  {/* Podium block */}
-                  <div
-                    className={`w-20 ${barH} rounded-t-lg flex items-start justify-center pt-2 shadow-md`}
-                    style={{ background: PODIUM_COLORS[colorIdx] + (colorIdx === 0 ? '' : '99') }}
-                  >
-                    <span className="text-white font-black text-xl drop-shadow">
-                      {rank === 0 ? '🥇' : rank === 1 ? '🥈' : '🥉'}
-                    </span>
-                  </div>
-
-                  {/* Place label */}
-                  <div className="text-xs text-gray-500 font-medium">{PODIUM_LABELS[rank]}</div>
+            {/* Name + bar */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-sm font-semibold text-gray-800 truncate">
+                  {p.name.split(' ')[0]}
+                  {isGold && <span className="ml-1.5 text-xs">🥇</span>}
+                  {isSilv && <span className="ml-1.5 text-xs">🥈</span>}
+                  {isBron && <span className="ml-1.5 text-xs">🥉</span>}
+                </span>
+                <div className="flex items-center gap-2 shrink-0 ml-2">
+                  <span className="text-xs text-gray-400">{p.totalRounds}R</span>
+                  <span className="text-sm font-bold text-gray-800 w-12 text-right">{p.seasonScore.toFixed(1)}</span>
                 </div>
-              )
-            })}
+              </div>
+              <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${pct}%`, background: barColor }}
+                />
+              </div>
+            </div>
           </div>
-        </div>
-      )}
-
-      {/* ── HORIZONTAL BAR CHART (all players) ── */}
-      {active.length > 1 && (
-        <div>
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 text-center">
-            Full Standings
-          </h3>
-          <Bar
-            data={barData}
-            options={barOptions}
-            height={Math.max(active.length * 36, 120)}
-          />
-        </div>
-      )}
-
+        )
+      })}
     </div>
   )
 }
