@@ -151,6 +151,15 @@ const COLORS = [
   '#0891b2', '#be185d', '#65a30d', '#ea580c', '#6366f1',
 ]
 
+// Returns a y-axis min that sits below the lowest value so no bar is invisible
+function barFloor(values: number[]) {
+  if (!values.length) return 0
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const pad = Math.max(5, (max - min) * 0.5)
+  return Math.max(0, Math.floor(min - pad))
+}
+
 type Tab = 'overview' | 'player' | 'compare'
 
 export interface RoundScore {
@@ -266,19 +275,14 @@ function OverviewTab({ data, selected, setSelected }: {
     },
   }
 
+  const roundBarBests  = activeWithScores.map((p) => Math.max(...p.scores.map((s) => s.totalPoints)))
+  const roundBarAvgs   = activeWithScores.map((p) => p.avgPoints)
+  const roundBarFloor  = barFloor([...roundBarBests, ...roundBarAvgs])
   const roundBarData = {
     labels: activeWithScores.map((p) => p.name.split(' ')[0]),
     datasets: [
-      {
-        label: 'Best Round',
-        data:  activeWithScores.map((p) => Math.max(...p.scores.map((s) => s.totalPoints))),
-        backgroundColor: '#15803d',
-      },
-      {
-        label: 'Avg Round',
-        data:  activeWithScores.map((p) => p.avgPoints),
-        backgroundColor: '#86efac',
-      },
+      { label: 'Best Round', data: roundBarBests, backgroundColor: '#15803d' },
+      { label: 'Avg Round',  data: roundBarAvgs,  backgroundColor: '#86efac' },
     ],
   }
 
@@ -366,7 +370,7 @@ function OverviewTab({ data, selected, setSelected }: {
 
         <div className="card">
           <h2 className="text-base font-bold text-gray-900 mb-4">⛳ Best vs Avg Round</h2>
-          <Bar data={roundBarData} options={{ ...barOpts, scales: { x: scaleBase, y: { ...scaleBase, beginAtZero: false } } }} />
+          <Bar data={roundBarData} options={{ ...barOpts, scales: { x: scaleBase, y: { ...scaleBase, min: roundBarFloor } } }} />
         </div>
 
         <div className="card">
@@ -422,10 +426,12 @@ function PlayerTab({ data, initialPlayerId }: { data: Analytics; initialPlayerId
   const dateLabel = (d: string) =>
     new Date(d.slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
+  const ptValues     = sorted.map((s) => s.totalPoints)
   const pointsBarData = {
     labels: sorted.map((s) => dateLabel(s.date)),
-    datasets: [{ label: 'Points', data: sorted.map((s) => s.totalPoints), backgroundColor: color }],
+    datasets: [{ label: 'Points', data: ptValues, backgroundColor: color }],
   }
+  const pointsBarOpts = { ...barOptsAutoScale, scales: { x: scaleBase, y: { ...scaleBase, min: barFloor(ptValues) } } }
 
   const netScores = sorted.map((s) => {
     const net = s.holes === 9 ? s.gross - s.handicap / 2 : s.gross - s.handicap
@@ -504,7 +510,7 @@ function PlayerTab({ data, initialPlayerId }: { data: Analytics; initialPlayerId
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card">
           <h2 className="text-base font-bold text-gray-900 mb-4">📊 Points Per Round</h2>
-          <Bar data={pointsBarData} options={barOptsAutoScale} />
+          <Bar data={pointsBarData} options={pointsBarOpts} />
         </div>
 
         <div className="card">
