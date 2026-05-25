@@ -359,7 +359,9 @@ function OverviewTab({ data, selected, setSelected }: {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card lg:col-span-2">
           <h2 className="text-base font-bold text-gray-900 mb-4">📈 Cumulative Points Over Season</h2>
-          <Line data={cumulativeData} options={lineOpts} />
+          <div className="h-64 sm:h-80">
+            <Line data={cumulativeData} options={{ ...lineOpts, maintainAspectRatio: false }} />
+          </div>
         </div>
 
         <div className="card lg:col-span-2">
