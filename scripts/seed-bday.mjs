@@ -17,22 +17,22 @@ const GROUPS = [
   {
     code: 'GROUP1',
     name: 'Group 1',
-    teams: ['Team A', 'Team B'],
+    teams: ['Dan & Jackson', 'Doug & Tom'],
   },
   {
     code: 'GROUP2',
     name: 'Group 2',
-    teams: ['Team C', 'Team D'],
+    teams: ['Nick & Tibi', 'Dad & Grant'],
   },
   {
     code: 'GROUP3',
     name: 'Group 3',
-    teams: ['Team E', 'Team F'],
+    teams: ['Matt & Bill', 'TBD'],
   },
   {
     code: 'GROUP4',
     name: 'Group 4',
-    teams: ['Team G', 'Team H'],
+    teams: ['Nick N & Peter', 'Jody & Alex'],
   },
 ]
 
