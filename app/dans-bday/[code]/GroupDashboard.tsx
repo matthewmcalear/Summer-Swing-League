@@ -38,7 +38,7 @@ function relativeTime(ts: string) {
 
 // ── Hole Score Grid ────────────────────────────────────────────────────────────
 
-const COMMON_SCORES = [2, 3, 4, 5, 6, 7, 8, 9, 10]
+const COMMON_SCORES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 function HoleGrid({
   scores, onSave,
@@ -109,40 +109,45 @@ function HoleGrid({
                 <button
                   key={n}
                   onClick={() => save(editing, n)}
-                  className={`py-3 rounded-xl text-lg font-extrabold transition-colors ${
+                  className={`py-3 rounded-xl font-extrabold transition-colors ${
                     scoreMap[editing] === n
                       ? 'bg-green-600 text-white'
-                      : 'bg-gray-100 hover:bg-green-100 text-gray-800'
+                      : n === 1
+                        ? 'bg-yellow-100 hover:bg-yellow-200 text-yellow-800 border border-yellow-300'
+                        : 'bg-gray-100 hover:bg-green-100 text-gray-800'
                   }`}
                 >
-                  {n}
+                  {n === 1 ? <span className="text-sm leading-tight block">1<br/>⛳️</span> : <span className="text-lg">{n}</span>}
                 </button>
               ))}
             </div>
 
-            {/* Manual entry for unusual scores */}
-            <div className="flex gap-2">
-              <input
-                type="number" min={1} max={20}
-                placeholder="Other…"
-                className="form-input flex-1 text-center text-lg font-bold py-2"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const n = parseInt((e.target as HTMLInputElement).value, 10)
-                    if (!isNaN(n) && n >= 1 && n <= 20) save(editing, n)
-                  }
-                }}
-              />
-              <button
-                onClick={(e) => {
-                  const input = (e.currentTarget.previousSibling as HTMLInputElement)
-                  const n = parseInt(input.value, 10)
-                  if (!isNaN(n) && n >= 1 && n <= 20) save(editing, n)
-                }}
-                className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl"
-              >
-                Save
-              </button>
+            {/* Manual entry for scores outside quick-tap range */}
+            <div className="space-y-1">
+              <p className="text-xs text-gray-400 font-medium">Score above 10? Type it:</p>
+              <div className="flex gap-2">
+                <input
+                  type="number" min={1} max={99}
+                  placeholder="e.g. 11, 12…"
+                  className="form-input flex-1 text-center text-lg font-bold py-2"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const n = parseInt((e.target as HTMLInputElement).value, 10)
+                      if (!isNaN(n) && n >= 1) save(editing, n)
+                    }
+                  }}
+                />
+                <button
+                  onClick={(e) => {
+                    const input = (e.currentTarget.previousSibling as HTMLInputElement)
+                    const n = parseInt(input.value, 10)
+                    if (!isNaN(n) && n >= 1) save(editing, n)
+                  }}
+                  className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl"
+                >
+                  Save
+                </button>
+              </div>
             </div>
           </div>
         </div>
