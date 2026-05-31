@@ -117,6 +117,11 @@ export default function EventDashboard() {
   const [nameSet,   setNameSet]   = useState(false)
   const chatBottomRef             = useRef<HTMLDivElement>(null)
 
+  // Mulligan alert state
+  const [mulliganAlerts, setMulliganAlerts] = useState<{ id: string; message: string }[]>([])
+  const seenMulliganIds                     = useRef<Set<string>>(new Set())
+  const notifyReady                         = useRef(false)
+
   // Restore saved name from localStorage on mount
   useEffect(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('bday_chat_name') : null
@@ -131,6 +136,18 @@ export default function EventDashboard() {
       setFeed(data.feed ?? [])
       setMessages(data.messages ?? [])
       setLastPoll(new Date())
+
+      // Check for new mulligan events in the feed
+      const mulliganItems: FeedItem[] = (data.feed ?? []).filter((f: FeedItem) => f.type === 'mulligan')
+      const fresh: { id: string; message: string }[] = []
+      for (const item of mulliganItems) {
+        if (!seenMulliganIds.current.has(item.id)) {
+          seenMulliganIds.current.add(item.id)
+          if (notifyReady.current) fresh.push({ id: item.id, message: item.message })
+        }
+      }
+      if (fresh.length > 0) setMulliganAlerts((p) => [...p, ...fresh])
+      notifyReady.current = true
     } catch { /* ignore */ }
     finally { setLoading(false) }
   }, [])
@@ -178,6 +195,31 @@ export default function EventDashboard() {
 
   return (
     <div className="space-y-6">
+
+      {/* ── Mulligan alert banner ── */}
+      {mulliganAlerts.length > 0 && (
+        <div className="rounded-2xl bg-red-600 text-white px-4 py-4 shadow-lg space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">💀</span>
+              <p className="font-extrabold text-base leading-tight">
+                Reverse Mulligan{mulliganAlerts.length > 1 ? 's' : ''} Fired!
+              </p>
+            </div>
+            <button
+              onClick={() => setMulliganAlerts([])}
+              className="shrink-0 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-xl text-xs font-bold transition-colors"
+            >
+              Clear
+            </button>
+          </div>
+          {mulliganAlerts.map((a) => (
+            <p key={a.id} className="text-sm text-red-100 bg-red-700/50 rounded-xl px-3 py-2">
+              {a.message}
+            </p>
+          ))}
+        </div>
+      )}
 
       {/* ── Hero ── */}
       <div className="rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white px-6 py-8 shadow-xl">
