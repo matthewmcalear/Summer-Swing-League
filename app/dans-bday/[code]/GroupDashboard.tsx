@@ -319,27 +319,61 @@ function TeamCard({
 
           {/* Action buttons */}
           <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => post('/api/bday/beer', { teamId: team.id, hole: currentHole })}
-              disabled={busy}
-              className="flex flex-col items-center gap-1 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm transition-colors disabled:opacity-50 shadow-sm"
-            >
-              <span className="text-2xl">🍺</span>
-              <span>Shotgun!</span>
-              <span className="text-[10px] text-amber-200 font-normal">+1 mulligan</span>
-            </button>
+            {/* Beer */}
+            <div className="flex gap-1">
+              <button
+                onClick={() => post('/api/bday/beer', { teamId: team.id, hole: currentHole })}
+                disabled={busy}
+                className="flex-1 flex flex-col items-center gap-1 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm transition-colors disabled:opacity-50 shadow-sm"
+              >
+                <span className="text-2xl">🍺</span>
+                <span>Shotgun!</span>
+                <span className="text-[10px] text-amber-200 font-normal">+1 mulligan</span>
+              </button>
+              {team.beers > 0 && (
+                <button
+                  disabled={busy}
+                  title="Undo last beer"
+                  className="w-9 flex items-center justify-center rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-700 font-bold text-lg transition-colors disabled:opacity-50"
+                  onClick={() => {
+                    setBusy(true)
+                    fetch('/api/bday/beer', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teamId: team.id }) })
+                      .then(onAction).finally(() => setBusy(false))
+                  }}
+                >
+                  −
+                </button>
+              )}
+            </div>
 
-            <button
-              onClick={() => post('/api/bday/hotdog', { teamId: team.id, hole: currentHole })}
-              disabled={busy}
-              className="flex flex-col items-center gap-1 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm transition-colors disabled:opacity-50 shadow-sm"
-            >
-              <span className="text-2xl">🌭</span>
-              <span>Ate a Dog!</span>
-              <span className="text-[10px] text-orange-200 font-normal">
-                {dogsToNext === 1 ? '🔥 one more for −1!' : `${dogsToNext} to −1 stroke`}
-              </span>
-            </button>
+            {/* Hot dog */}
+            <div className="flex gap-1">
+              <button
+                onClick={() => post('/api/bday/hotdog', { teamId: team.id, hole: currentHole })}
+                disabled={busy}
+                className="flex-1 flex flex-col items-center gap-1 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm transition-colors disabled:opacity-50 shadow-sm"
+              >
+                <span className="text-2xl">🌭</span>
+                <span>Ate a Dog!</span>
+                <span className="text-[10px] text-orange-200 font-normal">
+                  {dogsToNext === 1 ? '🔥 one more for −1!' : `${dogsToNext} to −1 stroke`}
+                </span>
+              </button>
+              {team.hotdogs > 0 && (
+                <button
+                  disabled={busy}
+                  title="Undo last hot dog"
+                  className="w-9 flex items-center justify-center rounded-xl bg-orange-100 hover:bg-orange-200 text-orange-700 font-bold text-lg transition-colors disabled:opacity-50"
+                  onClick={() => {
+                    setBusy(true)
+                    fetch('/api/bday/hotdog', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teamId: team.id }) })
+                      .then(onAction).finally(() => setBusy(false))
+                  }}
+                >
+                  −
+                </button>
+              )}
+            </div>
           </div>
 
           {team.mulligan_bank > 0 && (
