@@ -325,23 +325,10 @@ function TeamCard({
         </div>
 
         <div className="p-4 space-y-4">
-          {/* Stats row */}
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="bg-amber-50 rounded-xl py-2 border border-amber-100">
-              <div className="text-xl font-extrabold text-amber-700 tabular-nums">{team.beers}</div>
-              <div className="text-[10px] text-amber-500 font-semibold uppercase tracking-wide">Beers</div>
-            </div>
-            <div className="bg-orange-50 rounded-xl py-2 border border-orange-100">
-              <div className="text-xl font-extrabold text-orange-700 tabular-nums">{team.hotdogs}</div>
-              <div className="text-[10px] text-orange-500 font-semibold uppercase tracking-wide">Hot Dogs</div>
-              {team.hotdog_discount > 0 && (
-                <div className="text-[10px] text-orange-600 font-bold">−{team.hotdog_discount} to apply</div>
-              )}
-            </div>
-            <div className={`rounded-xl py-2 border ${team.mulligan_bank > 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100'}`}>
-              <div className={`text-xl font-extrabold tabular-nums ${team.mulligan_bank > 0 ? 'text-red-600' : 'text-gray-400'}`}>{team.mulligan_bank}</div>
-              <div className={`text-[10px] font-semibold uppercase tracking-wide ${team.mulligan_bank > 0 ? 'text-red-400' : 'text-gray-400'}`}>Mulligans</div>
-            </div>
+          {/* Mulligan bank stat */}
+          <div className={`rounded-xl py-2 border text-center ${team.mulligan_bank > 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100'}`}>
+            <div className={`text-xl font-extrabold tabular-nums ${team.mulligan_bank > 0 ? 'text-red-600' : 'text-gray-400'}`}>{team.mulligan_bank}</div>
+            <div className={`text-[10px] font-semibold uppercase tracking-wide ${team.mulligan_bank > 0 ? 'text-red-400' : 'text-gray-400'}`}>Mulligans available</div>
           </div>
 
           {/* Hot dog discount reminder */}
@@ -365,22 +352,16 @@ function TeamCard({
 
           {/* Action buttons */}
           <div className="grid grid-cols-2 gap-2">
-            {/* Beer */}
-            <div className="flex gap-1">
-              <button
-                onClick={() => post('/api/bday/beer', { teamId: team.id, hole: currentHole })}
-                disabled={busy}
-                className="flex-1 flex flex-col items-center gap-1 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm transition-colors disabled:opacity-50 shadow-sm"
-              >
-                <span className="text-2xl">🍺</span>
-                <span>Shotgun!</span>
-                <span className="text-[10px] text-amber-200 font-normal">+1 mulligan</span>
-              </button>
-              {team.beers > 0 && (
+            {/* Beer counter */}
+            <div className="rounded-xl bg-amber-50 border border-amber-200 overflow-hidden">
+              <div className="flex items-center justify-between px-3 py-1.5 border-b border-amber-200">
+                <span className="text-xs font-bold text-amber-700">🍺 Beers</span>
+                <span className="text-lg font-extrabold text-amber-700 tabular-nums">{team.beers}</span>
+              </div>
+              <div className="flex">
                 <button
-                  disabled={busy}
-                  title="Undo last beer"
-                  className="w-9 flex items-center justify-center rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-700 font-bold text-lg transition-colors disabled:opacity-50"
+                  disabled={busy || team.beers === 0}
+                  className="flex-1 py-2.5 text-amber-600 font-bold text-xl hover:bg-amber-100 transition-colors disabled:opacity-30"
                   onClick={() => {
                     setBusy(true)
                     fetch('/api/bday/beer', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teamId: team.id }) })
@@ -389,27 +370,28 @@ function TeamCard({
                 >
                   −
                 </button>
-              )}
-            </div>
-
-            {/* Hot dog */}
-            <div className="flex gap-1">
-              <button
-                onClick={() => post('/api/bday/hotdog', { teamId: team.id, hole: currentHole })}
-                disabled={busy}
-                className="flex-1 flex flex-col items-center gap-1 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm transition-colors disabled:opacity-50 shadow-sm"
-              >
-                <span className="text-2xl">🌭</span>
-                <span>Ate a Dog!</span>
-                <span className="text-[10px] text-orange-200 font-normal">
-                  {dogsToNext === 1 ? '🔥 one more for −1!' : `${dogsToNext} more to −1 stroke`}
-                </span>
-              </button>
-              {team.hotdogs > 0 && (
+                <div className="w-px bg-amber-200" />
                 <button
                   disabled={busy}
-                  title="Undo last hot dog"
-                  className="w-9 flex items-center justify-center rounded-xl bg-orange-100 hover:bg-orange-200 text-orange-700 font-bold text-lg transition-colors disabled:opacity-50"
+                  className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xl transition-colors disabled:opacity-50"
+                  onClick={() => post('/api/bday/beer', { teamId: team.id, hole: currentHole })}
+                >
+                  +
+                </button>
+              </div>
+              <p className="text-[10px] text-amber-500 text-center pb-1.5">+1 mulligan per beer</p>
+            </div>
+
+            {/* Hot dog counter */}
+            <div className="rounded-xl bg-orange-50 border border-orange-200 overflow-hidden">
+              <div className="flex items-center justify-between px-3 py-1.5 border-b border-orange-200">
+                <span className="text-xs font-bold text-orange-700">🌭 Hot Dogs</span>
+                <span className="text-lg font-extrabold text-orange-700 tabular-nums">{team.hotdogs}</span>
+              </div>
+              <div className="flex">
+                <button
+                  disabled={busy || team.hotdogs === 0}
+                  className="flex-1 py-2.5 text-orange-600 font-bold text-xl hover:bg-orange-100 transition-colors disabled:opacity-30"
                   onClick={() => {
                     setBusy(true)
                     fetch('/api/bday/hotdog', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teamId: team.id }) })
@@ -418,7 +400,18 @@ function TeamCard({
                 >
                   −
                 </button>
-              )}
+                <div className="w-px bg-orange-200" />
+                <button
+                  disabled={busy}
+                  className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold text-xl transition-colors disabled:opacity-50"
+                  onClick={() => post('/api/bday/hotdog', { teamId: team.id, hole: currentHole })}
+                >
+                  +
+                </button>
+              </div>
+              <p className="text-[10px] text-orange-500 text-center pb-1.5">
+                {dogsToNext === 1 ? '🔥 one more for −1 stroke!' : `${dogsToNext} more for next −1 stroke`}
+              </p>
             </div>
           </div>
 
