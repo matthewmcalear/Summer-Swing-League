@@ -1,7 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
+
+const EventMap = dynamic(() => import('./EventMap'), { ssr: false })
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -105,7 +108,7 @@ export default function EventDashboard() {
   const [loading,  setLoading]  = useState(true)
   const [lastPoll, setLastPoll] = useState<Date | null>(null)
 
-  const fetchState = async () => {
+  const fetchState = useCallback(async () => {
     try {
       const res  = await fetch('/api/bday/state', { cache: 'no-store' })
       const data = await res.json()
@@ -114,15 +117,21 @@ export default function EventDashboard() {
       setLastPoll(new Date())
     } catch { /* ignore */ }
     finally { setLoading(false) }
-  }
+  }, [])
 
   useEffect(() => {
     fetchState()
     const id = setInterval(fetchState, 10_000)
     return () => clearInterval(id)
-  }, [])
+  }, [fetchState])
 
-  const ranked = rankAll(groups)
+  const ranked    = rankAll(groups)
+  const mapGroups = groups.filter((g) => g.location_lat != null && g.location_lon != null).map((g) => ({
+    name: g.name, code: g.code,
+    lat:  g.location_lat!,
+    lon:  g.location_lon!,
+    teams: g.teams.map((t) => ({ name: t.name, net_total: t.net_total, holes_played: t.holes_played })),
+  }))
 
   return (
     <div className="space-y-6">
@@ -137,22 +146,41 @@ export default function EventDashboard() {
           </div>
           <div className="text-5xl">🏌️</div>
         </div>
-        <div className="mt-5 flex flex-wrap gap-2">
-          {['GROUP1','GROUP2','GROUP3','GROUP4'].map((code) => (
-            <Link
-              key={code}
-              href={`/dans-bday/${code}`}
-              className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-bold transition-colors"
-            >
-              {code} →
-            </Link>
-          ))}
+        <div className="mt-4 flex justify-end">
           <Link
             href="/dans-bday/admin"
-            className="px-3 py-1.5 bg-black/20 hover:bg-black/30 rounded-xl text-sm font-bold transition-colors ml-auto"
+            className="px-3 py-1.5 bg-black/20 hover:bg-black/30 rounded-xl text-xs font-bold transition-colors"
           >
             ⚙️ Edit Teams
           </Link>
+        </div>
+      </div>
+
+      {/* ── Group dashboards — the main CTA ── */}
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-2 px-1">
+          Tap your group to log beers 🍺 dogs 🌭 mulligans 💀 and scores
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          {groups.map((g) => (
+            <Link
+              key={g.id}
+              href={`/dans-bday/${g.code}`}
+              className="block rounded-2xl border-2 border-amber-200 bg-amber-50 hover:bg-amber-100 hover:border-amber-400 transition-all p-4 shadow-sm"
+            >
+              <p className="font-extrabold text-amber-900 text-base">{g.name}</p>
+              <p className="text-xs font-mono text-amber-600 mb-2">{g.code}</p>
+              {g.teams.map((t) => (
+                <p key={t.id} className="text-xs text-gray-700 truncate">
+                  {t.name}
+                  {t.holes_played > 0 && (
+                    <span className="ml-1 font-bold text-green-700">{t.net_total} ({t.holes_played}/18)</span>
+                  )}
+                </p>
+              ))}
+              <p className="mt-2 text-xs font-bold text-amber-700">Open dashboard →</p>
+            </Link>
+          ))}
         </div>
       </div>
 
@@ -174,7 +202,7 @@ export default function EventDashboard() {
             <p className="text-sm text-gray-400">Loading…</p>
           </div>
         ) : ranked.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-8">No teams found — seed the database first.</p>
+          <p className="text-sm text-gray-400 text-center py-8">No teams found.</p>
         ) : (
           <div className="space-y-2">
             {ranked.map((team, i) => <ScoreRow key={team.id} team={team} rank={i + 1} />)}
@@ -186,37 +214,16 @@ export default function EventDashboard() {
         </div>
       </div>
 
-      {/* ── Group cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {groups.map((g) => (
-          <div key={g.id} className="card">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-gray-900">{g.name}</h3>
-              <Link
-                href={`/dans-bday/${g.code}`}
-                className="text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg hover:bg-amber-100 transition-colors"
-              >
-                Open →
-              </Link>
-            </div>
-            <div className="space-y-2">
-              {g.teams.map((t) => (
-                <div key={t.id} className="flex items-center gap-2 text-sm">
-                  <span className="flex-1 font-medium text-gray-700 truncate">{t.name}</span>
-                  <span className="text-gray-400 tabular-nums">
-                    {t.holes_played > 0 ? `${t.net_total} (${t.holes_played}/18)` : '—'}
-                  </span>
-                </div>
-              ))}
-            </div>
-            {g.location_at && (
-              <p className="mt-2 text-[10px] text-gray-400">
-                📍 Location updated {relativeTime(g.location_at)}
-              </p>
-            )}
-          </div>
-        ))}
-      </div>
+      {/* ── Live group map ── */}
+      {mapGroups.length > 0 && (
+        <div className="card">
+          <h2 className="text-lg font-bold text-gray-900 mb-3">📍 Group Locations</h2>
+          <EventMap groups={mapGroups} />
+          <p className="text-xs text-gray-400 mt-2 text-center">
+            Updates when groups share their location from their dashboard
+          </p>
+        </div>
+      )}
 
       {/* ── Activity feed ── */}
       {feed.length > 0 && (

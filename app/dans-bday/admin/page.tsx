@@ -217,6 +217,31 @@ export default function BdayAdminPage() {
         </div>
       )}
 
+      {/* ── Danger zone ── */}
+      <div className="rounded-2xl border-2 border-red-200 bg-red-50 px-5 py-4 space-y-3">
+        <p className="font-bold text-red-800">⚠️ Danger Zone</p>
+        <p className="text-sm text-red-700">
+          Use <strong>Reset All Event Data</strong> to wipe all scores, beers, hot dogs, mulligans,
+          and GPS locations — but keep groups and team names intact.
+          Do this after testing so you start July 3rd with a clean slate.
+        </p>
+        <button
+          disabled={busy}
+          onClick={async () => {
+            if (!confirm('Reset ALL event data? This clears every score, beer, hot dog, mulligan, and GPS location. Groups and team names are kept. This cannot be undone.')) return
+            setBusy(true)
+            try {
+              await fetch('/api/bday/reset', { method: 'DELETE' })
+              await fetchState()
+              alert('✓ All event data cleared. Ready for the real day!')
+            } finally { setBusy(false) }
+          }}
+          className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-50"
+        >
+          🗑️ Reset All Event Data
+        </button>
+      </div>
+
       <div className="text-center">
         <Link href="/dans-bday" className="text-sm text-amber-600 font-semibold hover:underline">
           ← Back to leaderboard
