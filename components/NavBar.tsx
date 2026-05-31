@@ -60,14 +60,14 @@ export default function NavBar() {
               className={`ml-1 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
                 isActive('/dans-bday')
                   ? 'bg-amber-500 text-white'
-                  : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500 hover:text-white border border-amber-500/40'
+                  : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500 hover:text-white'
               }`}
             >
               🎂 Dan's Bday
             </Link>
             <Link
               href="/admin"
-              className="ml-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-green-700 hover:bg-green-600 transition-all border border-green-600"
+              className="ml-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-green-700 hover:bg-green-600 transition-all"
             >
               Admin
             </Link>
@@ -88,9 +88,9 @@ export default function NavBar() {
           </button>
         </div>
 
-        {/* Mobile menu — always rendered, animated via max-height */}
-        <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${open ? 'max-h-[30rem]' : 'max-h-0'}`}>
-          <div className="pb-3 space-y-0.5 border-t border-green-800 pt-2">
+        {/* Mobile menu — outer clips animation, inner scrolls content */}
+        <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${open ? 'max-h-[80svh]' : 'max-h-0'}`}>
+          <div className="overflow-y-auto max-h-[80svh] pb-3 space-y-0.5 border-t border-green-800 pt-2">
             {links.map(({ href, label }) => (
               <Link
                 key={href}
