@@ -34,16 +34,20 @@ interface ChatMessage { id: string; sender_name: string; text: string; sent_at: 
 const HOLE_PARS = [4, 4, 4, 4, 5, 3, 4, 4, 4, 4, 4, 4, 4, 3, 5, 4, 3, 5]
 const TOTAL_PAR = HOLE_PARS.reduce((s, p) => s + p, 0) // 72
 
-function fmtVsPar(total: number, holesPlayed: number): string {
-  if (holesPlayed === 0) return '—'
-  const diff = total - TOTAL_PAR
+function playedPar(holeScores: HoleScore[]): number {
+  return holeScores.reduce((s, h) => s + (HOLE_PARS[h.hole - 1] ?? 4), 0)
+}
+
+function fmtVsPar(total: number, holeScores: HoleScore[]): string {
+  if (holeScores.length === 0) return '—'
+  const diff = total - playedPar(holeScores)
   if (diff === 0) return 'E'
   return diff > 0 ? `+${diff}` : `${diff}`
 }
 
-function vsParColor(total: number, holesPlayed: number): string {
-  if (holesPlayed === 0) return 'text-gray-300'
-  const diff = total - TOTAL_PAR
+function vsParColor(total: number, holeScores: HoleScore[]): string {
+  if (holeScores.length === 0) return 'text-gray-300'
+  const diff = total - playedPar(holeScores)
   if (diff < 0) return 'text-red-600'
   if (diff === 0) return 'text-green-700'
   return 'text-gray-500'
@@ -106,8 +110,8 @@ function ScoreRow({ team, rank }: { team: TeamState; rank: number }) {
         {team.holes_played > 0 ? (
           <>
             <p className="text-xl font-extrabold text-green-700 tabular-nums leading-none">{team.total}</p>
-            <p className={`text-xs font-bold tabular-nums leading-none mt-0.5 ${vsParColor(team.total, team.holes_played)}`}>
-              {fmtVsPar(team.total, team.holes_played)}
+            <p className={`text-xs font-bold tabular-nums leading-none mt-0.5 ${vsParColor(team.total, team.hole_scores)}`}>
+              {fmtVsPar(team.total, team.hole_scores)}
             </p>
           </>
         ) : (
@@ -173,8 +177,8 @@ function FinalScorecard({ groups, ranked }: { groups: GroupState[]; ranked: Team
                       {team.holes_played > 0 ? (
                         <>
                           <p className="text-xl font-extrabold text-green-700 tabular-nums leading-none">{team.total}</p>
-                          <p className={`text-xs font-bold tabular-nums ${vsParColor(team.total, team.holes_played)}`}>
-                            {fmtVsPar(team.total, team.holes_played)}
+                          <p className={`text-xs font-bold tabular-nums ${vsParColor(team.total, team.hole_scores)}`}>
+                            {fmtVsPar(team.total, team.hole_scores)}
                           </p>
                         </>
                       ) : (

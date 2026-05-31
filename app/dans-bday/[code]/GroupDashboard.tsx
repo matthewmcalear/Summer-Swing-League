@@ -32,9 +32,13 @@ interface AllGroupState { groups: GroupState[]; messages: ChatMessage[] }
 const HOLE_PARS = [4, 4, 4, 4, 5, 3, 4, 4, 4, 4, 4, 4, 4, 3, 5, 4, 3, 5]
 const TOTAL_PAR = HOLE_PARS.reduce((s, p) => s + p, 0) // 72
 
-function fmtVsPar(total: number, holesPlayed: number): string {
-  if (holesPlayed === 0) return ''
-  const diff = total - TOTAL_PAR
+function playedPar(holeScores: HoleScore[]): number {
+  return holeScores.reduce((s, h) => s + (HOLE_PARS[h.hole - 1] ?? 4), 0)
+}
+
+function fmtVsPar(total: number, holeScores: HoleScore[]): string {
+  if (holeScores.length === 0) return ''
+  const diff = total - playedPar(holeScores)
   if (diff === 0) return 'E'
   return diff > 0 ? `+${diff}` : `${diff}`
 }
@@ -391,7 +395,7 @@ function TeamCard({
             <div className="text-right ml-3 shrink-0">
               <div className="text-2xl font-extrabold text-white tabular-nums leading-none">{team.total}</div>
               <div className="text-[10px] text-green-200 tabular-nums">
-                {fmtVsPar(team.total, team.holes_played)} · {team.holes_played}/18
+                {fmtVsPar(team.total, team.hole_scores)} · {team.holes_played}/18
               </div>
             </div>
           )}
