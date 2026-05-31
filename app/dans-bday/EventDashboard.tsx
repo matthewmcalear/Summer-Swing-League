@@ -147,6 +147,12 @@ export default function EventDashboard() {
               {code} →
             </Link>
           ))}
+          <Link
+            href="/dans-bday/admin"
+            className="px-3 py-1.5 bg-black/20 hover:bg-black/30 rounded-xl text-sm font-bold transition-colors ml-auto"
+          >
+            ⚙️ Edit Teams
+          </Link>
         </div>
       </div>
 
