@@ -9,7 +9,7 @@ interface GroupPin {
   code: string
   lat: number
   lon: number
-  teams: { name: string; net_total: number; holes_played: number }[]
+  teams: { name: string; total: number; holes_played: number }[]
 }
 
 export default function EventMap({ groups }: { groups: GroupPin[] }) {
@@ -49,7 +49,7 @@ export default function EventMap({ groups }: { groups: GroupPin[] }) {
       bounds.push([g.lat, g.lon])
       const scoreLines = g.teams
         .map((t) => t.holes_played > 0
-          ? `<div style="font-size:11px;color:#d1fae5">${t.name}: <strong>${t.net_total}</strong> (${t.holes_played}/18)</div>`
+          ? `<div style="font-size:11px;color:#d1fae5">${t.name}: <strong>${t.total}</strong> (${t.holes_played}/18)</div>`
           : `<div style="font-size:11px;color:#6ee7b7">${t.name}: not started</div>`
         ).join('')
 

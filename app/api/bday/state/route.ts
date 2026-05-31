@@ -26,19 +26,19 @@ export async function GET() {
     location_lon: g.location_lon,
     location_at:  g.location_at,
     teams: g.teams.map((t) => {
-      const beers        = t.activities.filter((a) => a.type === 'beer').length
-      const hotdogs      = t.activities.filter((a) => a.type === 'hotdog').length
-      const hotdogDiscount = Math.floor(hotdogs / 3)
-      const mulligansSent = t.mulligans_sent.length
-      const mulliganBank  = Math.max(0, beers - mulligansSent)
-      const gross         = t.hole_scores.reduce((s, h) => s + h.strokes, 0)
+      const beers           = t.activities.filter((a) => a.type === 'beer').length
+      const hotdogs         = t.activities.filter((a) => a.type === 'hotdog').length
+      const hotdog_discount = Math.floor(hotdogs / 3)
+      const mulligansSent   = t.mulligans_sent.length
+      const mulliganBank    = Math.max(0, beers - mulligansSent)
+      const total           = t.hole_scores.reduce((s, h) => s + h.strokes, 0)
       return {
         id:                 t.id,
         name:               t.name,
         group_id:           t.group_id,
         beers,
         hotdogs,
-        hotdog_discount:    hotdogDiscount,
+        hotdog_discount,    // informational only — teams apply this themselves
         mulligan_bank:      mulliganBank,
         mulligans_sent:     mulligansSent,
         mulligans_received: t.mulligans_received.map((m) => ({
@@ -49,8 +49,7 @@ export async function GET() {
         })),
         hole_scores:  t.hole_scores.map((h) => ({ hole: h.hole, strokes: h.strokes })),
         holes_played: t.hole_scores.length,
-        gross_total:  gross,
-        net_total:    Math.max(0, gross - hotdogDiscount),
+        total,
       }
     }),
   }))

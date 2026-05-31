@@ -14,7 +14,7 @@ interface TeamState {
   mulligan_bank: number; mulligans_sent: number
   mulligans_received: MulliganRx[]
   hole_scores: HoleScore[]; holes_played: number
-  gross_total: number; net_total: number
+  total: number
 }
 
 interface GroupState {
@@ -193,7 +193,7 @@ function MulliganModal({
             >
               {t.name}
               <span className="ml-2 text-xs text-gray-400 font-normal">
-                ({t.holes_played > 0 ? `${t.net_total} strokes, ${t.holes_played}/18` : 'not started'})
+                ({t.holes_played > 0 ? `${t.total} strokes, ${t.holes_played}/18` : 'not started'})
               </span>
             </button>
           ))}
@@ -220,13 +220,14 @@ function MulliganModal({
 // ── Team Card ─────────────────────────────────────────────────────────────────
 
 function TeamCard({
-  team, allTeams, currentHole, groupCode, onAction,
+  team, allTeams, currentHole, groupCode, onAction, onHoleScored,
 }: {
   team: TeamState
   allTeams: TeamState[]
   currentHole: number
   groupCode: string
   onAction: () => void
+  onHoleScored: (hole: number) => void
 }) {
   const [firing,   setFiring]   = useState(false)
   const [editName, setEditName] = useState(false)
@@ -269,6 +270,7 @@ function TeamCard({
     } else {
       fetch('/api/bday/score', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teamId: team.id, hole, strokes }) }).then(onAction)
       silentlyUpdateLocation()
+      onHoleScored(hole)
     }
   }
 
@@ -282,7 +284,6 @@ function TeamCard({
   }
 
   const dogsToNext = 3 - (team.hotdogs % 3)
-  const nextDiscountAt = team.hotdogs + dogsToNext
 
   return (
     <>
@@ -317,7 +318,7 @@ function TeamCard({
           )}
           {team.holes_played > 0 && (
             <div className="text-right ml-3 shrink-0">
-              <div className="text-2xl font-extrabold text-white tabular-nums leading-none">{team.net_total}</div>
+              <div className="text-2xl font-extrabold text-white tabular-nums leading-none">{team.total}</div>
               <div className="text-[10px] text-green-200">{team.holes_played}/18 holes</div>
             </div>
           )}
@@ -334,7 +335,7 @@ function TeamCard({
               <div className="text-xl font-extrabold text-orange-700 tabular-nums">{team.hotdogs}</div>
               <div className="text-[10px] text-orange-500 font-semibold uppercase tracking-wide">Hot Dogs</div>
               {team.hotdog_discount > 0 && (
-                <div className="text-[10px] text-orange-600 font-bold">−{team.hotdog_discount} strokes</div>
+                <div className="text-[10px] text-orange-600 font-bold">−{team.hotdog_discount} to apply</div>
               )}
             </div>
             <div className={`rounded-xl py-2 border ${team.mulligan_bank > 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100'}`}>
@@ -343,10 +344,10 @@ function TeamCard({
             </div>
           </div>
 
-          {/* Hot dog progress hint */}
-          {team.hotdogs % 3 !== 0 && (
-            <p className="text-[11px] text-orange-500 text-center font-medium">
-              {dogsToNext} more dog{dogsToNext !== 1 ? 's' : ''} to unlock −1 stroke (at {nextDiscountAt} total)
+          {/* Hot dog discount reminder */}
+          {team.hotdog_discount > 0 && (
+            <p className="text-[11px] text-orange-600 text-center font-semibold bg-orange-50 rounded-lg py-1.5 px-2 border border-orange-100">
+              🌭 You've earned −{team.hotdog_discount} stroke{team.hotdog_discount !== 1 ? 's' : ''} — subtract when entering your scores
             </p>
           )}
 
@@ -401,7 +402,7 @@ function TeamCard({
                 <span className="text-2xl">🌭</span>
                 <span>Ate a Dog!</span>
                 <span className="text-[10px] text-orange-200 font-normal">
-                  {dogsToNext === 1 ? '🔥 one more for −1!' : `${dogsToNext} to −1 stroke`}
+                  {dogsToNext === 1 ? '🔥 one more for −1!' : `${dogsToNext} more to −1 stroke`}
                 </span>
               </button>
               {team.hotdogs > 0 && (
@@ -707,6 +708,7 @@ export default function GroupDashboard({ groupCode }: { groupCode: string }) {
           currentHole={currentHole}
           groupCode={code}
           onAction={fetchState}
+          onHoleScored={(hole) => setCurrentHole((prev) => hole >= prev && hole < 18 ? hole + 1 : prev)}
         />
       ))}
 

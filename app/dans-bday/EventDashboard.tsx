@@ -17,7 +17,7 @@ interface TeamState {
   mulligan_bank: number; mulligans_sent: number
   mulligans_received: MulliganRx[]
   hole_scores: HoleScore[]; holes_played: number
-  gross_total: number; net_total: number
+  total: number
 }
 
 interface GroupState {
@@ -45,7 +45,7 @@ function rankAll(groups: GroupState[]) {
       if (a.holes_played === 0 && b.holes_played === 0) return 0
       if (a.holes_played === 0) return 1
       if (b.holes_played === 0) return -1
-      if (a.net_total !== b.net_total) return a.net_total - b.net_total
+      if (a.total !== b.total) return a.total - b.total
       return b.holes_played - a.holes_played
     })
 }
@@ -54,7 +54,6 @@ function rankAll(groups: GroupState[]) {
 
 function ScoreRow({ team, rank }: { team: TeamState; rank: number }) {
   const medals = ['🥇', '🥈', '🥉']
-  const dogsToNext = team.hotdogs > 0 ? 3 - (team.hotdogs % 3) : 3
   return (
     <div className={`flex items-center gap-2 px-3 py-3 rounded-xl ${rank === 1 ? 'bg-yellow-50 border border-yellow-200' : 'bg-white border border-gray-100'}`}>
       {/* Rank */}
@@ -70,16 +69,14 @@ function ScoreRow({ team, rank }: { team: TeamState; rank: number }) {
         </p>
       </div>
 
-      {/* Hot dog tracker */}
+      {/* Hot dog count + earned discount reminder */}
       <div className="shrink-0 text-center w-14">
         <div className={`rounded-lg px-1.5 py-1 ${team.hotdogs > 0 ? 'bg-orange-50 border border-orange-200' : 'bg-gray-50 border border-gray-100'}`}>
           <p className={`text-sm font-extrabold tabular-nums leading-none ${team.hotdogs > 0 ? 'text-orange-600' : 'text-gray-300'}`}>
             🌭 {team.hotdogs}
           </p>
-          {team.hotdog_discount > 0 ? (
-            <p className="text-[10px] text-orange-500 font-bold mt-0.5">−{team.hotdog_discount} strk</p>
-          ) : (
-            <p className="text-[10px] text-gray-300 mt-0.5">{dogsToNext} to −1</p>
+          {team.hotdog_discount > 0 && (
+            <p className="text-[10px] text-orange-400 font-semibold mt-0.5">−{team.hotdog_discount} earned</p>
           )}
         </div>
       </div>
@@ -87,10 +84,7 @@ function ScoreRow({ team, rank }: { team: TeamState; rank: number }) {
       {/* Score */}
       <div className="text-right shrink-0 w-12">
         {team.holes_played > 0 ? (
-          <>
-            <p className="text-xl font-extrabold text-green-700 tabular-nums leading-none">{team.net_total}</p>
-            <p className="text-[10px] text-gray-400">{team.gross_total} gross</p>
-          </>
+          <p className="text-xl font-extrabold text-green-700 tabular-nums leading-none">{team.total}</p>
         ) : (
           <p className="text-sm text-gray-300 font-semibold">—</p>
         )}
@@ -188,7 +182,7 @@ export default function EventDashboard() {
     name: g.name, code: g.code,
     lat:  g.location_lat!,
     lon:  g.location_lon!,
-    teams: g.teams.map((t) => ({ name: t.name, net_total: t.net_total, holes_played: t.holes_played })),
+    teams: g.teams.map((t) => ({ name: t.name, total: t.total, holes_played: t.holes_played })),
   }))
 
   return (
@@ -257,7 +251,7 @@ export default function EventDashboard() {
                 <p key={t.id} className="text-xs text-gray-700 truncate">
                   {t.name}
                   {t.holes_played > 0 && (
-                    <span className="ml-1 font-bold text-green-700">{t.net_total} ({t.holes_played}/18)</span>
+                    <span className="ml-1 font-bold text-green-700">{t.total} ({t.holes_played}/18)</span>
                   )}
                 </p>
               ))}
@@ -419,7 +413,7 @@ export default function EventDashboard() {
       {/* ── Rules quick ref ── */}
       <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800 space-y-1.5">
         <p className="font-bold text-amber-900 mb-2">Quick Rules</p>
-        <p>🌭 Every 3 hot dogs = <strong>−1 stroke</strong> off your team score. No cap.</p>
+        <p>🌭 Every 3 hot dogs = <strong>−1 stroke</strong>. Apply the discount yourself when entering scores. Most dogs eaten wins a prize.</p>
         <p>🍺 Every beer shotgunned = <strong>+1 Reverse Mulligan</strong> for your team.</p>
         <p>💀 Fire a mulligan at any team — <strong>their last shot is erased</strong>, they replay.</p>
       </div>
