@@ -257,15 +257,11 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
     fetchElevation(targetPos.lat, targetPos.lon).then((e) => { setTargetElev(e); setElevLoading(false) })
   }, [targetPos])
 
-  // Fullscreen change listener
+  // Lock/unlock body scroll when in CSS fullscreen
   useEffect(() => {
-    const onFsChange = () => {
-      setIsFullscreen(!!document.fullscreenElement)
-      setTimeout(() => mapRef.current?.invalidateSize(), 100)
-    }
-    document.addEventListener('fullscreenchange', onFsChange)
-    return () => document.removeEventListener('fullscreenchange', onFsChange)
-  }, [])
+    document.body.style.overflow = isFullscreen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [isFullscreen])
 
   const handleMapClick = useCallback((lat: number, lon: number) => {
     setTargetPos({ lat, lon })
@@ -282,11 +278,10 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
     mapRef.current.rotateTo(next, { animate: true })
   }
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      mapWrapperRef.current?.requestFullscreen()
-    } else {
-      document.exitFullscreen()
-    }
+    setIsFullscreen((fs) => {
+      setTimeout(() => mapRef.current?.invalidateSize(), 100)
+      return !fs
+    })
   }
 
   // Computed stats
@@ -365,7 +360,6 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
         }
         .leaflet-control-zoom-in  { border-radius: 8px 8px 4px 4px !important; }
         .leaflet-control-zoom-out { border-radius: 4px 4px 8px 8px !important; border-top: none !important; }
-        :fullscreen .rf-map-wrapper { border-radius: 0 !important; }
       `}</style>
 
       {/* ── Player selector ───────────────────────────────────────────────── */}
@@ -392,8 +386,12 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
       {/* ── Map ───────────────────────────────────────────────────────────── */}
       <div
         ref={mapWrapperRef}
-        className="rf-map-wrapper relative rounded-2xl overflow-hidden shadow-md border border-gray-200"
-        style={{ height: isFullscreen ? '100%' : 'clamp(500px, calc(100svh - 200px), 860px)' }}
+        className={`rf-map-wrapper overflow-hidden shadow-md ${
+          isFullscreen
+            ? 'fixed inset-0 z-[9999] rounded-none border-0'
+            : 'relative rounded-2xl border border-gray-200'
+        }`}
+        style={{ height: isFullscreen ? '100dvh' : 'clamp(500px, calc(100svh - 200px), 860px)' }}
       >
         <MapContainer
           center={center}
