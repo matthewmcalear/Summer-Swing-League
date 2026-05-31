@@ -26,6 +26,7 @@
     "chartjs-adapter-date-fns": "^3.0.0",
     "date-fns": "^4.1.0",
     "leaflet": "^1.9.4",
+    "leaflet-rotate": "^0.2.8",
     "next": "14.2.5",
     "nodemailer": "^8.0.7",
     "postcss": "^8.4.35",

@@ -1,9 +1,32 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { MapContainer, TileLayer, Marker, Polyline, Polygon, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Polyline, Polygon, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import 'leaflet-rotate'
+
+// ── Type augmentation for leaflet-rotate ───────────────────────────────────────
+
+declare module 'leaflet' {
+  interface Map {
+    getBearing(): number
+    setBearing(bearing: number): this
+    rotateTo(bearing: number, options?: ZoomPanOptions): this
+  }
+  interface MapOptions {
+    rotate?: boolean
+    touchRotate?: boolean
+    bearing?: number
+  }
+}
+
+declare module 'react-leaflet' {
+  interface MapContainerProps {
+    rotate?: boolean
+    touchRotate?: boolean
+  }
+}
 
 // ── Math helpers ───────────────────────────────────────────────────────────────
 
@@ -106,8 +129,39 @@ const pinIcon = L.divIcon({
 // ── Map sub-components ─────────────────────────────────────────────────────────
 
 function ClickHandler({ onMapClick }: { onMapClick: (lat: number, lon: number) => void }) {
-  useMapEvents({ click: (e) => onMapClick(e.latlng.lat, e.latlng.lng) })
+  const map = useMap()
+  useEffect(() => {
+    const handler = (e: L.LeafletMouseEvent) => onMapClick(e.latlng.lat, e.latlng.lng)
+    map.on('click', handler)
+    return () => { map.off('click', handler) }
+  }, [map, onMapClick])
   return null
+}
+
+function BearingSync({ onBearing }: { onBearing: (b: number) => void }) {
+  const map = useMap()
+  useEffect(() => {
+    const handler = () => onBearing(map.getBearing?.() ?? 0)
+    map.on('rotate', handler)
+    return () => { map.off('rotate', handler) }
+  }, [map, onBearing])
+  return null
+}
+
+// ── Compass needle SVG ─────────────────────────────────────────────────────────
+
+function CompassNeedle({ bearing }: { bearing: number }) {
+  // Needle always points to geographic north — rotates opposite to map bearing
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <circle cx="10" cy="10" r="8" stroke="#374151" strokeWidth="1.5" />
+      <g transform={`rotate(${-bearing}, 10, 10)`}>
+        <polygon points="10,3 12,10 10,11 8,10" fill="#dc2626" />
+        <polygon points="10,17 12,10 10,11 8,10" fill="#9ca3af" />
+      </g>
+      <circle cx="10" cy="10" r="1.5" fill="#374151" />
+    </svg>
+  )
 }
 
 // ── Club recommendation ────────────────────────────────────────────────────────
@@ -142,6 +196,7 @@ interface Member { id: string; full_name: string }
 
 export default function RangeFinderClient({ members = [] }: { members?: Member[] }) {
   const mapRef                      = useRef<L.Map | null>(null)
+  const mapWrapperRef               = useRef<HTMLDivElement>(null)
   const [userPos,    setUserPos]    = useState<(Pos & { accuracy: number }) | null>(null)
   const [targetPos,  setTargetPos]  = useState<Pos | null>(null)
   const [userElev,   setUserElev]   = useState<number | null>(null)
@@ -152,6 +207,8 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
   const [showDispersion, setShowDispersion] = useState(true)
   const [dispersionHcap, setDispersionHcap] = useState(20)
   const [memberId,      setMemberId]      = useState<string>('')
+  const [bearing,       setBearing]       = useState(0)
+  const [isFullscreen,  setIsFullscreen]  = useState(false)
 
   // Load persisted member from localStorage, then fetch their bag
   useEffect(() => {
@@ -200,13 +257,37 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
     fetchElevation(targetPos.lat, targetPos.lon).then((e) => { setTargetElev(e); setElevLoading(false) })
   }, [targetPos])
 
+  // Fullscreen change listener
+  useEffect(() => {
+    const onFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+      setTimeout(() => mapRef.current?.invalidateSize(), 100)
+    }
+    document.addEventListener('fullscreenchange', onFsChange)
+    return () => document.removeEventListener('fullscreenchange', onFsChange)
+  }, [])
+
   const handleMapClick = useCallback((lat: number, lon: number) => {
     setTargetPos({ lat, lon })
     setTargetElev(null)
   }, [])
 
-  const clearPin = () => { setTargetPos(null); setTargetElev(null) }
-  const recenter = () => { if (userPos) mapRef.current?.setView([userPos.lat, userPos.lon], mapRef.current.getZoom()) }
+  const clearPin      = () => { setTargetPos(null); setTargetElev(null) }
+  const recenter      = () => { if (userPos) mapRef.current?.setView([userPos.lat, userPos.lon], mapRef.current.getZoom()) }
+  const resetNorth    = () => mapRef.current?.rotateTo(0, { animate: true })
+  const rotateDelta   = (delta: number) => {
+    if (!mapRef.current) return
+    const cur        = mapRef.current.getBearing?.() ?? 0
+    const next       = ((cur + delta) % 360 + 360) % 360
+    mapRef.current.rotateTo(next, { animate: true })
+  }
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      mapWrapperRef.current?.requestFullscreen()
+    } else {
+      document.exitFullscreen()
+    }
+  }
 
   // Computed stats
   const yards    = userPos && targetPos ? haversineYards(userPos.lat, userPos.lon, targetPos.lat, targetPos.lon) : null
@@ -262,6 +343,7 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
   )
 
   const center: [number, number] = [userPos.lat, userPos.lon]
+  const isNorth = Math.abs(bearing) < 1
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -280,6 +362,7 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
           box-shadow: 0 2px 6px rgba(0,0,0,0.12) !important;
           font-size: 16px !important; color: #374151 !important;
         }
+        :fullscreen .rf-map-wrapper { border-radius: 0 !important; }
       `}</style>
 
       {/* ── Player selector ───────────────────────────────────────────────── */}
@@ -305,14 +388,17 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
 
       {/* ── Map ───────────────────────────────────────────────────────────── */}
       <div
-        className="relative rounded-2xl overflow-hidden shadow-md border border-gray-200"
-        style={{ height: 'clamp(500px, calc(100svh - 200px), 860px)' }}
+        ref={mapWrapperRef}
+        className="rf-map-wrapper relative rounded-2xl overflow-hidden shadow-md border border-gray-200"
+        style={{ height: isFullscreen ? '100%' : 'clamp(500px, calc(100svh - 200px), 860px)' }}
       >
         <MapContainer
           center={center}
           zoom={17}
           style={{ height: '100%', width: '100%' }}
           ref={mapRef}
+          rotate={true}
+          touchRotate={true}
         >
           {/* Esri World Imagery — free satellite tiles, no API key */}
           <TileLayer
@@ -322,6 +408,7 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
           />
 
           <ClickHandler onMapClick={handleMapClick} />
+          <BearingSync onBearing={setBearing} />
 
           {/* User position */}
           <Marker position={[userPos.lat, userPos.lon]} icon={userIcon} />
@@ -406,13 +493,67 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
           </div>
         )}
 
-        {/* Overlaid map buttons */}
-        <div className="absolute bottom-4 left-3 z-[1000] flex gap-2">
+        {/* ── Map controls ──────────────────────────────────────────────── */}
+        <div className="absolute bottom-4 left-3 z-[1000] flex gap-1.5 flex-wrap">
+          {/* Re-center */}
           <button
             onClick={recenter}
             className="bg-white/95 backdrop-blur rounded-xl shadow-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-white border border-gray-200 transition-colors"
           >
-            📍 Re-center
+            📍
+          </button>
+
+          {/* Rotate CCW */}
+          <button
+            onClick={() => rotateDelta(-15)}
+            title="Rotate left 15°"
+            className="bg-white/95 backdrop-blur rounded-xl shadow-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-white border border-gray-200 transition-colors"
+          >
+            ↺
+          </button>
+
+          {/* Compass — shows needle + resets to north */}
+          <button
+            onClick={resetNorth}
+            title={isNorth ? 'North up' : `Bearing ${Math.round(bearing)}° — tap to reset`}
+            className={`bg-white/95 backdrop-blur rounded-xl shadow-lg px-2.5 py-2 text-sm font-semibold border transition-colors flex items-center gap-1 ${
+              isNorth
+                ? 'text-gray-500 border-gray-200 hover:bg-white'
+                : 'text-amber-700 border-amber-300 bg-amber-50/95 hover:bg-amber-100/95'
+            }`}
+          >
+            <CompassNeedle bearing={bearing} />
+            {!isNorth && (
+              <span className="text-[11px] tabular-nums">{Math.round(bearing)}°</span>
+            )}
+          </button>
+
+          {/* Rotate CW */}
+          <button
+            onClick={() => rotateDelta(15)}
+            title="Rotate right 15°"
+            className="bg-white/95 backdrop-blur rounded-xl shadow-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-white border border-gray-200 transition-colors"
+          >
+            ↻
+          </button>
+        </div>
+
+        {/* Fullscreen toggle — top-left */}
+        <div className="absolute top-3 left-3 z-[1000]">
+          <button
+            onClick={toggleFullscreen}
+            title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+            className="bg-white/95 backdrop-blur rounded-xl shadow-lg px-2.5 py-2 text-gray-700 hover:bg-white border border-gray-200 transition-colors"
+          >
+            {isFullscreen ? (
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <path d="M6 1v5H1M10 1v5h5M15 10h-5v5M1 10h5v5"/>
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <path d="M1 6V1h5M10 1h5v5M15 10v5h-5M6 15H1v-5"/>
+              </svg>
+            )}
           </button>
         </div>
       </div>
