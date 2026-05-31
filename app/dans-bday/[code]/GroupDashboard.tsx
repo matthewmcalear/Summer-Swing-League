@@ -23,7 +23,7 @@ interface GroupState {
   teams: TeamState[]
 }
 
-interface ChatMessage { id: string; group_id: string; group_name: string; text: string; sent_at: string }
+interface ChatMessage { id: string; sender_name: string; text: string; sent_at: string }
 
 interface AllGroupState { groups: GroupState[]; messages: ChatMessage[] }
 
@@ -349,7 +349,7 @@ function TeamCard({
 
 // ── Chat ──────────────────────────────────────────────────────────────────────
 
-function ChatPanel({ messages, groupCode }: { messages: ChatMessage[]; groupCode: string }) {
+function ChatPanel({ messages, senderName }: { messages: ChatMessage[]; senderName: string }) {
   const [text,    setText]    = useState('')
   const [sending, setSending] = useState(false)
   const bottomRef             = useRef<HTMLDivElement>(null)
@@ -366,7 +366,7 @@ function ChatPanel({ messages, groupCode }: { messages: ChatMessage[]; groupCode
       await fetch('/api/bday/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ groupCode, text: trimmed }),
+        body: JSON.stringify({ senderName, text: trimmed }),
       })
       setText('')
     } finally { setSending(false) }
@@ -375,8 +375,8 @@ function ChatPanel({ messages, groupCode }: { messages: ChatMessage[]; groupCode
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3">
-        <h2 className="text-white font-bold text-sm">💬 Group Chat</h2>
-        <p className="text-blue-200 text-[11px]">Trash talk, updates, bragging rights</p>
+        <h2 className="text-white font-bold text-sm">💬 Trash Talk</h2>
+        <p className="text-blue-200 text-[11px]">Chatting as {senderName}</p>
       </div>
 
       <div className="h-52 overflow-y-auto p-3 space-y-2 bg-gray-50">
@@ -384,16 +384,16 @@ function ChatPanel({ messages, groupCode }: { messages: ChatMessage[]; groupCode
           <p className="text-xs text-gray-400 text-center pt-8">No messages yet. Say something!</p>
         ) : (
           messages.map((m) => (
-            <div key={m.id} className={`flex flex-col ${m.group_name === groupCode ? 'items-end' : 'items-start'}`}>
+            <div key={m.id} className={`flex flex-col ${m.sender_name === senderName ? 'items-end' : 'items-start'}`}>
               <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
-                m.group_name === groupCode
+                m.sender_name === senderName
                   ? 'bg-blue-600 text-white rounded-br-sm'
                   : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm shadow-sm'
               }`}>
                 {m.text}
               </div>
               <span className="text-[10px] text-gray-400 mt-0.5 px-1">
-                {m.group_name} · {relativeTime(m.sent_at)}
+                {m.sender_name} · {relativeTime(m.sent_at)}
               </span>
             </div>
           ))
@@ -406,7 +406,7 @@ function ChatPanel({ messages, groupCode }: { messages: ChatMessage[]; groupCode
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
-          placeholder="Type a message…"
+          placeholder="Say something…"
           maxLength={200}
           className="form-input flex-1 py-2 text-sm"
         />
@@ -624,7 +624,7 @@ export default function GroupDashboard({ groupCode }: { groupCode: string }) {
       </div>
 
       {/* Group Chat */}
-      <ChatPanel messages={messages} groupCode={group.name} />
+      <ChatPanel messages={messages} senderName={group.name} />
 
       {/* Link to full leaderboard */}
       <Link

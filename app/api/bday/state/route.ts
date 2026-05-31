@@ -89,8 +89,7 @@ export async function GET() {
     take: 60,
   })
   const messages = rawMessages.reverse().map((m) => ({
-    id: m.id, group_id: m.group_id, group_name: m.group_name,
-    text: m.text, sent_at: m.sent_at,
+    id: m.id, sender_name: m.sender_name, text: m.text, sent_at: m.sent_at,
   }))
 
   return NextResponse.json({ groups: enriched, feed, messages })

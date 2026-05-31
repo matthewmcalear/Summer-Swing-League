@@ -27,7 +27,7 @@ interface GroupState {
 }
 
 interface FeedItem    { id: string; type: string; message: string; timestamp: string }
-interface ChatMessage { id: string; group_id: string; group_name: string; text: string; sent_at: string }
+interface ChatMessage { id: string; sender_name: string; text: string; sent_at: string }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -104,14 +104,24 @@ function ScoreRow({ team, rank }: { team: TeamState; rank: number }) {
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function EventDashboard() {
-  const [groups,   setGroups]   = useState<GroupState[]>([])
-  const [feed,     setFeed]     = useState<FeedItem[]>([])
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [loading,  setLoading]  = useState(true)
-  const [lastPoll, setLastPoll] = useState<Date | null>(null)
-  const [chatText, setChatText] = useState('')
-  const [chatBusy, setChatBusy] = useState(false)
-  const chatBottomRef           = useRef<HTMLDivElement>(null)
+  const [groups,    setGroups]    = useState<GroupState[]>([])
+  const [feed,      setFeed]      = useState<FeedItem[]>([])
+  const [messages,  setMessages]  = useState<ChatMessage[]>([])
+  const [loading,   setLoading]   = useState(true)
+  const [lastPoll,  setLastPoll]  = useState<Date | null>(null)
+
+  // Chat state
+  const [chatName,  setChatName]  = useState('')
+  const [chatText,  setChatText]  = useState('')
+  const [chatBusy,  setChatBusy]  = useState(false)
+  const [nameSet,   setNameSet]   = useState(false)
+  const chatBottomRef             = useRef<HTMLDivElement>(null)
+
+  // Restore saved name from localStorage on mount
+  useEffect(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('bday_chat_name') : null
+    if (saved) { setChatName(saved); setNameSet(true) }
+  }, [])
 
   const fetchState = useCallback(async () => {
     try {
@@ -135,15 +145,23 @@ export default function EventDashboard() {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages.length])
 
-  const sendChat = async (groupCode: string) => {
+  const saveName = () => {
+    const name = chatName.trim()
+    if (!name) return
+    localStorage.setItem('bday_chat_name', name)
+    setNameSet(true)
+  }
+
+  const sendChat = async () => {
     const text = chatText.trim()
-    if (!text || chatBusy) return
+    const name = chatName.trim()
+    if (!text || !name || chatBusy) return
     setChatBusy(true)
     try {
       await fetch('/api/bday/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ groupCode, text }),
+        body: JSON.stringify({ senderName: name, text }),
       })
       setChatText('')
       fetchState()
@@ -270,51 +288,86 @@ export default function EventDashboard() {
       {/* ── Group Chat ── */}
       <div className="card">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold text-gray-900">💬 Group Chat</h2>
-          <span className="text-xs text-gray-400">All groups · trash talk welcome</span>
+          <h2 className="text-lg font-bold text-gray-900">💬 Trash Talk</h2>
+          <span className="text-xs text-gray-400">Open to everyone</span>
         </div>
 
-        <div className="h-56 overflow-y-auto space-y-2 mb-3 pr-1">
+        {/* Message list */}
+        <div className="h-56 overflow-y-auto space-y-2 mb-3">
           {messages.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center pt-10">No messages yet.</p>
+            <p className="text-sm text-gray-400 text-center pt-10">No messages yet — say something!</p>
           ) : (
             messages.map((m) => (
-              <div key={m.id} className="flex items-start gap-2 text-sm">
-                <span className="shrink-0 text-[10px] font-bold bg-amber-100 text-amber-700 rounded-lg px-1.5 py-0.5 mt-0.5 whitespace-nowrap">
-                  {m.group_name}
+              <div key={m.id} className={`flex flex-col ${m.sender_name === chatName.trim() ? 'items-end' : 'items-start'}`}>
+                <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
+                  m.sender_name === chatName.trim()
+                    ? 'bg-amber-500 text-white rounded-br-sm'
+                    : 'bg-gray-100 text-gray-800 rounded-bl-sm'
+                }`}>
+                  {m.text}
+                </div>
+                <span className="text-[10px] text-gray-400 mt-0.5 px-1">
+                  {m.sender_name} · {relativeTime(m.sent_at)}
                 </span>
-                <span className="text-gray-800 flex-1">{m.text}</span>
-                <span className="shrink-0 text-[10px] text-gray-400 tabular-nums mt-0.5">{relativeTime(m.sent_at)}</span>
               </div>
             ))
           )}
           <div ref={chatBottomRef} />
         </div>
 
-        <div className="border-t border-gray-100 pt-3">
-          <p className="text-xs text-gray-500 mb-2 font-medium">Send as your group:</p>
-          <div className="flex gap-2 flex-wrap mb-2">
-            {groups.map((g) => (
+        {/* Name + message inputs */}
+        <div className="border-t border-gray-100 pt-3 space-y-2">
+          {!nameSet ? (
+            <div className="flex gap-2">
+              <input
+                value={chatName}
+                onChange={(e) => setChatName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') saveName() }}
+                placeholder="Enter your name to chat…"
+                maxLength={30}
+                autoFocus
+                className="form-input flex-1 py-2 text-sm"
+              />
               <button
-                key={g.id}
-                onClick={() => sendChat(g.code)}
-                disabled={chatBusy || !chatText.trim()}
-                className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs font-bold rounded-lg transition-colors disabled:opacity-40"
+                onClick={saveName}
+                disabled={!chatName.trim()}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-40"
               >
-                {g.name}
+                Set
               </button>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <input
-              value={chatText}
-              onChange={(e) => setChatText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && groups.length === 1) sendChat(groups[0].code) }}
-              placeholder="Type a message, then tap your group to send…"
-              maxLength={200}
-              className="form-input flex-1 py-2 text-sm"
-            />
-          </div>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-500">
+                  Chatting as <strong className="text-gray-800">{chatName.trim()}</strong>
+                </span>
+                <button
+                  onClick={() => { setNameSet(false); localStorage.removeItem('bday_chat_name') }}
+                  className="text-xs text-gray-400 hover:text-gray-600 underline"
+                >
+                  Change
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  value={chatText}
+                  onChange={(e) => setChatText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') sendChat() }}
+                  placeholder="Say something…"
+                  maxLength={200}
+                  className="form-input flex-1 py-2 text-sm"
+                />
+                <button
+                  onClick={sendChat}
+                  disabled={!chatText.trim() || chatBusy}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-40"
+                >
+                  Send
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

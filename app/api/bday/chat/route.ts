@@ -12,16 +12,13 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const { groupCode, text } = await req.json()
-  if (!groupCode || !text?.trim()) {
-    return NextResponse.json({ error: 'groupCode and text required' }, { status: 400 })
+  const { senderName, text } = await req.json()
+  if (!senderName?.trim() || !text?.trim()) {
+    return NextResponse.json({ error: 'senderName and text required' }, { status: 400 })
   }
 
-  const group = await prisma.bdayGroup.findUnique({ where: { code: groupCode.toUpperCase() } })
-  if (!group) return NextResponse.json({ error: 'Group not found' }, { status: 404 })
-
   const msg = await prisma.bdayMessage.create({
-    data: { group_id: group.id, group_name: group.name, text: text.trim() },
+    data: { sender_name: senderName.trim(), text: text.trim() },
   })
   return NextResponse.json({ message: msg })
 }
