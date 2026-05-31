@@ -737,13 +737,18 @@ export default function GroupDashboard({ groupCode }: { groupCode: string }) {
       {/* Group Chat */}
       <ChatPanel messages={messages} senderName={group.name} />
 
-      {/* Link to full leaderboard */}
-      <Link
-        href="/dans-bday"
-        className="block text-center py-3 rounded-2xl border border-amber-200 bg-amber-50 text-amber-700 font-bold text-sm hover:bg-amber-100 transition-colors"
-      >
-        🏆 View Full Leaderboard
-      </Link>
+      {/* Spacer so sticky bar doesn't overlap last card */}
+      <div className="h-20" />
+
+      {/* Sticky bottom bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 p-3 bg-white/90 backdrop-blur border-t border-gray-200 shadow-lg">
+        <Link
+          href="/dans-bday"
+          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-base transition-colors shadow-md"
+        >
+          🏆 Back to Leaderboard
+        </Link>
+      </div>
 
     </div>
   )
