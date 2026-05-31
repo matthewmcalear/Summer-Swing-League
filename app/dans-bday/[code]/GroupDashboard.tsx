@@ -581,8 +581,21 @@ export default function GroupDashboard({ groupCode }: { groupCode: string }) {
         </div>
         <h1 className="text-2xl font-extrabold leading-tight">{group.name}</h1>
         <p className="text-green-200 text-xs mt-1">Dan's Birthday Tournament · July 3rd</p>
-        <div className="mt-2 inline-block bg-white/20 rounded-lg px-2.5 py-1 text-xs font-bold tracking-wide">
-          Your group: {group.code}
+        <div className="mt-2 flex items-center gap-2 flex-wrap">
+          <div className="inline-block bg-white/20 rounded-lg px-2.5 py-1 text-xs font-bold tracking-wide">
+            Your group: {group.code}
+          </div>
+          <select
+            value={group.code}
+            onChange={(e) => { if (e.target.value !== group.code) window.location.href = `/dans-bday/${e.target.value}` }}
+            className="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold rounded-lg px-2 py-1 border border-white/30 outline-none cursor-pointer"
+          >
+            {state.groups.map((g) => (
+              <option key={g.code} value={g.code} className="text-gray-900 bg-white">
+                {g.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
