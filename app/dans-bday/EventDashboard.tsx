@@ -54,44 +54,42 @@ function rankAll(groups: GroupState[]) {
 
 function ScoreRow({ team, rank }: { team: TeamState; rank: number }) {
   const medals = ['🥇', '🥈', '🥉']
+  const dogsToNext = team.hotdogs > 0 ? 3 - (team.hotdogs % 3) : 3
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl ${rank === 1 ? 'bg-yellow-50 border border-yellow-200' : 'bg-white border border-gray-100'}`}>
-      <span className="w-7 shrink-0 text-center font-bold text-gray-500 text-sm">
+    <div className={`flex items-center gap-2 px-3 py-3 rounded-xl ${rank === 1 ? 'bg-yellow-50 border border-yellow-200' : 'bg-white border border-gray-100'}`}>
+      {/* Rank */}
+      <span className="w-6 shrink-0 text-center font-bold text-gray-500 text-sm">
         {rank <= 3 ? medals[rank - 1] : rank}
       </span>
 
+      {/* Name + holes */}
       <div className="flex-1 min-w-0">
         <p className="font-bold text-gray-900 text-sm truncate">{team.name}</p>
         <p className="text-[11px] text-gray-400">
-          {team.holes_played > 0 ? `${team.holes_played}/18 holes` : 'Not started'}
+          {team.holes_played > 0 ? `${team.holes_played}/18` : 'Not started'}
         </p>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
-        {team.beers > 0 && (
-          <span className="text-xs bg-amber-100 text-amber-700 rounded-lg px-1.5 py-0.5 font-semibold">
-            🍺×{team.beers}
-          </span>
-        )}
-        {team.hotdogs > 0 && (
-          <span className="text-xs bg-orange-100 text-orange-700 rounded-lg px-1.5 py-0.5 font-semibold">
-            🌭×{team.hotdogs}
-          </span>
-        )}
-        {team.mulligan_bank > 0 && (
-          <span className="text-xs bg-red-100 text-red-700 rounded-lg px-1.5 py-0.5 font-semibold">
-            💀×{team.mulligan_bank}
-          </span>
-        )}
+      {/* Hot dog tracker */}
+      <div className="shrink-0 text-center w-14">
+        <div className={`rounded-lg px-1.5 py-1 ${team.hotdogs > 0 ? 'bg-orange-50 border border-orange-200' : 'bg-gray-50 border border-gray-100'}`}>
+          <p className={`text-sm font-extrabold tabular-nums leading-none ${team.hotdogs > 0 ? 'text-orange-600' : 'text-gray-300'}`}>
+            🌭 {team.hotdogs}
+          </p>
+          {team.hotdog_discount > 0 ? (
+            <p className="text-[10px] text-orange-500 font-bold mt-0.5">−{team.hotdog_discount} strk</p>
+          ) : (
+            <p className="text-[10px] text-gray-300 mt-0.5">{dogsToNext} to −1</p>
+          )}
+        </div>
       </div>
 
-      <div className="text-right shrink-0 w-16">
+      {/* Score */}
+      <div className="text-right shrink-0 w-12">
         {team.holes_played > 0 ? (
           <>
             <p className="text-xl font-extrabold text-green-700 tabular-nums leading-none">{team.net_total}</p>
-            {team.hotdog_discount > 0 && (
-              <p className="text-[10px] text-orange-500 font-semibold">-{team.hotdog_discount}🌭</p>
-            )}
+            <p className="text-[10px] text-gray-400">{team.gross_total} gross</p>
           </>
         ) : (
           <p className="text-sm text-gray-300 font-semibold">—</p>
