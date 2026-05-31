@@ -268,22 +268,27 @@ export default function EventDashboard() {
         </div>
       )}
 
-      {/* ── Activity feed ── */}
-      {feed.length > 0 && (
-        <div className="card">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">📡 Live Activity</h2>
-          <div className="space-y-2 max-h-80 overflow-y-auto">
+      {/* ── Activity log ── */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-bold text-gray-900">📋 Activity Log</h2>
+          <span className="text-xs text-gray-400">{feed.length} event{feed.length !== 1 ? 's' : ''}</span>
+        </div>
+        {feed.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-6">No activity yet — get out there!</p>
+        ) : (
+          <div className="space-y-0 max-h-80 overflow-y-auto divide-y divide-gray-50">
             {feed.map((item) => (
-              <div key={item.id} className="flex items-start gap-3 text-sm">
-                <span className="text-[11px] text-gray-400 shrink-0 tabular-nums mt-0.5 w-14 text-right">
+              <div key={item.id} className="flex items-start gap-3 py-2 text-sm">
+                <span className="text-[11px] text-gray-400 shrink-0 tabular-nums mt-0.5 w-14 text-right leading-5">
                   {relativeTime(item.timestamp)}
                 </span>
-                <span className="text-gray-700">{item.message}</span>
+                <span className="text-gray-700 flex-1 leading-5">{item.message}</span>
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* ── Group Chat ── */}
       <div className="card">

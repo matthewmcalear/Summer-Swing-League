@@ -63,8 +63,8 @@ export async function GET() {
         timestamp: a.logged_at,
         type:      a.type as 'beer' | 'hotdog',
         message:   a.type === 'beer'
-          ? `🍺 ${t.name} shotgunned a beer${a.hole ? ` on hole ${a.hole}` : ''}`
-          : `🌭 ${t.name} ate a hot dog${a.hole ? ` on hole ${a.hole}` : ''}`,
+          ? `🍺 ${t.name} (${g.name}) shotgunned a beer${a.hole ? ` on hole ${a.hole}` : ''}`
+          : `🌭 ${t.name} (${g.name}) ate a hot dog${a.hole ? ` on hole ${a.hole}` : ''}`,
       }))
     )
   )
@@ -75,7 +75,7 @@ export async function GET() {
         id:        m.id,
         timestamp: m.fired_at,
         type:      'mulligan' as const,
-        message:   `💀 ${t.name} fired a reverse mulligan at ${m.target.name}${m.hole ? ` on hole ${m.hole}` : ''}`,
+        message:   `💀 ${t.name} (${g.name}) reverse mulligan'd ${m.target.name}${m.hole ? ` on hole ${m.hole}` : ''}`,
       }))
     )
   )
