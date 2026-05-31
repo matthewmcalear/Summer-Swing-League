@@ -29,6 +29,25 @@ interface GroupState {
 interface FeedItem    { id: string; type: string; message: string; timestamp: string }
 interface ChatMessage { id: string; sender_name: string; text: string; sent_at: string }
 
+// ── Course par ─────────────────────────────────────────────────────────────────
+// Carling Lake Golf Course — update if you have exact hole pars
+const TOTAL_PAR = 72
+
+function fmtVsPar(total: number, holesPlayed: number): string {
+  if (holesPlayed === 0) return '—'
+  const diff = total - TOTAL_PAR
+  if (diff === 0) return 'E'
+  return diff > 0 ? `+${diff}` : `${diff}`
+}
+
+function vsParColor(total: number, holesPlayed: number): string {
+  if (holesPlayed === 0) return 'text-gray-300'
+  const diff = total - TOTAL_PAR
+  if (diff < 0) return 'text-red-600'
+  if (diff === 0) return 'text-green-700'
+  return 'text-gray-500'
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function relativeTime(ts: string) {
@@ -82,14 +101,131 @@ function ScoreRow({ team, rank }: { team: TeamState; rank: number }) {
       </div>
 
       {/* Score */}
-      <div className="text-right shrink-0 w-12">
+      <div className="text-right shrink-0 w-16">
         {team.holes_played > 0 ? (
-          <p className="text-xl font-extrabold text-green-700 tabular-nums leading-none">{team.total}</p>
+          <>
+            <p className="text-xl font-extrabold text-green-700 tabular-nums leading-none">{team.total}</p>
+            <p className={`text-xs font-bold tabular-nums leading-none mt-0.5 ${vsParColor(team.total, team.holes_played)}`}>
+              {fmtVsPar(team.total, team.holes_played)}
+            </p>
+          </>
         ) : (
           <p className="text-sm text-gray-300 font-semibold">—</p>
         )}
       </div>
     </div>
+  )
+}
+
+// ── Final Scorecard ────────────────────────────────────────────────────────────
+
+function FinalScorecard({ groups, ranked }: { groups: GroupState[]; ranked: TeamState[] }) {
+  const [open, setOpen] = useState(false)
+  const anyStarted = ranked.some((t) => t.holes_played > 0)
+  if (!anyStarted) return null
+
+  const groupName = (groupId: string) => groups.find((g) => g.id === groupId)?.name ?? ''
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="w-full py-3 rounded-2xl border-2 border-green-200 bg-green-50 hover:bg-green-100 text-green-800 font-bold text-sm transition-colors flex items-center justify-center gap-2"
+      >
+        🏁 View Final Scorecard
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm overflow-y-auto p-4">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden my-4">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-4 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-extrabold text-xl leading-tight">🏆 Scorecard</h2>
+                  <p className="text-amber-100 text-xs mt-0.5">Dan's Birthday · July 3rd · Carling Lake</p>
+                </div>
+                <button onClick={() => setOpen(false)} className="text-white/70 hover:text-white text-2xl leading-none">✕</button>
+              </div>
+            </div>
+
+            {/* Scoreboard */}
+            <div className="divide-y divide-gray-100">
+              {ranked.map((team, i) => {
+                const medals = ['🥇', '🥈', '🥉']
+                const isPodium = i < 3
+                return (
+                  <div key={team.id} className={`px-5 py-3 flex items-center gap-3 ${i === 0 ? 'bg-yellow-50' : ''}`}>
+                    <span className="w-8 shrink-0 text-center font-bold text-lg">
+                      {isPodium ? medals[i] : <span className="text-gray-400 text-sm">#{i + 1}</span>}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-gray-900 text-sm leading-tight">{team.name}</p>
+                      <p className="text-[11px] text-gray-400">{groupName(team.group_id)}</p>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0 text-xs text-gray-500">
+                      {team.beers > 0 && <span>🍺 {team.beers}</span>}
+                      {team.hotdogs > 0 && <span>🌭 {team.hotdogs}</span>}
+                      <span className="text-[11px] text-gray-400">{team.holes_played}/18</span>
+                    </div>
+                    <div className="text-right shrink-0 w-14">
+                      {team.holes_played > 0 ? (
+                        <>
+                          <p className="text-xl font-extrabold text-green-700 tabular-nums leading-none">{team.total}</p>
+                          <p className={`text-xs font-bold tabular-nums ${vsParColor(team.total, team.holes_played)}`}>
+                            {fmtVsPar(team.total, team.holes_played)}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-gray-300 font-semibold text-sm">DNS</p>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Hot dog leaderboard */}
+            {ranked.some((t) => t.hotdogs > 0) && (
+              <div className="bg-orange-50 border-t border-orange-100 px-5 py-3">
+                <p className="text-xs font-bold text-orange-700 mb-2">🌭 Hot Dog Award</p>
+                {[...ranked]
+                  .filter((t) => t.hotdogs > 0)
+                  .sort((a, b) => b.hotdogs - a.hotdogs)
+                  .slice(0, 3)
+                  .map((t, i) => (
+                    <div key={t.id} className="flex justify-between text-sm text-orange-800 font-semibold py-0.5">
+                      <span>{i === 0 ? '🏆 ' : ''}{t.name}</span>
+                      <span>{t.hotdogs} dog{t.hotdogs !== 1 ? 's' : ''}</span>
+                    </div>
+                  ))}
+              </div>
+            )}
+
+            {/* Beer leaderboard */}
+            {ranked.some((t) => t.beers > 0) && (
+              <div className="bg-amber-50 border-t border-amber-100 px-5 py-3">
+                <p className="text-xs font-bold text-amber-700 mb-2">🍺 Beer Award</p>
+                {[...ranked]
+                  .filter((t) => t.beers > 0)
+                  .sort((a, b) => b.beers - a.beers)
+                  .slice(0, 3)
+                  .map((t, i) => (
+                    <div key={t.id} className="flex justify-between text-sm text-amber-800 font-semibold py-0.5">
+                      <span>{i === 0 ? '🏆 ' : ''}{t.name}</span>
+                      <span>{t.beers} beer{t.beers !== 1 ? 's' : ''}</span>
+                    </div>
+                  ))}
+              </div>
+            )}
+
+            <div className="px-5 py-3 border-t border-gray-100 text-center">
+              <p className="text-xs text-gray-400">Par {TOTAL_PAR} · Two-man scramble · Hot Dog Rule · Reverse Mulligans</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -292,6 +428,9 @@ export default function EventDashboard() {
           Score = gross strokes − hot dog discount (every 3 dogs = −1 stroke)
         </div>
       </div>
+
+      {/* ── Final Scorecard ── */}
+      <FinalScorecard groups={groups} ranked={ranked} />
 
       {/* ── Live group map ── */}
       {mapGroups.length > 0 && (

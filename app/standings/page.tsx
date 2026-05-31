@@ -54,7 +54,22 @@ export default async function Standings() {
     }
   })
 
-  standings.sort((a, b) => b.seasonScore - a.seasonScore)
+  standings.sort((a, b) => {
+    if (b.seasonScore !== a.seasonScore) return b.seasonScore - a.seasonScore
+    if (b.totalRounds !== a.totalRounds) return b.totalRounds - a.totalRounds
+    const aTop = a.topScores[0] ?? 0
+    const bTop = b.topScores[0] ?? 0
+    return bTop - aTop
+  })
+
+  // Mark tied players (same season score as adjacent entry)
+  const tiedIds = new Set<string>()
+  for (let i = 0; i < standings.length - 1; i++) {
+    if (standings[i].seasonScore === standings[i + 1].seasonScore) {
+      tiedIds.add(standings[i].id)
+      tiedIds.add(standings[i + 1].id)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -88,7 +103,12 @@ export default async function Standings() {
                 <tr key={p.id} className={`border-t border-gray-100 ${rowBg(i)}`}>
                   <td className="px-3 py-3 font-bold text-base">{medalFor(i)}</td>
                   <td className="px-3 py-3">
-                    <div className="font-semibold">{p.name}</div>
+                    <div className="font-semibold flex items-center gap-1.5">
+                      {p.name}
+                      {tiedIds.has(p.id) && (
+                        <span className="text-[10px] font-bold text-gray-400 bg-gray-100 rounded px-1 py-0.5 leading-none">TIE</span>
+                      )}
+                    </div>
                     <div className="sm:hidden mt-1 space-y-0.5">
                       <div className="text-xs text-gray-400 flex flex-wrap gap-x-2">
                         <span>Hdcp {p.currentHandicap}</span>

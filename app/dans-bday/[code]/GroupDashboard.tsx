@@ -27,6 +27,16 @@ interface ChatMessage { id: string; sender_name: string; text: string; sent_at: 
 
 interface AllGroupState { groups: GroupState[]; messages: ChatMessage[] }
 
+// ── Course par ─────────────────────────────────────────────────────────────────
+const TOTAL_PAR = 72
+
+function fmtVsPar(total: number, holesPlayed: number): string {
+  if (holesPlayed === 0) return ''
+  const diff = total - TOTAL_PAR
+  if (diff === 0) return 'E'
+  return diff > 0 ? `+${diff}` : `${diff}`
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function relativeTime(ts: string) {
@@ -377,7 +387,9 @@ function TeamCard({
           {team.holes_played > 0 && (
             <div className="text-right ml-3 shrink-0">
               <div className="text-2xl font-extrabold text-white tabular-nums leading-none">{team.total}</div>
-              <div className="text-[10px] text-green-200">{team.holes_played}/18 holes</div>
+              <div className="text-[10px] text-green-200 tabular-nums">
+                {fmtVsPar(team.total, team.holes_played)} · {team.holes_played}/18
+              </div>
             </div>
           )}
         </div>

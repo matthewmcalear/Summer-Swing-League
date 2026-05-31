@@ -1,0 +1,18 @@
+{
+  "name": "Summer Swing League 2026",
+  "short_name": "SSL 2026",
+  "description": "Competitive and social golf league — April 15 to October 10, 2026",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#14532d",
+  "theme_color": "#14532d",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/IMG_1002.jpeg",
+      "sizes": "any",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
