@@ -175,11 +175,12 @@ function MulliganModal({
 // ── Team Card ─────────────────────────────────────────────────────────────────
 
 function TeamCard({
-  team, allTeams, currentHole, onAction,
+  team, allTeams, currentHole, groupCode, onAction,
 }: {
   team: TeamState
   allTeams: TeamState[]
   currentHole: number
+  groupCode: string
   onAction: () => void
 }) {
   const [firing,   setFiring]   = useState(false)
@@ -204,11 +205,25 @@ function TeamCard({
     } finally { setBusy(false); setEditName(false) }
   }
 
+  const silentlyUpdateLocation = () => {
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(
+      (pos) => fetch('/api/bday/location', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groupCode, lat: pos.coords.latitude, lon: pos.coords.longitude }),
+      }),
+      () => { /* silent — GPS optional */ },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60_000 },
+    )
+  }
+
   const savScore = (hole: number, strokes: number | null) => {
     if (strokes == null) {
       fetch('/api/bday/score', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teamId: team.id, hole }) }).then(onAction)
     } else {
       fetch('/api/bday/score', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teamId: team.id, hole, strokes }) }).then(onAction)
+      silentlyUpdateLocation()
     }
   }
 
@@ -598,6 +613,7 @@ export default function GroupDashboard({ groupCode }: { groupCode: string }) {
           team={team}
           allTeams={allTeams}
           currentHole={currentHole}
+          groupCode={code}
           onAction={fetchState}
         />
       ))}
