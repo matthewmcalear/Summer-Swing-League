@@ -506,12 +506,57 @@ function EmailTab({ members }: { members: Member[] }) {
   )
 }
 
+// ── Dan's Bday tab ────────────────────────────────────────────────────────────
+function BdayTab() {
+  const [busy,  setBusy]  = useState(false)
+  const [done,  setDone]  = useState(false)
+
+  const reset = async () => {
+    if (!confirm('Reset ALL birthday event data? This clears every score, beer, hot dog, mulligan, chat message, and GPS location. Groups and team names are kept. This cannot be undone.')) return
+    setBusy(true)
+    setDone(false)
+    try {
+      await fetch('/api/bday/reset', { method: 'DELETE' })
+      setDone(true)
+    } finally { setBusy(false) }
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="card space-y-2">
+        <p className="font-semibold text-gray-800">🎂 Dan's Birthday Tournament</p>
+        <p className="text-sm text-gray-500">Manage teams, view the live leaderboard, or open a group dashboard.</p>
+        <div className="flex gap-3 flex-wrap pt-1">
+          <a href="/dans-bday" className="btn-secondary text-sm">🏆 Leaderboard</a>
+          <a href="/dans-bday/admin" className="btn-secondary text-sm">⚙️ Manage Teams</a>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border-2 border-red-200 bg-red-50 px-5 py-4 space-y-3">
+        <p className="font-bold text-red-800">⚠️ Reset Event Data</p>
+        <p className="text-sm text-red-700">
+          Wipes all scores, beers, hot dogs, mulligans, chat messages, and GPS locations —
+          but keeps groups and team names intact. Use this after testing so you start July 3rd with a clean slate.
+        </p>
+        {done && <p className="text-sm font-semibold text-green-700">✓ All event data cleared. Ready for the real day!</p>}
+        <button
+          onClick={reset}
+          disabled={busy}
+          className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-50"
+        >
+          {busy ? 'Resetting…' : '🗑️ Reset All Event Data'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Main admin page ────────────────────────────────────────────────────────────
 export default function AdminPage() {
   const [authed, setAuthed]   = useState(false)
   const [pw, setPw]           = useState('')
   const [pwErr, setPwErr]     = useState('')
-  const [tab, setTab]         = useState<'members' | 'scores' | 'courses' | 'email' | 'bonuses'>('members')
+  const [tab, setTab]         = useState<'members' | 'scores' | 'courses' | 'email' | 'bonuses' | 'bday'>('members')
   const [members, setMembers] = useState<Member[]>([])
   const [scores, setScores]   = useState<Score[]>([])
   const [courses, setCourses] = useState<{ name: string; count: number }[]>([])
@@ -644,6 +689,7 @@ export default function AdminPage() {
           { key: 'courses', label: `Courses (${courses.length})` },
           { key: 'bonuses', label: 'Bonuses' },
           { key: 'email',   label: 'Email League' },
+          { key: 'bday',    label: '🎂 Dan\'s Bday' },
         ] as const).map(({ key, label }) => (
           <button key={key} onClick={() => setTab(key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -714,6 +760,8 @@ export default function AdminPage() {
         </div>
       ) : tab === 'bonuses' ? (
         <BonusesTab members={members} />
+      ) : tab === 'bday' ? (
+        <BdayTab />
       ) : (
         <EmailTab members={members} />
       )}
