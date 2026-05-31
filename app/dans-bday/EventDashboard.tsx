@@ -76,7 +76,7 @@ function rankAll(groups: GroupState[]) {
 
 // ── Components ─────────────────────────────────────────────────────────────────
 
-function ScoreRow({ team, rank }: { team: TeamState; rank: number }) {
+function ScoreRow({ team, rank, groupCode }: { team: TeamState; rank: number; groupCode: string }) {
   const medals = ['🥇', '🥈', '🥉']
   return (
     <div className={`flex items-center gap-2 px-3 py-3 rounded-xl ${rank === 1 ? 'bg-yellow-50 border border-yellow-200' : 'bg-white border border-gray-100'}`}>
@@ -87,7 +87,7 @@ function ScoreRow({ team, rank }: { team: TeamState; rank: number }) {
 
       {/* Name + holes */}
       <div className="flex-1 min-w-0">
-        <p className="font-bold text-gray-900 text-sm truncate">{team.name}</p>
+        <Link href={`/dans-bday/${groupCode}`} className="font-bold text-gray-900 text-sm truncate hover:text-amber-600 hover:underline transition-colors block">{team.name}</Link>
         <p className="text-[11px] text-gray-400">
           {team.holes_played > 0 ? `${team.holes_played}/18` : 'Not started'}
         </p>
@@ -320,7 +320,8 @@ export default function EventDashboard() {
     } finally { setChatBusy(false) }
   }
 
-  const ranked    = rankAll(groups)
+  const ranked       = rankAll(groups)
+  const groupCodeById = Object.fromEntries(groups.map((g) => [g.id, g.code]))
   const mapGroups = groups.filter((g) => g.location_lat != null && g.location_lon != null).map((g) => ({
     name: g.name, code: g.code,
     lat:  g.location_lat!,
@@ -425,7 +426,7 @@ export default function EventDashboard() {
           <p className="text-sm text-gray-400 text-center py-8">No teams found.</p>
         ) : (
           <div className="space-y-2">
-            {ranked.map((team, i) => <ScoreRow key={team.id} team={team} rank={i + 1} />)}
+            {ranked.map((team, i) => <ScoreRow key={team.id} team={team} rank={i + 1} groupCode={groupCodeById[team.group_id] ?? ''} />)}
           </div>
         )}
 
