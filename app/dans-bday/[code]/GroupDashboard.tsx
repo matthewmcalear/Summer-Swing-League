@@ -554,13 +554,21 @@ export default function GroupDashboard({ groupCode }: { groupCode: string }) {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <Link href="/dans-bday" className="text-xs text-gray-400 hover:text-gray-600 font-semibold">← Leaderboard</Link>
-          <h1 className="text-2xl font-extrabold text-gray-900 mt-1">{group.name}</h1>
-          <p className="text-sm text-gray-500">Dan's Birthday Tournament · July 3rd</p>
+      <div className="rounded-2xl bg-gradient-to-br from-green-700 to-green-600 text-white px-5 py-4 shadow-lg">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <Link
+            href="/dans-bday"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-xl text-xs font-bold transition-colors"
+          >
+            ← Leaderboard
+          </Link>
+          <span className="text-3xl">🏌️</span>
         </div>
-        <div className="text-4xl">🏌️</div>
+        <h1 className="text-2xl font-extrabold leading-tight">{group.name}</h1>
+        <p className="text-green-200 text-xs mt-1">Dan's Birthday Tournament · July 3rd</p>
+        <div className="mt-2 inline-block bg-white/20 rounded-lg px-2.5 py-1 text-xs font-bold tracking-wide">
+          Your group: {group.code}
+        </div>
       </div>
 
       {/* Current hole selector */}
