@@ -28,7 +28,9 @@ interface ChatMessage { id: string; sender_name: string; text: string; sent_at: 
 interface AllGroupState { groups: GroupState[]; messages: ChatMessage[] }
 
 // ── Course par ─────────────────────────────────────────────────────────────────
-const TOTAL_PAR = 72
+// Carling Lake Golf Club — White tees (73.3 / 104%)
+const HOLE_PARS = [4, 4, 4, 4, 5, 3, 4, 4, 4, 4, 4, 4, 3, 5, 4, 3, 3, 5]
+const TOTAL_PAR = HOLE_PARS.reduce((s, p) => s + p, 0) // 71
 
 function fmtVsPar(total: number, holesPlayed: number): string {
   if (holesPlayed === 0) return ''
@@ -89,6 +91,7 @@ function HoleGrid({
             >
               <div className="text-[9px] font-normal opacity-60">{h}</div>
               <div>{scoreMap[h] ?? '—'}</div>
+              <div className="text-[8px] font-normal opacity-40">p{HOLE_PARS[h - 1]}</div>
             </button>
           ))}
         </div>
