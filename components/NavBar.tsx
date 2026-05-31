@@ -56,6 +56,16 @@ export default function NavBar() {
               </Link>
             ))}
             <Link
+              href="/dans-bday"
+              className={`ml-1 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                isActive('/dans-bday')
+                  ? 'bg-amber-500 text-white'
+                  : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500 hover:text-white border border-amber-500/40'
+              }`}
+            >
+              🎂 Dan's Bday
+            </Link>
+            <Link
               href="/admin"
               className="ml-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-green-700 hover:bg-green-600 transition-all border border-green-600"
             >
@@ -95,6 +105,17 @@ export default function NavBar() {
                 {label}
               </Link>
             ))}
+            <Link
+              href="/dans-bday"
+              onClick={() => setOpen(false)}
+              className={`block px-3 py-2.5 rounded-lg text-sm font-bold transition-colors mt-1 ${
+                isActive('/dans-bday')
+                  ? 'bg-amber-500 text-white'
+                  : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500 hover:text-white'
+              }`}
+            >
+              🎂 Dan's Birthday Tournament
+            </Link>
             <Link
               href="/admin"
               onClick={() => setOpen(false)}
