@@ -31,8 +31,8 @@ interface ChatMessage { id: string; sender_name: string; text: string; sent_at: 
 
 // ── Course par ─────────────────────────────────────────────────────────────────
 // Carling Lake Golf Club — White tees (73.3 / 104%)
-const HOLE_PARS = [4, 4, 4, 4, 5, 3, 4, 4, 4, 4, 4, 4, 3, 5, 4, 3, 3, 5]
-const TOTAL_PAR = HOLE_PARS.reduce((s, p) => s + p, 0) // 71
+const HOLE_PARS = [4, 4, 4, 4, 5, 3, 4, 4, 4, 4, 4, 4, 4, 3, 5, 4, 3, 5]
+const TOTAL_PAR = HOLE_PARS.reduce((s, p) => s + p, 0) // 72
 
 function fmtVsPar(total: number, holesPlayed: number): string {
   if (holesPlayed === 0) return '—'
