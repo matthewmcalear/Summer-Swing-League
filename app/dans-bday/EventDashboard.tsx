@@ -150,7 +150,9 @@ export default function EventDashboard() {
     return () => clearInterval(id)
   }, [fetchState])
 
+  const chatInitialised = useRef(false)
   useEffect(() => {
+    if (!chatInitialised.current) { chatInitialised.current = true; return }
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages.length])
 

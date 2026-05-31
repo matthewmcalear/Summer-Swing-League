@@ -449,7 +449,9 @@ function ChatPanel({ messages, senderName }: { messages: ChatMessage[]; senderNa
   const [sending, setSending] = useState(false)
   const bottomRef             = useRef<HTMLDivElement>(null)
 
+  const initialised = useRef(false)
   useEffect(() => {
+    if (!initialised.current) { initialised.current = true; return }
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages.length])
 
