@@ -38,76 +38,116 @@ function relativeTime(ts: string) {
 
 // ── Hole Score Grid ────────────────────────────────────────────────────────────
 
+const COMMON_SCORES = [2, 3, 4, 5, 6, 7, 8, 9, 10]
+
 function HoleGrid({
-  teamId, scores, onSave,
+  scores, onSave,
 }: {
-  teamId: string
   scores: HoleScore[]
   onSave: (hole: number, strokes: number | null) => void
 }) {
   const [editing, setEditing] = useState<number | null>(null)
-  const [val,     setVal]     = useState('')
 
   const scoreMap = Object.fromEntries(scores.map((s) => [s.hole, s.strokes]))
 
-  const openHole = (hole: number) => {
-    setEditing(hole)
-    setVal(scoreMap[hole] != null ? String(scoreMap[hole]) : '')
+  const save = (hole: number, strokes: number) => {
+    onSave(hole, strokes)
+    setEditing(null)
   }
 
-  const commit = (hole: number) => {
-    const n = parseInt(val, 10)
-    if (!isNaN(n) && n >= 1 && n <= 20) {
-      onSave(hole, n)
-    } else if (val === '' && scoreMap[hole]) {
-      onSave(hole, null)
-    }
+  const clear = (hole: number) => {
+    onSave(hole, null)
     setEditing(null)
   }
 
   return (
-    <div>
-      <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-2">Hole Scores</p>
-      <div className="grid grid-cols-9 gap-1">
-        {Array.from({ length: 18 }, (_, i) => i + 1).map((h) => (
-          <button
-            key={h}
-            onClick={() => openHole(h)}
-            className={`rounded-lg text-center py-1.5 text-xs font-bold transition-colors ${
-              editing === h
-                ? 'bg-green-600 text-white ring-2 ring-green-400'
-                : scoreMap[h] != null
-                  ? 'bg-green-100 text-green-800 border border-green-200'
-                  : 'bg-gray-50 text-gray-400 border border-gray-200 hover:bg-gray-100'
-            }`}
-          >
-            <div className="text-[9px] font-normal opacity-60">{h}</div>
-            <div>{editing === h ? '…' : scoreMap[h] ?? '—'}</div>
-          </button>
-        ))}
+    <>
+      <div>
+        <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-2">Hole Scores</p>
+        <div className="grid grid-cols-9 gap-1">
+          {Array.from({ length: 18 }, (_, i) => i + 1).map((h) => (
+            <button
+              key={h}
+              onClick={() => setEditing(h)}
+              className={`rounded-lg text-center py-1.5 text-xs font-bold transition-colors ${
+                editing === h
+                  ? 'bg-green-600 text-white ring-2 ring-green-400'
+                  : scoreMap[h] != null
+                    ? 'bg-green-100 text-green-800 border border-green-200'
+                    : 'bg-gray-50 text-gray-400 border border-gray-200 hover:bg-gray-100'
+              }`}
+            >
+              <div className="text-[9px] font-normal opacity-60">{h}</div>
+              <div>{scoreMap[h] ?? '—'}</div>
+            </button>
+          ))}
+        </div>
       </div>
+
+      {/* Fixed bottom overlay — stays above the keyboard on mobile */}
       {editing !== null && (
-        <div className="mt-2 flex items-center gap-2">
-          <span className="text-sm text-gray-600 font-semibold">Hole {editing}:</span>
-          <input
-            type="number" min={1} max={20} value={val}
-            onChange={(e) => setVal(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') commit(editing) }}
-            autoFocus
-            className="form-input w-20 py-1.5 text-sm text-center tabular-nums"
-            placeholder="strokes"
-          />
-          <button onClick={() => commit(editing)}
-            className="px-3 py-1.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700">
-            Save
-          </button>
-          <button onClick={() => setEditing(null)}
-            className="px-3 py-1.5 bg-gray-100 text-gray-600 text-sm font-semibold rounded-lg hover:bg-gray-200">
-            ✕
-          </button>
+        <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40" onClick={() => setEditing(null)}>
+          <div className="w-full max-w-sm bg-white rounded-t-2xl p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <p className="font-extrabold text-gray-900 text-lg">Hole {editing}</p>
+              <div className="flex items-center gap-2">
+                {scoreMap[editing] != null && (
+                  <button
+                    onClick={() => clear(editing)}
+                    className="text-xs text-red-500 hover:text-red-700 font-semibold px-2 py-1 rounded-lg hover:bg-red-50"
+                  >
+                    Clear
+                  </button>
+                )}
+                <button onClick={() => setEditing(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+              </div>
+            </div>
+
+            {/* Quick-tap common scores */}
+            <div className="grid grid-cols-5 gap-2">
+              {COMMON_SCORES.map((n) => (
+                <button
+                  key={n}
+                  onClick={() => save(editing, n)}
+                  className={`py-3 rounded-xl text-lg font-extrabold transition-colors ${
+                    scoreMap[editing] === n
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-100 hover:bg-green-100 text-gray-800'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+
+            {/* Manual entry for unusual scores */}
+            <div className="flex gap-2">
+              <input
+                type="number" min={1} max={20}
+                placeholder="Other…"
+                className="form-input flex-1 text-center text-lg font-bold py-2"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const n = parseInt((e.target as HTMLInputElement).value, 10)
+                    if (!isNaN(n) && n >= 1 && n <= 20) save(editing, n)
+                  }
+                }}
+              />
+              <button
+                onClick={(e) => {
+                  const input = (e.currentTarget.previousSibling as HTMLInputElement)
+                  const n = parseInt(input.value, 10)
+                  if (!isNaN(n) && n >= 1 && n <= 20) save(editing, n)
+                }}
+                className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl"
+              >
+                Save
+              </button>
+            </div>
+          </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
 
@@ -389,7 +429,7 @@ function TeamCard({
           )}
 
           {/* Hole scores */}
-          <HoleGrid teamId={team.id} scores={team.hole_scores} onSave={savScore} />
+          <HoleGrid scores={team.hole_scores} onSave={savScore} />
         </div>
       </div>
     </>
