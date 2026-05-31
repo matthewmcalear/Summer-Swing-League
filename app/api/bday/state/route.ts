@@ -35,6 +35,8 @@ export async function GET() {
       return {
         id:                 t.id,
         name:               t.name,
+        player1:            t.player1,
+        player2:            t.player2,
         group_id:           t.group_id,
         beers,
         hotdogs,
@@ -62,8 +64,8 @@ export async function GET() {
         timestamp: a.logged_at,
         type:      a.type as 'beer' | 'hotdog',
         message:   a.type === 'beer'
-          ? `🍺 ${t.name} (${g.name}) shotgunned a beer${a.hole ? ` on hole ${a.hole}` : ''}`
-          : `🌭 ${t.name} (${g.name}) ate a hot dog${a.hole ? ` on hole ${a.hole}` : ''}`,
+          ? `🍺 ${a.player || t.name} (${g.name}) shotgunned a beer${a.hole ? ` on hole ${a.hole}` : ''}`
+          : `🌭 ${a.player || t.name} (${g.name}) ate a hot dog${a.hole ? ` on hole ${a.hole}` : ''}`,
       }))
     )
   )

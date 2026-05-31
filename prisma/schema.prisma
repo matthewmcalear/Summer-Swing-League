@@ -110,6 +110,8 @@ model BdayTeam {
   id         String   @id @default(uuid()) @db.Uuid
   group_id   String   @db.Uuid
   name       String
+  player1    String   @default("")
+  player2    String   @default("")
   created_at DateTime @default(now())
 
   group              BdayGroup      @relation(fields: [group_id], references: [id], onDelete: Cascade)

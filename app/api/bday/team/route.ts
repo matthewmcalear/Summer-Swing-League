@@ -5,12 +5,14 @@ export const dynamic = 'force-dynamic'
 
 // PATCH /api/bday/team — update team name and/or group
 export async function PATCH(request: Request) {
-  const { teamId, name, groupId } = await request.json()
+  const { teamId, name, groupId, player1, player2 } = await request.json()
   if (!teamId) return NextResponse.json({ error: 'Missing teamId' }, { status: 400 })
 
-  const data: { name?: string; group_id?: string } = {}
-  if (name?.trim())  data.name     = name.trim()
-  if (groupId)       data.group_id = groupId
+  const data: { name?: string; group_id?: string; player1?: string; player2?: string } = {}
+  if (name?.trim())          data.name     = name.trim()
+  if (groupId)               data.group_id = groupId
+  if (player1 !== undefined) data.player1  = player1.trim()
+  if (player2 !== undefined) data.player2  = player2.trim()
 
   if (Object.keys(data).length === 0) return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
 
