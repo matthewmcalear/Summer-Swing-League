@@ -9,7 +9,7 @@ interface HoleScore  { hole: number; strokes: number }
 interface MulliganRx { id: string; sender_name: string; hole: number | null; fired_at: string }
 
 interface TeamState {
-  id: string; name: string; group_id: string
+  id: string; name: string; player1: string; player2: string; group_id: string
   beers: number; hotdogs: number; hotdog_discount: number
   mulligan_bank: number; mulligans_sent: number
   mulligans_received: MulliganRx[]
@@ -229,10 +229,22 @@ function TeamCard({
   onAction: () => void
   onHoleScored: (hole: number) => void
 }) {
-  const [firing,   setFiring]   = useState(false)
-  const [editName, setEditName] = useState(false)
-  const [nameVal,  setNameVal]  = useState(team.name)
-  const [busy,     setBusy]     = useState(false)
+  const [firing,    setFiring]    = useState(false)
+  const [editName,  setEditName]  = useState(false)
+  const [nameVal,   setNameVal]   = useState(team.name)
+  const [p1Val,     setP1Val]     = useState(team.player1)
+  const [p2Val,     setP2Val]     = useState(team.player2)
+  const [whoFor,    setWhoFor]    = useState<'beer' | 'hotdog' | null>(null)
+
+  // Sync player names when poll brings in updated data (but don't override in-flight edits)
+  const editingPlayers = useRef(false)
+  useEffect(() => {
+    if (!editingPlayers.current) {
+      setP1Val(team.player1)
+      setP2Val(team.player2)
+    }
+  }, [team.player1, team.player2])
+  const [busy,      setBusy]      = useState(false)
 
   const post = async (url: string, body: object) => {
     setBusy(true)
@@ -249,6 +261,16 @@ function TeamCard({
       await fetch('/api/bday/team', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teamId: team.id, name: nameVal.trim() }) })
       onAction()
     } finally { setBusy(false); setEditName(false) }
+  }
+
+  const patchPlayers = async () => {
+    await fetch('/api/bday/team', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teamId: team.id, player1: p1Val, player2: p2Val }) })
+    onAction()
+  }
+
+  const logActivity = (type: 'beer' | 'hotdog', player: string) => {
+    setWhoFor(null)
+    post(`/api/bday/${type}`, { teamId: team.id, hole: currentHole, player })
   }
 
   const silentlyUpdateLocation = () => {
@@ -285,8 +307,44 @@ function TeamCard({
 
   const dogsToNext = 3 - (team.hotdogs % 3)
 
+  const players = [team.player1, team.player2].filter(Boolean)
+
   return (
     <>
+      {/* Who drank/ate? picker */}
+      {whoFor && (
+        <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40" onClick={() => setWhoFor(null)}>
+          <div className="w-full max-w-sm bg-white rounded-t-2xl p-5 space-y-3" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <p className="font-extrabold text-gray-900">{whoFor === 'beer' ? '🍺 Who shotgunned?' : '🌭 Who ate the dog?'}</p>
+              <button onClick={() => setWhoFor(null)} className="text-gray-400 text-xl">✕</button>
+            </div>
+            {players.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2">
+                {players.map((p) => (
+                  <button key={p} onClick={() => logActivity(whoFor, p)}
+                    className="py-4 rounded-xl bg-gray-100 hover:bg-green-100 font-bold text-gray-800 text-base transition-colors">
+                    {p}
+                  </button>
+                ))}
+                <button onClick={() => logActivity(whoFor, team.name)}
+                  className="col-span-2 py-3 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-500 text-sm font-semibold transition-colors">
+                  Both / Team
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-400">Add player names to your team card to track individually, or log as the team:</p>
+                <button onClick={() => logActivity(whoFor, team.name)}
+                  className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold transition-colors">
+                  Log as {team.name}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {firing && (
         <MulliganModal
           senderTeam={team}
@@ -325,6 +383,30 @@ function TeamCard({
         </div>
 
         <div className="p-4 space-y-4">
+          {/* Player names */}
+          <div className="grid grid-cols-2 gap-2">
+            {(['player1', 'player2'] as const).map((field, idx) => {
+              const val   = field === 'player1' ? p1Val : p2Val
+              const setVal = field === 'player1' ? setP1Val : setP2Val
+              return (
+                <div key={field} className="flex flex-col gap-0.5">
+                  <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide px-1">
+                    Player {idx + 1}
+                  </label>
+                  <input
+                    value={val}
+                    onChange={(e) => setVal(e.target.value)}
+                    onFocus={() => { editingPlayers.current = true }}
+                    onBlur={() => { editingPlayers.current = false; patchPlayers() }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                    placeholder={`Player ${idx + 1} name`}
+                    className="rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-800 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent placeholder:font-normal placeholder:text-gray-400"
+                  />
+                </div>
+              )
+            })}
+          </div>
+
           {/* Mulligan bank stat */}
           <div className={`rounded-xl py-2 border text-center ${team.mulligan_bank > 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100'}`}>
             <div className={`text-xl font-extrabold tabular-nums ${team.mulligan_bank > 0 ? 'text-red-600' : 'text-gray-400'}`}>{team.mulligan_bank}</div>
@@ -374,7 +456,7 @@ function TeamCard({
                 <button
                   disabled={busy}
                   className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xl transition-colors disabled:opacity-50"
-                  onClick={() => post('/api/bday/beer', { teamId: team.id, hole: currentHole })}
+                  onClick={() => setWhoFor('beer')}
                 >
                   +
                 </button>
@@ -404,7 +486,7 @@ function TeamCard({
                 <button
                   disabled={busy}
                   className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold text-xl transition-colors disabled:opacity-50"
-                  onClick={() => post('/api/bday/hotdog', { teamId: team.id, hole: currentHole })}
+                  onClick={() => setWhoFor('hotdog')}
                 >
                   +
                 </button>

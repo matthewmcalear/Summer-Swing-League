@@ -3,6 +3,13 @@ import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
+export async function DELETE(request: Request) {
+  const { mulliganId } = await request.json()
+  if (!mulliganId) return NextResponse.json({ error: 'Missing mulliganId' }, { status: 400 })
+  await prisma.bdayMulligan.delete({ where: { id: mulliganId } })
+  return NextResponse.json({ ok: true })
+}
+
 export async function POST(request: Request) {
   const { senderTeamId, targetTeamId, hole } = await request.json()
   if (!senderTeamId || !targetTeamId) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
