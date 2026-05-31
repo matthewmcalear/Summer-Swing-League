@@ -57,7 +57,7 @@ export default function NavBar() {
             ))}
             <Link
               href="/dans-bday"
-              className={`ml-1 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
+              className={`ml-1 px-3 py-1.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
                 isActive('/dans-bday')
                   ? 'bg-amber-500 text-white'
                   : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500 hover:text-white'
