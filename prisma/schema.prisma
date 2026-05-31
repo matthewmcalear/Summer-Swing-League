@@ -89,3 +89,72 @@ model ClubYardage {
   @@unique([member_id, club_name])
   @@map("club_yardages")
 }
+
+// ── Dan's Birthday Event ───────────────────────────────────────────────────────
+
+model BdayGroup {
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String
+  code         String    @unique
+  location_lat Float?
+  location_lon Float?
+  location_at  DateTime?
+  created_at   DateTime  @default(now())
+
+  teams BdayTeam[]
+
+  @@map("bday_groups")
+}
+
+model BdayTeam {
+  id         String   @id @default(uuid()) @db.Uuid
+  group_id   String   @db.Uuid
+  name       String
+  created_at DateTime @default(now())
+
+  group              BdayGroup      @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  hole_scores        BdayHoleScore[]
+  activities         BdayActivity[]
+  mulligans_sent     BdayMulligan[] @relation("MulliganSender")
+  mulligans_received BdayMulligan[] @relation("MulliganTarget")
+
+  @@map("bday_teams")
+}
+
+model BdayHoleScore {
+  id      String @id @default(uuid()) @db.Uuid
+  team_id String @db.Uuid
+  hole    Int
+  strokes Int
+
+  team BdayTeam @relation(fields: [team_id], references: [id], onDelete: Cascade)
+
+  @@unique([team_id, hole])
+  @@map("bday_hole_scores")
+}
+
+model BdayActivity {
+  id        String   @id @default(uuid()) @db.Uuid
+  team_id   String   @db.Uuid
+  type      String   // "beer" | "hotdog"
+  hole      Int?
+  player    String?
+  logged_at DateTime @default(now())
+
+  team BdayTeam @relation(fields: [team_id], references: [id], onDelete: Cascade)
+
+  @@map("bday_activities")
+}
+
+model BdayMulligan {
+  id        String   @id @default(uuid()) @db.Uuid
+  sender_id String   @db.Uuid
+  target_id String   @db.Uuid
+  hole      Int?
+  fired_at  DateTime @default(now())
+
+  sender BdayTeam @relation("MulliganSender", fields: [sender_id], references: [id], onDelete: Cascade)
+  target BdayTeam @relation("MulliganTarget", fields: [target_id], references: [id], onDelete: Cascade)
+
+  @@map("bday_mulligans")
+}

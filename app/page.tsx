@@ -93,14 +93,22 @@ function TournamentBanner() {
           </div>
 
           {/* CTA */}
-          <a
-            href="https://docs.google.com/spreadsheets/d/1XSkvBXlmCx8LdRaOPoWmqw_FXTNYXT0c/edit?gid=1357249633#gid=1357249633"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm transition-colors"
-          >
-            📋 Sign up — Golf &amp; Staying Over
-          </a>
+          <div className="flex gap-2">
+            <a
+              href="https://docs.google.com/spreadsheets/d/1XSkvBXlmCx8LdRaOPoWmqw_FXTNYXT0c/edit?gid=1357249633#gid=1357249633"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm transition-colors"
+            >
+              📋 Sign up
+            </a>
+            <Link
+              href="/dans-bday"
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-green-700 hover:bg-green-800 text-white font-bold text-sm transition-colors"
+            >
+              🏆 Live Scores
+            </Link>
+          </div>
         </div>
       </div>
       </div>
