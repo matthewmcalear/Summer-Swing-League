@@ -25,6 +25,8 @@ declare module 'react-leaflet' {
   interface MapContainerProps {
     rotate?: boolean
     touchRotate?: boolean
+    rotateControl?: boolean | object
+    attributionControl?: boolean
   }
 }
 
@@ -400,12 +402,13 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
           ref={mapRef}
           rotate={true}
           touchRotate={true}
+          rotateControl={false}
           zoomControl={false}
+          attributionControl={false}
         >
           {/* Esri World Imagery — free satellite tiles, no API key */}
           <TileLayer
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-            attribution="Tiles &copy; Esri &mdash; Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP"
             maxZoom={19}
           />
 
