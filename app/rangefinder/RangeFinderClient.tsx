@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { MapContainer, TileLayer, Marker, Polyline, Polygon, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Polyline, Polygon, useMap, ZoomControl } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-rotate'
@@ -356,12 +356,15 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
           50%       { transform: scale(2.2); opacity: 0; }
         }
         .rf-pulse { animation: rf-pulse 2s ease-in-out infinite; }
-        .leaflet-control-zoom { border: none !important; }
+        .leaflet-control-zoom { border: none !important; box-shadow: none !important; }
         .leaflet-control-zoom a {
-          border-radius: 8px !important; border: 1px solid #e5e7eb !important;
+          border: 1px solid #e5e7eb !important;
           box-shadow: 0 2px 6px rgba(0,0,0,0.12) !important;
           font-size: 16px !important; color: #374151 !important;
+          background: rgba(255,255,255,0.95) !important;
         }
+        .leaflet-control-zoom-in  { border-radius: 8px 8px 4px 4px !important; }
+        .leaflet-control-zoom-out { border-radius: 4px 4px 8px 8px !important; border-top: none !important; }
         :fullscreen .rf-map-wrapper { border-radius: 0 !important; }
       `}</style>
 
@@ -399,6 +402,7 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
           ref={mapRef}
           rotate={true}
           touchRotate={true}
+          zoomControl={false}
         >
           {/* Esri World Imagery — free satellite tiles, no API key */}
           <TileLayer
@@ -407,6 +411,7 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
             maxZoom={19}
           />
 
+          <ZoomControl position="bottomright" />
           <ClickHandler onMapClick={handleMapClick} />
           <BearingSync onBearing={setBearing} />
 
@@ -498,9 +503,10 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
           {/* Re-center */}
           <button
             onClick={recenter}
-            className="bg-white/95 backdrop-blur rounded-xl shadow-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-white border border-gray-200 transition-colors"
+            title="Re-center on my position"
+            className="bg-white/95 backdrop-blur rounded-xl shadow-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-white border border-gray-200 transition-colors flex items-center gap-1.5"
           >
-            📍
+            📍 <span className="hidden sm:inline">Center</span>
           </button>
 
           {/* Rotate CCW */}
