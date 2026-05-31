@@ -158,3 +158,13 @@ model BdayMulligan {
 
   @@map("bday_mulligans")
 }
+
+model BdayMessage {
+  id         String   @id @default(uuid()) @db.Uuid
+  group_id   String   @db.Uuid
+  group_name String
+  text       String
+  sent_at    DateTime @default(now())
+
+  @@map("bday_messages")
+}

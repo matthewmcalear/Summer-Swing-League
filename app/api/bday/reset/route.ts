@@ -10,6 +10,7 @@ export async function DELETE() {
     prisma.bdayMulligan.deleteMany(),
     prisma.bdayActivity.deleteMany(),
     prisma.bdayHoleScore.deleteMany(),
+    prisma.bdayMessage.deleteMany(),
     prisma.bdayGroup.updateMany({
       data: { location_lat: null, location_lon: null, location_at: null },
     }),

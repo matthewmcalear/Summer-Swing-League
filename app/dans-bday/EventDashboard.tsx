@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 
@@ -26,7 +26,8 @@ interface GroupState {
   teams: TeamState[]
 }
 
-interface FeedItem { id: string; type: string; message: string; timestamp: string }
+interface FeedItem    { id: string; type: string; message: string; timestamp: string }
+interface ChatMessage { id: string; group_id: string; group_name: string; text: string; sent_at: string }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -105,8 +106,12 @@ function ScoreRow({ team, rank }: { team: TeamState; rank: number }) {
 export default function EventDashboard() {
   const [groups,   setGroups]   = useState<GroupState[]>([])
   const [feed,     setFeed]     = useState<FeedItem[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading,  setLoading]  = useState(true)
   const [lastPoll, setLastPoll] = useState<Date | null>(null)
+  const [chatText, setChatText] = useState('')
+  const [chatBusy, setChatBusy] = useState(false)
+  const chatBottomRef           = useRef<HTMLDivElement>(null)
 
   const fetchState = useCallback(async () => {
     try {
@@ -114,6 +119,7 @@ export default function EventDashboard() {
       const data = await res.json()
       setGroups(data.groups ?? [])
       setFeed(data.feed ?? [])
+      setMessages(data.messages ?? [])
       setLastPoll(new Date())
     } catch { /* ignore */ }
     finally { setLoading(false) }
@@ -124,6 +130,25 @@ export default function EventDashboard() {
     const id = setInterval(fetchState, 10_000)
     return () => clearInterval(id)
   }, [fetchState])
+
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages.length])
+
+  const sendChat = async (groupCode: string) => {
+    const text = chatText.trim()
+    if (!text || chatBusy) return
+    setChatBusy(true)
+    try {
+      await fetch('/api/bday/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groupCode, text }),
+      })
+      setChatText('')
+      fetchState()
+    } finally { setChatBusy(false) }
+  }
 
   const ranked    = rankAll(groups)
   const mapGroups = groups.filter((g) => g.location_lat != null && g.location_lon != null).map((g) => ({
@@ -241,6 +266,57 @@ export default function EventDashboard() {
           </div>
         </div>
       )}
+
+      {/* ── Group Chat ── */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-bold text-gray-900">💬 Group Chat</h2>
+          <span className="text-xs text-gray-400">All groups · trash talk welcome</span>
+        </div>
+
+        <div className="h-56 overflow-y-auto space-y-2 mb-3 pr-1">
+          {messages.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center pt-10">No messages yet.</p>
+          ) : (
+            messages.map((m) => (
+              <div key={m.id} className="flex items-start gap-2 text-sm">
+                <span className="shrink-0 text-[10px] font-bold bg-amber-100 text-amber-700 rounded-lg px-1.5 py-0.5 mt-0.5 whitespace-nowrap">
+                  {m.group_name}
+                </span>
+                <span className="text-gray-800 flex-1">{m.text}</span>
+                <span className="shrink-0 text-[10px] text-gray-400 tabular-nums mt-0.5">{relativeTime(m.sent_at)}</span>
+              </div>
+            ))
+          )}
+          <div ref={chatBottomRef} />
+        </div>
+
+        <div className="border-t border-gray-100 pt-3">
+          <p className="text-xs text-gray-500 mb-2 font-medium">Send as your group:</p>
+          <div className="flex gap-2 flex-wrap mb-2">
+            {groups.map((g) => (
+              <button
+                key={g.id}
+                onClick={() => sendChat(g.code)}
+                disabled={chatBusy || !chatText.trim()}
+                className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs font-bold rounded-lg transition-colors disabled:opacity-40"
+              >
+                {g.name}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              value={chatText}
+              onChange={(e) => setChatText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && groups.length === 1) sendChat(groups[0].code) }}
+              placeholder="Type a message, then tap your group to send…"
+              maxLength={200}
+              className="form-input flex-1 py-2 text-sm"
+            />
+          </div>
+        </div>
+      </div>
 
       {/* ── Rules quick ref ── */}
       <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800 space-y-1.5">

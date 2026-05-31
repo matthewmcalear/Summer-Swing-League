@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -23,7 +23,9 @@ interface GroupState {
   teams: TeamState[]
 }
 
-interface AllGroupState { groups: GroupState[] }
+interface ChatMessage { id: string; group_id: string; group_name: string; text: string; sent_at: string }
+
+interface AllGroupState { groups: GroupState[]; messages: ChatMessage[] }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -43,8 +45,8 @@ function HoleGrid({
   scores: HoleScore[]
   onSave: (hole: number, strokes: number | null) => void
 }) {
-  const [editing,  setEditing]  = useState<number | null>(null)
-  const [val,      setVal]      = useState('')
+  const [editing, setEditing] = useState<number | null>(null)
+  const [val,     setVal]     = useState('')
 
   const scoreMap = Object.fromEntries(scores.map((s) => [s.hole, s.strokes]))
 
@@ -58,7 +60,7 @@ function HoleGrid({
     if (!isNaN(n) && n >= 1 && n <= 20) {
       onSave(hole, n)
     } else if (val === '' && scoreMap[hole]) {
-      onSave(hole, null) // clear
+      onSave(hole, null)
     }
     setEditing(null)
   }
@@ -88,10 +90,7 @@ function HoleGrid({
         <div className="mt-2 flex items-center gap-2">
           <span className="text-sm text-gray-600 font-semibold">Hole {editing}:</span>
           <input
-            type="number"
-            min={1}
-            max={20}
-            value={val}
+            type="number" min={1} max={20} value={val}
             onChange={(e) => setVal(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') commit(editing) }}
             autoFocus
@@ -183,10 +182,10 @@ function TeamCard({
   currentHole: number
   onAction: () => void
 }) {
-  const [firing,    setFiring]    = useState(false)
-  const [editName,  setEditName]  = useState(false)
-  const [nameVal,   setNameVal]   = useState(team.name)
-  const [busy,      setBusy]      = useState(false)
+  const [firing,   setFiring]   = useState(false)
+  const [editName, setEditName] = useState(false)
+  const [nameVal,  setNameVal]  = useState(team.name)
+  const [busy,     setBusy]     = useState(false)
 
   const post = async (url: string, body: object) => {
     setBusy(true)
@@ -348,21 +347,122 @@ function TeamCard({
   )
 }
 
+// ── Chat ──────────────────────────────────────────────────────────────────────
+
+function ChatPanel({ messages, groupCode }: { messages: ChatMessage[]; groupCode: string }) {
+  const [text,    setText]    = useState('')
+  const [sending, setSending] = useState(false)
+  const bottomRef             = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages.length])
+
+  const send = async () => {
+    const trimmed = text.trim()
+    if (!trimmed || sending) return
+    setSending(true)
+    try {
+      await fetch('/api/bday/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groupCode, text: trimmed }),
+      })
+      setText('')
+    } finally { setSending(false) }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3">
+        <h2 className="text-white font-bold text-sm">💬 Group Chat</h2>
+        <p className="text-blue-200 text-[11px]">Trash talk, updates, bragging rights</p>
+      </div>
+
+      <div className="h-52 overflow-y-auto p-3 space-y-2 bg-gray-50">
+        {messages.length === 0 ? (
+          <p className="text-xs text-gray-400 text-center pt-8">No messages yet. Say something!</p>
+        ) : (
+          messages.map((m) => (
+            <div key={m.id} className={`flex flex-col ${m.group_name === groupCode ? 'items-end' : 'items-start'}`}>
+              <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
+                m.group_name === groupCode
+                  ? 'bg-blue-600 text-white rounded-br-sm'
+                  : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm shadow-sm'
+              }`}>
+                {m.text}
+              </div>
+              <span className="text-[10px] text-gray-400 mt-0.5 px-1">
+                {m.group_name} · {relativeTime(m.sent_at)}
+              </span>
+            </div>
+          ))
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      <div className="p-3 flex gap-2 border-t border-gray-100">
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
+          placeholder="Type a message…"
+          maxLength={200}
+          className="form-input flex-1 py-2 text-sm"
+        />
+        <button
+          onClick={send}
+          disabled={!text.trim() || sending}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-40"
+        >
+          Send
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function GroupDashboard({ groupCode }: { groupCode: string }) {
   const code = groupCode.toUpperCase()
   const [state,       setState]       = useState<AllGroupState | null>(null)
   const [currentHole, setCurrentHole] = useState(1)
-  const [locBusy,     setLocBusy]     = useState(false)
+  const [autoLoc,     setAutoLoc]     = useState(false)
   const [locMsg,      setLocMsg]      = useState('')
+  const watchIdRef                    = useRef<number | null>(null)
+
+  // Track seen mulligan IDs so we can show notifications for new ones
+  const seenMulliganIds = useRef<Set<string>>(new Set())
+  const [newMulligans,  setNewMulligans] = useState<{ sender_name: string; hole: number | null; team_name: string }[]>([])
+
+  // notifyReady is true after the first successful load — prevents false alerts on mount
+  const notifyReady = useRef(false)
 
   const fetchState = useCallback(async () => {
     try {
       const res = await fetch('/api/bday/state', { cache: 'no-store' })
-      setState(await res.json())
+      const data: AllGroupState = await res.json()
+      setState(data)
+
+      const myGroup = data.groups.find((g) => g.code === code)
+      if (myGroup) {
+        const fresh: typeof newMulligans = []
+        for (const team of myGroup.teams) {
+          for (const m of team.mulligans_received) {
+            if (!seenMulliganIds.current.has(m.id)) {
+              seenMulliganIds.current.add(m.id)
+              if (notifyReady.current) {
+                fresh.push({ sender_name: m.sender_name, hole: m.hole, team_name: team.name })
+              }
+            }
+          }
+        }
+        if (fresh.length > 0) setNewMulligans((p) => [...p, ...fresh])
+      }
+      notifyReady.current = true
     } catch { /* ignore */ }
-  }, [])
+  }, [code])
 
   useEffect(() => {
     fetchState()
@@ -370,27 +470,42 @@ export default function GroupDashboard({ groupCode }: { groupCode: string }) {
     return () => clearInterval(id)
   }, [fetchState])
 
-  const group = state?.groups.find((g) => g.code === code)
-  const allTeams = state?.groups.flatMap((g) => g.teams) ?? []
+  // Auto-location via watchPosition
+  useEffect(() => {
+    if (!autoLoc) {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current)
+        watchIdRef.current = null
+      }
+      return
+    }
+    if (!navigator.geolocation) { setLocMsg('GPS not available'); setAutoLoc(false); return }
 
-  const updateLocation = () => {
-    if (!navigator.geolocation) { setLocMsg('GPS not supported'); return }
-    setLocBusy(true)
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        await fetch('/api/bday/location', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ groupCode: code, lat: pos.coords.latitude, lon: pos.coords.longitude }),
-        })
-        setLocMsg('Location updated!')
-        setLocBusy(false)
-        setTimeout(() => setLocMsg(''), 3000)
-      },
-      () => { setLocMsg('GPS error — allow location access'); setLocBusy(false) },
-      { enableHighAccuracy: true, timeout: 10000 },
+    const postLoc = async (lat: number, lon: number) => {
+      await fetch('/api/bday/location', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groupCode: code, lat, lon }),
+      })
+      setLocMsg(`📍 Updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`)
+    }
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (pos) => postLoc(pos.coords.latitude, pos.coords.longitude),
+      () => { setLocMsg('GPS error — check location permissions'); setAutoLoc(false) },
+      { enableHighAccuracy: true, maximumAge: 30_000 },
     )
-  }
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current)
+        watchIdRef.current = null
+      }
+    }
+  }, [autoLoc, code])
+
+  const group    = state?.groups.find((g) => g.code === code)
+  const allTeams = state?.groups.flatMap((g) => g.teams) ?? []
+  const messages = state?.messages ?? []
 
   if (!state) return (
     <div className="text-center py-20">
@@ -410,6 +525,33 @@ export default function GroupDashboard({ groupCode }: { groupCode: string }) {
 
   return (
     <div className="space-y-5">
+
+      {/* ── Mulligan incoming notification ── */}
+      {newMulligans.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center p-4 pointer-events-none">
+          <div className="pointer-events-auto w-full max-w-sm bg-red-600 text-white rounded-2xl shadow-2xl p-5 space-y-3 animate-bounce-once">
+            <div className="flex items-center gap-3">
+              <span className="text-4xl">💀</span>
+              <div>
+                <p className="font-extrabold text-lg leading-tight">REVERSE MULLIGAN!</p>
+                <p className="text-red-200 text-sm">Someone just nuked you</p>
+              </div>
+            </div>
+            {newMulligans.map((m, i) => (
+              <p key={i} className="text-sm font-semibold bg-red-700/50 rounded-xl px-3 py-2">
+                💀 <strong>{m.sender_name}</strong> fired at <strong>{m.team_name}</strong>
+                {m.hole ? ` on hole ${m.hole}` : ''}
+              </p>
+            ))}
+            <button
+              onClick={() => setNewMulligans([])}
+              className="w-full py-2.5 bg-white/20 hover:bg-white/30 rounded-xl font-bold text-sm transition-colors"
+            >
+              Got it — REVENGE TIME 🔫
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -452,23 +594,37 @@ export default function GroupDashboard({ groupCode }: { groupCode: string }) {
         />
       ))}
 
-      {/* Location */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-3 flex items-center gap-3">
-        <div className="flex-1">
-          <p className="text-sm font-semibold text-gray-700">📍 Share Group Location</p>
-          {group.location_at && (
-            <p className="text-xs text-gray-400">Last updated {relativeTime(group.location_at)}</p>
-          )}
-          {locMsg && <p className="text-xs text-green-600 font-semibold mt-0.5">{locMsg}</p>}
+      {/* Auto-location */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-gray-700">
+              📍 Live Location Sharing
+              {autoLoc && <span className="ml-2 inline-block w-2 h-2 bg-green-400 rounded-full animate-pulse" />}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {autoLoc ? 'Tracking — updates automatically as you move' : 'Let other groups see where you are on the course'}
+            </p>
+            {locMsg && <p className="text-xs text-green-600 font-semibold mt-1">{locMsg}</p>}
+            {group.location_at && !autoLoc && (
+              <p className="text-xs text-gray-400 mt-0.5">Last shared {relativeTime(group.location_at)}</p>
+            )}
+          </div>
+          <button
+            onClick={() => setAutoLoc((v) => !v)}
+            className={`px-4 py-2 rounded-xl font-bold text-sm transition-colors border ${
+              autoLoc
+                ? 'bg-green-600 hover:bg-green-700 text-white border-green-700'
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200'
+            }`}
+          >
+            {autoLoc ? 'Stop' : 'Start'}
+          </button>
         </div>
-        <button
-          onClick={updateLocation}
-          disabled={locBusy}
-          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-xl border border-gray-200 transition-colors disabled:opacity-50"
-        >
-          {locBusy ? '…' : 'Update'}
-        </button>
       </div>
+
+      {/* Group Chat */}
+      <ChatPanel messages={messages} groupCode={group.name} />
 
       {/* Link to full leaderboard */}
       <Link

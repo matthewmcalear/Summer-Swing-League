@@ -84,5 +84,14 @@ export async function GET() {
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     .slice(0, 40)
 
-  return NextResponse.json({ groups: enriched, feed })
+  const rawMessages = await prisma.bdayMessage.findMany({
+    orderBy: { sent_at: 'desc' },
+    take: 60,
+  })
+  const messages = rawMessages.reverse().map((m) => ({
+    id: m.id, group_id: m.group_id, group_name: m.group_name,
+    text: m.text, sent_at: m.sent_at,
+  }))
+
+  return NextResponse.json({ groups: enriched, feed, messages })
 }
