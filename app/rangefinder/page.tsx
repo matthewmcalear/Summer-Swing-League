@@ -1,6 +1,10 @@
 import dynamic from 'next/dynamic'
 import { prisma } from '@/lib/prisma'
 
+// Render at request time so new members appear without a redeploy
+// (can't use `export const dynamic` — the name is taken by the import above)
+export const revalidate = 0
+
 const RangeFinderClient = dynamic(() => import('./RangeFinderClient'), {
   ssr: false,
   loading: () => (

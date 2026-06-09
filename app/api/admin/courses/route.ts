@@ -1,13 +1,8 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
+import { isAdmin } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
-
-function isAdmin() {
-  const cookieStore = cookies()
-  return cookieStore.get('ssl_admin')?.value === process.env.ADMIN_PASSWORD
-}
 
 function toTitleCase(str: string): string {
   return str.trim().split(/\s+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')

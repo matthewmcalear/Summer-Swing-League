@@ -1,10 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { cookies } from 'next/headers'
-
-function isAdmin() {
-  return cookies().get('ssl_admin')?.value === process.env.ADMIN_PASSWORD
-}
+import { isAdmin } from '@/lib/auth'
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

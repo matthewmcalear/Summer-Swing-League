@@ -17,12 +17,24 @@ export default async function Standings() {
     prisma.seasonBonus.findMany({ orderBy: { awarded_date: 'asc' } }),
   ])
 
-  const standings: StandingEntry[] = members.map((member) => {
-    const memberPoints = scores
-      .filter((s) => s.member_id === member.id)
-      .map((s) => Number(s.total_points ?? 0))
+  // Group scores and bonuses by member once, instead of filtering per member
+  const pointsByMember = new Map<string, number[]>()
+  for (const s of scores) {
+    if (!s.member_id) continue
+    const list = pointsByMember.get(s.member_id) ?? []
+    list.push(Number(s.total_points ?? 0))
+    pointsByMember.set(s.member_id, list)
+  }
+  const bonusesByMember = new Map<string, typeof bonuses>()
+  for (const b of bonuses) {
+    const list = bonusesByMember.get(b.member_id) ?? []
+    list.push(b)
+    bonusesByMember.set(b.member_id, list)
+  }
 
-    const memberBonuses = bonuses.filter((b) => b.member_id === member.id)
+  const standings: StandingEntry[] = members.map((member) => {
+    const memberPoints  = pointsByMember.get(member.id) ?? []
+    const memberBonuses = bonusesByMember.get(member.id) ?? []
     const bonusTotal    = memberBonuses.reduce((sum, b) => sum + b.points, 0)
 
     const { seasonScore, totalPoints, topScores, improvementBonus, handicapImprovement, seasonBonusPoints } =

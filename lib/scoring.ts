@@ -7,6 +7,49 @@ export const DIFFICULTY_MULTIPLIERS: Record<string, number> = {
 export const SEASON_START = '2026-04-15'
 export const SEASON_END   = '2026-10-10'
 
+/** Sanity ranges for submitted rounds — wide enough for any real score, tight enough to catch typos. */
+export const ROUND_LIMITS = {
+  9:  { minGross: 25, maxGross: 90 },
+  18: { minGross: 50, maxGross: 180 },
+  minHandicap: -10,
+  maxHandicap: 54,
+} as const
+
+/**
+ * Validate a round submission. Returns an error message, or null if valid.
+ */
+export function validateRound({
+  holes,
+  gross,
+  handicap,
+  playDate,
+}: {
+  holes: number
+  gross: number
+  handicap: number
+  playDate: string
+}): string | null {
+  if (holes !== 9 && holes !== 18) return 'holes must be 9 or 18'
+
+  const limits = ROUND_LIMITS[holes]
+  if (!Number.isInteger(gross) || gross < limits.minGross || gross > limits.maxGross) {
+    return `gross score for ${holes} holes must be a whole number between ${limits.minGross} and ${limits.maxGross}`
+  }
+
+  if (!Number.isFinite(handicap) || handicap < ROUND_LIMITS.minHandicap || handicap > ROUND_LIMITS.maxHandicap) {
+    return `handicap must be between ${ROUND_LIMITS.minHandicap} and ${ROUND_LIMITS.maxHandicap}`
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(playDate) || isNaN(new Date(playDate + 'T12:00:00').getTime())) {
+    return 'play_date must be a valid date (YYYY-MM-DD)'
+  }
+  if (playDate < SEASON_START || playDate > SEASON_END) {
+    return `play_date must be within the season (${SEASON_START} to ${SEASON_END})`
+  }
+
+  return null
+}
+
 /**
  * Calculate total points for a round.
  *

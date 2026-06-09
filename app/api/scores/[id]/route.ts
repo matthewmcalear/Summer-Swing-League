@@ -1,11 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { cookies } from 'next/headers'
+import { isAdmin } from '@/lib/auth'
 import { calculatePoints } from '@/lib/scoring'
-
-function isAdmin() {
-  return cookies().get('ssl_admin')?.value === process.env.ADMIN_PASSWORD
-}
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -21,13 +17,19 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     const course_difficulty = body.course_difficulty        ?? existing.course_difficulty
     const additional_points = Number(body.additional_points ?? existing.additional_points)
 
-    // Recalculate points with updated values
+    // Recalculate points with updated values.
+    // Group bonus comes from the member list captured at submission;
+    // fall back to group_size arithmetic for legacy rows without ids.
+    const otherCount = existing.group_member_ids.length > 0
+      ? existing.group_member_ids.length
+      : Math.max((existing.group_size ?? 1) - 1, 0)
+
     const { basePoints, difficultyMultiplier, groupBonus, totalPoints } = calculatePoints({
       holes,
       gross:                   gross_score,
       handicap:                handicap_used,
       difficulty:              course_difficulty,
-      otherLeagueMembersCount: Math.max((existing.group_size ?? 1) - 1, 0),
+      otherLeagueMembersCount: otherCount,
       additionalPoints:        additional_points,
     })
 

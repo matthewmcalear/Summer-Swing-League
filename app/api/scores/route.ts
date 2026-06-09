@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { calculatePoints } from '@/lib/scoring'
+import { calculatePoints, validateRound } from '@/lib/scoring'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,8 +44,14 @@ export async function POST(request: Request) {
     const grossNum    = Number(gross_score)
     const handicapNum = Number(handicap_used)
 
-    if (![9, 18].includes(holesNum)) {
-      return NextResponse.json({ error: 'holes must be 9 or 18' }, { status: 400 })
+    const validationError = validateRound({
+      holes:    holesNum,
+      gross:    grossNum,
+      handicap: handicapNum,
+      playDate: String(play_date),
+    })
+    if (validationError) {
+      return NextResponse.json({ error: validationError }, { status: 400 })
     }
 
     // Fetch main player
