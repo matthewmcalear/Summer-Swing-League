@@ -35,10 +35,9 @@ export default function NavBar() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 font-extrabold tracking-wide whitespace-nowrap">
-            <Logo className="w-9 h-9 drop-shadow-md" />
-            <span className="hidden sm:inline text-white text-lg">Summer Swing League</span>
-            <span className="sm:hidden text-white text-base">Summer Swing League</span>
-            <span className="hidden sm:inline text-green-400 font-bold text-sm ml-0.5">2026</span>
+            <Logo className="w-9 h-9 sm:w-10 sm:h-10 drop-shadow-md" />
+            <span className="text-white text-lg sm:text-xl">Summer Swing League</span>
+            <span className="text-green-400 font-bold text-sm sm:text-base">2026</span>
           </Link>
 
           {/* Desktop links */}
