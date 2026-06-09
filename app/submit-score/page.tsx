@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { calculatePoints } from '@/lib/scoring'
 import type { Member } from '@/types'
 
 const DIFFICULTY_OPTIONS = [
@@ -51,28 +52,25 @@ export default function SubmitScore() {
     if (member) setForm((f) => ({ ...f, handicap_used: String(member.current_handicap) }))
   }, [form.member_id, members])
 
-  // Live point preview
+  // Live point preview — uses the exact same shared formula as the server
   useEffect(() => {
-    const holes    = Number(form.holes) as 9 | 18
     const gross    = Number(form.gross_score)
     const handicap = Number(form.handicap_used)
-    const extra    = Number(form.additional_points) || 0
 
-    if (!gross || !handicap) { setPreviewPoints(null); return }
-
-    const diffMap: Record<string, number> = { easy: 0.95, average: 1.0, tough: 1.05 }
-    const mult   = diffMap[form.course_difficulty] ?? 1.0
-    const others = groupIds.length
-
-    let base: number
-    if (holes === 9) {
-      base = 75 - (gross - handicap / 2)
-    } else {
-      base = (150 - (gross - handicap)) / 2
+    if (!gross || form.handicap_used === '' || isNaN(handicap)) {
+      setPreviewPoints(null)
+      return
     }
 
-    const total = base * mult + others + extra
-    setPreviewPoints(Math.round(total * 100) / 100)
+    const { totalPoints } = calculatePoints({
+      holes:                   Number(form.holes) as 9 | 18,
+      gross,
+      handicap,
+      difficulty:              form.course_difficulty,
+      otherLeagueMembersCount: groupIds.length,
+      additionalPoints:        Number(form.additional_points) || 0,
+    })
+    setPreviewPoints(totalPoints)
   }, [form, groupIds])
 
   const toggleGroup = (id: string) => {

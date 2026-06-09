@@ -9,7 +9,25 @@ export default function EmailTab({ members }: { members: Member[] }) {
   const [subject, setSubject]   = useState('')
   const [body, setBody]         = useState('')
   const [sending, setSending]   = useState(false)
+  const [sendingDigest, setSendingDigest] = useState(false)
   const [result, setResult]     = useState<{ ok: boolean; msg: string } | null>(null)
+
+  const sendDigest = async () => {
+    if (!confirm(`Email the current standings to all ${active.length} active members?`)) return
+    setSendingDigest(true)
+    setResult(null)
+    try {
+      const res = await fetch('/api/admin/standings-digest', { method: 'POST' })
+      const data = await res.json()
+      setResult(res.ok
+        ? { ok: true,  msg: `Standings digest sent to ${data.sent} member${data.sent !== 1 ? 's' : ''}.` }
+        : { ok: false, msg: data.error || 'Failed to send digest.' })
+    } catch {
+      setResult({ ok: false, msg: 'Network error.' })
+    } finally {
+      setSendingDigest(false)
+    }
+  }
 
   const toggleAll = () =>
     setSelected(selected.length === active.length ? [] : active.map((m) => m.id))
@@ -44,6 +62,23 @@ export default function EmailTab({ members }: { members: Member[] }) {
 
   return (
     <div className="space-y-5">
+      {/* One-click standings digest */}
+      <div className="card flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-gray-700">📊 Standings Digest</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            One click — emails the current leaderboard to every active member.
+          </p>
+        </div>
+        <button
+          onClick={sendDigest}
+          disabled={sendingDigest || !active.length}
+          className="btn-primary text-sm px-4 py-2 disabled:opacity-50"
+        >
+          {sendingDigest ? 'Sending…' : 'Send standings digest'}
+        </button>
+      </div>
+
       {/* Recipient selector */}
       <div className="card space-y-3">
         <div className="flex items-center justify-between">
