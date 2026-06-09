@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import ThemeToggle from './ThemeToggle'
+import Logo from './Logo'
 
 const links = [
   { href: '/',             label: 'Home'         },
@@ -33,10 +34,10 @@ export default function NavBar() {
         <div className="flex items-center justify-between h-14">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 font-extrabold tracking-wide whitespace-nowrap">
-            <span className="text-2xl">⛳</span>
+          <Link href="/" className="flex items-center gap-2.5 font-extrabold tracking-wide whitespace-nowrap">
+            <Logo className="w-9 h-9 drop-shadow-md" />
             <span className="hidden sm:inline text-white text-lg">Summer Swing League</span>
-            <span className="sm:hidden text-white text-2xl">SSL</span><span className="sm:hidden text-green-400 font-bold text-2xl">2026</span>
+            <span className="sm:hidden text-white text-base">Summer Swing League</span>
             <span className="hidden sm:inline text-green-400 font-bold text-sm ml-0.5">2026</span>
           </Link>
 
@@ -76,12 +77,9 @@ export default function NavBar() {
             </div>
           </div>
 
-          {/* Mobile: theme toggle + season badge (nav lives in the bottom tab bar) */}
-          <div className="md:hidden flex items-center gap-2">
+          {/* Mobile: theme toggle (nav lives in the bottom tab bar) */}
+          <div className="md:hidden flex items-center">
             <ThemeToggle />
-            <span className="text-xs font-semibold text-green-300">
-              Apr 15 – Oct 10
-            </span>
           </div>
         </div>
       </div>
