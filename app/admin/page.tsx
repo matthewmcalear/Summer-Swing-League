@@ -163,8 +163,8 @@ export default function AdminPage() {
           <div className="w-10 h-10 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : tab === 'members' ? (
-        <div className="card overflow-x-auto p-0">
-          <table className="w-full table-base">
+        <div className="card overflow-x-auto p-0 max-h-[70vh] overflow-y-auto">
+          <table className="w-full table-base table-sticky">
             <thead>
               <tr>
                 <th>Name</th><th>Email</th><th>Current HC</th><th>Starting HC</th><th>Joined</th><th>Actions</th>
@@ -178,8 +178,8 @@ export default function AdminPage() {
           </table>
         </div>
       ) : tab === 'scores' ? (
-        <div className="card overflow-x-auto p-0">
-          <table className="w-full table-base">
+        <div className="card overflow-x-auto p-0 max-h-[70vh] overflow-y-auto">
+          <table className="w-full table-base table-sticky">
             <thead>
               <tr>
                 <th>Date</th><th>Player</th><th>Course</th><th>Holes</th>

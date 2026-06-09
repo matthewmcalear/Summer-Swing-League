@@ -1,6 +1,7 @@
 'use client'
 
 import { Line, Bar, Doughnut } from 'react-chartjs-2'
+import CountUp from '@/components/CountUp'
 import {
   scaleBase, tooltipCfg, noLegend, lineOpts, barOpts, donutOpts,
   COLORS, barFloor, playerColor,
@@ -131,7 +132,7 @@ export default function OverviewTab({ data, selected, setSelected }: {
           { label: 'Best Round',     value: data.maxPoints },
         ].map(({ label, value }) => (
           <div key={label} className="card text-center">
-            <div className="text-2xl font-bold text-green-700">{value}</div>
+            <div className="text-2xl font-bold text-green-700"><CountUp value={Number(value)} /></div>
             <div className="text-xs text-gray-500 mt-1">{label}</div>
           </div>
         ))}
@@ -139,7 +140,8 @@ export default function OverviewTab({ data, selected, setSelected }: {
 
       {withScores.length > 1 && (
         <div className="card">
-          <p className="text-sm font-semibold text-gray-700 mb-3">Filter players:</p>
+          <p className="text-sm font-semibold text-gray-700 mb-1">Filter players</p>
+          <p className="text-xs text-gray-400 mb-3">Top 5 shown by default — tap to add or remove anyone</p>
           <div className="flex flex-wrap gap-2">
             {withScores.map((p) => {
               const on = selected.includes(p.id)
@@ -182,12 +184,16 @@ export default function OverviewTab({ data, selected, setSelected }: {
 
         <div className="card">
           <h2 className="text-base font-bold text-gray-900 mb-4">⛳ Best vs Avg Round</h2>
-          <Bar data={roundBarData} options={{ ...barOpts, scales: { x: scaleBase, y: { ...scaleBase, min: roundBarFloor } } }} />
+          <div className="h-60 sm:h-72">
+            <Bar data={roundBarData} options={{ ...barOpts, maintainAspectRatio: false, scales: { x: scaleBase, y: { ...scaleBase, min: roundBarFloor } } }} />
+          </div>
         </div>
 
         <div className="card">
           <h2 className="text-base font-bold text-gray-900 mb-4">🏌️ Rounds Played</h2>
-          <Bar data={roundsData} options={{ ...barOpts, plugins: { legend: noLegend, tooltip: tooltipCfg } }} />
+          <div className="h-60 sm:h-72">
+            <Bar data={roundsData} options={{ ...barOpts, maintainAspectRatio: false, plugins: { legend: noLegend, tooltip: tooltipCfg } }} />
+          </div>
         </div>
 
         {data.topCourses.length > 0 && (

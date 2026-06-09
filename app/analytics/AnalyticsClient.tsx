@@ -24,7 +24,15 @@ export default function AnalyticsClient({
 }) {
   const validTabs: Tab[] = ['overview', 'player', 'compare', 'bags']
   const [tab, setTab]           = useState<Tab>(validTabs.includes(initialTab as Tab) ? (initialTab as Tab) : 'overview')
-  const [selected, setSelected] = useState<string[]>(() => data.playerTimelines.map((p) => p.id))
+  // Default to the top 5 by season score — keeps the overview charts readable.
+  // Players can toggle anyone else on via the filter chips.
+  const [selected, setSelected] = useState<string[]>(() =>
+    [...data.playerTimelines]
+      .filter((p) => p.scores.length > 0)
+      .sort((a, b) => b.seasonScore - a.seasonScore)
+      .slice(0, 5)
+      .map((p) => p.id)
+  )
 
   const withScores = data.playerTimelines.filter((p) => p.scores.length > 0)
   const tabs = [

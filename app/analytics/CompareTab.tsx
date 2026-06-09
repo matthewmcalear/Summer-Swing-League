@@ -159,7 +159,9 @@ export default function CompareTab({ data }: { data: Analytics }) {
           <div className="card">
             <h2 className="text-base font-bold text-gray-900 mb-1">📈 Season Score Progression</h2>
             <p className="text-xs text-gray-400 mb-4">Top 5 rounds × participation multiplier + improvement bonus — matches the standings</p>
-            <Line data={cumulativeData} options={lineOpts} />
+            <div className="h-64 sm:h-80">
+              <Line data={cumulativeData} options={{ ...lineOpts, maintainAspectRatio: false }} />
+            </div>
           </div>
 
           {/* ── Head-to-head shared rounds ── */}
@@ -194,7 +196,9 @@ export default function CompareTab({ data }: { data: Analytics }) {
               <div className="card">
                 <h2 className="text-base font-bold text-gray-900 mb-1">📊 Points in Shared Rounds</h2>
                 <p className="text-xs text-gray-400 mb-4">Side-by-side points each time they played together</p>
-                <Bar data={h2hBarData} options={{ ...barOpts, aspectRatio: Math.min(3, Math.max(2, sharedRounds.length * 0.5)) }} />
+                <div className="h-56 sm:h-64">
+                  <Bar data={h2hBarData} options={{ ...barOpts, maintainAspectRatio: false }} />
+                </div>
               </div>
 
               {/* Round-by-round table */}

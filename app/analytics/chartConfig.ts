@@ -57,40 +57,58 @@ ChartJS.register(
   crosshairPlugin as any,
 )
 
+// ── Dark-mode awareness (read once at module init on the client) ──────────────
+const isDark =
+  typeof window !== 'undefined' &&
+  window.matchMedia?.('(prefers-color-scheme: dark)').matches
+
+const tickColor   = isDark ? '#94a3b8' : '#6b7280'
+const gridColor   = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)'
+const legendColor = isDark ? '#cbd5e1' : '#6b7280'
+
 // ── Global element defaults (apply to every chart on the page) ─────────────────
 ChartJS.defaults.elements.point.radius        = 0
-ChartJS.defaults.elements.point.hoverRadius   = 5
+ChartJS.defaults.elements.point.hoverRadius   = 6
 ChartJS.defaults.elements.point.hoverBorderWidth = 2
-ChartJS.defaults.elements.line.borderWidth    = 2
+ChartJS.defaults.elements.line.borderWidth    = 2.5
 ChartJS.defaults.elements.line.tension        = 0.4
 ;(ChartJS.defaults.elements.bar as any).borderRadius = 6
 ;(ChartJS.defaults.elements.bar as any).borderWidth  = 0
 ChartJS.defaults.font.family = 'Inter, system-ui, sans-serif'
-ChartJS.defaults.font.size   = 11
+ChartJS.defaults.font.size   = 12.5
 
 // ── Shared style building blocks ───────────────────────────────────────────────
 export const scaleBase = {
-  grid:   { color: 'rgba(0,0,0,0.05)', tickLength: 0 },
+  grid:   { color: gridColor, tickLength: 0 },
   border: { display: false },
-  ticks:  { color: '#9ca3af', padding: 8 },
+  ticks:  {
+    color: tickColor,
+    padding: 8,
+    autoSkip: true,
+    maxTicksLimit: 7,
+    maxRotation: 0,
+    font: { size: 12 },
+  },
 }
 
 export const tooltipCfg = {
-  backgroundColor: 'rgba(17,24,39,0.92)',
+  backgroundColor: 'rgba(17,24,39,0.94)',
   titleColor:      '#f9fafb',
-  bodyColor:       '#d1d5db',
-  borderColor:     'rgba(255,255,255,0.08)',
+  bodyColor:       '#e5e7eb',
+  borderColor:     'rgba(255,255,255,0.1)',
   borderWidth:     1,
-  padding:         10,
-  cornerRadius:    8,
+  padding:         12,
+  cornerRadius:    10,
   usePointStyle:   true,
-  boxWidth:        8,
-  boxHeight:       8,
+  boxWidth:        9,
+  boxHeight:       9,
+  titleFont:       { size: 13, weight: 'bold' as const },
+  bodyFont:        { size: 13 },
 }
 
 export const legendCfg = {
   position: 'bottom' as const,
-  labels:   { color: '#6b7280', padding: 16, usePointStyle: true, pointStyleWidth: 16 },
+  labels:   { color: legendColor, padding: 12, usePointStyle: true, pointStyleWidth: 14, font: { size: 12.5 } },
 }
 
 export const noLegend = { display: false }

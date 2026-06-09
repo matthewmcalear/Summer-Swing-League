@@ -114,13 +114,17 @@ export default function PlayerTab({ data, initialPlayerId }: { data: Analytics; 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card">
           <h2 className="text-base font-bold text-gray-900 mb-4">📊 Points Per Round</h2>
-          <Bar data={pointsBarData} options={pointsBarOpts} />
+          <div className="h-60 sm:h-72">
+            <Bar data={pointsBarData} options={{ ...pointsBarOpts, maintainAspectRatio: false }} />
+          </div>
         </div>
 
         <div className="card">
           <h2 className="text-base font-bold text-gray-900 mb-1">📉 Net Score Trend</h2>
           <p className="text-xs text-gray-400 mb-3">Normalized to 18H equivalent · 9H rounds doubled · lower is better</p>
-          <Line data={netTrendData} options={lineOptsNoLegend} />
+          <div className="h-60 sm:h-72">
+            <Line data={netTrendData} options={{ ...lineOptsNoLegend, maintainAspectRatio: false }} />
+          </div>
         </div>
 
         {compositionData && (

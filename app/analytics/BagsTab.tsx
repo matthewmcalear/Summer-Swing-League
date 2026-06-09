@@ -72,7 +72,7 @@ export default function BagsTab({ data }: { data: Analytics }) {
 
   const chartOpts = {
     responsive:  true,
-    aspectRatio: 1.6,
+    maintainAspectRatio: false,
     indexAxis:   'y' as const,
     interaction: { mode: 'index' as const, intersect: false },
     plugins: { legend: legendCfg, tooltip: { ...tooltipCfg, callbacks: { label: (ctx: any) => ctx.parsed.x != null ? `  ${ctx.dataset.label}: ${ctx.parsed.x} yd` : '' } } },
@@ -114,7 +114,10 @@ export default function BagsTab({ data }: { data: Analytics }) {
         <div className="card">
           <h2 className="text-base font-bold text-gray-900 mb-1">📊 Club Distance Comparison</h2>
           <p className="text-xs text-gray-400 mb-4">Clubs where 2+ members have entered a yardage</p>
-          <Bar data={chartData} options={chartOpts} />
+          {/* Height scales with club count so horizontal bars never get squished */}
+          <div style={{ height: `${Math.max(220, commonClubs.length * (bags.length * 18 + 16) + 90)}px` }}>
+            <Bar data={chartData} options={chartOpts} />
+          </div>
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 py-6 text-center text-sm text-gray-400">
