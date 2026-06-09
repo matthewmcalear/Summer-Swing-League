@@ -58,9 +58,11 @@ ChartJS.register(
 )
 
 // ── Dark-mode awareness (read once at module init on the client) ──────────────
+// The `dark` class on <html> is the source of truth — set pre-paint in layout.tsx
+// and toggled by ThemeToggle. Charts pick it up on the next page load/navigation.
 const isDark =
-  typeof window !== 'undefined' &&
-  window.matchMedia?.('(prefers-color-scheme: dark)').matches
+  typeof document !== 'undefined' &&
+  document.documentElement.classList.contains('dark')
 
 const tickColor   = isDark ? '#94a3b8' : '#6b7280'
 const gridColor   = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)'

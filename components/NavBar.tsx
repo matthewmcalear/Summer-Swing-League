@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import ThemeToggle from './ThemeToggle'
 
 const links = [
   { href: '/',             label: 'Home'         },
@@ -70,12 +71,18 @@ export default function NavBar() {
             >
               Admin
             </Link>
+            <div className="ml-1">
+              <ThemeToggle />
+            </div>
           </div>
 
-          {/* Mobile: season badge (nav lives in the bottom tab bar) */}
-          <span className="md:hidden text-xs font-semibold text-green-300">
-            Apr 15 – Oct 10
-          </span>
+          {/* Mobile: theme toggle + season badge (nav lives in the bottom tab bar) */}
+          <div className="md:hidden flex items-center gap-2">
+            <ThemeToggle />
+            <span className="text-xs font-semibold text-green-300">
+              Apr 15 – Oct 10
+            </span>
+          </div>
         </div>
       </div>
     </nav>

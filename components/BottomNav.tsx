@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
+import ThemeToggle from './ThemeToggle'
 
 const TABS = [
   { href: '/',             label: 'Home',      icon: '🏠' },
@@ -65,6 +66,7 @@ export default function BottomNav() {
                 {label}
               </Link>
             ))}
+            <ThemeToggle showLabel />
           </div>
         </div>
       </div>
