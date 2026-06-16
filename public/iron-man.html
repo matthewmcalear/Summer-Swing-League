@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IRON MAN · Last One Standing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#15120c; --ink2:#1b1710; --plate:#221d15; --plate2:#2a2418;
+  --line:rgba(201,162,75,.22); --line-soft:rgba(237,230,214,.08);
+  --gold:#c9a24b; --gold-hi:#ebd08a; --gold-deep:#8a6e2e;
+  --garnet:#b14a40; --garnet-hi:#d06a5d;
+  --parch:#ede6d6; --text:#c2b89f; --muted:#8a8067;
+  --shadow:0 18px 40px -22px rgba(0,0,0,.85);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:
+    radial-gradient(1200px 600px at 50% -8%, rgba(201,162,75,.10), transparent 60%),
+    radial-gradient(900px 500px at 90% 110%, rgba(177,74,64,.07), transparent 60%),
+    var(--ink);
+  color:var(--text); font-family:Inter,system-ui,sans-serif; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px; margin:0 auto; padding:0 22px}
+section{padding:64px 0; border-top:1px solid var(--line-soft)}
+section:first-of-type{border-top:0}
+
+/* ---- type ---- */
+.eyebrow{font-family:"Cormorant Garamond",serif; font-style:italic; font-size:1.05rem;
+  color:var(--gold); letter-spacing:.02em; margin:0 0 6px}
+h2.head{font-family:Oswald,sans-serif; font-weight:600; text-transform:uppercase;
+  letter-spacing:.13em; color:var(--parch); font-size:clamp(1.3rem,3.2vw,1.9rem);
+  margin:0 0 4px}
+.sub{color:var(--muted); max-width:62ch; margin:0 0 30px; font-size:.96rem}
+.num{font-family:Oswald,sans-serif; font-variant-numeric:tabular-nums; font-weight:600}
+
+/* ---- masthead ---- */
+.mast{padding:74px 0 26px; text-align:center; position:relative; overflow:hidden}
+.crest{display:inline-flex; align-items:center; gap:14px; color:var(--gold);
+  font-family:"Cormorant Garamond",serif; font-style:italic; font-size:1.05rem; letter-spacing:.06em;
+  opacity:0; animation:fade .8s ease .05s forwards}
+.crest svg{width:26px;height:26px;fill:none;stroke:var(--gold);stroke-width:1.4}
+.crest .rule{width:42px;height:1px;background:linear-gradient(90deg,transparent,var(--gold))}
+.crest .rule.r{background:linear-gradient(90deg,var(--gold),transparent)}
+.title{font-family:Oswald,sans-serif; font-weight:700; text-transform:uppercase;
+  font-size:clamp(3.2rem,15vw,8.5rem); line-height:.84; letter-spacing:.02em; margin:14px 0 6px;
+  color:transparent; background:linear-gradient(180deg,var(--gold-hi),var(--gold) 55%,var(--gold-deep));
+  -webkit-background-clip:text; background-clip:text;
+  text-shadow:0 1px 0 rgba(0,0,0,.4); opacity:0; animation:rise 1s cubic-bezier(.2,.7,.2,1) .12s forwards}
+.tagline{font-family:Oswald,sans-serif; text-transform:uppercase; letter-spacing:.42em;
+  font-weight:300; color:var(--parch); font-size:clamp(.7rem,2.2vw,.95rem); margin:0;
+  padding-left:.42em; opacity:0; animation:fade 1s ease .5s forwards}
+.seasonline{margin:22px auto 0; display:inline-flex; gap:0; align-items:stretch;
+  border:1px solid var(--line); border-radius:3px; overflow:hidden; background:rgba(0,0,0,.18);
+  opacity:0; animation:fade 1s ease .7s forwards}
+.seasonline .cell{padding:11px 20px; text-align:center}
+.seasonline .cell + .cell{border-left:1px solid var(--line)}
+.seasonline .k{font-family:Oswald,sans-serif; font-size:1.5rem; font-weight:600; color:var(--parch); line-height:1}
+.seasonline .l{font-size:.62rem; text-transform:uppercase; letter-spacing:.2em; color:var(--muted); margin-top:5px}
+
+/* ---- champions band (signature) ---- */
+.band-intro{text-align:center; margin-bottom:26px}
+.plates{display:flex; gap:14px; overflow-x:auto; padding:6px 2px 18px; scroll-snap-type:x mandatory}
+.plates::-webkit-scrollbar{height:8px}
+.plates::-webkit-scrollbar-thumb{background:var(--gold-deep); border-radius:4px}
+.plate{flex:0 0 156px; scroll-snap-align:center; background:
+   linear-gradient(180deg,var(--plate2),var(--plate)); border:1px solid var(--line);
+   border-radius:5px; padding:16px 14px 15px; text-align:center; cursor:pointer; position:relative;
+   transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+   box-shadow:inset 0 1px 0 rgba(237,230,214,.05)}
+.plate:hover{transform:translateY(-5px); border-color:var(--gold); box-shadow:var(--shadow)}
+.plate .ed{font-family:Oswald,sans-serif; font-size:.66rem; letter-spacing:.24em; text-transform:uppercase; color:var(--muted)}
+.plate .when{font-size:.62rem; color:var(--muted); margin-top:2px; letter-spacing:.06em}
+.plate .champ{font-family:Oswald,sans-serif; font-weight:600; font-size:1.45rem; color:var(--parch);
+  margin:12px 0 3px; line-height:1}
+.plate .field{font-size:.62rem; color:var(--muted); text-transform:uppercase; letter-spacing:.14em}
+.plate.repeat{border-color:rgba(201,162,75,.55)}
+.plate.repeat .champ{color:transparent; background:linear-gradient(180deg,var(--gold-hi),var(--gold));
+  -webkit-background-clip:text; background-clip:text}
+.plate .crown{position:absolute; top:-10px; left:50%; transform:translateX(-50%);
+  width:22px;height:22px; color:var(--gold)}
+.plate .ribbon{height:3px; width:34px; margin:11px auto 0; border-radius:2px;
+  background:linear-gradient(90deg,transparent,var(--gold-deep),transparent)}
+.plate.repeat .ribbon{background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+
+/* ---- leaderboard ---- */
+.tablewrap{border:1px solid var(--line); border-radius:6px; overflow:hidden; background:rgba(0,0,0,.16)}
+.scroll{overflow-x:auto}
+table{width:100%; border-collapse:collapse; min-width:640px}
+thead th{font-family:Oswald,sans-serif; font-weight:500; text-transform:uppercase;
+  letter-spacing:.12em; font-size:.66rem; color:var(--muted); text-align:right;
+  padding:14px 14px; border-bottom:1px solid var(--line); cursor:pointer; white-space:nowrap;
+  user-select:none; transition:color .15s}
+thead th:first-child,thead th.l{text-align:left}
+thead th:hover{color:var(--parch)}
+thead th.active{color:var(--gold)}
+thead th.active::after{content:" ▾"; font-size:.6rem}
+tbody td{padding:12px 14px; text-align:right; border-bottom:1px solid var(--line-soft);
+  font-variant-numeric:tabular-nums; font-size:.92rem}
+tbody td:first-child,tbody td.l{text-align:left}
+tbody tr:last-child td{border-bottom:0}
+tbody tr{transition:background .15s}
+tbody tr:hover{background:rgba(201,162,75,.06)}
+.rank{font-family:Oswald,sans-serif; color:var(--muted); width:38px}
+.pname{font-weight:600; color:var(--parch)}
+.medal{display:inline-block; width:7px;height:7px;border-radius:50%; margin-right:9px; vertical-align:middle}
+.m1{background:var(--gold-hi); box-shadow:0 0 0 2px rgba(235,208,138,.25)}
+.m2{background:#cdd2d8}
+.m3{background:#c08a52}
+.cap{color:var(--muted); font-size:.78rem; margin-top:10px}
+.cap b{color:var(--text); font-weight:600}
+
+/* ---- record book plaques ---- */
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(248px,1fr)); gap:14px}
+.plaque{background:linear-gradient(180deg,var(--plate2),var(--plate)); border:1px solid var(--line);
+  border-radius:6px; padding:20px 20px 18px; position:relative; overflow:hidden;
+  box-shadow:inset 0 1px 0 rgba(237,230,214,.05)}
+.plaque::before{content:""; position:absolute; inset:0 auto 0 0; width:3px;
+  background:linear-gradient(180deg,var(--gold),var(--gold-deep))}
+.plaque.red::before{background:linear-gradient(180deg,var(--garnet-hi),var(--garnet))}
+.plaque .lab{font-family:"Cormorant Garamond",serif; font-style:italic; color:var(--gold);
+  font-size:1.02rem; margin:0 0 8px}
+.plaque.red .lab{color:var(--garnet-hi)}
+.plaque .who{font-family:Oswald,sans-serif; font-weight:600; color:var(--parch);
+  font-size:1.55rem; line-height:1.05; margin:0}
+.plaque .stat{font-family:Oswald,sans-serif; color:var(--gold-hi); font-size:.95rem;
+  letter-spacing:.04em; margin:4px 0 0}
+.plaque .note{color:var(--muted); font-size:.82rem; margin:11px 0 0}
+.plaque .mini{margin:12px 0 0; padding:0; list-style:none; font-size:.84rem}
+.plaque .mini li{display:flex; justify-content:space-between; padding:4px 0; border-top:1px solid var(--line-soft)}
+.plaque .mini li span:last-child{font-family:Oswald,sans-serif; color:var(--parch)}
+
+/* ---- redemption ---- */
+.redbar{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:18px}
+.redstat{background:rgba(177,74,64,.08); border:1px solid rgba(177,74,64,.28); border-radius:6px; padding:16px 18px}
+.redstat .k{font-family:Oswald,sans-serif; font-size:1.8rem; font-weight:600; color:var(--garnet-hi); line-height:1}
+.redstat .l{font-size:.72rem; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin-top:6px}
+.comeback{display:flex; flex-wrap:wrap; gap:10px}
+.cb{display:flex; align-items:center; gap:10px; background:var(--plate); border:1px solid var(--line);
+  border-radius:30px; padding:8px 16px 8px 10px; font-size:.9rem}
+.cb .b{width:26px;height:26px;border-radius:50%; display:grid;place-items:center; font-size:.9rem;
+  background:rgba(201,162,75,.14); border:1px solid var(--line)}
+.cb b{color:var(--parch); font-family:Oswald,sans-serif; font-weight:500}
+.cb small{color:var(--muted)}
+
+/* ---- edition browser ---- */
+.edtabs{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px}
+.edtab{font-family:Oswald,sans-serif; font-weight:500; letter-spacing:.08em; font-size:.78rem;
+  text-transform:uppercase; color:var(--muted); background:var(--plate); border:1px solid var(--line);
+  border-radius:4px; padding:9px 13px; cursor:pointer; transition:.18s}
+.edtab:hover{color:var(--parch); border-color:var(--gold-deep)}
+.edtab.on{color:var(--ink); background:linear-gradient(180deg,var(--gold-hi),var(--gold)); border-color:var(--gold)}
+.edhdr{display:flex; flex-wrap:wrap; align-items:baseline; gap:14px; margin-bottom:16px}
+.edhdr .t{font-family:Oswald,sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:.1em;
+  color:var(--parch); font-size:1.3rem}
+.edhdr .meta{color:var(--muted); font-size:.84rem}
+.edhdr .meta b{color:var(--gold)}
+.results{list-style:none; margin:0; padding:0; border:1px solid var(--line); border-radius:6px; overflow:hidden}
+.results li{display:grid; grid-template-columns:42px 1fr auto; align-items:center; gap:12px;
+  padding:10px 16px; border-bottom:1px solid var(--line-soft)}
+.results li:last-child{border-bottom:0}
+.results li.win{background:linear-gradient(90deg,rgba(201,162,75,.12),transparent)}
+.results .p{font-family:Oswald,sans-serif; color:var(--muted); font-variant-numeric:tabular-nums}
+.results .nm{color:var(--parch); font-weight:500}
+.results .nm .tag{font-family:"Cormorant Garamond",serif; font-style:italic; font-size:.85rem;
+  margin-left:9px; padding:1px 8px; border-radius:20px; border:1px solid rgba(177,74,64,.4);
+  color:var(--garnet-hi)}
+.results .nm .cw{color:var(--gold); margin-left:8px}
+.bars{display:flex; align-items:center; gap:10px; min-width:130px; justify-content:flex-end}
+.bar{height:7px; border-radius:4px; background:linear-gradient(90deg,var(--gold-deep),var(--gold)); min-width:3px}
+.bars small{color:var(--muted); font-variant-numeric:tabular-nums; width:18px; text-align:right; font-family:Oswald,sans-serif}
+
+/* milestones */
+.miles{margin-top:26px; background:rgba(0,0,0,.2); border:1px solid var(--line); border-radius:6px; padding:20px 22px}
+.miles h3{font-family:"Cormorant Garamond",serif; font-style:italic; color:var(--gold); margin:0 0 10px; font-size:1.15rem}
+.miles ul{margin:0; padding-left:18px}
+.miles li{margin:7px 0; font-size:.92rem}
+.miles li b{color:var(--parch)}
+
+footer{padding:40px 0 60px; text-align:center; color:var(--muted); font-size:.82rem; border-top:1px solid var(--line-soft)}
+footer .mk{font-family:"Cormorant Garamond",serif; font-style:italic; color:var(--gold); font-size:1.05rem}
+
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.reveal{opacity:1}
+html.js .reveal{opacity:0; transform:translateY(16px); transition:opacity .7s ease, transform .7s ease}
+html.js .reveal.in{opacity:1; transform:none}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important; transition:none!important}
+  .crest,.title,.tagline,.seasonline,.reveal{opacity:1!important; transform:none!important}
+}
+@media(max-width:560px){
+  .seasonline{flex-direction:row}
+  .results li{grid-template-columns:34px 1fr; }
+  .bars{grid-column:1/-1; justify-content:flex-start; margin-left:46px}
+}
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <div class="wrap">
+    <div class="crest"><span class="rule"></span>
+      <svg viewBox="0 0 24 24"><path d="M12 2l2 4 4 .5-3 3 .8 4.3L12 16l-3.8 1.8L9 13.5l-3-3 4-.5z"/><path d="M5 20h14"/></svg>
+      <span class="rule r"></span>
+    </div>
+    <h1 class="title">Iron&nbsp;Man</h1>
+    <p class="tagline">Last One Standing</p>
+    <div class="seasonline">
+      <div class="cell"><div class="k" id="m-ed">9</div><div class="l">Editions</div></div>
+      <div class="cell"><div class="k" id="m-comp">42</div><div class="l">Competitors</div></div>
+      <div class="cell"><div class="k" id="m-span">22→26</div><div class="l">Since 2022</div></div>
+    </div>
+  </div>
+</header>
+
+<section id="champions">
+  <div class="wrap">
+    <div class="band-intro reveal">
+      <p class="eyebrow">Hall of Champions</p>
+      <h2 class="head">Nine editions, one survivor each</h2>
+      <p class="sub" style="margin-left:auto;margin-right:auto">One person is knocked out every round until a single competitor is left. Tap any plate to jump to that edition's full board. Gold names are repeat champions.</p>
+    </div>
+    <div class="plates" id="plates"></div>
+  </div>
+</section>
+
+<section id="leaderboard">
+  <div class="wrap">
+    <p class="eyebrow reveal">The Record Book</p>
+    <h2 class="head reveal">All-time leaderboard</h2>
+    <p class="sub reveal">Every competitor, ranked. Tap a column to re-sort. <b style="color:var(--text)">Rounds</b> = total rounds survived across all editions; <b style="color:var(--text)">Avg fin</b> = average finishing position as a share of the field (lower is better).</p>
+    <div class="tablewrap reveal">
+      <div class="scroll"><table id="lb"><thead></thead><tbody></tbody></table></div>
+    </div>
+    <p class="cap reveal">Top-half % is carried from Steven's official sheet. A blank means the metric doesn't apply.</p>
+  </div>
+</section>
+
+<section id="records">
+  <div class="wrap">
+    <p class="eyebrow reveal">Engraved In The Plate</p>
+    <h2 class="head reveal">The records that matter</h2>
+    <p class="sub reveal">The honours board — the marks it takes years of editions to set.</p>
+    <div class="grid" id="plaques"></div>
+  </div>
+</section>
+
+<section id="redemption">
+  <div class="wrap">
+    <p class="eyebrow reveal" style="color:var(--garnet-hi)">The Wildcard</p>
+    <h2 class="head reveal">Redemption Island</h2>
+    <p class="sub reveal">Lose, and you can take your shot on Redemption Island — survive there and you rejoin at the end to fight for the title. Lose on the island and you're gone for good.</p>
+    <div class="redbar reveal" id="redbar"></div>
+    <p class="cap reveal" style="margin-bottom:12px"><b>Made the podium straight off the island</b> — the rarest run in the game:</p>
+    <div class="comeback reveal" id="comeback"></div>
+  </div>
+</section>
+
+<section id="editions">
+  <div class="wrap">
+    <p class="eyebrow reveal">The Archive</p>
+    <h2 class="head reveal">Browse every edition</h2>
+    <p class="sub reveal">Full finishing order, with rounds survived. A garnet tag marks a Redemption Island return.</p>
+    <div class="edtabs reveal" id="edtabs"></div>
+    <div class="edhdr" id="edhdr"></div>
+    <ul class="results" id="results"></ul>
+    <div class="miles" id="miles">
+      <h3>Edition 9 — the milestones</h3>
+      <ul>
+        <li><b>Jack &amp; Megan</b> both cross 100 career rounds survived; <b>Laura &amp; Tyler</b> reach 75.</li>
+        <li><b>Megan</b> takes the title — a 7th top-5 in 9 editions — and snaps a long runner-up streak.</li>
+        <li><b>Jack</b> makes it three straight top-3 finishes.</li>
+        <li><b>Dan</b> lands his first-ever top 3, in his 8th edition.</li>
+        <li><b>Pete</b> survives Redemption Island for the very first time.</li>
+        <li><b>Nick</b> finishes 12th — ending a perfect 3-for-3 top-half run.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p class="mk">⚜ Iron Man ⚜</p>
+    <p>Stats through Edition 9 · June 2026. Run &amp; tracked by Steven.</p>
+  </div>
+</footer>
+
+<script>
+const DATA = {"meta": {"editions": 9, "competitors": 42, "firstdate": "2022-06", "lastdate": "2026/06"}, "leaderboard": [{"name": "Megan", "ev": 9, "wins": 2, "t3": 6, "t5": 7, "tot": 106.0, "avgpct": 0.307, "best": 1, "runner": 3, "tophalf": 0.778}, {"name": "Jack", "ev": 9, "wins": 3, "t3": 4, "t5": 5, "tot": 103.0, "avgpct": 0.327, "best": 1, "runner": 0, "tophalf": 0.667}, {"name": "Jody", "ev": 7, "wins": 2, "t3": 3, "t5": 3, "tot": 78.0, "avgpct": 0.318, "best": 1, "runner": 1, "tophalf": 0.714}, {"name": "Tyler", "ev": 8, "wins": 0, "t3": 1, "t5": 2, "tot": 77.0, "avgpct": 0.448, "best": 3, "runner": 0, "tophalf": 0.625}, {"name": "Laura", "ev": 8, "wins": 1, "t3": 2, "t5": 3, "tot": 75.0, "avgpct": 0.465, "best": 1, "runner": 0, "tophalf": 0.625}, {"name": "Peter", "ev": 8, "wins": 0, "t3": 0, "t5": 2, "tot": 71.0, "avgpct": 0.495, "best": 5, "runner": 0, "tophalf": 0.625}, {"name": "Erin", "ev": 7, "wins": 0, "t3": 2, "t5": 2, "tot": 70.0, "avgpct": 0.439, "best": 3, "runner": 0, "tophalf": 0.571}, {"name": "Tom", "ev": 8, "wins": 1, "t3": 2, "t5": 3, "tot": 70.0, "avgpct": 0.481, "best": 1, "runner": 1, "tophalf": 0.625}, {"name": "Sam", "ev": 8, "wins": 0, "t3": 1, "t5": 3, "tot": 69.0, "avgpct": 0.505, "best": 3, "runner": 0, "tophalf": 0.375}, {"name": "Matt", "ev": 5, "wins": 0, "t3": 2, "t5": 3, "tot": 53.0, "avgpct": 0.418, "best": 2, "runner": 2, "tophalf": 0.6}, {"name": "Dan", "ev": 8, "wins": 0, "t3": 1, "t5": 2, "tot": 53.0, "avgpct": 0.66, "best": 2, "runner": 1, "tophalf": 0.25}, {"name": "Doug", "ev": 4, "wins": 0, "t3": 1, "t5": 3, "tot": 48.0, "avgpct": 0.358, "best": 3, "runner": 0, "tophalf": 0.75}, {"name": "Erik", "ev": 7, "wins": 0, "t3": 0, "t5": 0, "tot": 47.0, "avgpct": 0.654, "best": 6, "runner": 0, "tophalf": 0.286}, {"name": "Nick N", "ev": 4, "wins": 0, "t3": 1, "t5": 1, "tot": 42.0, "avgpct": 0.403, "best": 3, "runner": 0, "tophalf": 0.75}, {"name": "Nick C", "ev": 3, "wins": 0, "t3": 0, "t5": 1, "tot": 33.0, "avgpct": 0.379, "best": 5, "runner": 0, "tophalf": 0.667}, {"name": "Joey", "ev": 4, "wins": 0, "t3": 0, "t5": 0, "tot": 29.0, "avgpct": 0.519, "best": 6, "runner": 0, "tophalf": 0.25}, {"name": "Ezra", "ev": 4, "wins": 0, "t3": 0, "t5": 0, "tot": 28.0, "avgpct": 0.635, "best": 7, "runner": 0, "tophalf": 0.5}, {"name": "Sean", "ev": 4, "wins": 0, "t3": 0, "t5": 0, "tot": 28.0, "avgpct": 0.659, "best": 9, "runner": 0, "tophalf": 0}, {"name": "Sophie CB", "ev": 4, "wins": 0, "t3": 0, "t5": 0, "tot": 22.0, "avgpct": 0.75, "best": 13, "runner": 0, "tophalf": 0}, {"name": "Kevin", "ev": 4, "wins": 0, "t3": 0, "t5": 0, "tot": 21.0, "avgpct": 0.743, "best": 11, "runner": 0, "tophalf": 0}, {"name": "Sophie T", "ev": 2, "wins": 0, "t3": 0, "t5": 1, "tot": 20.0, "avgpct": 0.404, "best": 4, "runner": 0, "tophalf": 0.5}, {"name": "Yakau", "ev": 4, "wins": 0, "t3": 0, "t5": 0, "tot": 19.0, "avgpct": 0.728, "best": 6, "runner": 0, "tophalf": 0}, {"name": "Alex S", "ev": 2, "wins": 0, "t3": 0, "t5": 1, "tot": 18.0, "avgpct": 0.442, "best": 5, "runner": 0, "tophalf": 0.5}, {"name": "Cam", "ev": 1, "wins": 0, "t3": 1, "t5": 1, "tot": 16.0, "avgpct": 0.1, "best": 2, "runner": 1, "tophalf": 1}, {"name": "Ben", "ev": 1, "wins": 0, "t3": 0, "t5": 1, "tot": 14.0, "avgpct": 0.2, "best": 4, "runner": 0, "tophalf": 1}, {"name": "Evie", "ev": 2, "wins": 0, "t3": 0, "t5": 1, "tot": 14.0, "avgpct": 0.592, "best": 4, "runner": 0, "tophalf": 0.5}, {"name": "Sarah M", "ev": 3, "wins": 0, "t3": 0, "t5": 0, "tot": 13.0, "avgpct": 0.784, "best": 9, "runner": 0, "tophalf": 0.333}, {"name": "Chris", "ev": 2, "wins": 0, "t3": 0, "t5": 0, "tot": 11.0, "avgpct": 0.742, "best": 8, "runner": 0, "tophalf": 0.5}, {"name": "Alan", "ev": 1, "wins": 0, "t3": 0, "t5": 0, "tot": 9.0, "avgpct": 0.417, "best": 10, "runner": 0, "tophalf": 1}, {"name": "Ben S", "ev": 1, "wins": 0, "t3": 0, "t5": 0, "tot": 8.0, "avgpct": 0.467, "best": 7, "runner": 0, "tophalf": 1}, {"name": "Strands", "ev": 1, "wins": 0, "t3": 0, "t5": 0, "tot": 7.0, "avgpct": 0.533, "best": 8, "runner": 0, "tophalf": 0}, {"name": "Kiera", "ev": 1, "wins": 0, "t3": 0, "t5": 0, "tot": 7.0, "avgpct": 0.75, "best": 18, "runner": 0, "tophalf": 0}, {"name": "Mira", "ev": 1, "wins": 0, "t3": 0, "t5": 0, "tot": 7.0, "avgpct": 0.789, "best": 15, "runner": 0, "tophalf": 0}, {"name": "Karo", "ev": 1, "wins": 0, "t3": 0, "t5": 0, "tot": 6.0, "avgpct": 0.667, "best": 10, "runner": 0, "tophalf": 0}, {"name": "Olivia", "ev": 1, "wins": 0, "t3": 0, "t5": 0, "tot": 6.0, "avgpct": 0.667, "best": 10, "runner": 0, "tophalf": 0}, {"name": "Nathalie", "ev": 1, "wins": 0, "t3": 0, "t5": 0, "tot": 5.0, "avgpct": 0.895, "best": 17, "runner": 0, "tophalf": 0}, {"name": "Emma G", "ev": 1, "wins": 0, "t3": 0, "t5": 0, "tot": 3.0, "avgpct": 0.933, "best": 14, "runner": 0, "tophalf": 0}, {"name": "Alia", "ev": 1, "wins": 0, "t3": 0, "t5": 0, "tot": 2.0, "avgpct": 0.867, "best": 13, "runner": 0, "tophalf": 0}, {"name": "Sarah", "ev": 1, "wins": 0, "t3": 0, "t5": 0, "tot": 2.0, "avgpct": 0.867, "best": 13, "runner": 0, "tophalf": null}, {"name": "Emma N", "ev": 1, "wins": 0, "t3": 0, "t5": 0, "tot": 1.0, "avgpct": 0.933, "best": 14, "runner": 0, "tophalf": 0}, {"name": "Hitesh", "ev": 1, "wins": 0, "t3": 0, "t5": 0, "tot": 1.0, "avgpct": 0.944, "best": 17, "runner": 0, "tophalf": 0}, {"name": "Sarah Y", "ev": 2, "wins": 0, "t3": 0, "t5": 0, "tot": 0, "avgpct": 1.0, "best": 11, "runner": 0, "tophalf": 0}], "champions": [{"event": 1, "date": "2022-06-01 00:00:00", "N": 11, "champ": "Jody"}, {"event": 2, "date": "2022-11-01 00:00:00", "N": 15, "champ": "Jody"}, {"event": 3, "date": "2023-06-01 00:00:00", "N": 15, "champ": "Tom"}, {"event": 4, "date": "2023-11-01 00:00:00", "N": 19, "champ": "Jack"}, {"event": 5, "date": "2024-06-01 00:00:00", "N": 18, "champ": "Megan"}, {"event": 6, "date": "2024-12-01 00:00:00", "N": 24, "champ": "Laura"}, {"event": 7, "date": "2025-06-01 00:00:00", "N": 20, "champ": "Jack"}, {"event": 8, "date": "2025-11-01 00:00:00", "N": 18, "champ": "Jack"}, {"event": 9, "date": "2026/06", "N": 15, "champ": "Megan"}], "editions": [{"n": 1, "date": "2022-06-01 00:00:00", "N": 11, "champ": "Jody", "results": [{"pos": 1, "name": "Jody", "tot": 11.0, "offri": 0}, {"pos": 2, "name": "Megan", "tot": 10.0, "offri": 0}, {"pos": 3, "name": "Sam", "tot": 9.0, "offri": 0}, {"pos": 4, "name": "Tom", "tot": 8.0, "offri": 1}, {"pos": 5, "name": "Laura", "tot": 7.0, "offri": 0}, {"pos": 6, "name": "Yakau", "tot": 6.0, "offri": 0}, {"pos": 6, "name": "Jack", "tot": 6.0, "offri": 0}, {"pos": 8, "name": "Tyler", "tot": 5.0, "offri": 0}, {"pos": 9, "name": "Dan", "tot": 4.0, "offri": 0}, {"pos": 10, "name": "Matt", "tot": 3.0, "offri": 0}, {"pos": 11, "name": "Sarah Y", "tot": 0, "offri": 0}]}, {"n": 2, "date": "2022-11-01 00:00:00", "N": 15, "champ": "Jody", "results": [{"pos": 1, "name": "Jody", "tot": 15.0, "offri": 0}, {"pos": 2, "name": "Megan", "tot": 13.0, "offri": 0}, {"pos": 3, "name": "Tyler", "tot": 12.0, "offri": 0}, {"pos": 4, "name": "Sophie T", "tot": 11.0, "offri": 0}, {"pos": 5, "name": "Peter", "tot": 10.0, "offri": 0}, {"pos": 6, "name": "Erin", "tot": 9.0, "offri": 1}, {"pos": 7, "name": "Ben S", "tot": 8.0, "offri": 0}, {"pos": 8, "name": "Strands", "tot": 7.0, "offri": 0}, {"pos": 9, "name": "Sam", "tot": 6.0, "offri": 0}, {"pos": 10, "name": "Erik", "tot": 5.0, "offri": 0}, {"pos": 11, "name": "Kevin", "tot": 4.0, "offri": 0}, {"pos": 12, "name": "Jack", "tot": 3.0, "offri": 0}, {"pos": 13, "name": "Laura", "tot": 2.0, "offri": 0}, {"pos": 14, "name": "Tom", "tot": 1.0, "offri": 0}, {"pos": 15, "name": "Dan", "tot": 0, "offri": 0}]}, {"n": 3, "date": "2023-06-01 00:00:00", "N": 15, "champ": "Tom", "results": [{"pos": 1, "name": "Tom", "tot": 15.0, "offri": 0}, {"pos": 2, "name": "Jody", "tot": 14.0, "offri": 0}, {"pos": 3, "name": "Erin", "tot": 13.0, "offri": 0}, {"pos": 4, "name": "Evie", "tot": 12.0, "offri": 0}, {"pos": 5, "name": "Alex S", "tot": 11.0, "offri": 0}, {"pos": 6, "name": "Erik", "tot": 10.0, "offri": 0}, {"pos": 7, "name": "Peter", "tot": 9.0, "offri": 0}, {"pos": 8, "name": "Yakau", "tot": 8.0, "offri": 0}, {"pos": 9, "name": "Jack", "tot": 7.0, "offri": 0}, {"pos": 10, "name": "Karo", "tot": 6.0, "offri": 1}, {"pos": 11, "name": "Dan", "tot": 5.0, "offri": 0}, {"pos": 12, "name": "Sam", "tot": 5.0, "offri": 0}, {"pos": 13, "name": "Alia", "tot": 2.0, "offri": 0}, {"pos": 14, "name": "Emma N", "tot": 1.0, "offri": 0}, {"pos": 15, "name": "Megan", "tot": 0, "offri": 0}]}, {"n": 4, "date": "2023-11-01 00:00:00", "N": 19, "champ": "Jack", "results": [{"pos": 1, "name": "Jack", "tot": 19.0, "offri": 0}, {"pos": 2, "name": "Megan", "tot": 18.0, "offri": 0}, {"pos": 3, "name": "Erin", "tot": 17.0, "offri": 0}, {"pos": 4, "name": "Doug", "tot": 16.0, "offri": 0}, {"pos": 5, "name": "Nick C", "tot": 15.0, "offri": 0}, {"pos": 6, "name": "Tyler", "tot": 15.0, "offri": 1}, {"pos": 7, "name": "Peter", "tot": 13.0, "offri": 0}, {"pos": 8, "name": "Erik", "tot": 12.0, "offri": 0}, {"pos": 9, "name": "Jody", "tot": 11.0, "offri": 0}, {"pos": 10, "name": "Dan", "tot": 10.0, "offri": 0}, {"pos": 11, "name": "Sean", "tot": 9.0, "offri": 0}, {"pos": 12, "name": "Sam", "tot": 8.0, "offri": 0}, {"pos": 13, "name": "Sophie CB", "tot": 7.0, "offri": 0}, {"pos": 14, "name": "Kevin", "tot": 5.0, "offri": 0}, {"pos": 15, "name": "Mira", "tot": 7.0, "offri": 0}, {"pos": 16, "name": "Laura", "tot": 6.0, "offri": 0}, {"pos": 17, "name": "Nathalie", "tot": 5.0, "offri": 0}, {"pos": 18, "name": "Tom", "tot": 3.0, "offri": 0}, {"pos": 19, "name": "Sarah Y", "tot": 0, "offri": 0}]}, {"n": 5, "date": "2024-06-01 00:00:00", "N": 18, "champ": "Megan", "results": [{"pos": 1, "name": "Megan", "tot": 17.0, "offri": 1}, {"pos": 2, "name": "Matt", "tot": 15.0, "offri": 0}, {"pos": 3, "name": "Doug", "tot": 14.0, "offri": 0}, {"pos": 4, "name": "Jack", "tot": 13.0, "offri": 0}, {"pos": 5, "name": "Dan", "tot": 12.0, "offri": 0}, {"pos": 6, "name": "Laura", "tot": 11.0, "offri": 0}, {"pos": 7, "name": "Ezra", "tot": 10.0, "offri": 0}, {"pos": 8, "name": "Tom", "tot": 9.0, "offri": 0}, {"pos": 10, "name": "Jody", "tot": 8.0, "offri": 0}, {"pos": 10, "name": "Sean", "tot": 8.0, "offri": 0}, {"pos": 10, "name": "Tyler", "tot": 6.0, "offri": 0}, {"pos": 12, "name": "Erik", "tot": 7.0, "offri": 0}, {"pos": 13, "name": "Sam", "tot": 6.0, "offri": 0}, {"pos": 14, "name": "Erin", "tot": 5.0, "offri": 0}, {"pos": 15, "name": "Kevin", "tot": 4.0, "offri": 0}, {"pos": 16, "name": "Sophie CB", "tot": 3.0, "offri": 0}, {"pos": 17, "name": "Hitesh", "tot": 1.0, "offri": 0}, {"pos": 18, "name": "Peter", "tot": 2.0, "offri": 0}]}, {"n": 6, "date": "2024-12-01 00:00:00", "N": 24, "champ": "Laura", "results": [{"pos": 1, "name": "Laura", "tot": 19.0, "offri": 0}, {"pos": 2, "name": "Tom", "tot": 18.0, "offri": 1}, {"pos": 3, "name": "Nick N", "tot": 16.0, "offri": 0}, {"pos": 4, "name": "Sam", "tot": 15.0, "offri": 0}, {"pos": 5, "name": "Matt", "tot": 14.0, "offri": 0}, {"pos": 6, "name": "Joey", "tot": 13.0, "offri": 0}, {"pos": 7, "name": "Jody", "tot": 13.0, "offri": 1}, {"pos": 8, "name": "Tyler", "tot": 11.0, "offri": 0}, {"pos": 9, "name": "Nick C", "tot": 10.0, "offri": 0}, {"pos": 10, "name": "Jack", "tot": 9.0, "offri": 0}, {"pos": 10, "name": "Alan", "tot": 9.0, "offri": 0}, {"pos": 12, "name": "Peter", "tot": 9.0, "offri": 0}, {"pos": 13, "name": "Sophie T", "tot": 9.0, "offri": 0}, {"pos": 14, "name": "Erin", "tot": 9.0, "offri": 0}, {"pos": 15, "name": "Sophie CB", "tot": 8.0, "offri": 0}, {"pos": 16, "name": "Kevin", "tot": 8.0, "offri": 0}, {"pos": 17, "name": "Ezra", "tot": 7.0, "offri": 0}, {"pos": 18, "name": "Kiera", "tot": 7.0, "offri": 0}, {"pos": 19, "name": "Megan", "tot": 6.0, "offri": 0}, {"pos": 20, "name": "Doug", "tot": 5.0, "offri": 0}, {"pos": 21, "name": "Erik", "tot": 4.0, "offri": 0}, {"pos": 22, "name": "Evie", "tot": 2.0, "offri": 0}, {"pos": 23, "name": "Sarah M", "tot": 1.0, "offri": 0}, {"pos": 24, "name": "Yakau", "tot": 2.0, "offri": 0}]}, {"n": 7, "date": "2025-06-01 00:00:00", "N": 20, "champ": "Jack", "results": [{"pos": 1, "name": "Jack", "tot": 17.0, "offri": 1}, {"pos": 2, "name": "Cam", "tot": 16.0, "offri": 0}, {"pos": 3, "name": "Megan", "tot": 15.0, "offri": 0}, {"pos": 4, "name": "Ben", "tot": 14.0, "offri": 1}, {"pos": 5, "name": "Sam", "tot": 13.0, "offri": 0}, {"pos": 6, "name": "Nick N", "tot": 12.0, "offri": 0}, {"pos": 7, "name": "Peter", "tot": 11.0, "offri": 0}, {"pos": 8, "name": "Erin", "tot": 10.0, "offri": 0}, {"pos": 9, "name": "Sarah M", "tot": 9.0, "offri": 0}, {"pos": 10, "name": "Nick C", "tot": 8.0, "offri": 0}, {"pos": 11, "name": "Joey", "tot": 4.0, "offri": 0}, {"pos": 11, "name": "Laura", "tot": 7.0, "offri": 0}, {"pos": 11, "name": "Alex S", "tot": 7.0, "offri": 0}, {"pos": 11, "name": "Erik", "tot": 7.0, "offri": 0}, {"pos": 15, "name": "Matt", "tot": 6.0, "offri": 0}, {"pos": 16, "name": "Sophie CB", "tot": 4.0, "offri": 0}, {"pos": 17, "name": "Tyler", "tot": 5.0, "offri": 0}, {"pos": 18, "name": "Dan", "tot": 5.0, "offri": 0}, {"pos": 19, "name": "Chris", "tot": 3.0, "offri": 0}, {"pos": 20, "name": "Sean", "tot": 3.0, "offri": 0}]}, {"n": 8, "date": "2025-11-01 00:00:00", "N": 18, "champ": "Jack", "results": [{"pos": 1, "name": "Jack", "tot": 16.0, "offri": 0}, {"pos": 2, "name": "Matt", "tot": 15.0, "offri": 1}, {"pos": 3, "name": "Laura", "tot": 14.0, "offri": 0}, {"pos": 4, "name": "Doug", "tot": 13.0, "offri": 0}, {"pos": 5, "name": "Megan", "tot": 12.0, "offri": 0}, {"pos": 6, "name": "Tyler", "tot": 11.0, "offri": 0}, {"pos": 7, "name": "Nick N", "tot": 10.0, "offri": 0}, {"pos": 8, "name": "Ezra", "tot": 9.0, "offri": 1}, {"pos": 9, "name": "Sean", "tot": 8.0, "offri": 0}, {"pos": 10, "name": "Erin", "tot": 7.0, "offri": 0}, {"pos": 11, "name": "Tom", "tot": 6.0, "offri": 0}, {"pos": 11, "name": "Joey", "tot": 6.0, "offri": 0}, {"pos": 11, "name": "Jody", "tot": 6.0, "offri": 0}, {"pos": 11, "name": "Peter", "tot": 6.0, "offri": 0}, {"pos": 15, "name": "Yakau", "tot": 3.0, "offri": 0}, {"pos": 16, "name": "Dan", "tot": 3.0, "offri": 0}, {"pos": 17, "name": "Sarah M", "tot": 3.0, "offri": 0}, {"pos": 18, "name": "Erik", "tot": 2.0, "offri": 0}]}, {"n": 9, "date": "2026/06", "N": 15, "champ": "Megan", "results": [{"pos": 1, "name": "Megan", "tot": 15.0, "offri": 0}, {"pos": 2, "name": "Dan", "tot": 14.0, "offri": 0}, {"pos": 3, "name": "Jack", "tot": 13.0, "offri": 0}, {"pos": 4, "name": "Tyler", "tot": 12.0, "offri": 0}, {"pos": 5, "name": "Peter", "tot": 11.0, "offri": 1}, {"pos": 6, "name": "Tom", "tot": 10.0, "offri": 0}, {"pos": 7, "name": "Laura", "tot": 9.0, "offri": 0}, {"pos": 8, "name": "Chris", "tot": 8.0, "offri": 1}, {"pos": 9, "name": "Sam", "tot": 7.0, "offri": 0}, {"pos": 10, "name": "Joey", "tot": 6.0, "offri": 0}, {"pos": 10, "name": "Olivia", "tot": 6.0, "offri": 0}, {"pos": 12, "name": "Nick N", "tot": 4.0, "offri": 0}, {"pos": 13, "name": "Sarah", "tot": 2.0, "offri": 0}, {"pos": 14, "name": "Emma G", "tot": 3.0, "offri": 0}, {"pos": 15, "name": "Ezra", "tot": 2.0, "offri": 0}]}], "records": {"most_titles": [["Jack", 3], ["Megan", 2], ["Jody", 2], ["Laura", 1], ["Tom", 1]], "iron": ["Megan", "Jack"], "endurance": [["Megan", 106.0], ["Jack", 103.0], ["Jody", 78.0], ["Tyler", 77.0], ["Laura", 75.0]], "metronome": [["Megan", 0.307, 9], ["Jody", 0.318, 7], ["Jack", 0.327, 9], ["Doug", 0.358, 4], ["Nick N", 0.403, 4]], "bridesmaid": [["Megan", 3, 2], ["Matt", 2, 0], ["Jody", 1, 2], ["Tom", 1, 1], ["Dan", 1, 0]], "ri_comebacks": [{"name": "Megan", "event": 5, "pos": 1}, {"name": "Tom", "event": 6, "pos": 2}, {"name": "Jack", "event": 7, "pos": 1}, {"name": "Matt", "event": 8, "pos": 2}], "streak_t3": [["Jack", 3]], "streak_t5": [["Megan", 3], ["Jack", 3]]}};
+const $=(s,r=document)=>r.querySelector(s);
+document.documentElement.className='js';
+
+function monthLabel(d){
+  let y,m;
+  if(d.includes('-')){const p=d.split(' ')[0].split('-'); y=p[0]; m=+p[1];}
+  else if(d.includes('/')){const p=d.split('/'); y=p[0]; m=+p[1];}
+  else return d;
+  const M=['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return M[m]+" "+y;
+}
+
+// meta
+$('#m-ed').textContent=DATA.meta.editions;
+$('#m-comp').textContent=DATA.meta.competitors;
+$('#m-span').textContent="’22 → ’26";
+
+// champions band
+const titleCount={};
+DATA.champions.forEach(c=>titleCount[c.champ]=(titleCount[c.champ]||0)+1);
+const plates=$('#plates');
+DATA.champions.forEach((c,i)=>{
+  const rep=titleCount[c.champ]>1;
+  const el=document.createElement('div');
+  el.className='plate'+(rep?' repeat':'');
+  el.dataset.ed=c.event;
+  el.innerHTML=(rep?'<svg class="crown" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18l2-9 4 5 3-7 3 7 4-5 2 9z"/></svg>':'')
+    +'<div class="ed">Edition '+c.event+'</div>'
+    +'<div class="when">'+monthLabel(c.date)+'</div>'
+    +'<div class="champ">'+c.champ+'</div>'
+    +'<div class="ribbon"></div>'
+    +'<div class="field">'+c.N+' in the field</div>';
+  el.addEventListener('click',()=>selectEdition(c.event,true));
+  plates.appendChild(el);
+});
+
+// leaderboard
+const COLS=[
+  {k:'name',t:'Player',l:true,fmt:(v,r,i)=>{
+     let med = i===0?'<span class="medal m1"></span>':i===1?'<span class="medal m2"></span>':i===2?'<span class="medal m3"></span>':'';
+     return med+'<span class="pname">'+v+'</span>';}},
+  {k:'ev',t:'Ed'},
+  {k:'wins',t:'Wins'},
+  {k:'t3',t:'Top 3'},
+  {k:'t5',t:'Top 5'},
+  {k:'tot',t:'Rounds'},
+  {k:'avgpct',t:'Avg fin',fmt:v=>(v*100).toFixed(0)+'%'},
+  {k:'tophalf',t:'Top ½',fmt:v=>v==null?'—':(v*100).toFixed(0)+'%'},
+];
+let sortKey='tot', sortAsc=false;
+function renderLB(){
+  const rows=[...DATA.leaderboard].sort((a,b)=>{
+    let x=a[sortKey],y=b[sortKey];
+    if(x==null)x=-1; if(y==null)y=-1;
+    if(sortKey==='name')return sortAsc?(''+x).localeCompare(y):(''+y).localeCompare(x);
+    return sortAsc?x-y:y-x;
+  });
+  $('#lb thead').innerHTML='<tr><th class="l">#</th>'+COLS.map(c=>
+     '<th class="'+(c.l?'l ':'')+(c.k===sortKey?'active':'')+'" data-k="'+c.k+'">'+c.t+'</th>').join('')+'</tr>';
+  $('#lb tbody').innerHTML=rows.map((r,i)=>'<tr><td class="rank">'+(i+1)+'</td>'+
+     COLS.map(c=>'<td class="'+(c.l?'l':'')+'">'+(c.fmt?c.fmt(r[c.k],r,i):r[c.k])+'</td>').join('')+'</tr>').join('');
+  $('#lb thead').querySelectorAll('th[data-k]').forEach(th=>th.addEventListener('click',()=>{
+     const k=th.dataset.k;
+     if(k===sortKey)sortAsc=!sortAsc; else {sortKey=k; sortAsc=(k==='name'||k==='avgpct');}
+     renderLB();
+  }));
+}
+renderLB();
+
+// record book plaques
+const rec=DATA.records;
+const ironNames=rec.iron.join(' & ');
+const end=rec.endurance, met=rec.metronome, bm=rec.bridesmaid;
+const t3streak=rec.streak_t3[0];
+const plq=[
+ {lab:'Most titles',who:rec.most_titles[0][0],stat:rec.most_titles[0][1]+' championships',
+  note:'Two of them back-to-back (Editions 7 & 8), and one won straight off Redemption Island.'},
+ {lab:'The Iron competitors',who:ironNames,stat:DATA.meta.editions+' for '+DATA.meta.editions+' · never missed one',
+  note:'The only two to show up for every single edition since 2022.'},
+ {lab:'Endurance',who:end[0][0],stat:end[0][1]+' career rounds survived',
+  mini:end.slice(0,4).map(e=>[e[0],e[1]])},
+ {lab:'The metronome',who:met[0][0],stat:'avg finish '+(met[0][1]*100).toFixed(0)+'% of field',
+  note:'Most consistently high finisher (min. 4 editions) — lower is better.'},
+ {lab:'The bridesmaid',who:bm[0][0],stat:bm[0][1]+' runner-up finishes',
+  note:'The most second-places of anyone — then finally took the crown in Edition 9.'},
+ {lab:'Hot streak',who:t3streak[0],stat:t3streak[1]+' straight top-3 finishes',
+  note:'Riding the longest active podium streak into Edition 10.'},
+];
+$('#plaques').innerHTML=plq.map(p=>{
+  let body=p.mini
+    ? '<ul class="mini">'+p.mini.map(m=>'<li><span>'+m[0]+'</span><span>'+m[1]+'</span></li>').join('')+'</ul>'
+    : '<p class="note">'+p.note+'</p>';
+  return '<div class="plaque"><p class="lab">'+p.lab+'</p><p class="who">'+p.who+
+    '</p><p class="stat">'+p.stat+'</p>'+body+'</div>';
+}).join('');
+
+// redemption
+const totSent=DATA.leaderboard.reduce((s,r)=>s,0);
+// derive RI quick stats from editions
+let sentTotal=0, offTotal=0;
+DATA.editions.forEach(e=>e.results.forEach(r=>{ if(r.offri)offTotal++; }));
+const redStats=[
+  {k:DATA.records.ri_comebacks.length,l:'Podium finishes from the island'},
+  {k:offTotal,l:'Successful escapes, all-time'},
+  {k:'2',l:'Champions crowned from the island'},
+];
+$('#redbar').innerHTML=redStats.map(s=>'<div class="redstat"><div class="k">'+s.k+'</div><div class="l">'+s.l+'</div></div>').join('');
+const place={1:'👑 won it all',2:'🥈 runner-up',3:'🥉 third'};
+$('#comeback').innerHTML=DATA.records.ri_comebacks.map(c=>{
+  const ed=DATA.champions.find(x=>x.event===c.event);
+  return '<div class="cb"><span class="b">'+(c.pos===1?'👑':'🏝️')+'</span><span><b>'+c.name+
+    '</b> · Edition '+c.event+' &nbsp;<small>'+place[c.pos]+'</small></span></div>';
+}).join('');
+
+// edition browser
+const tabs=$('#edtabs');
+DATA.editions.forEach(e=>{
+  const b=document.createElement('button');
+  b.className='edtab'; b.textContent='Ed '+e.n; b.dataset.ed=e.n;
+  b.addEventListener('click',()=>selectEdition(e.n,false));
+  tabs.appendChild(b);
+});
+function selectEdition(n,scroll){
+  const e=DATA.editions.find(x=>x.n===n);
+  document.querySelectorAll('.edtab').forEach(t=>t.classList.toggle('on',+t.dataset.ed===n));
+  const maxTot=Math.max(...e.results.map(r=>r.tot));
+  $('#edhdr').innerHTML='<span class="t">Edition '+e.n+'</span>'+
+    '<span class="meta">'+monthLabel(e.date)+' · <b>'+e.N+'</b> competitors · champion <b>'+e.champ+'</b></span>';
+  $('#results').innerHTML=e.results.map(r=>{
+    const w=Math.max(3,(r.tot/maxTot)*120);
+    const tag=r.offri?'<span class="tag">island return</span>':'';
+    const cw=r.pos===1?'<span class="cw">👑</span>':'';
+    return '<li class="'+(r.pos===1?'win':'')+'"><span class="p">'+ordinal(r.pos)+'</span>'+
+      '<span class="nm">'+r.name+cw+tag+'</span>'+
+      '<span class="bars"><span class="bar" style="width:'+w+'px"></span><small>'+r.tot+'</small></span></li>';
+  }).join('');
+  if(scroll)$('#editions').scrollIntoView({behavior:'smooth'});
+}
+function ordinal(n){const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
+selectEdition(DATA.editions[DATA.editions.length-1].n,false);
+
+// reveal on scroll
+if('IntersectionObserver' in window){
+  const io=new IntersectionObserver(es=>es.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target);}}),{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+}else{
+  document.querySelectorAll('.reveal').forEach(el=>el.classList.add('in'));
+}
+</script>
+</body>
+</html>
