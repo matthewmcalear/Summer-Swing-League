@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { calculatePoints, validateRound } from '@/lib/scoring'
+import { scoreDifferential } from '@/lib/handicap'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,6 +35,10 @@ export async function POST(request: Request) {
       play_date,
       notes             = null,
       additional_points = 0,
+      course_id         = null,
+      course_rating     = null,
+      slope_rating      = null,
+      course_par        = null,
     } = body
 
     if (!member_id || !holes || !gross_score || handicap_used === undefined || !course_name || !play_date) {
@@ -75,6 +80,21 @@ export async function POST(request: Request) {
       otherCount = groupMembers.length
     }
 
+    // Course handicap inputs — only used when a library course was picked.
+    const courseRatingNum = course_rating == null ? null : Number(course_rating)
+    const slopeRatingNum  = slope_rating  == null ? null : Number(slope_rating)
+    const courseParNum    = course_par    == null ? null : Number(course_par)
+
+    const differential =
+      courseRatingNum != null && slopeRatingNum != null
+        ? scoreDifferential({
+            gross:        grossNum,
+            courseRating: courseRatingNum,
+            slopeRating:  slopeRatingNum,
+            holes:        holesNum,
+          })
+        : null
+
     // Calculate points
     const { basePoints, difficultyMultiplier, groupBonus, totalPoints } = calculatePoints({
       holes:                   holesNum,
@@ -96,6 +116,11 @@ export async function POST(request: Request) {
         course_name:           toTitleCase(course_name),
         course_difficulty,
         difficulty_multiplier: difficultyMultiplier,
+        course_id:             course_id || null,
+        course_rating:         courseRatingNum,
+        slope_rating:          slopeRatingNum,
+        course_par:            courseParNum,
+        score_differential:    differential,
         group_member_ids:      otherIds,
         group_member_names:    groupNames,
         group_size:            otherCount + 1,

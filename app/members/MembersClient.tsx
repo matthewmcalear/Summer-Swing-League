@@ -4,6 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import type { Member, HandicapHistory } from '@/types'
 
+type Suggestion = { index: number; differentialsConsidered: number }
+
 function ViewToggle({ compact, setCompact }: { compact: boolean; setCompact: (v: boolean) => void }) {
   return (
     <div className="flex rounded-lg border border-gray-200 text-xs font-semibold overflow-hidden shrink-0">
@@ -19,7 +21,13 @@ function ViewToggle({ compact, setCompact }: { compact: boolean; setCompact: (v:
   )
 }
 
-export default function MembersClient({ members }: { members: Member[] }) {
+export default function MembersClient({
+  members,
+  suggestions = {},
+}: {
+  members: Member[]
+  suggestions?: Record<string, Suggestion>
+}) {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [history, setHistory]   = useState<Record<string, HandicapHistory[]>>({})
   const [compact, setCompact]   = useState(false)
@@ -55,6 +63,14 @@ export default function MembersClient({ members }: { members: Member[] }) {
                 >
                   {m.full_name}
                 </Link>
+                {suggestions[m.id] && (
+                  <span
+                    className="text-[11px] text-gray-400 shrink-0"
+                    title={`WHS estimate from your ${suggestions[m.id].differentialsConsidered} most recent rated rounds. Compare with The Grint, etc.`}
+                  >
+                    est {suggestions[m.id].index.toFixed(1)}
+                  </span>
+                )}
                 <span className="text-xs text-gray-400 shrink-0">Hdcp</span>
                 <span className="font-bold text-green-700 text-sm w-8 text-right shrink-0">{m.current_handicap}</span>
                 <button
@@ -105,6 +121,11 @@ export default function MembersClient({ members }: { members: Member[] }) {
                 <div className="text-right">
                   <div className="text-xs text-gray-400">Handicap</div>
                   <div className="text-xl font-bold text-green-700">{m.current_handicap}</div>
+                  {suggestions[m.id] && (
+                    <div className="text-[11px] text-gray-400 mt-0.5" title={`From your ${suggestions[m.id].differentialsConsidered} most recent rated rounds. Compare with The Grint, etc.`}>
+                      WHS est. <span className="font-semibold text-gray-600">{suggestions[m.id].index.toFixed(1)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -6,6 +6,7 @@ import type { Member, Score } from '@/types'
 import MemberRow from './MemberRow'
 import ScoreRow from './ScoreRow'
 import CourseRow from './CourseRow'
+import CourseLibraryTab from './CourseLibraryTab'
 import BonusesTab from './BonusesTab'
 import EmailTab from './EmailTab'
 import BdayTab from './BdayTab'
@@ -18,6 +19,7 @@ export default function AdminPage() {
   const [members, setMembers] = useState<Member[]>([])
   const [scores, setScores]   = useState<Score[]>([])
   const [courses, setCourses] = useState<{ name: string; count: number }[]>([])
+  const [suggestions, setSuggestions] = useState<Record<string, { index: number; differentialsConsidered: number }>>({})
   const [loading, setLoading] = useState(false)
 
   const login = async (e: React.FormEvent) => {
@@ -39,14 +41,16 @@ export default function AdminPage() {
 
   const fetchAll = async () => {
     setLoading(true)
-    const [m, s, c] = await Promise.all([
+    const [m, s, c, h] = await Promise.all([
       fetch('/api/admin/members').then(r => r.json()),
       fetch('/api/scores').then(r => r.json()),
       fetch('/api/admin/courses').then(r => r.json()),
+      fetch('/api/handicap-suggestions').then(r => r.json()).catch(() => ({})),
     ])
     setMembers(m)
     setScores(s)
     setCourses(Array.isArray(c) ? c : [])
+    setSuggestions(h && typeof h === 'object' ? h : {})
     setLoading(false)
   }
 
@@ -167,12 +171,18 @@ export default function AdminPage() {
           <table className="w-full table-base table-sticky">
             <thead>
               <tr>
-                <th>Name</th><th>Email</th><th>Current HC</th><th>Starting HC</th><th>Joined</th><th>Actions</th>
+                <th>Name</th><th>Email</th><th>Current HC</th><th>WHS Est.</th><th>Starting HC</th><th>Joined</th><th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {members.map(m => (
-                <MemberRow key={m.id} member={m} onSave={saveMember} onDelete={deleteMember} />
+                <MemberRow
+                  key={m.id}
+                  member={m}
+                  suggestion={suggestions[m.id]}
+                  onSave={saveMember}
+                  onDelete={deleteMember}
+                />
               ))}
             </tbody>
           </table>
@@ -195,9 +205,12 @@ export default function AdminPage() {
           </table>
         </div>
       ) : tab === 'courses' ? (
-        <div className="space-y-3">
+        <div className="space-y-6">
+          <CourseLibraryTab />
+          <div className="space-y-3 border-t border-gray-200 pt-6">
           <p className="text-sm text-gray-500">
-            Rename a course to fix spelling variants — updates every score that uses that name at once.
+            <strong>Fix name variants:</strong> rename a course below to update every score that uses
+            that name at once. (Separate from the library above.)
           </p>
           <div className="card overflow-x-auto p-0">
             <table className="w-full table-base">
@@ -214,6 +227,7 @@ export default function AdminPage() {
                 ))}
               </tbody>
             </table>
+          </div>
           </div>
         </div>
       ) : tab === 'bonuses' ? (

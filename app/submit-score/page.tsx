@@ -5,6 +5,16 @@ import { useRouter } from 'next/navigation'
 import { calculatePoints } from '@/lib/scoring'
 import type { Member } from '@/types'
 
+type LibraryCourse = {
+  id: string
+  name: string
+  tee_name: string
+  course_rating: number
+  slope_rating: number
+  par: number
+  holes: number
+}
+
 const DIFFICULTY_OPTIONS = [
   { value: 'easy',    label: 'Easy (×0.95)'    },
   { value: 'average', label: 'Average (×1.00)'  },
@@ -19,7 +29,9 @@ export default function SubmitScore() {
   const [submitting, setSubmitting]       = useState(false)
   const [error, setError]                 = useState('')
   const [previewPoints, setPreviewPoints] = useState<number | null>(null)
-  const [courseSuggestions, setCourseSuggestions] = useState<string[]>([])
+  const [courses, setCourses]             = useState<LibraryCourse[]>([])
+  const [legacyNames, setLegacyNames]     = useState<string[]>([])
+  const [selectedCourse, setSelectedCourse] = useState<LibraryCourse | null>(null)
   const [courseMode, setCourseMode] = useState<'select' | 'new'>('select')
 
   const [form, setForm] = useState({
@@ -41,9 +53,17 @@ export default function SubmitScore() {
       .catch(() => {})
     fetch('/api/courses')
       .then((r) => r.json())
-      .then((d: string[]) => setCourseSuggestions(d))
+      .then((d: { courses?: LibraryCourse[]; legacyNames?: string[] }) => {
+        setCourses(Array.isArray(d.courses) ? d.courses : [])
+        // Names already covered by a library course shouldn't appear twice.
+        const libNames = new Set((d.courses ?? []).map((c) => c.name))
+        setLegacyNames((d.legacyNames ?? []).filter((n) => !libNames.has(n)))
+      })
       .catch(() => {})
   }, [])
+
+  const courseLabel = (c: LibraryCourse) =>
+    `${c.name}${c.tee_name ? ` — ${c.tee_name}` : ''} (R ${c.course_rating}/S ${c.slope_rating}, par ${c.par})`
 
   // Auto-fill handicap when player changes
   useEffect(() => {
@@ -95,6 +115,12 @@ export default function SubmitScore() {
           handicap_used:     Number(form.handicap_used),
           additional_points: Number(form.additional_points) || 0,
           group_member_ids:  groupIds,
+          // Course library fields (present only when a library course is picked) —
+          // let the server compute a WHS score differential for handicap suggestions.
+          course_id:     selectedCourse?.id ?? null,
+          course_rating: selectedCourse?.course_rating ?? null,
+          slope_rating:  selectedCourse?.slope_rating ?? null,
+          course_par:    selectedCourse?.par ?? null,
         }),
       })
 
@@ -210,20 +236,45 @@ export default function SubmitScore() {
             <select
               required
               className="form-input"
-              value={form.course_name}
+              value={selectedCourse ? `lib:${selectedCourse.id}` : form.course_name ? `legacy:${form.course_name}` : ''}
               onChange={(e) => {
-                if (e.target.value === '__new__') {
+                const v = e.target.value
+                if (v === '__new__') {
                   setCourseMode('new')
-                  setForm({ ...form, course_name: '' })
+                  setSelectedCourse(null)
+                  setForm((f) => ({ ...f, course_name: '' }))
+                } else if (v.startsWith('lib:')) {
+                  const c = courses.find((x) => x.id === v.slice(4)) || null
+                  setSelectedCourse(c)
+                  setForm((f) => ({
+                    ...f,
+                    course_name: c?.name ?? '',
+                    holes: c ? String(c.holes) : f.holes,
+                  }))
+                } else if (v.startsWith('legacy:')) {
+                  setSelectedCourse(null)
+                  setForm((f) => ({ ...f, course_name: v.slice(7) }))
                 } else {
-                  setForm({ ...form, course_name: e.target.value })
+                  setSelectedCourse(null)
+                  setForm((f) => ({ ...f, course_name: '' }))
                 }
               }}
             >
               <option value="">Select a course…</option>
-              {courseSuggestions.map((name) => (
-                <option key={name} value={name}>{name}</option>
-              ))}
+              {courses.length > 0 && (
+                <optgroup label="Course library (rating &amp; slope)">
+                  {courses.map((c) => (
+                    <option key={c.id} value={`lib:${c.id}`}>{courseLabel(c)}</option>
+                  ))}
+                </optgroup>
+              )}
+              {legacyNames.length > 0 && (
+                <optgroup label="Previously played (no rating)">
+                  {legacyNames.map((name) => (
+                    <option key={name} value={`legacy:${name}`}>{name}</option>
+                  ))}
+                </optgroup>
+              )}
               <option value="__new__">+ Add new course…</option>
             </select>
           ) : (
@@ -245,6 +296,17 @@ export default function SubmitScore() {
                 ← Back to course list
               </button>
             </div>
+          )}
+          {selectedCourse ? (
+            <p className="text-xs text-green-700 mt-1">
+              ✓ Rating {selectedCourse.course_rating} · Slope {selectedCourse.slope_rating} · Par{' '}
+              {selectedCourse.par} — this round will count toward your suggested handicap.
+            </p>
+          ) : (
+            <p className="text-xs text-gray-400 mt-1">
+              Tip: pick a course from the library (with rating &amp; slope) so this round counts toward your
+              suggested handicap. Ask an admin to add yours if it&apos;s missing.
+            </p>
           )}
         </div>
 

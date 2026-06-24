@@ -34,6 +34,12 @@ model Score {
   course_name           String
   course_difficulty     String   @default("average")
   difficulty_multiplier Float    @default(1.0)
+  // Handicap inputs — nullable for backward compatibility with pre-handicap rounds.
+  course_id             String?  @db.Uuid
+  course_rating         Float?
+  slope_rating          Int?
+  course_par            Int?
+  score_differential    Float?   // WHS 18-hole-equivalent differential, computed at save
   group_member_ids      String[] @default([])
   group_member_names    String   @default("")
   group_size            Int      @default(1)
@@ -47,8 +53,26 @@ model Score {
 
   member           Member?          @relation(fields: [member_id], references: [id], onDelete: SetNull)
   handicap_history HandicapHistory[]
+  course           Course?          @relation(fields: [course_id], references: [id], onDelete: SetNull)
 
   @@map("scores")
+}
+
+model Course {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String
+  tee_name      String   @default("")   // e.g. "Blue", "White", "Mens"
+  course_rating Float
+  slope_rating  Int
+  par           Int
+  holes         Int      @default(18)   // 9 or 18
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+
+  scores Score[]
+
+  @@unique([name, tee_name])
+  @@map("courses")
 }
 
 model SeasonBonus {

@@ -4,12 +4,26 @@ import { useState } from 'react'
 import type { Member } from '@/types'
 
 // ── Inline edit row for a member ──────────────────────────────────────────────
-export default function MemberRow({ member, onSave, onDelete }: {
+export default function MemberRow({ member, suggestion, onSave, onDelete }: {
   member: Member
+  suggestion?: { index: number; differentialsConsidered: number }
   onSave: (id: string, data: Partial<Member>) => Promise<void>
   onDelete: (id: string) => void
 }) {
   const [editing, setEditing] = useState(false)
+  const [applying, setApplying] = useState(false)
+
+  const applySuggestion = async () => {
+    if (!suggestion) return
+    if (!confirm(`Set ${member.full_name}'s handicap to the WHS estimate of ${suggestion.index.toFixed(1)}? This affects league points.`)) return
+    setApplying(true)
+    await onSave(member.id, { current_handicap: suggestion.index })
+    setApplying(false)
+  }
+
+  // Whether the stored handicap already matches the suggestion (within rounding).
+  const matchesSuggestion =
+    suggestion != null && Math.abs(Number(member.current_handicap) - suggestion.index) < 0.05
   const [form, setForm] = useState({
     full_name:          member.full_name,
     email:              member.email,
@@ -45,6 +59,9 @@ export default function MemberRow({ member, onSave, onDelete }: {
           <input className="form-input py-1 text-xs w-24" type="number" step="0.1" value={form.current_handicap}
             onChange={e => setForm(f => ({ ...f, current_handicap: e.target.value }))} />
         </td>
+        <td className="px-4 py-2 text-xs text-gray-400">
+          {suggestion ? suggestion.index.toFixed(1) : '—'}
+        </td>
         <td className="px-4 py-2">
           <input className="form-input py-1 text-xs w-24" type="number" step="0.1" placeholder="(none)"
             value={form.starting_handicap}
@@ -66,6 +83,31 @@ export default function MemberRow({ member, onSave, onDelete }: {
       <td className="px-4 py-3 font-medium">{member.full_name}</td>
       <td className="px-4 py-3">{member.email}</td>
       <td className="px-4 py-3">{member.current_handicap}</td>
+      <td className="px-4 py-3">
+        {!suggestion ? (
+          <span className="text-xs text-gray-300">—</span>
+        ) : (
+          <span className="inline-flex items-center gap-2">
+            <span
+              className="text-sm font-medium text-gray-700"
+              title={`From ${suggestion.differentialsConsidered} most recent rated rounds`}
+            >
+              {suggestion.index.toFixed(1)}
+            </span>
+            {matchesSuggestion ? (
+              <span className="text-xs text-green-600" title="Current handicap matches the estimate">✓</span>
+            ) : (
+              <button
+                onClick={applySuggestion}
+                disabled={applying}
+                className="btn-secondary text-xs px-2 py-0.5"
+              >
+                {applying ? '…' : 'Apply'}
+              </button>
+            )}
+          </span>
+        )}
+      </td>
       <td className="px-4 py-3 text-xs text-gray-400">
         {member.starting_handicap != null ? member.starting_handicap : '—'}
       </td>
