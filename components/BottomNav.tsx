@@ -13,6 +13,7 @@ const TABS = [
 ]
 
 const MORE_LINKS = [
+  { href: '/play',        label: 'Play Live',   icon: '🎯' },
   { href: '/analytics',   label: 'Analytics',   icon: '📊' },
   { href: '/members',     label: 'Members',     icon: '👥' },
   { href: '/rangefinder', label: 'Rangefinder', icon: '📍' },

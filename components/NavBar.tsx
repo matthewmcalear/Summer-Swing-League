@@ -10,6 +10,7 @@ const links = [
   { href: '/standings',    label: 'Standings'    },
   { href: '/scores',       label: 'Scores'       },
   { href: '/submit-score', label: 'Submit Score' },
+  { href: '/play',         label: 'Play Live'    },
   { href: '/analytics',    label: 'Analytics'    },
   { href: '/members',      label: 'Members'      },
   { href: '/rangefinder',  label: 'Rangefinder' },

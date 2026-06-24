@@ -1,13 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { calculatePoints, validateRound } from '@/lib/scoring'
-import { scoreDifferential } from '@/lib/handicap'
+import { recordRound } from '@/lib/recordRound'
 
 export const dynamic = 'force-dynamic'
-
-function toTitleCase(str: string): string {
-  return str.trim().split(/\s+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
-}
 
 export async function GET() {
   try {
@@ -24,141 +19,15 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const {
-      member_id,
-      holes,
-      gross_score,
-      handicap_used,
-      course_name,
-      course_difficulty = 'average',
-      group_member_ids  = [],
-      play_date,
-      notes             = null,
-      additional_points = 0,
-      course_id         = null,
-    } = body
-
-    if (!member_id || !holes || !gross_score || handicap_used === undefined || !course_name || !play_date) {
+    // handicap_used is required on the manual submit form.
+    if (body.handicap_used === undefined) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
-
-    const holesNum    = Number(holes)    as 9 | 18
-    const grossNum    = Number(gross_score)
-    const handicapNum = Number(handicap_used)
-
-    const validationError = validateRound({
-      holes:    holesNum,
-      gross:    grossNum,
-      handicap: handicapNum,
-      playDate: String(play_date),
-    })
-    if (validationError) {
-      return NextResponse.json({ error: validationError }, { status: 400 })
+    const result = await recordRound(body)
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: result.status })
     }
-
-    // Fetch main player
-    const player = await prisma.member.findUnique({ where: { id: member_id } })
-    if (!player) return NextResponse.json({ error: 'Player not found' }, { status: 404 })
-
-    // Fetch group members
-    const otherIds: string[] = Array.isArray(group_member_ids)
-      ? group_member_ids.filter((id: string) => id !== member_id)
-      : []
-
-    let groupNames = ''
-    let otherCount = 0
-
-    if (otherIds.length > 0) {
-      const groupMembers = await prisma.member.findMany({
-        where: { id: { in: otherIds } },
-        select: { full_name: true },
-      })
-      groupNames = groupMembers.map((m) => m.full_name).join(', ')
-      otherCount = groupMembers.length
-    }
-
-    // Handicap inputs — resolved from the picked library course (authoritative).
-    // Rating/par are scaled if the holes played differ from the course's holes
-    // (e.g. a 9-hole round at an 18-hole course → half the rating).
-    let effRating: number | null = null
-    let effSlope:  number | null = null
-    let effPar:    number | null = null
-    let differential: number | null = null
-
-    if (course_id) {
-      const course = await prisma.course.findUnique({ where: { id: course_id } })
-      if (course) {
-        const factor = holesNum / course.holes
-        effRating = Math.round(course.course_rating * factor * 10) / 10
-        effSlope  = course.slope_rating
-        effPar    = Math.round(course.par * factor)
-        differential = scoreDifferential({
-          gross:        grossNum,
-          courseRating: effRating,
-          slopeRating:  effSlope,
-          holes:        holesNum,
-        })
-      }
-    }
-
-    // Calculate points
-    const { basePoints, difficultyMultiplier, groupBonus, totalPoints } = calculatePoints({
-      holes:                   holesNum,
-      gross:                   grossNum,
-      handicap:                handicapNum,
-      difficulty:              course_difficulty,
-      otherLeagueMembersCount: otherCount,
-      additionalPoints:        Number(additional_points),
-    })
-
-    // Save score
-    const score = await prisma.score.create({
-      data: {
-        member_id,
-        player_name:           player.full_name,
-        holes:                 holesNum,
-        gross_score:           grossNum,
-        handicap_used:         handicapNum,
-        course_name:           toTitleCase(course_name),
-        course_difficulty,
-        difficulty_multiplier: difficultyMultiplier,
-        course_id:             course_id || null,
-        course_rating:         effRating,
-        slope_rating:          effSlope,
-        course_par:            effPar,
-        score_differential:    differential,
-        group_member_ids:      otherIds,
-        group_member_names:    groupNames,
-        group_size:            otherCount + 1,
-        base_points:           basePoints,
-        group_bonus:           groupBonus,
-        additional_points:     Number(additional_points),
-        total_points:          totalPoints,
-        play_date:             new Date(play_date + 'T12:00:00'),
-        notes:                 notes || null,
-      },
-    })
-
-    // Update member's current handicap.
-    // If this is their first round, also lock in starting_handicap for improvement tracking.
-    const memberFresh = await prisma.member.findUnique({ where: { id: member_id } })
-    await prisma.member.update({
-      where: { id: member_id },
-      data: {
-        current_handicap:  handicapNum,
-        ...(memberFresh?.starting_handicap == null ? { starting_handicap: handicapNum } : {}),
-      },
-    })
-    await prisma.handicapHistory.create({
-      data: {
-        member_id,
-        handicap:    handicapNum,
-        score_id:    score.id,
-        recorded_at: new Date(play_date + 'T12:00:00'),  // use round date, not submission date
-      },
-    })
-
-    return NextResponse.json({ success: true, score }, { status: 201 })
+    return NextResponse.json({ success: true, score: result.score }, { status: 201 })
   } catch (e) {
     console.error(e)
     return NextResponse.json({ error: 'Failed to submit score' }, { status: 500 })

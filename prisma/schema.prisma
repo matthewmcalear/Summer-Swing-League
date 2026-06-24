@@ -193,3 +193,36 @@ model BdayMessage {
 
   @@map("bday_messages")
 }
+
+// ── Live round tracking (Phase 2) ──────────────────────────────────────────────
+
+model LiveRound {
+  id               String    @id @default(uuid()) @db.Uuid
+  member_id        String    @db.Uuid
+  player_name      String
+  course_id        String?   @db.Uuid
+  course_name      String
+  holes            Int
+  play_date        DateTime
+  group_member_ids String[]  @default([])
+  current_hole     Int       @default(1)
+  started_at       DateTime  @default(now())
+  completed_at     DateTime?
+  score_id         String?   @db.Uuid     // the Score created when the round is finished
+
+  hole_scores LiveHoleScore[]
+
+  @@map("live_rounds")
+}
+
+model LiveHoleScore {
+  id            String @id @default(uuid()) @db.Uuid
+  live_round_id String @db.Uuid
+  hole          Int
+  strokes       Int
+
+  round LiveRound @relation(fields: [live_round_id], references: [id], onDelete: Cascade)
+
+  @@unique([live_round_id, hole])
+  @@map("live_hole_scores")
+}
