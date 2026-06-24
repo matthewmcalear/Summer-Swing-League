@@ -220,6 +220,8 @@ model LiveHoleScore {
   live_round_id String @db.Uuid
   hole          Int
   strokes       Int
+  putts         Int?           // null = not recorded
+  par           Int    @default(4)
 
   round LiveRound @relation(fields: [live_round_id], references: [id], onDelete: Cascade)
 
