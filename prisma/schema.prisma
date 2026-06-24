@@ -66,6 +66,7 @@ model Course {
   slope_rating  Int
   par           Int
   holes         Int      @default(18)   // 9 or 18
+  hole_pars     Int[]    @default([])   // per-hole pars, learned from live rounds
   is_active     Boolean  @default(true)
   created_at    DateTime @default(now())
 

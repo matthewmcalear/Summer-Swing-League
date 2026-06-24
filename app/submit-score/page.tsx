@@ -158,9 +158,9 @@ export default function SubmitScore() {
       })
 
       if (res.ok) {
-        // Submitted from a live round → clear it so it stops showing as in-progress.
+        // Submitted from a live round → save its pars to the course and clear it.
         if (liveRoundId) {
-          fetch(`/api/live/${liveRoundId}`, { method: 'DELETE' }).catch(() => {})
+          fetch(`/api/live/${liveRoundId}/finalize`, { method: 'POST' }).catch(() => {})
           if (typeof window !== 'undefined') localStorage.removeItem('ssl_live_round_id')
         }
         router.push('/success')

@@ -7,6 +7,7 @@ import type { Member } from '@/types'
 type LibraryCourse = {
   id: string; name: string; tee_name: string
   course_rating: number; slope_rating: number; par: number; holes: number
+  hole_pars?: number[]
 }
 type HoleScore = { hole: number; strokes: number; putts: number | null; par: number }
 type LiveRound = {
@@ -114,14 +115,26 @@ export default function PlayLive() {
   }
 
   // ── Derived ──
+  // The library course backing this round (for stored hole_pars + total par).
+  const roundCourse = courses.find((c) => c.id === round?.course_id) || null
   const parFor = (hole: number) =>
-    parsMap[hole] ?? HOLE_PARS[round?.course_name ?? '']?.[hole - 1] ?? 4
+    parsMap[hole]
+    ?? roundCourse?.hole_pars?.[hole - 1]
+    ?? HOLE_PARS[round?.course_name ?? '']?.[hole - 1]
+    ?? 4
   const enteredHoles = round ? Array.from({ length: round.holes }, (_, i) => i + 1).filter((h) => strokesMap[h] !== undefined) : []
   const totalStrokes = enteredHoles.reduce((s, h) => s + strokesMap[h], 0)
   const totalParPlayed = enteredHoles.reduce((s, h) => s + parFor(h), 0)
   const vsPar = totalStrokes - totalParPlayed
   const totalPutts = enteredHoles.reduce((s, h) => s + (puttsMap[h] ?? 0), 0)
   const vsParLabel = (n: number) => (n === 0 ? 'E' : n > 0 ? `+${n}` : `${n}`)
+
+  // Par validation — only meaningful for a full round of the matched course.
+  const allHoles = round ? Array.from({ length: round.holes }, (_, i) => i + 1) : []
+  const parsTotal = allHoles.reduce((s, h) => s + parFor(h), 0)
+  const parsComparable = roundCourse != null && roundCourse.holes === round?.holes
+  const parWarning = parsComparable && parsTotal !== roundCourse!.par
+  const establishingPars = roundCourse != null && (roundCourse.hole_pars?.length ?? 0) === 0
 
   const strokes = strokesMap[currentHole]
   const putts   = puttsMap[currentHole]
@@ -275,6 +288,18 @@ export default function PlayLive() {
         <div className="card py-3"><div className={`text-2xl font-bold tabular-nums ${vsPar > 0 ? 'text-blue-700' : vsPar < 0 ? 'text-red-600' : 'text-gray-900'}`}>{enteredHoles.length ? vsParLabel(vsPar) : '–'}</div><div className="text-[11px] text-gray-400 mt-0.5">vs Par</div></div>
         <div className="card py-3"><div className="text-2xl font-bold text-gray-900 tabular-nums">{enteredHoles.length}<span className="text-gray-300 text-base">/{round?.holes}</span></div><div className="text-[11px] text-gray-400 mt-0.5">Thru</div></div>
       </div>
+
+      {parWarning ? (
+        <div className="rounded-lg bg-amber-50 border border-amber-300 p-3 text-sm text-amber-800">
+          ⚠️ Your hole pars add up to <strong>{parsTotal}</strong>, but {roundCourse!.name} is par{' '}
+          <strong>{roundCourse!.par}</strong>. Tap a hole&apos;s par (3 / 4 / 5) to fix it before submitting.
+        </div>
+      ) : establishingPars ? (
+        <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-sm text-blue-800">
+          ⓘ First time logging pars for {roundCourse!.name} — set each hole&apos;s par and they&apos;ll be
+          saved for everyone next time.
+        </div>
+      ) : null}
 
       {scorecardOpen ? (
         <Scorecard round={round!} strokesMap={strokesMap} puttsMap={puttsMap} parFor={parFor}
