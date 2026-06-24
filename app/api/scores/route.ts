@@ -36,9 +36,6 @@ export async function POST(request: Request) {
       notes             = null,
       additional_points = 0,
       course_id         = null,
-      course_rating     = null,
-      slope_rating      = null,
-      course_par        = null,
     } = body
 
     if (!member_id || !holes || !gross_score || handicap_used === undefined || !course_name || !play_date) {
@@ -80,20 +77,29 @@ export async function POST(request: Request) {
       otherCount = groupMembers.length
     }
 
-    // Course handicap inputs — only used when a library course was picked.
-    const courseRatingNum = course_rating == null ? null : Number(course_rating)
-    const slopeRatingNum  = slope_rating  == null ? null : Number(slope_rating)
-    const courseParNum    = course_par    == null ? null : Number(course_par)
+    // Handicap inputs — resolved from the picked library course (authoritative).
+    // Rating/par are scaled if the holes played differ from the course's holes
+    // (e.g. a 9-hole round at an 18-hole course → half the rating).
+    let effRating: number | null = null
+    let effSlope:  number | null = null
+    let effPar:    number | null = null
+    let differential: number | null = null
 
-    const differential =
-      courseRatingNum != null && slopeRatingNum != null
-        ? scoreDifferential({
-            gross:        grossNum,
-            courseRating: courseRatingNum,
-            slopeRating:  slopeRatingNum,
-            holes:        holesNum,
-          })
-        : null
+    if (course_id) {
+      const course = await prisma.course.findUnique({ where: { id: course_id } })
+      if (course) {
+        const factor = holesNum / course.holes
+        effRating = Math.round(course.course_rating * factor * 10) / 10
+        effSlope  = course.slope_rating
+        effPar    = Math.round(course.par * factor)
+        differential = scoreDifferential({
+          gross:        grossNum,
+          courseRating: effRating,
+          slopeRating:  effSlope,
+          holes:        holesNum,
+        })
+      }
+    }
 
     // Calculate points
     const { basePoints, difficultyMultiplier, groupBonus, totalPoints } = calculatePoints({
@@ -117,9 +123,9 @@ export async function POST(request: Request) {
         course_difficulty,
         difficulty_multiplier: difficultyMultiplier,
         course_id:             course_id || null,
-        course_rating:         courseRatingNum,
-        slope_rating:          slopeRatingNum,
-        course_par:            courseParNum,
+        course_rating:         effRating,
+        slope_rating:          effSlope,
+        course_par:            effPar,
         score_differential:    differential,
         group_member_ids:      otherIds,
         group_member_names:    groupNames,

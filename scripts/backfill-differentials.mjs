@@ -3,8 +3,10 @@
  * handicaps appear for players from their historical scores (no re-entry).
  *
  * For each round WITHOUT a differential yet, match it to a library course by
- * name + holes, assume the White/middle tee (old rounds don't record the tee),
- * and compute the differential with the SAME formula as lib/handicap.ts.
+ * name, assume the White/middle tee (old rounds don't record the tee), and
+ * compute the differential with the SAME formula as lib/handicap.ts. Rating/par
+ * are scaled by holes-played ÷ course-holes, so a 9-hole round at an 18-hole
+ * course uses half the rating (standard 9-hole conversion).
  *
  * Usage:
  *   DATABASE_URL="$(heroku config:get DATABASE_URL -a summerswingleague)" \
@@ -39,14 +41,12 @@ function pickTee(courses) {
 async function main() {
   const courses = await prisma.course.findMany({ where: { is_active: true } })
 
-  // key: `${name}__${holes}` → chosen course (one tee)
-  const lookup = new Map()
-  const grouped = {}
+  // name → list of library courses (one or more tees / hole counts)
+  const byName = new Map()
   for (const c of courses) {
-    const k = `${c.name}__${c.holes}`
-    ;(grouped[k] ??= []).push(c)
+    if (!byName.has(c.name)) byName.set(c.name, [])
+    byName.get(c.name).push(c)
   }
-  for (const [k, list] of Object.entries(grouped)) lookup.set(k, pickTee(list))
 
   const scores = await prisma.score.findMany({
     where: { score_differential: null },
@@ -57,21 +57,29 @@ async function main() {
   const unmatched = {}
 
   for (const s of scores) {
-    const course = lookup.get(`${s.course_name}__${s.holes}`)
-    if (!course) {
-      unmatched[`${s.course_name} (${s.holes}h)`] = (unmatched[`${s.course_name} (${s.holes}h)`] ?? 0) + 1
+    const cands = byName.get(s.course_name)
+    if (!cands) {
+      unmatched[s.course_name] = (unmatched[s.course_name] ?? 0) + 1
       continue
     }
-    const diff = scoreDifferential(s.gross_score, course.course_rating, course.slope_rating, s.holes)
+    // Prefer an entry with the same hole count; else scale a different one.
+    const exact = cands.filter((c) => c.holes === s.holes)
+    const course = pickTee(exact.length ? exact : cands)
+
+    // Scale rating/par if holes played differ from the course's holes.
+    const factor    = s.holes / course.holes
+    const effRating = Math.round(course.course_rating * factor * 10) / 10
+    const effPar    = Math.round(course.par * factor)
+    const diff      = scoreDifferential(s.gross_score, effRating, course.slope_rating, s.holes)
     if (diff == null) continue
 
     await prisma.score.update({
       where: { id: s.id },
       data: {
         course_id:          course.id,
-        course_rating:      course.course_rating,
+        course_rating:      effRating,
         slope_rating:       course.slope_rating,
-        course_par:         course.par,
+        course_par:         effPar,
         score_differential: diff,
       },
     })
@@ -81,7 +89,7 @@ async function main() {
   console.log(`✓ Backfilled ${updated} round(s) with a score differential.`)
   const skips = Object.entries(unmatched)
   if (skips.length) {
-    console.log(`\nSkipped (no library course matching name + holes):`)
+    console.log(`\nSkipped (no library course matching this name):`)
     for (const [name, n] of skips.sort((a, b) => b[1] - a[1])) console.log(`  ${n.toString().padStart(3)} × ${name}`)
   }
   console.log('\nDone.')
