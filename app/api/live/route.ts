@@ -7,7 +7,10 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: Request) {
   try {
     const memberId = new URL(request.url).searchParams.get('member_id')
-    if (!memberId) return NextResponse.json(null)
+    // Guard against malformed ids — member_id is a UUID column, so a bad value
+    // would otherwise throw at the DB layer.
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!memberId || !isUuid.test(memberId)) return NextResponse.json(null)
     const round = await prisma.liveRound.findFirst({
       where:   { member_id: memberId, completed_at: null },
       orderBy: { started_at: 'desc' },
