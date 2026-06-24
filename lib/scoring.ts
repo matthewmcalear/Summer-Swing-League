@@ -4,6 +4,19 @@ export const DIFFICULTY_MULTIPLIERS: Record<string, number> = {
   tough:   1.05,
 }
 
+/**
+ * Suggest a league difficulty bucket from a course's slope rating.
+ * Slope 113 is the USGA "average" course (range 55–155); below plays easier,
+ * above plays tougher. Cutoffs: ≤112 easy · 113–124 average · ≥125 tough.
+ * Used to auto-fill (overridable) the difficulty when a rated library course is picked.
+ */
+export function difficultyFromSlope(slope: number): 'easy' | 'average' | 'tough' {
+  if (!Number.isFinite(slope)) return 'average'
+  if (slope <= 112) return 'easy'
+  if (slope >= 125) return 'tough'
+  return 'average'
+}
+
 export const SEASON_START = '2026-04-15'
 export const SEASON_END   = '2026-10-10'
 

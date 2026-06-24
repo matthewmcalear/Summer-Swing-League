@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { calculatePoints } from '@/lib/scoring'
+import { calculatePoints, difficultyFromSlope } from '@/lib/scoring'
 import type { Member } from '@/types'
 
 type LibraryCourse = {
@@ -32,6 +32,7 @@ export default function SubmitScore() {
   const [courses, setCourses]             = useState<LibraryCourse[]>([])
   const [legacyNames, setLegacyNames]     = useState<string[]>([])
   const [selectedCourse, setSelectedCourse] = useState<LibraryCourse | null>(null)
+  const [difficultyAutoSet, setDifficultyAutoSet] = useState(false)
   const [courseMode, setCourseMode] = useState<'select' | 'new'>('select')
 
   const [form, setForm] = useState({
@@ -246,10 +247,13 @@ export default function SubmitScore() {
                 } else if (v.startsWith('lib:')) {
                   const c = courses.find((x) => x.id === v.slice(4)) || null
                   setSelectedCourse(c)
+                  setDifficultyAutoSet(!!c)
                   setForm((f) => ({
                     ...f,
                     course_name: c?.name ?? '',
                     holes: c ? String(c.holes) : f.holes,
+                    // Auto-fill the league difficulty from slope (player can override).
+                    course_difficulty: c ? difficultyFromSlope(c.slope_rating) : f.course_difficulty,
                   }))
                 } else if (v.startsWith('legacy:')) {
                   setSelectedCourse(null)
@@ -313,6 +317,11 @@ export default function SubmitScore() {
         {/* Difficulty */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Course Difficulty *</label>
+          {selectedCourse && difficultyAutoSet && (
+            <p className="text-xs text-green-700 mb-1.5">
+              Auto-set from slope {selectedCourse.slope_rating} — adjust if needed.
+            </p>
+          )}
           <div className="flex gap-3">
             {DIFFICULTY_OPTIONS.map(({ value, label }) => (
               <label
@@ -329,7 +338,7 @@ export default function SubmitScore() {
                   value={value}
                   className="sr-only"
                   checked={form.course_difficulty === value}
-                  onChange={() => setForm({ ...form, course_difficulty: value })}
+                  onChange={() => { setDifficultyAutoSet(false); setForm({ ...form, course_difficulty: value }) }}
                 />
                 {label}
               </label>

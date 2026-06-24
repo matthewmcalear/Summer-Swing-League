@@ -3,10 +3,30 @@ import {
   calculatePoints,
   computeSeasonScore,
   validateRound,
+  difficultyFromSlope,
   DIFFICULTY_MULTIPLIERS,
   SEASON_START,
   SEASON_END,
 } from './scoring'
+
+describe('difficultyFromSlope', () => {
+  it('maps below-average slope to easy (≤112)', () => {
+    expect(difficultyFromSlope(112)).toBe('easy')
+    expect(difficultyFromSlope(100)).toBe('easy')
+  })
+  it('maps around-average slope to average (113–124)', () => {
+    expect(difficultyFromSlope(113)).toBe('average')
+    expect(difficultyFromSlope(120)).toBe('average')
+    expect(difficultyFromSlope(124)).toBe('average')
+  })
+  it('maps above-average slope to tough (≥125)', () => {
+    expect(difficultyFromSlope(125)).toBe('tough')
+    expect(difficultyFromSlope(140)).toBe('tough')
+  })
+  it('falls back to average on bad input', () => {
+    expect(difficultyFromSlope(NaN)).toBe('average')
+  })
+})
 
 describe('calculatePoints', () => {
   it('computes 9-hole base: 75 - (gross - handicap/2)', () => {
