@@ -48,7 +48,6 @@ export default function PlayLive() {
   const [parsMap, setParsMap]       = useState<Record<number, number>>({})
   const [currentHole, setCurrentHole] = useState(1)
   const [scorecardOpen, setScorecardOpen] = useState(false)
-  const [finishing, setFinishing]   = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -163,15 +162,15 @@ export default function PlayLive() {
 
   const goTo = (h: number) => { if (round) setCurrentHole(Math.min(Math.max(h, 1), round.holes)) }
 
-  const finish = async () => {
+  const reviewAndSubmit = () => {
     if (!round) return
-    setError(''); setFinishing(true)
-    const res = await fetch(`/api/live/${round.id}/finish`, { method: 'POST' })
-    setFinishing(false)
-    if (res.ok) {
-      if (typeof window !== 'undefined') localStorage.removeItem(LS_KEY)
-      router.push('/success')
-    } else setError((await res.json().catch(() => ({})))?.error || 'Could not finish round')
+    if (enteredHoles.length < round.holes) {
+      setError(`Enter all ${round.holes} holes before submitting (${enteredHoles.length} so far).`)
+      return
+    }
+    // Hand off to the Submit Score form to review/confirm. The live round (and
+    // its resume state) is kept until it's actually submitted there.
+    router.push(`/submit-score?live=${round.id}`)
   }
 
   const abandon = async () => {
@@ -335,12 +334,12 @@ export default function PlayLive() {
           <div className="flex gap-3">
             <button onClick={() => goTo(currentHole - 1)} disabled={currentHole <= 1} className="btn-secondary flex-1 py-3 disabled:opacity-40">← Prev</button>
             {isLast
-              ? <button onClick={finish} disabled={finishing} className="btn-primary flex-1 py-3">{finishing ? 'Finishing…' : 'Finish ✓'}</button>
+              ? <button onClick={reviewAndSubmit} className="btn-primary flex-1 py-3">Review &amp; submit →</button>
               : <button onClick={() => goTo(currentHole + 1)} className="btn-primary flex-1 py-3">Next →</button>}
           </div>
           {!isLast && (
-            <button onClick={finish} disabled={finishing} className="w-full text-sm text-green-700 hover:underline">
-              {finishing ? 'Finishing…' : 'Finish round now'}
+            <button onClick={reviewAndSubmit} className="w-full text-sm text-green-700 hover:underline">
+              Review &amp; submit now
             </button>
           )}
         </>

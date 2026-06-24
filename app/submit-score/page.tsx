@@ -34,6 +34,8 @@ export default function SubmitScore() {
   const [selectedCourse, setSelectedCourse] = useState<LibraryCourse | null>(null)
   const [difficultyAutoSet, setDifficultyAutoSet] = useState(false)
   const [courseMode, setCourseMode] = useState<'select' | 'new'>('select')
+  const [liveRoundId, setLiveRoundId] = useState<string | null>(null)
+  const [imported, setImported]       = useState(false)
 
   const [form, setForm] = useState({
     member_id:        '',
@@ -62,6 +64,36 @@ export default function SubmitScore() {
       })
       .catch(() => {})
   }, [])
+
+  // Prefill from a finished live round (/play hands off via ?live=<id>).
+  useEffect(() => {
+    if (courses.length === 0) return
+    const liveId = typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('live') : null
+    if (!liveId || liveRoundId) return
+    setLiveRoundId(liveId)
+    fetch(`/api/live/${liveId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((rd) => {
+        if (!rd) return
+        const gross = (rd.hole_scores || []).reduce((s: number, h: { strokes: number }) => s + h.strokes, 0)
+        const course = courses.find((c) => c.id === rd.course_id) || null
+        setSelectedCourse(course)
+        setDifficultyAutoSet(!!course)
+        setGroupIds(Array.isArray(rd.group_member_ids) ? rd.group_member_ids : [])
+        setForm((f) => ({
+          ...f,
+          member_id:         rd.member_id,
+          holes:             String(rd.holes),
+          gross_score:       String(gross),
+          course_name:       rd.course_name,
+          course_difficulty: course ? difficultyFromSlope(course.slope_rating) : f.course_difficulty,
+          play_date:         new Date(rd.play_date).toISOString().slice(0, 10),
+        }))
+        setImported(true)
+      })
+      .catch(() => {})
+  }, [courses, liveRoundId])
 
   const courseLabel = (c: LibraryCourse) =>
     `${c.name}${c.tee_name ? ` — ${c.tee_name}` : ''} (R ${c.course_rating}/S ${c.slope_rating}, par ${c.par})`
@@ -126,6 +158,11 @@ export default function SubmitScore() {
       })
 
       if (res.ok) {
+        // Submitted from a live round → clear it so it stops showing as in-progress.
+        if (liveRoundId) {
+          fetch(`/api/live/${liveRoundId}`, { method: 'DELETE' }).catch(() => {})
+          if (typeof window !== 'undefined') localStorage.removeItem('ssl_live_round_id')
+        }
         router.push('/success')
       } else {
         const body = await res.json()
@@ -148,6 +185,12 @@ export default function SubmitScore() {
           Enter your round details below. Your handicap will be updated automatically.
         </p>
       </div>
+
+      {imported && (
+        <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-800">
+          ⛳ Imported from your live round — review the details below and submit to confirm.
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="card space-y-5">
         {/* Player */}
