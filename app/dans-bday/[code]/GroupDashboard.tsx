@@ -56,6 +56,78 @@ function relativeTime(ts: string) {
 
 const COMMON_SCORES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
+// Bottom sheet for entering a hole score — shared by the hole grid and the
+// sticky quick-action bar.
+function ScoreSheet({ hole, current, onSave, onClear, onClose }: {
+  hole: number
+  current: number | undefined
+  onSave: (hole: number, strokes: number) => void
+  onClear: (hole: number) => void
+  onClose: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40" onClick={onClose}>
+      <div
+        className="w-full max-w-sm bg-white rounded-t-2xl p-5 space-y-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <p className="font-extrabold text-gray-900 text-lg">Hole {hole}</p>
+          <div className="flex items-center gap-2">
+            {current != null && (
+              <button onClick={() => onClear(hole)} className="text-xs text-red-500 hover:text-red-700 font-semibold px-2 py-1 rounded-lg hover:bg-red-50">Clear</button>
+            )}
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+          </div>
+        </div>
+        <div className="grid grid-cols-5 gap-2">
+          {COMMON_SCORES.map((n) => (
+            <button
+              key={n}
+              onClick={() => onSave(hole, n)}
+              className={`py-3 rounded-xl font-extrabold transition-colors ${
+                current === n
+                  ? 'bg-green-600 text-white'
+                  : n === 1
+                    ? 'bg-yellow-100 hover:bg-yellow-200 text-yellow-800 border border-yellow-300'
+                    : 'bg-gray-100 hover:bg-green-100 text-gray-800'
+              }`}
+            >
+              {n === 1 ? <span className="text-sm leading-tight block">1<br/>⛳️</span> : <span className="text-lg">{n}</span>}
+            </button>
+          ))}
+        </div>
+        <div className="space-y-1">
+          <p className="text-xs text-gray-400 font-medium">Score above 10? Type it:</p>
+          <div className="flex gap-2">
+            <input
+              type="number" min={1} max={99}
+              placeholder="e.g. 11, 12…"
+              className="form-input flex-1 text-center text-lg font-bold py-2"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const n = parseInt((e.target as HTMLInputElement).value, 10)
+                  if (!isNaN(n) && n >= 1) onSave(hole, n)
+                }
+              }}
+            />
+            <button
+              onClick={(e) => {
+                const input = (e.currentTarget.previousSibling as HTMLInputElement)
+                const n = parseInt(input.value, 10)
+                if (!isNaN(n) && n >= 1) onSave(hole, n)
+              }}
+              className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function HoleGrid({
   scores, onSave,
 }: {
@@ -101,73 +173,14 @@ function HoleGrid({
         </div>
       </div>
 
-      {/* Fixed bottom overlay — stays above the keyboard on mobile */}
       {editing !== null && (
-        <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40" onClick={() => setEditing(null)}>
-          <div className="w-full max-w-sm bg-white rounded-t-2xl p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <p className="font-extrabold text-gray-900 text-lg">Hole {editing}</p>
-              <div className="flex items-center gap-2">
-                {scoreMap[editing] != null && (
-                  <button
-                    onClick={() => clear(editing)}
-                    className="text-xs text-red-500 hover:text-red-700 font-semibold px-2 py-1 rounded-lg hover:bg-red-50"
-                  >
-                    Clear
-                  </button>
-                )}
-                <button onClick={() => setEditing(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
-              </div>
-            </div>
-
-            {/* Quick-tap common scores */}
-            <div className="grid grid-cols-5 gap-2">
-              {COMMON_SCORES.map((n) => (
-                <button
-                  key={n}
-                  onClick={() => save(editing, n)}
-                  className={`py-3 rounded-xl font-extrabold transition-colors ${
-                    scoreMap[editing] === n
-                      ? 'bg-green-600 text-white'
-                      : n === 1
-                        ? 'bg-yellow-100 hover:bg-yellow-200 text-yellow-800 border border-yellow-300'
-                        : 'bg-gray-100 hover:bg-green-100 text-gray-800'
-                  }`}
-                >
-                  {n === 1 ? <span className="text-sm leading-tight block">1<br/>⛳️</span> : <span className="text-lg">{n}</span>}
-                </button>
-              ))}
-            </div>
-
-            {/* Manual entry for scores outside quick-tap range */}
-            <div className="space-y-1">
-              <p className="text-xs text-gray-400 font-medium">Score above 10? Type it:</p>
-              <div className="flex gap-2">
-                <input
-                  type="number" min={1} max={99}
-                  placeholder="e.g. 11, 12…"
-                  className="form-input flex-1 text-center text-lg font-bold py-2"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      const n = parseInt((e.target as HTMLInputElement).value, 10)
-                      if (!isNaN(n) && n >= 1) save(editing, n)
-                    }
-                  }}
-                />
-                <button
-                  onClick={(e) => {
-                    const input = (e.currentTarget.previousSibling as HTMLInputElement)
-                    const n = parseInt(input.value, 10)
-                    if (!isNaN(n) && n >= 1) save(editing, n)
-                  }}
-                  className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ScoreSheet
+          hole={editing}
+          current={scoreMap[editing]}
+          onSave={(h, n) => save(h, n)}
+          onClear={(h) => clear(h)}
+          onClose={() => setEditing(null)}
+        />
       )}
     </>
   )
@@ -537,6 +550,9 @@ export default function GroupDashboard({ groupCode }: { groupCode: string }) {
   const code = groupCode.toUpperCase()
   const [state,       setState]       = useState<AllGroupState | null>(null)
   const [currentHole, setCurrentHole] = useState(1)
+  const [activeTeamId, setActiveTeamId] = useState<string | null>(null)
+  const [quickHole,   setQuickHole]   = useState<number | null>(null)
+  const [quickBusy,   setQuickBusy]   = useState(false)
   const [autoLoc,     setAutoLoc]     = useState(false)
   const [locMsg,      setLocMsg]      = useState('')
   const watchIdRef                    = useRef<number | null>(null)
@@ -631,6 +647,29 @@ export default function GroupDashboard({ groupCode }: { groupCode: string }) {
       <Link href="/dans-bday" className="inline-block mt-2 text-sm text-amber-600 font-semibold underline">← Back to leaderboard</Link>
     </div>
   )
+
+  // Active team for the sticky quick-action bar (defaults to the first team).
+  const activeTeam = group.teams.find((t) => t.id === activeTeamId) ?? group.teams[0]
+
+  const quickPost = async (url: string) => {
+    if (!activeTeam) return
+    setQuickBusy(true)
+    try {
+      await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teamId: activeTeam.id, hole: currentHole }) })
+      fetchState()
+    } finally { setQuickBusy(false) }
+  }
+
+  const quickSaveScore = (hole: number, strokes: number | null) => {
+    if (!activeTeam) return
+    if (strokes == null) {
+      fetch('/api/bday/score', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teamId: activeTeam.id, hole }) }).then(fetchState)
+    } else {
+      fetch('/api/bday/score', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teamId: activeTeam.id, hole, strokes }) }).then(fetchState)
+      if (hole < 18) setCurrentHole(hole + 1)
+    }
+    setQuickHole(null)
+  }
 
   return (
     <div className="space-y-5">
@@ -758,18 +797,65 @@ export default function GroupDashboard({ groupCode }: { groupCode: string }) {
       {/* Group Chat */}
       <ChatPanel messages={messages} senderName={group.name} />
 
-      {/* Spacer so sticky bar doesn't overlap last card */}
-      <div className="h-20" />
+      {/* Spacer so the sticky quick-bar doesn't overlap the last card */}
+      <div className="h-36" />
 
-      {/* Sticky bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 p-3 bg-white/90 backdrop-blur border-t border-gray-200 shadow-lg">
-        <Link
-          href="/dans-bday"
-          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-base transition-colors shadow-md"
-        >
-          🏆 Back to Leaderboard
-        </Link>
+      {/* Sticky quick-action bar — log without scrolling */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-40 px-3 pt-2 bg-white/95 backdrop-blur border-t border-gray-200 shadow-lg space-y-2"
+        style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))' }}
+      >
+        {/* Active team + back to leaderboard */}
+        <div className="flex items-center gap-2">
+          {group.teams.length > 1 && (
+            <div className="flex gap-1 flex-1 min-w-0">
+              {group.teams.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setActiveTeamId(t.id)}
+                  className={`flex-1 min-w-0 truncate px-2 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                    activeTeam?.id === t.id ? 'bg-green-700 text-white' : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {t.name}
+                </button>
+              ))}
+            </div>
+          )}
+          <Link
+            href="/dans-bday"
+            className="shrink-0 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-extrabold transition-colors"
+          >
+            🏆 Leaderboard
+          </Link>
+        </div>
+
+        {/* Hole + quick actions for the active team */}
+        <div className="grid grid-cols-4 gap-2">
+          <div className="flex items-center justify-between bg-gray-100 rounded-xl">
+            <button onClick={() => setCurrentHole((h) => Math.max(1, h - 1))} className="w-9 h-10 text-xl font-bold text-gray-500">−</button>
+            <span className="text-sm font-extrabold text-gray-800 tabular-nums">H{currentHole}</span>
+            <button onClick={() => setCurrentHole((h) => Math.min(18, h + 1))} className="w-9 h-10 text-xl font-bold text-gray-500">+</button>
+          </div>
+          <button onClick={() => quickPost('/api/bday/hotdog')} disabled={quickBusy} className="rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-extrabold py-2 text-base disabled:opacity-50">+🌭</button>
+          <button onClick={() => quickPost('/api/bday/beer')} disabled={quickBusy} className="rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold py-2 text-base disabled:opacity-50">+🍺</button>
+          <button onClick={() => setQuickHole(currentHole)} className="rounded-xl bg-green-700 hover:bg-green-800 text-white font-extrabold py-2 text-sm">📝 Score</button>
+        </div>
+        {group.teams.length > 1 && (
+          <p className="text-[10px] text-gray-400 text-center -mt-0.5">Logging for <strong className="text-gray-600">{activeTeam?.name}</strong> · hole {currentHole}</p>
+        )}
       </div>
+
+      {/* Quick score sheet */}
+      {quickHole !== null && activeTeam && (
+        <ScoreSheet
+          hole={quickHole}
+          current={activeTeam.hole_scores.find((s) => s.hole === quickHole)?.strokes}
+          onSave={(h, n) => quickSaveScore(h, n)}
+          onClear={(h) => quickSaveScore(h, null)}
+          onClose={() => setQuickHole(null)}
+        />
+      )}
 
     </div>
   )

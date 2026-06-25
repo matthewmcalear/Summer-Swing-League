@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { useState } from 'react'
+import BdayCountdown from '@/components/BdayCountdown'
 
 const StandingsChart = dynamic(() => import('@/components/StandingsChart'), { ssr: false })
 
@@ -120,6 +121,9 @@ export default function Home() {
 
   return (
     <div className="space-y-8">
+
+      {/* ── Dan's Birthday countdown ── */}
+      <BdayCountdown />
 
       {/* ── HERO with Carling Lake background ── */}
       <div className="relative rounded-2xl overflow-hidden shadow-xl" style={{ minHeight: '420px' }}>

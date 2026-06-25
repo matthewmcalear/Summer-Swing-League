@@ -28,6 +28,10 @@ export default function BottomNav() {
   const pathname = usePathname()
   const [moreOpen, setMoreOpen] = useState(false)
 
+  // The Dan's Birthday event pages are an immersive sub-app with their own
+  // sticky bars — hide the global bottom nav there so they don't collide.
+  if (pathname.startsWith('/dans-bday')) return null
+
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
 

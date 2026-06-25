@@ -242,6 +242,7 @@ export default function EventDashboard() {
   const [messages,  setMessages]  = useState<ChatMessage[]>([])
   const [loading,   setLoading]   = useState(true)
   const [lastPoll,  setLastPoll]  = useState<Date | null>(null)
+  const [tab,       setTab]       = useState<'scores' | 'map' | 'feed' | 'chat'>('scores')
 
   // Chat state
   const [chatName,  setChatName]  = useState('')
@@ -377,7 +378,31 @@ export default function EventDashboard() {
         </div>
       </div>
 
+      {/* ── Sticky tab bar ── */}
+      <div className="sticky top-14 z-30 -mx-4 px-4 py-2 bg-white/95 dark-tabbar backdrop-blur">
+        <div className="grid grid-cols-4 gap-1.5">
+          {([
+            { key: 'scores', icon: '🏆', label: 'Scores' },
+            { key: 'map',    icon: '📍', label: 'Map'    },
+            { key: 'feed',   icon: '📋', label: 'Feed'   },
+            { key: 'chat',   icon: '💬', label: 'Chat'   },
+          ] as const).map(({ key, icon, label }) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={`flex flex-col items-center gap-0.5 py-1.5 rounded-xl text-[11px] font-bold transition-colors ${
+                tab === key ? 'bg-amber-500 text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
+            >
+              <span className="text-lg leading-none">{icon}</span>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* ── Group dashboards — the main CTA ── */}
+      {tab === 'scores' && (
       <div>
         <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-2 px-1">
           Tap your group to log beers 🍺 dogs 🌭 mulligans 💀 and scores
@@ -404,8 +429,10 @@ export default function EventDashboard() {
           ))}
         </div>
       </div>
+      )}
 
       {/* ── Leaderboard ── */}
+      {tab === 'scores' && (
       <div className="card">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-900">🏆 Leaderboard</h2>
@@ -434,22 +461,32 @@ export default function EventDashboard() {
           Score = gross strokes − hot dog discount (every 3 dogs = −1 stroke)
         </div>
       </div>
+      )}
 
       {/* ── Final Scorecard ── */}
-      <FinalScorecard groups={groups} ranked={ranked} />
+      {tab === 'scores' && <FinalScorecard groups={groups} ranked={ranked} />}
 
       {/* ── Live group map ── */}
-      {mapGroups.length > 0 && (
-        <div className="card">
-          <h2 className="text-lg font-bold text-gray-900 mb-3">📍 Group Locations</h2>
-          <EventMap groups={mapGroups} />
-          <p className="text-xs text-gray-400 mt-2 text-center">
-            Updates when groups share their location from their dashboard
-          </p>
-        </div>
+      {tab === 'map' && (
+        mapGroups.length > 0 ? (
+          <div className="card">
+            <h2 className="text-lg font-bold text-gray-900 mb-3">📍 Group Locations</h2>
+            <EventMap groups={mapGroups} />
+            <p className="text-xs text-gray-400 mt-2 text-center">
+              Updates when groups share their location from their dashboard
+            </p>
+          </div>
+        ) : (
+          <div className="card text-center py-12">
+            <div className="text-4xl mb-2">📍</div>
+            <p className="text-sm text-gray-500 font-semibold">No locations shared yet</p>
+            <p className="text-xs text-gray-400 mt-1">Groups appear here once they turn on location sharing from their dashboard.</p>
+          </div>
+        )
       )}
 
       {/* ── Activity log ── */}
+      {tab === 'feed' && (
       <div className="card">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold text-gray-900">📋 Activity Log</h2>
@@ -470,8 +507,10 @@ export default function EventDashboard() {
           </div>
         )}
       </div>
+      )}
 
       {/* ── Group Chat ── */}
+      {tab === 'chat' && (
       <div className="card">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold text-gray-900">💬 Trash Talk</h2>
@@ -556,14 +595,17 @@ export default function EventDashboard() {
           )}
         </div>
       </div>
+      )}
 
       {/* ── Rules quick ref ── */}
+      {tab === 'scores' && (
       <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800 space-y-1.5">
         <p className="font-bold text-amber-900 mb-2">Quick Rules</p>
         <p>🌭 Every 3 hot dogs = <strong>−1 stroke</strong>. Apply the discount yourself when entering scores. Most dogs eaten wins a prize.</p>
         <p>🍺 Every beer shotgunned = <strong>+1 Reverse Mulligan</strong> for your team.</p>
         <p>💀 Fire a mulligan at any team — <strong>their last shot is erased</strong>, they replay.</p>
       </div>
+      )}
 
     </div>
   )
