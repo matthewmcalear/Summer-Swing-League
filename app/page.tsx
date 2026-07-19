@@ -51,8 +51,8 @@ export default function Home() {
           </p>
           </div>
 
-          <div className="space-y-3 w-full lg:w-96 shrink-0">
-            <div className="flex gap-3">
+          <div className="space-y-3 w-full lg:w-72 shrink-0">
+            <div className="flex gap-3 lg:flex-col">
               <Link
                 href="/submit-score"
                 className="flex-1 text-center px-4 py-3 bg-white text-green-900 rounded-xl font-bold text-sm hover:bg-green-50 transition-all shadow-lg hover:shadow-xl"
@@ -72,7 +72,7 @@ export default function Home() {
                 Rangefinder
               </Link>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 lg:flex-col">
               <Link
                 href="/register"
                 className="flex-1 text-center px-4 py-3 rounded-xl font-bold text-sm transition-all shadow border border-white/30 hover:border-white/60"
