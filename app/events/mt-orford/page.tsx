@@ -19,10 +19,11 @@ export default function MtOrfordEventPage() {
         </h1>
         <p className="text-sky-100 text-lg font-semibold mt-2">Sunday, August 2, 2026</p>
         <div className="flex flex-wrap gap-2 mt-4">
-          <span className="rounded-xl bg-white/15 backdrop-blur px-3 py-2 text-sm font-bold">🕦 Tee time 1 — 11:25 AM</span>
-          <span className="rounded-xl bg-white/15 backdrop-blur px-3 py-2 text-sm font-bold">🕦 Tee time 2 — 11:34 AM</span>
+          <span className="rounded-xl bg-white/15 backdrop-blur px-3 py-2 text-sm font-bold">🕦 Tee time 1 — 11:16 AM</span>
+          <span className="rounded-xl bg-white/15 backdrop-blur px-3 py-2 text-sm font-bold">🕦 Tee time 2 — 11:25 AM</span>
+          <span className="rounded-xl bg-white/15 backdrop-blur px-3 py-2 text-sm font-bold">🕦 Tee time 3 — 11:34 AM</span>
         </div>
-        <p className="text-sky-200 text-xs mt-3">2 slots currently booked — back-to-back groups.</p>
+        <p className="text-sky-200 text-xs mt-3">3 slots currently booked — back-to-back groups.</p>
       </div>
 
       {/* ── Points on offer ── */}

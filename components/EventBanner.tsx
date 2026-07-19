@@ -54,7 +54,7 @@ export default function EventBanner() {
     >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sky-200 text-[11px] font-bold uppercase tracking-widest">Next League Event · Sun Aug 2 · Tee times 11:25 &amp; 11:34 AM</p>
+          <p className="text-sky-200 text-[11px] font-bold uppercase tracking-widest">Next League Event · Sun Aug 2 · Tee times 11:16, 11:25 &amp; 11:34 AM</p>
           <p className="font-extrabold text-lg leading-tight">⛰️ Golf at Mt. Orford — {label}</p>
           <p className="text-sky-100 text-xs mt-0.5 font-medium">+3 pts for playing · +2 season pts for best SSL score of the day</p>
         </div>
