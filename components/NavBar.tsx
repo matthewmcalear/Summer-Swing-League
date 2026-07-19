@@ -17,6 +17,7 @@ const links = [
   { href: '/my-bag',       label: 'My Bag'      },
   { href: '/rules',        label: 'Rules'        },
   { href: '/about',        label: 'About'        },
+  { href: '/dans-bday',    label: "Dan's Bday"   },
 ]
 
 // Mobile navigation lives in <BottomNav /> — this top bar is logo-only on phones.
@@ -57,14 +58,14 @@ export default function NavBar() {
               </Link>
             ))}
             <Link
-              href="/dans-bday"
+              href="/events/mt-orford"
               className={`ml-1 px-3 py-1.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-                isActive('/dans-bday')
-                  ? 'bg-amber-500 text-white'
-                  : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500 hover:text-white'
+                isActive('/events/mt-orford')
+                  ? 'bg-sky-500 text-white'
+                  : 'bg-sky-500/20 text-sky-300 hover:bg-sky-500 hover:text-white'
               }`}
             >
-              🎂 Dan's Bday
+              ⛰️ Mt. Orford
             </Link>
             <Link
               href="/admin"

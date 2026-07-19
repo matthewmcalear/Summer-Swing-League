@@ -3,105 +3,17 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
-import { useState } from 'react'
-import BdayCountdown from '@/components/BdayCountdown'
+import EventBanner from '@/components/EventBanner'
 
 const StandingsChart = dynamic(() => import('@/components/StandingsChart'), { ssr: false })
-
-function TournamentBanner() {
-  const [open, setOpen] = useState(false)
-  return (
-    <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 overflow-hidden shadow-sm">
-      {/* Summary row — always visible */}
-      <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5">
-        <div className="text-3xl shrink-0">🏆</div>
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-0.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-600 bg-amber-100 border border-amber-200 rounded-full px-2 py-0.5">Results Are In</span>
-            <span className="text-xs text-amber-700 font-medium">July 3rd · Carling Lake</span>
-          </div>
-          <p className="font-bold text-gray-900">Dan's Annual Birthday Golf Tournament — Dan & Jackson take the title</p>
-          <p className="text-sm text-gray-600 mt-0.5">70 net (77 gross − 7 hot-dog strokes) · 117 hot dogs eaten · 57 beers shotgunned · 8 mulligans fired</p>
-        </div>
-        {/* Podium pills */}
-        <div className="flex gap-1.5 shrink-0 flex-wrap">
-          <span className="px-2 py-1 rounded-lg bg-yellow-100 border border-yellow-300 text-yellow-800 text-xs font-bold">🥇 Dan & Jackson · 70</span>
-          <span className="px-2 py-1 rounded-lg bg-gray-100 border border-gray-300 text-gray-700 text-xs font-bold">🥈 Doug & Tom · 80</span>
-          <span className="px-2 py-1 rounded-lg bg-orange-100 border border-orange-300 text-orange-800 text-xs font-bold">🥉 Nick N & Peter · 81</span>
-        </div>
-        <button
-          onClick={() => setOpen((o) => !o)}
-          className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold bg-amber-500 text-white hover:bg-amber-600 transition-colors"
-        >
-          {open ? 'Hide recap' : 'View recap'}
-        </button>
-      </div>
-
-      {/* Expanded recap — CSS grid-height transition for smooth open/close */}
-      <div className={`grid transition-all duration-300 ease-in-out ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
-      <div className="overflow-hidden">
-        <div className="border-t border-amber-200 px-5 py-5 space-y-5 bg-white/60">
-
-          {/* New champions */}
-          <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-gray-700">
-            <p><strong>2026 Champions: Dan & Jackson</strong> — The birthday boy delivered. 14 pars, a 38 on the back nine, 21 hot dogs, 13 shotguns, and a five-mulligan barrage at Nick & Peter on the very first hole. Dethroned the defending champs by 10 clear shots.</p>
-            <p className="mt-1 text-gray-500"><strong>Defending champs Doug & Tom</strong> went down swinging — 27 beers shotgunned (a tournament record that should probably worry us) and still shot the second-best round of the day.</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Hot Dog Award */}
-            <div className="rounded-xl bg-white border border-amber-100 p-4">
-              <p className="text-xs font-bold uppercase tracking-wide text-amber-600 mb-2">🌭 Hot Dog Award — Tie</p>
-              <p className="text-sm text-gray-700 leading-relaxed"><strong>Dan & Jackson</strong> and <strong>Nick N & Peter</strong>, 21 dogs apiece. The field combined for 117 — the Hot Dog Rule swung the podium: Nick & Peter's −7 discount lifted them past Matt & Uncle Lou into 3rd.</p>
-            </div>
-
-            {/* Mulligan war */}
-            <div className="rounded-xl bg-white border border-amber-100 p-4">
-              <p className="text-xs font-bold uppercase tracking-wide text-amber-600 mb-2">💀 The Hole-1 Mulligan War</p>
-              <p className="text-sm text-gray-700 leading-relaxed">All 8 reverse mulligans of the day were traded between Dan & Jackson and Nick N & Peter — on the first tee. Doug & Tom banked 27 mulligans and, terrifyingly, never fired a single one.</p>
-            </div>
-          </div>
-
-          {/* SSL Points awarded */}
-          <div className="rounded-xl bg-green-50 border border-green-200 p-4">
-            <p className="text-xs font-bold uppercase tracking-wide text-green-700 mb-2">SSL Season Points Awarded</p>
-            <div className="flex flex-wrap gap-3 text-sm font-semibold">
-              <span className="text-yellow-700">🥇 Dan & Jackson — +5 pts each</span>
-              <span className="text-gray-600">🥈 Doug & Tom — +3 pts each</span>
-              <span className="text-orange-700">🥉 Nick N & Peter — +1 pt each</span>
-            </div>
-            <p className="text-xs text-gray-500 mt-1">Added directly to SSL season scores — check the standings.</p>
-          </div>
-
-          {/* CTA */}
-          <div className="flex gap-2">
-            <Link
-              href="/dans-bday"
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm transition-colors"
-            >
-              🏅 Full Results & Awards
-            </Link>
-            <Link
-              href="/standings"
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-green-700 hover:bg-green-800 text-white font-bold text-sm transition-colors"
-            >
-              📊 Season Standings
-            </Link>
-          </div>
-        </div>
-      </div>
-      </div>
-    </div>
-  )
-}
 
 export default function Home() {
 
   return (
     <div className="space-y-8">
 
-      {/* ── Dan's Birthday countdown ── */}
-      <BdayCountdown />
+      {/* ── Next league event: Mt. Orford ── */}
+      <EventBanner />
 
       {/* ── HERO with Carling Lake background ── */}
       <div className="relative rounded-2xl overflow-hidden shadow-xl" style={{ minHeight: '420px' }}>
@@ -179,9 +91,6 @@ export default function Home() {
         </div>
 
       </div>
-
-      {/* ── TOURNAMENT BANNER ── */}
-      <TournamentBanner />
 
       {/* ── PRIZE STRIP ── */}
       <div className="flex items-center gap-4 bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-3">

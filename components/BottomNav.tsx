@@ -20,6 +20,7 @@ const MORE_LINKS = [
   { href: '/my-bag',      label: 'My Bag',      icon: '🎒' },
   { href: '/rules',       label: 'Rules',       icon: '📖' },
   { href: '/about',       label: 'About',       icon: 'ℹ️' },
+  { href: '/events/mt-orford', label: 'Mt. Orford', icon: '⛰️' },
   { href: '/dans-bday',   label: "Dan's Bday",  icon: '🎂' },
   { href: '/admin',       label: 'Admin',       icon: '⚙️' },
 ]
