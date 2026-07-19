@@ -211,6 +211,7 @@ body {
   html.dark .bg-orange-50 { background-color: rgba(249, 115, 22, 0.08); }
   html.dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.10); }
   html.dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.10); }
+  html.dark .bg-sky-50 { background-color: rgba(14, 165, 233, 0.10); }
   html.dark .hover\:bg-gray-50:hover { background-color: #1a2536; }
   html.dark .hover\:bg-green-50:hover { background-color: rgba(34, 197, 94, 0.12); }
   html.dark .hover\:bg-red-50:hover { background-color: rgba(239, 68, 68, 0.14); }
@@ -230,6 +231,7 @@ body {
   html.dark .text-amber-600, html.dark .text-amber-700 { color: #fbbf24; }
   html.dark .text-blue-600, html.dark .text-blue-700 { color: #60a5fa; }
   html.dark .text-red-600, html.dark .text-red-700 { color: #f87171; }
+  html.dark .text-sky-800, html.dark .text-sky-900 { color: #7dd3fc; }
 
 
   /* Borders & dividers */
@@ -241,6 +243,7 @@ body {
   html.dark .border-amber-200 { border-color: rgba(245, 158, 11, 0.25); }
   html.dark .border-red-200 { border-color: rgba(239, 68, 68, 0.3); }
   html.dark .border-blue-200 { border-color: rgba(59, 130, 246, 0.3); }
+  html.dark .border-sky-200 { border-color: rgba(14, 165, 233, 0.3); }
   html.dark .divide-gray-50 > * + *, html.dark .divide-gray-100 > * + * { border-color: #1f2c40; }
 
 

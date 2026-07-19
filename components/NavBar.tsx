@@ -2,8 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 import ThemeToggle from './ThemeToggle'
 import Logo from './Logo'
+
+// League events — newest first. Add new events here and in BottomNav's More sheet.
+const EVENTS = [
+  { href: '/events/mt-orford', icon: '⛰️', label: 'Mt. Orford',  sub: 'Sun Aug 2 · Next up' },
+  { href: '/dans-bday',        icon: '🎂', label: "Dan's Bday",  sub: 'Jul 3 · Results'     },
+]
 
 const links = [
   { href: '/',             label: 'Home'         },
@@ -17,8 +24,58 @@ const links = [
   { href: '/my-bag',       label: 'My Bag'      },
   { href: '/rules',        label: 'Rules'        },
   { href: '/about',        label: 'About'        },
-  { href: '/dans-bday',    label: "Dan's Bday"   },
 ]
+
+function EventsMenu({ isActive }: { isActive: (href: string) => boolean }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const anyActive = EVENTS.some((e) => isActive(e.href))
+
+  // Close on click outside
+  useEffect(() => {
+    if (!open) return
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className={`ml-1 px-3 py-1.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+          anyActive || open
+            ? 'bg-sky-500 text-white'
+            : 'bg-sky-500/20 text-sky-300 hover:bg-sky-500 hover:text-white'
+        }`}
+      >
+        🎉 Events <span className="text-xs">{open ? '▴' : '▾'}</span>
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-white shadow-xl border border-gray-100 overflow-hidden py-1">
+          {EVENTS.map(({ href, icon, label, sub }) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setOpen(false)}
+              className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${
+                isActive(href) ? 'bg-sky-50' : 'hover:bg-gray-50'
+              }`}
+            >
+              <span className="text-xl">{icon}</span>
+              <span>
+                <span className="block text-sm font-bold text-gray-900 leading-tight">{label}</span>
+                <span className="block text-[11px] text-gray-400">{sub}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 // Mobile navigation lives in <BottomNav /> — this top bar is logo-only on phones.
 export default function NavBar() {
@@ -57,16 +114,7 @@ export default function NavBar() {
                 {label}
               </Link>
             ))}
-            <Link
-              href="/events/mt-orford"
-              className={`ml-1 px-3 py-1.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-                isActive('/events/mt-orford')
-                  ? 'bg-sky-500 text-white'
-                  : 'bg-sky-500/20 text-sky-300 hover:bg-sky-500 hover:text-white'
-              }`}
-            >
-              ⛰️ Mt. Orford
-            </Link>
+            <EventsMenu isActive={isActive} />
             <Link
               href="/admin"
               className="ml-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-green-700 hover:bg-green-600 transition-all"
