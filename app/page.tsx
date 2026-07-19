@@ -30,8 +30,9 @@ export default function Home() {
           background: 'linear-gradient(135deg, rgba(10,40,15,0.82) 0%, rgba(15,60,25,0.65) 60%, rgba(0,0,0,0.3) 100%)'
         }} />
 
-        {/* Content */}
-        <div className="relative z-10 p-8 sm:p-12 text-white max-w-3xl">
+        {/* Content — text left, action buttons right on desktop */}
+        <div className="relative z-10 p-8 sm:p-12 text-white flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 lg:gap-12" style={{ minHeight: '420px' }}>
+          <div className="max-w-2xl">
           <div className="mb-4 flex flex-wrap gap-2">
             <span className="season-badge">🌿 Season 2 · 2026</span>
             <span className="season-badge">📅 Apr 15 – Oct 10</span>
@@ -44,12 +45,13 @@ export default function Home() {
             <span className="text-white/70">2026</span>
           </h1>
 
-          <p className="text-green-100 text-lg sm:text-xl mb-8 max-w-xl leading-relaxed drop-shadow">
+          <p className="text-green-100 text-lg sm:text-xl max-w-xl leading-relaxed drop-shadow">
             Competitive group golf all summer long. Any course. Any skill level.
             Play more, earn more, win cash.
           </p>
+          </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3 w-full lg:w-96 shrink-0">
             <div className="flex gap-3">
               <Link
                 href="/submit-score"
