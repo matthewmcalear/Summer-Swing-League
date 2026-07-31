@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Monitor, Sun, Moon, type LucideIcon } from 'lucide-react'
 
 type Mode = 'auto' | 'light' | 'dark'
 
 const NEXT: Record<Mode, Mode> = { auto: 'light', light: 'dark', dark: 'auto' }
-const ICON: Record<Mode, string> = { auto: '🌓', light: '☀️', dark: '🌙' }
+const ICON: Record<Mode, LucideIcon> = { auto: Monitor, light: Sun, dark: Moon }
 const LABEL: Record<Mode, string> = { auto: 'Auto', light: 'Light', dark: 'Dark' }
 
 function applyMode(mode: Mode) {
@@ -39,6 +40,7 @@ export default function ThemeToggle({ showLabel = false }: { showLabel?: boolean
   }
 
   const m = mode ?? 'auto'
+  const Icon = ICON[m]
   return (
     <button
       onClick={cycle}
@@ -46,9 +48,9 @@ export default function ThemeToggle({ showLabel = false }: { showLabel?: boolean
       aria-label={`Theme: ${LABEL[m]}`}
       className={showLabel
         ? 'flex flex-col items-center gap-1 rounded-xl py-3 text-xs font-medium text-gray-600 hover:bg-gray-50 active:bg-gray-100 transition-colors w-full'
-        : 'px-2.5 py-1.5 rounded-lg text-lg leading-none hover:bg-green-800 transition-colors'}
+        : 'px-2.5 py-1.5 rounded-lg hover:bg-green-800 transition-colors'}
     >
-      <span className={showLabel ? 'text-2xl leading-none' : ''}>{ICON[m]}</span>
+      <Icon size={showLabel ? 24 : 18} strokeWidth={2} aria-hidden="true" />
       {showLabel && <>Theme: {LABEL[m]}</>}
     </button>
   )

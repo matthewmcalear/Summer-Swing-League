@@ -1,6 +1,12 @@
 @import "tailwindcss";
 
 @theme {
+  /* ── The ball ─────────────────────────────────────────────────────────────
+     Every color on this site is derived from the league's printed golf ball:
+     a deep-green disc, a brass ring, a red pin flag — plus a warm neutral and
+     a warm near-black. Nothing outside this set. */
+
+  /* Deep green — primary surfaces, headers, primary buttons (the disc). */
   --color-green-50:  #f0fdf4;
   --color-green-100: #dcfce7;
   --color-green-200: #bbf7d0;
@@ -11,20 +17,71 @@
   --color-green-700: #15803d;
   --color-green-800: #166534;
   --color-green-900: #14532d;
+
+  /* Brass ring — RESERVED for prize / winner / rank-position elements only.
+     Not general decoration. */
+  --color-brass-50:  #faf4e2;
+  --color-brass-100: #f2e4bb;
+  --color-brass-200: #e6cd86;
+  --color-brass-300: #d8b45a;
+  --color-brass-400: #c69a33;
+  --color-brass-500: #b8862f;
+  --color-brass-600: #9a6f24;
+  --color-brass-700: #7c5a1e;
+
+  /* Pin flag — RESERVED for the flag mark and true destructive / alert states. */
+  --color-flag-400: #d14338;
+  --color-flag-500: #b3271e;
+  --color-flag-600: #991b13;
+
+  /* Warm neutral (the card / paper) and warm near-black ink. */
+  --color-sand-50:  #fbf9f4;
+  --color-sand-100: #f5f1e8;
+  --color-sand-200: #ece5d6;
+  --color-ink:      #1c1a17;
+
   --font-sans: 'Inter', system-ui, sans-serif;
+  /* --font-display is injected by next/font (Fraunces) on <body>; see layout.tsx. */
 }
 
 html {
   scroll-behavior: smooth;
 }
 
-/* ── Site background: subtle golf-green linen texture ── */
+/* ── Site background: subtle golf-green linen texture on warm sand ── */
 body {
-  @apply text-gray-900;
-  background-color: #f4f8f4;
+  color: var(--color-ink);
+  background-color: var(--color-sand-100);
   background-image:
-    radial-gradient(circle at 1px 1px, rgba(34,85,34,0.07) 1px, transparent 0);
+    radial-gradient(circle at 1px 1px, rgba(20,83,45,0.06) 1px, transparent 0);
   background-size: 24px 24px;
+}
+
+/* ── Display type: Fraunces carries the personality now that the emoji are gone.
+   Applied to headings site-wide; body stays Inter. --font-display is set on
+   <body> by next/font (layout.tsx). ── */
+.font-display,
+h1, h2, h3 {
+  font-family: var(--font-display), 'Iowan Old Style', Georgia, serif;
+  font-optical-sizing: auto;
+  letter-spacing: -0.015em;
+}
+
+/* ── Keyboard focus: visible on every interactive element ── */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-brass-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Honor reduced-motion globally for anything animated on the site ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ── Form inputs ── */
@@ -72,8 +129,13 @@ body {
 
 .btn-danger {
   @apply inline-flex items-center justify-center px-3 py-1.5 rounded-lg
-         bg-red-50 text-red-700 font-semibold text-sm border border-red-200
-         hover:bg-red-100 transition-colors;
+         font-semibold text-sm border transition-colors;
+  color: var(--color-flag-600);
+  border-color: color-mix(in srgb, var(--color-flag-500) 30%, transparent);
+  background: color-mix(in srgb, var(--color-flag-500) 8%, white);
+}
+.btn-danger:hover {
+  background: color-mix(in srgb, var(--color-flag-500) 14%, white);
 }
 
 /* ── Tables ── */
@@ -187,23 +249,23 @@ body {
 /* ── Dark mode — controlled by the `dark` class on <html>.
    Set pre-paint by the inline script in layout.tsx (auto/light/dark, localStorage). ── */
   html.dark body {
-    background-color: #0b1220;
+    background-color: #14120d;
     background-image:
       radial-gradient(circle at 1px 1px, rgba(74,222,128,0.05) 1px, transparent 0);
-    color: #e5e7eb;
+    color: #ece7dc;
   }
 
 
   /* Surfaces */
-  html.dark .card, html.dark .card-hover, html.dark .bg-white { background-color: #16202f; }
-  html.dark .card, html.dark .card-hover { border-color: #1f2c40; }
-  html.dark .dark-sheet { background-color: #16202f; border-color: #1f2c40; }
-  html.dark .dark-tabbar { background-color: rgba(13, 19, 31, 0.92); border-color: #1f2c40; }
+  html.dark .card, html.dark .card-hover, html.dark .bg-white { background-color: #201c15; }
+  html.dark .card, html.dark .card-hover { border-color: #2c2619; }
+  html.dark .dark-sheet { background-color: #201c15; border-color: #2c2619; }
+  html.dark .dark-tabbar { background-color: rgba(20, 18, 13, 0.92); border-color: #2c2619; }
 
 
   /* Light tinted backgrounds → dark equivalents */
-  html.dark .bg-gray-50 { background-color: #131c2b; }
-  html.dark .bg-gray-100 { background-color: #1e293b; }
+  html.dark .bg-gray-50 { background-color: #191710; }
+  html.dark .bg-gray-100 { background-color: #241f16; }
   html.dark .bg-green-50 { background-color: rgba(34, 197, 94, 0.10); }
   html.dark .bg-green-100 { background-color: rgba(34, 197, 94, 0.18); }
   html.dark .bg-yellow-50 { background-color: rgba(250, 204, 21, 0.08); }
@@ -212,57 +274,59 @@ body {
   html.dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.10); }
   html.dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.10); }
   html.dark .bg-sky-50 { background-color: rgba(14, 165, 233, 0.10); }
-  html.dark .hover\:bg-gray-50:hover { background-color: #1a2536; }
+  html.dark .hover\:bg-gray-50:hover { background-color: #211d15; }
   html.dark .hover\:bg-green-50:hover { background-color: rgba(34, 197, 94, 0.12); }
   html.dark .hover\:bg-red-50:hover { background-color: rgba(239, 68, 68, 0.14); }
-  html.dark .hover\:bg-gray-100:hover { background-color: #243044; }
+  html.dark .hover\:bg-gray-100:hover { background-color: #2a2418; }
   html.dark .table-base tbody tr:hover { background-color: rgba(34, 197, 94, 0.07); }
 
 
   /* Text */
-  html.dark .text-gray-900 { color: #f1f5f9; }
-  html.dark .text-gray-800 { color: #e2e8f0; }
-  html.dark .text-gray-700 { color: #cbd5e1; }
-  html.dark .text-gray-600 { color: #94a3b8; }
-  html.dark .text-gray-500 { color: #8b97a8; }
-  html.dark .text-gray-300 { color: #475569; }
+  html.dark .text-gray-900 { color: #f4efe6; }
+  html.dark .text-gray-800 { color: #e7e1d5; }
+  html.dark .text-gray-700 { color: #cfc7b7; }
+  html.dark .text-gray-600 { color: #a39b8b; }
+  html.dark .text-gray-500 { color: #948c7d; }
+  html.dark .text-gray-300 { color: #574f42; }
   html.dark .text-green-800 { color: #6ee7a0; }
   html.dark .text-green-700 { color: #4ade80; }
   html.dark .text-amber-600, html.dark .text-amber-700 { color: #fbbf24; }
+  /* Brass reads dark on white; on dark surfaces lift it to the light ring tone. */
+  html.dark .text-brass-700, html.dark .text-brass-600, html.dark .text-brass-500 { color: #d8b45a; }
   html.dark .text-blue-600, html.dark .text-blue-700 { color: #60a5fa; }
   html.dark .text-red-600, html.dark .text-red-700 { color: #f87171; }
   html.dark .text-sky-800, html.dark .text-sky-900 { color: #7dd3fc; }
 
 
   /* Borders & dividers */
-  html.dark .border-gray-100 { border-color: #1f2c40; }
-  html.dark .border-gray-200 { border-color: #283751; }
-  html.dark .border-gray-300 { border-color: #344560; }
+  html.dark .border-gray-100 { border-color: #2c2619; }
+  html.dark .border-gray-200 { border-color: #37301f; }
+  html.dark .border-gray-300 { border-color: #453d29; }
   html.dark .border-green-200 { border-color: rgba(34, 197, 94, 0.25); }
   html.dark .border-yellow-200 { border-color: rgba(250, 204, 21, 0.25); }
   html.dark .border-amber-200 { border-color: rgba(245, 158, 11, 0.25); }
   html.dark .border-red-200 { border-color: rgba(239, 68, 68, 0.3); }
   html.dark .border-blue-200 { border-color: rgba(59, 130, 246, 0.3); }
   html.dark .border-sky-200 { border-color: rgba(14, 165, 233, 0.3); }
-  html.dark .divide-gray-50 > * + *, html.dark .divide-gray-100 > * + * { border-color: #1f2c40; }
+  html.dark .divide-gray-50 > * + *, html.dark .divide-gray-100 > * + * { border-color: #2c2619; }
 
 
   /* Forms */
   html.dark .form-input {
-    background-color: #111a29;
-    border-color: #344560;
-    color: #e5e7eb;
+    background-color: #1b1810;
+    border-color: #453d29;
+    color: #ece7dc;
   }
-  html.dark .form-input::placeholder { color: #64748b; }
+  html.dark .form-input::placeholder { color: #6b6355; }
 
 
   /* Buttons that are white in light mode */
-  html.dark .btn-secondary { background-color: #16202f; }
+  html.dark .btn-secondary { background-color: #201c15; }
   html.dark .btn-secondary:hover { background-color: rgba(34, 197, 94, 0.12); }
 
 
   /* Tables */
-  html.dark .table-base thead, html.dark .table-sticky thead { background-color: #131c2b; }
+  html.dark .table-base thead, html.dark .table-sticky thead { background-color: #191710; }
 
 
   /* Prize cards */
@@ -272,4 +336,4 @@ body {
 
 
   /* Skeletons */
-  html.dark .bg-gray-200 { background-color: #243044; }
+  html.dark .bg-gray-200 { background-color: #2a2418; }
