@@ -1,8 +1,11 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { Flag } from 'lucide-react'
 import type { StandingEntry } from '@/types'
 
+// Top-five mini leaderboard for the home page. Full detail lives on /standings.
 export default function StandingsChart() {
   const [players, setPlayers] = useState<StandingEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -10,7 +13,7 @@ export default function StandingsChart() {
   useEffect(() => {
     fetch('/api/standings')
       .then((r) => r.json())
-      .then((d: StandingEntry[]) => { setPlayers(d); setLoading(false) })
+      .then((d: StandingEntry[]) => { setPlayers(Array.isArray(d) ? d : []); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
 
@@ -20,61 +23,54 @@ export default function StandingsChart() {
     </div>
   )
 
-  const active = players.filter((p) => p.totalRounds > 0)
+  const active = players.filter((p) => p.totalRounds > 0).slice(0, 5)
 
+  // Real empty state — an invitation to act, not a blank.
   if (active.length === 0) return (
-    <div className="text-center py-6 text-gray-400 text-sm">
-      No scores yet — standings will appear here once rounds are submitted.
+    <div className="text-center py-8">
+      <p className="text-gray-500 text-sm font-medium">No rounds submitted yet — be the first.</p>
+      <Link
+        href="/submit-score"
+        className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-700 text-white text-sm font-bold hover:bg-green-800 transition-colors"
+      >
+        <Flag size={15} strokeWidth={2} aria-hidden="true" /> Submit the first round
+      </Link>
     </div>
   )
 
-  const maxScore = active[0]?.seasonScore ?? 1
-
   return (
-    <div className="space-y-1">
-      {active.map((p, i) => {
-        const pct    = Math.round((p.seasonScore / maxScore) * 100)
-        const isGold = i === 0
-        const isSilv = i === 1
-        const isBron = i === 2
-
-        const barColor = isGold ? '#f59e0b' : isSilv ? '#9ca3af' : isBron ? '#cd7f32' : '#16a34a'
-        const rankBg   = isGold ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                       : isSilv ? 'bg-gray-100 text-gray-600 border-gray-200'
-                       : isBron ? 'bg-orange-50 text-orange-700 border-orange-200'
-                       :          'bg-gray-50 text-gray-500 border-gray-100'
-
-        return (
-          <div key={p.id} className="flex items-center gap-3 py-1.5 group">
-            {/* Rank */}
-            <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold shrink-0 ${rankBg}`}>
-              {i + 1}
-            </div>
-
-            {/* Name + bar */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-0.5">
-                <span className="text-sm font-semibold text-gray-800 truncate">
-                  {p.name.split(' ')[0]}
-                  {isGold && <span className="ml-1.5 text-xs">🥇</span>}
-                  {isSilv && <span className="ml-1.5 text-xs">🥈</span>}
-                  {isBron && <span className="ml-1.5 text-xs">🥉</span>}
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+          <th className="text-left font-semibold w-8 pb-2">#</th>
+          <th className="text-left font-semibold pb-2">Player</th>
+          <th className="text-right font-semibold pb-2">Rounds</th>
+          <th className="text-right font-semibold pb-2 w-16">Points</th>
+        </tr>
+      </thead>
+      <tbody>
+        {active.map((p, i) => {
+          const medal = i < 3 // top three get the brass ring
+          return (
+            <tr key={p.id} className="border-t border-gray-100">
+              <td className="py-2.5">
+                <span
+                  className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
+                    medal
+                      ? 'bg-brass-50 text-brass-700 border border-brass-200'
+                      : 'bg-gray-50 text-gray-500 border border-gray-100'
+                  }`}
+                >
+                  {i + 1}
                 </span>
-                <div className="flex items-center gap-2 shrink-0 ml-2">
-                  <span className="text-xs text-gray-400">{p.totalRounds}R</span>
-                  <span className="text-sm font-bold text-gray-800 w-12 text-right">{p.seasonScore.toFixed(1)}</span>
-                </div>
-              </div>
-              <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${pct}%`, background: barColor }}
-                />
-              </div>
-            </div>
-          </div>
-        )
-      })}
-    </div>
+              </td>
+              <td className="py-2.5 font-semibold text-gray-800 truncate">{p.name}</td>
+              <td className="py-2.5 text-right text-gray-400 tabular-nums">{p.totalRounds}</td>
+              <td className="py-2.5 text-right font-bold text-gray-900 tabular-nums">{p.seasonScore.toFixed(1)}</td>
+            </tr>
+          )
+        })}
+      </tbody>
+    </table>
   )
 }
