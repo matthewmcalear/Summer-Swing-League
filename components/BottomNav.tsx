@@ -5,29 +5,40 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import {
   Home, Trophy, Flag, ClipboardList, Radio, BarChart3, Users,
-  LocateFixed, Backpack, BookOpen, Info, Cake, Settings, Menu, X,
+  LocateFixed, Backpack, BookOpen, Info, Cake, Menu, X,
   type LucideIcon,
 } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 
-const TABS: { href: string; label: string; icon: LucideIcon }[] = [
+type NavLink = { href: string; label: string; icon: LucideIcon }
+
+// Four quick tabs mirror the most-used primary items; the logo/Home rounds them out.
+const TABS: NavLink[] = [
   { href: '/',             label: 'Home',      icon: Home },
   { href: '/standings',    label: 'Standings', icon: Trophy },
   { href: '/submit-score', label: 'Submit',    icon: Flag },
   { href: '/scores',       label: 'Scores',    icon: ClipboardList },
 ]
 
-const MORE_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: '/play',        label: 'Play Live',   icon: Radio },
-  { href: '/analytics',   label: 'Analytics',   icon: BarChart3 },
-  { href: '/members',     label: 'Members',     icon: Users },
-  { href: '/rangefinder', label: 'Rangefinder', icon: LocateFixed },
-  { href: '/my-bag',      label: 'My Bag',      icon: Backpack },
-  { href: '/rules',       label: 'Rules',       icon: BookOpen },
-  { href: '/about',       label: 'About',       icon: Info },
-  { href: '/dans-bday',   label: "Dan's Bday",  icon: Cake },
-  { href: '/admin',       label: 'Admin',       icon: Settings },
+// The More sheet groups the rest to match the desktop nav's mental model.
+const MORE_GROUPS: { title: string; links: NavLink[] }[] = [
+  { title: 'League', links: [
+    { href: '/members', label: 'Members', icon: Users },
+    { href: '/rules',   label: 'Rules',   icon: BookOpen },
+  ] },
+  { title: 'Tools', links: [
+    { href: '/rangefinder', label: 'Rangefinder', icon: LocateFixed },
+    { href: '/play',        label: 'Play Live',   icon: Radio },
+    { href: '/analytics',   label: 'Analytics',   icon: BarChart3 },
+    { href: '/my-bag',      label: 'My Bag',      icon: Backpack },
+    { href: '/about',       label: 'About',       icon: Info },
+  ] },
+  { title: 'Events', links: [
+    { href: '/dans-bday', label: "Dan's Bday", icon: Cake },
+  ] },
 ]
+
+const MORE_LINKS: NavLink[] = MORE_GROUPS.flatMap((g) => g.links)
 
 export default function BottomNav() {
   const pathname = usePathname()
@@ -60,22 +71,29 @@ export default function BottomNav() {
       >
         <div className="bg-white dark-sheet rounded-t-3xl shadow-2xl border-t border-gray-100 px-4 pt-3 pb-24">
           <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-gray-300" />
-          <div className="grid grid-cols-4 gap-2">
-            {MORE_LINKS.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setMoreOpen(false)}
-                className={`flex flex-col items-center gap-1 rounded-xl py-3 text-xs font-medium transition-colors ${
-                  isActive(href)
-                    ? 'bg-green-50 text-green-800'
-                    : 'text-gray-600 hover:bg-gray-50 active:bg-gray-100'
-                }`}
-              >
-                <Icon size={22} strokeWidth={2} aria-hidden="true" />
-                {label}
-              </Link>
-            ))}
+          {MORE_GROUPS.map(({ title, links }) => (
+            <div key={title} className="mb-3">
+              <p className="px-1 mb-1 text-[11px] font-bold uppercase tracking-widest text-gray-400">{title}</p>
+              <div className="grid grid-cols-4 gap-2">
+                {links.map(({ href, label, icon: Icon }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setMoreOpen(false)}
+                    className={`flex flex-col items-center gap-1 rounded-xl py-3 text-xs font-medium transition-colors ${
+                      isActive(href)
+                        ? 'bg-green-50 text-green-800'
+                        : 'text-gray-600 hover:bg-gray-50 active:bg-gray-100'
+                    }`}
+                  >
+                    <Icon size={22} strokeWidth={2} aria-hidden="true" />
+                    {label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+          <div className="border-t border-gray-100 pt-2">
             <ThemeToggle showLabel />
           </div>
         </div>
