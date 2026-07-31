@@ -8,7 +8,6 @@ import Logo from './Logo'
 
 // League events — newest first. Add new events here and in BottomNav's More sheet.
 const EVENTS = [
-  { href: '/events/mt-orford', icon: '⛰️', label: 'Mt. Orford',  sub: 'Sun Aug 2 · Next up' },
   { href: '/dans-bday',        icon: '🎂', label: "Dan's Bday",  sub: 'Jul 3 · Results'     },
 ]
 

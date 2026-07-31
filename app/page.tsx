@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
-import EventBanner from '@/components/EventBanner'
 
 const StandingsChart = dynamic(() => import('@/components/StandingsChart'), { ssr: false })
 
@@ -11,9 +10,6 @@ export default function Home() {
 
   return (
     <div className="space-y-8">
-
-      {/* ── Next league event: Mt. Orford ── */}
-      <EventBanner />
 
       {/* ── HERO with Carling Lake background ── */}
       <div className="relative rounded-2xl overflow-hidden shadow-xl" style={{ minHeight: '420px' }}>
