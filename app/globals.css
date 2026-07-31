@@ -291,6 +291,8 @@ h1, h2, h3 {
   html.dark .text-green-800 { color: #6ee7a0; }
   html.dark .text-green-700 { color: #4ade80; }
   html.dark .text-amber-600, html.dark .text-amber-700 { color: #fbbf24; }
+  /* Brass reads dark on white; on dark surfaces lift it to the light ring tone. */
+  html.dark .text-brass-700, html.dark .text-brass-600, html.dark .text-brass-500 { color: #d8b45a; }
   html.dark .text-blue-600, html.dark .text-blue-700 { color: #60a5fa; }
   html.dark .text-red-600, html.dark .text-red-700 { color: #f87171; }
   html.dark .text-sky-800, html.dark .text-sky-900 { color: #7dd3fc; }

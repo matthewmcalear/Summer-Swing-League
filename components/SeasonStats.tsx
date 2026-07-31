@@ -41,11 +41,11 @@ export default function SeasonStats() {
     <div className={`grid gap-3 ${tiles.length === 3 ? 'grid-cols-3' : tiles.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
       {tiles.map(({ icon: Icon, value, label }) => (
         <div key={label} className="card flex items-center gap-3 py-4">
-          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-brass-50 text-brass-600 shrink-0">
+          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-green-50 text-green-700 shrink-0">
             <Icon size={20} strokeWidth={2} aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <div className="font-display text-2xl sm:text-3xl font-bold text-brass-600 leading-none tabular-nums">
+            <div className="font-display text-2xl sm:text-3xl font-bold text-green-800 leading-none tabular-nums">
               <CountUp value={value} />
             </div>
             <div className="text-[11px] sm:text-xs text-gray-500 font-medium mt-1 leading-tight">{label}</div>

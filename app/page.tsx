@@ -75,11 +75,11 @@ export default function Home() {
 
       {/* ── PRIZE STRIP ── */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-3">
-        <span className="text-sm font-bold text-brass-600">1st — $250</span>
+        <span className="text-sm font-extrabold text-brass-700">1st — $250</span>
         <span className="text-gray-200 select-none">|</span>
-        <span className="text-sm font-bold text-brass-500">2nd — $150</span>
+        <span className="text-sm font-bold text-brass-700">2nd — $150</span>
         <span className="text-gray-200 select-none">|</span>
-        <span className="text-sm font-bold text-brass-400">3rd — $75</span>
+        <span className="text-sm font-bold text-brass-600">3rd — $75</span>
         <span className="ml-auto text-xs text-gray-400 font-medium">$475 prize pool · Oct 10</span>
       </div>
 
