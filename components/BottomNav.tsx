@@ -3,25 +3,30 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
+import {
+  Home, Trophy, Flag, ClipboardList, Radio, BarChart3, Users,
+  LocateFixed, Backpack, BookOpen, Info, Cake, Settings, Menu, X,
+  type LucideIcon,
+} from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 
-const TABS = [
-  { href: '/',             label: 'Home',      icon: '🏠' },
-  { href: '/standings',    label: 'Standings', icon: '🏆' },
-  { href: '/submit-score', label: 'Submit',    icon: '⛳' },
-  { href: '/scores',       label: 'Scores',    icon: '📋' },
+const TABS: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: '/',             label: 'Home',      icon: Home },
+  { href: '/standings',    label: 'Standings', icon: Trophy },
+  { href: '/submit-score', label: 'Submit',    icon: Flag },
+  { href: '/scores',       label: 'Scores',    icon: ClipboardList },
 ]
 
-const MORE_LINKS = [
-  { href: '/play',        label: 'Play Live',   icon: '🎯' },
-  { href: '/analytics',   label: 'Analytics',   icon: '📊' },
-  { href: '/members',     label: 'Members',     icon: '👥' },
-  { href: '/rangefinder', label: 'Rangefinder', icon: '📍' },
-  { href: '/my-bag',      label: 'My Bag',      icon: '🎒' },
-  { href: '/rules',       label: 'Rules',       icon: '📖' },
-  { href: '/about',       label: 'About',       icon: 'ℹ️' },
-  { href: '/dans-bday',   label: "Dan's Bday",  icon: '🎂' },
-  { href: '/admin',       label: 'Admin',       icon: '⚙️' },
+const MORE_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: '/play',        label: 'Play Live',   icon: Radio },
+  { href: '/analytics',   label: 'Analytics',   icon: BarChart3 },
+  { href: '/members',     label: 'Members',     icon: Users },
+  { href: '/rangefinder', label: 'Rangefinder', icon: LocateFixed },
+  { href: '/my-bag',      label: 'My Bag',      icon: Backpack },
+  { href: '/rules',       label: 'Rules',       icon: BookOpen },
+  { href: '/about',       label: 'About',       icon: Info },
+  { href: '/dans-bday',   label: "Dan's Bday",  icon: Cake },
+  { href: '/admin',       label: 'Admin',       icon: Settings },
 ]
 
 export default function BottomNav() {
@@ -56,7 +61,7 @@ export default function BottomNav() {
         <div className="bg-white dark-sheet rounded-t-3xl shadow-2xl border-t border-gray-100 px-4 pt-3 pb-24">
           <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-gray-300" />
           <div className="grid grid-cols-4 gap-2">
-            {MORE_LINKS.map(({ href, label, icon }) => (
+            {MORE_LINKS.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
                 href={href}
@@ -67,7 +72,7 @@ export default function BottomNav() {
                     : 'text-gray-600 hover:bg-gray-50 active:bg-gray-100'
                 }`}
               >
-                <span className="text-2xl leading-none">{icon}</span>
+                <Icon size={22} strokeWidth={2} aria-hidden="true" />
                 {label}
               </Link>
             ))}
@@ -82,7 +87,7 @@ export default function BottomNav() {
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="grid grid-cols-5">
-          {TABS.map(({ href, label, icon }) => (
+          {TABS.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
@@ -91,20 +96,25 @@ export default function BottomNav() {
                 isActive(href) && !moreOpen ? 'text-green-700' : 'text-gray-400'
               }`}
             >
-              <span className={`text-xl leading-none transition-transform ${isActive(href) && !moreOpen ? 'scale-110' : ''}`}>
-                {icon}
-              </span>
+              <Icon
+                size={20}
+                strokeWidth={2}
+                aria-hidden="true"
+                className={`transition-transform ${isActive(href) && !moreOpen ? 'scale-110' : ''}`}
+              />
               {label}
               <span className={`h-0.5 w-8 rounded-full ${isActive(href) && !moreOpen ? 'bg-green-600' : 'bg-transparent'}`} />
             </Link>
           ))}
           <button
             onClick={() => setMoreOpen((o) => !o)}
+            aria-label={moreOpen ? 'Close menu' : 'More links'}
+            aria-expanded={moreOpen}
             className={`flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[11px] font-semibold transition-colors ${
               moreOpen || moreActive ? 'text-green-700' : 'text-gray-400'
             }`}
           >
-            <span className="text-xl leading-none">{moreOpen ? '✕' : '☰'}</span>
+            {moreOpen ? <X size={20} strokeWidth={2} aria-hidden="true" /> : <Menu size={20} strokeWidth={2} aria-hidden="true" />}
             More
             <span className={`h-0.5 w-8 rounded-full ${moreActive && !moreOpen ? 'bg-green-600' : 'bg-transparent'}`} />
           </button>
