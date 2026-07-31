@@ -30,25 +30,26 @@ export default function SeasonStats() {
   const rounds = data ? data.reduce((sum, p) => sum + p.totalRounds, 0) : null
   const members = data ? data.length : null
 
-  const tiles: { icon: LucideIcon; value: number; label: string }[] = []
-  if (daysLeft >= 0) tiles.push({ icon: CalendarDays, value: daysLeft, label: 'Days left in the season' })
-  if (rounds !== null) tiles.push({ icon: Flag, value: rounds, label: 'Rounds submitted' })
-  if (members !== null) tiles.push({ icon: Users, value: members, label: 'Members registered' })
+  const tiles: { icon: LucideIcon; value: number; label: string; full: string }[] = []
+  if (daysLeft >= 0) tiles.push({ icon: CalendarDays, value: daysLeft, label: 'Days left', full: 'Days left in the season' })
+  if (rounds !== null) tiles.push({ icon: Flag, value: rounds, label: 'Rounds', full: 'Rounds submitted' })
+  if (members !== null) tiles.push({ icon: Users, value: members, label: 'Members', full: 'Members registered' })
 
   if (tiles.length === 0) return null
 
   return (
-    <div className={`grid gap-3 ${tiles.length === 3 ? 'grid-cols-3' : tiles.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-      {tiles.map(({ icon: Icon, value, label }) => (
-        <div key={label} className="card flex items-center gap-3 py-4">
-          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-green-50 text-green-700 shrink-0">
-            <Icon size={20} strokeWidth={2} aria-hidden="true" />
+    <div className={`grid gap-2 sm:gap-3 ${tiles.length === 3 ? 'grid-cols-3' : tiles.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+      {tiles.map(({ icon: Icon, value, label, full }) => (
+        <div key={label} className="card flex flex-col items-center text-center gap-2 px-2 py-4 sm:py-5">
+          <span className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-green-50 text-green-700">
+            <Icon size={18} strokeWidth={2} aria-hidden="true" />
           </span>
-          <div className="min-w-0">
-            <div className="font-display text-2xl sm:text-3xl font-bold text-green-800 leading-none tabular-nums">
-              <CountUp value={value} />
-            </div>
-            <div className="text-[11px] sm:text-xs text-gray-500 font-medium mt-1 leading-tight">{label}</div>
+          <div className="font-display text-3xl sm:text-4xl font-bold text-green-800 leading-none tabular-nums">
+            <CountUp value={value} />
+          </div>
+          <div className="text-[11px] sm:text-xs text-gray-500 font-medium leading-tight">
+            <span className="sm:hidden">{label}</span>
+            <span className="hidden sm:inline">{full}</span>
           </div>
         </div>
       ))}

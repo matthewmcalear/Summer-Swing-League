@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
-import { Sprout, CalendarDays, Trophy, ListChecks } from 'lucide-react'
+import { Sprout, CalendarDays, Trophy, Medal, Award, ListChecks } from 'lucide-react'
 import SeasonStats from '@/components/SeasonStats'
 
 const StandingsChart = dynamic(() => import('@/components/StandingsChart'), { ssr: false })
@@ -73,14 +73,44 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── PRIZE STRIP ── */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-3">
-        <span className="text-sm font-extrabold text-brass-700">1st — $250</span>
-        <span className="text-gray-200 select-none">|</span>
-        <span className="text-sm font-bold text-brass-700">2nd — $150</span>
-        <span className="text-gray-200 select-none">|</span>
-        <span className="text-sm font-bold text-brass-600">3rd — $75</span>
-        <span className="ml-auto text-xs text-gray-400 font-medium">$475 prize pool · Oct 10</span>
+      {/* ── PRIZE PODIUM ── */}
+      <div>
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 items-stretch">
+          {[
+            { place: '1st', amount: 250, label: 'Champion',   Icon: Trophy },
+            { place: '2nd', amount: 150, label: 'Runner-up',  Icon: Medal },
+            { place: '3rd', amount: 75,  label: 'Third',      Icon: Award },
+          ].map(({ place, amount, label, Icon }, i) => {
+            const first = i === 0
+            return (
+              <div
+                key={place}
+                className={`relative flex flex-col items-center text-center rounded-2xl border px-2 py-4 sm:py-5 shadow-sm ${
+                  first
+                    ? 'prize-champion text-white border-brass-600 shadow-md sm:-translate-y-1'
+                    : 'bg-brass-50 border-brass-200 text-brass-700'
+                }`}
+              >
+                <Icon
+                  size={first ? 26 : 22}
+                  strokeWidth={2}
+                  aria-hidden="true"
+                  className={first ? 'text-white' : 'text-brass-600'}
+                />
+                <span className={`mt-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest ${first ? 'text-white/80' : 'text-brass-600/80'}`}>
+                  {place}
+                </span>
+                <span className="font-display text-2xl sm:text-4xl font-extrabold leading-none mt-0.5 tabular-nums">
+                  ${amount}
+                </span>
+                <span className={`mt-1 text-[11px] sm:text-xs font-medium ${first ? 'text-white/85' : 'text-brass-600'}`}>
+                  {label}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+        <p className="mt-2 text-center text-xs text-gray-400 font-medium">$475 prize pool · decided Oct 10</p>
       </div>
 
       {/* ── LIVE SEASON SIGNAL ── */}
