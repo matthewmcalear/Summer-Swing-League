@@ -12,7 +12,7 @@ const HOW_IT_WORKS: [string, string][] = [
   ['Book a round', 'Play any course with at least one other league member.'],
   ['Submit your score', 'Enter your gross score and current handicap — it updates your profile.'],
   ['Earn points', 'Points come from your net score, course difficulty, and group size.'],
-  ['Best 5 count', 'Your top five rounds set your season score.'],
+  ['Top 5 count', 'Your season score is your top 5 rounds (×participation multiplier) plus improvement and tournament bonuses.'],
   ['Win cash', 'The top three players split $475 after October 10.'],
 ]
 
