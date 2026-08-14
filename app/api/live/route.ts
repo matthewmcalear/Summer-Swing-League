@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { validateLeaguePin } from '@/lib/auth'
+import { validateLeaguePinOrSession, getLeaguePinSessionCookie } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,8 +29,9 @@ export async function POST(request: Request) {
   try {
     const { member_id, course_id = null, course_name, holes, play_date, group_member_ids = [], league_pin } = await request.json()
 
-    // Validate league PIN
-    if (!validateLeaguePin(league_pin)) {
+    // Validate league PIN or session
+    const pinCheck = validateLeaguePinOrSession(league_pin)
+    if (!pinCheck.valid) {
       return NextResponse.json(
         { error: 'Invalid or missing league PIN. Ask the commissioner if you need it.' },
         { status: 403 }
@@ -53,7 +54,14 @@ export async function POST(request: Request) {
       where:   { member_id, completed_at: null },
       include: { hole_scores: { orderBy: { hole: 'asc' } } },
     })
-    if (existing) return NextResponse.json(existing, { status: 200 })
+    if (existing) {
+      const response = NextResponse.json(existing, { status: 200 })
+      if (pinCheck.newSession) {
+        const cookie = getLeaguePinSessionCookie()
+        if (cookie) response.headers.set('Set-Cookie', cookie)
+      }
+      return response
+    }
 
     const round = await prisma.liveRound.create({
       data: {
@@ -67,7 +75,14 @@ export async function POST(request: Request) {
       },
       include: { hole_scores: true },
     })
-    return NextResponse.json(round, { status: 201 })
+    
+    const response = NextResponse.json(round, { status: 201 })
+    if (pinCheck.newSession) {
+      const cookie = getLeaguePinSessionCookie()
+      if (cookie) response.headers.set('Set-Cookie', cookie)
+    }
+    
+    return response
   } catch (e) {
     console.error(e)
     return NextResponse.json({ error: 'Failed to start live round' }, { status: 500 })

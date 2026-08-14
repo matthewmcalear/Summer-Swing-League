@@ -18,6 +18,7 @@ type LiveRound = {
 }
 
 const LS_KEY = 'ssl_live_round_id'
+const PIN_KEY = 'ssl_league_pin_session'
 
 // Per-hole pars for courses we have full scorecards for (prefill; editable in-app).
 const HOLE_PARS: Record<string, number[]> = {
@@ -40,6 +41,7 @@ export default function PlayLive() {
   const [holes, setHoles]       = useState(18)
   const [playDate, setPlayDate] = useState(new Date().toISOString().split('T')[0])
   const [groupIds, setGroupIds] = useState<string[]>([])
+  const [leaguePin, setLeaguePin] = useState('')
   const [starting, setStarting] = useState(false)
 
   // active round
@@ -51,6 +53,12 @@ export default function PlayLive() {
   const [scorecardOpen, setScorecardOpen] = useState(false)
 
   useEffect(() => {
+    // Load saved PIN from sessionStorage
+    if (typeof window !== 'undefined') {
+      const savedPin = sessionStorage.getItem(PIN_KEY)
+      if (savedPin) setLeaguePin(savedPin)
+    }
+
     Promise.all([
       fetch('/api/members').then((r) => r.json()).catch(() => []),
       fetch('/api/courses').then((r) => r.json()).catch(() => ({ courses: [] })),
@@ -102,11 +110,17 @@ export default function PlayLive() {
     setError('')
     if (!memberId || !selectedCourse) { setError('Pick a player and course.'); return }
     setStarting(true)
+    
+    // Save PIN to sessionStorage for this session
+    if (typeof window !== 'undefined' && leaguePin) {
+      sessionStorage.setItem(PIN_KEY, leaguePin)
+    }
+    
     const res = await fetch('/api/live', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         member_id: memberId, course_id: selectedCourse.id, course_name: selectedCourse.name,
-        holes, play_date: playDate, group_member_ids: groupIds,
+        holes, play_date: playDate, group_member_ids: groupIds, league_pin: leaguePin,
       }),
     })
     setStarting(false)
@@ -160,12 +174,13 @@ export default function PlayLive() {
     const s = strokesMap[currentHole]
     if (s === undefined) return
     const t = setTimeout(() => {
+      const savedPin = typeof window !== 'undefined' ? sessionStorage.getItem(PIN_KEY) : null
       fetch(`/api/live/${round.id}/hole`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           hole: currentHole, strokes: s,
           putts: puttsMap[currentHole] ?? null, par: parFor(currentHole),
-          current_hole: currentHole,
+          current_hole: currentHole, league_pin: savedPin || leaguePin,
         }),
       }).then(() => setRound((r) => r ? { ...r, hole_scores: mergeHole(r.hole_scores, currentHole, s) } : r)).catch(() => {})
     }, 400)
@@ -188,7 +203,8 @@ export default function PlayLive() {
 
   const abandon = async () => {
     if (!round || !confirm('Discard this in-progress round? Nothing will be saved.')) return
-    await fetch(`/api/live/${round.id}`, { method: 'DELETE' }).catch(() => {})
+    const savedPin = typeof window !== 'undefined' ? sessionStorage.getItem(PIN_KEY) : null
+    await fetch(`/api/live/${round.id}?league_pin=${encodeURIComponent(savedPin || leaguePin || '')}`, { method: 'DELETE' }).catch(() => {})
     if (typeof window !== 'undefined') localStorage.removeItem(LS_KEY)
     setRound(null); setStrokesMap({}); setPuttsMap({}); setParsMap({}); setCurrentHole(1); setView('setup')
   }
@@ -250,6 +266,20 @@ export default function PlayLive() {
               </div>
             </div>
           )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">League PIN *</label>
+            <input
+              type="password"
+              required
+              placeholder="Enter league PIN"
+              className="form-input"
+              value={leaguePin}
+              onChange={(e) => setLeaguePin(e.target.value)}
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Required to track rounds. Ask the commissioner if you don&apos;t have it.
+            </p>
+          </div>
           {error && <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">{error}</div>}
           <button type="submit" disabled={starting} className="btn-primary w-full py-3 text-base">{starting ? 'Starting…' : 'Start round ⛳'}</button>
         </form>
