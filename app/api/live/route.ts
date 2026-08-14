@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { validateLeaguePinOrSession, getLeaguePinSessionCookie } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,7 +27,17 @@ export async function GET(request: Request) {
 // POST /api/live  → start a round (or resume the member's existing one)
 export async function POST(request: Request) {
   try {
-    const { member_id, course_id = null, course_name, holes, play_date, group_member_ids = [] } = await request.json()
+    const body = await request.json()
+    const { member_id, course_id = null, course_name, holes, play_date, group_member_ids = [], league_pin } = body
+
+    // Validate league PIN or session
+    const pinCheck = validateLeaguePinOrSession(league_pin)
+    if (!pinCheck.valid) {
+      return NextResponse.json(
+        { error: 'Invalid or missing league PIN. Ask the commissioner if you need it.' },
+        { status: 403 }
+      )
+    }
 
     if (!member_id || !course_name || !holes || !play_date) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -44,7 +55,17 @@ export async function POST(request: Request) {
       where:   { member_id, completed_at: null },
       include: { hole_scores: { orderBy: { hole: 'asc' } } },
     })
-    if (existing) return NextResponse.json(existing, { status: 200 })
+    if (existing) {
+      const response = NextResponse.json(existing, { status: 200 })
+      
+      // Set session cookie if PIN was just validated
+      if (pinCheck.newSession) {
+        const cookie = getLeaguePinSessionCookie()
+        if (cookie) response.headers.set('Set-Cookie', cookie)
+      }
+      
+      return response
+    }
 
     const round = await prisma.liveRound.create({
       data: {
@@ -58,7 +79,16 @@ export async function POST(request: Request) {
       },
       include: { hole_scores: true },
     })
-    return NextResponse.json(round, { status: 201 })
+
+    const response = NextResponse.json(round, { status: 201 })
+    
+    // Set session cookie if PIN was just validated
+    if (pinCheck.newSession) {
+      const cookie = getLeaguePinSessionCookie()
+      if (cookie) response.headers.set('Set-Cookie', cookie)
+    }
+
+    return response
   } catch (e) {
     console.error(e)
     return NextResponse.json({ error: 'Failed to start live round' }, { status: 500 })

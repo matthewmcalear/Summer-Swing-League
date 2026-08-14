@@ -1,12 +1,24 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { recordRound } from '@/lib/recordRound'
+import { validateLeaguePinOrSession, getLeaguePinSessionCookie } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
 // POST /api/live/[id]/finish → total the holes, create the Score, close the round
-export async function POST(_: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
+    const body = await request.json().catch(() => ({}))
+    const { league_pin } = body
+
+    // Validate league PIN or session
+    const pinCheck = validateLeaguePinOrSession(league_pin)
+    if (!pinCheck.valid) {
+      return NextResponse.json(
+        { error: 'Invalid or missing league PIN. Ask the commissioner if you need it.' },
+        { status: 403 }
+      )
+    }
     const round = await prisma.liveRound.findUnique({
       where:   { id: params.id },
       include: { hole_scores: true },
@@ -33,6 +45,7 @@ export async function POST(_: Request, { params }: { params: { id: string } }) {
       group_member_ids: round.group_member_ids,
       play_date:        playDate,
       notes:            'Logged live, hole-by-hole',
+      league_pin,
     })
     if ('error' in result) {
       return NextResponse.json({ error: result.error }, { status: result.status })
@@ -43,7 +56,15 @@ export async function POST(_: Request, { params }: { params: { id: string } }) {
       data:  { completed_at: new Date(), score_id: result.score.id },
     })
 
-    return NextResponse.json({ success: true, score: result.score, gross }, { status: 201 })
+    const response = NextResponse.json({ success: true, score: result.score, gross }, { status: 201 })
+    
+    // Set session cookie if PIN was just validated
+    if (pinCheck.newSession) {
+      const cookie = getLeaguePinSessionCookie()
+      if (cookie) response.headers.set('Set-Cookie', cookie)
+    }
+
+    return response
   } catch (e) {
     console.error(e)
     return NextResponse.json({ error: 'Failed to finish round' }, { status: 500 })

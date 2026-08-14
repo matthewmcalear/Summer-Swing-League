@@ -38,6 +38,7 @@ export default function SubmitScore() {
   const [liveRoundId, setLiveRoundId] = useState<string | null>(null)
   const [imported, setImported]       = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [duplicateInfo, setDuplicateInfo] = useState<{ gross: number; course_name: string; play_date: string; id: string } | null>(null)
 
   const [form, setForm] = useState({
     member_id:        '',
@@ -134,12 +135,12 @@ export default function SubmitScore() {
     )
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, confirmDuplicate = false) => {
     e.preventDefault()
     setError('')
 
-    // Show confirmation step first
-    if (!showConfirm) {
+    // Show confirmation step first (unless confirming duplicate)
+    if (!showConfirm && !confirmDuplicate) {
       setShowConfirm(true)
       return
     }
@@ -157,6 +158,7 @@ export default function SubmitScore() {
           handicap_used:     Number(form.handicap_used),
           additional_points: 0,
           group_member_ids:  groupIds,
+          confirm_duplicate: confirmDuplicate || duplicateInfo != null,
           // Course library fields (present only when a library course is picked) —
           // let the server compute a WHS score differential for handicap suggestions.
           course_id:     selectedCourse?.id ?? null,
@@ -177,6 +179,16 @@ export default function SubmitScore() {
           if (typeof window !== 'undefined') localStorage.removeItem('ssl_live_round_id')
         }
         router.push('/success')
+      } else if (res.status === 409) {
+        // Possible duplicate
+        const body = await res.json()
+        if (body.duplicate) {
+          setDuplicateInfo(body.duplicate)
+          setShowConfirm(false)
+        } else {
+          setError(body.error || 'Failed to submit. Please try again.')
+          setShowConfirm(false)
+        }
       } else {
         const body = await res.json()
         setError(body.error || 'Failed to submit. Please try again.')
@@ -209,6 +221,38 @@ export default function SubmitScore() {
         </div>
       )}
 
+      {duplicateInfo && (
+        <div className="rounded-lg bg-yellow-50 border border-yellow-300 p-4">
+          <h2 className="text-lg font-bold text-yellow-900 mb-2">⚠️ Possible duplicate round</h2>
+          <p className="text-sm text-yellow-800 mb-3">
+            This looks like a double submit: <strong>{duplicateInfo.gross}</strong> at{' '}
+            <strong>{duplicateInfo.course_name}</strong> on{' '}
+            <strong>{new Date(duplicateInfo.play_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</strong>.
+          </p>
+          <p className="text-sm text-yellow-800 mb-4">
+            Late backfills are real — if this is a different round, click Submit anyway below.
+          </p>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => { setDuplicateInfo(null); setError('') }}
+              className="btn-secondary flex-1 py-2.5 text-sm"
+            >
+              ← Back to edit
+            </button>
+            <button
+              type="button"
+              onClick={(e) => handleSubmit(e as any, true)}
+              disabled={submitting}
+              className="btn-primary flex-1 py-2.5 text-sm"
+            >
+              {submitting ? 'Submitting…' : 'Submit anyway'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!duplicateInfo && (
       <form onSubmit={handleSubmit} className="card space-y-5">
         {showConfirm ? (
           /* ── Confirmation Step ── */
@@ -582,6 +626,7 @@ export default function SubmitScore() {
         </>
         )}
       </form>
+      )}
     </div>
   )
 }

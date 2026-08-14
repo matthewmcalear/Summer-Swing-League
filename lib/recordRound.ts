@@ -20,11 +20,13 @@ export type RecordRoundInput = {
   notes?:             string | null
   additional_points?: number
   league_pin?:        string   // required for unauthenticated submits
+  confirm_duplicate?: boolean  // set to true to bypass duplicate check
 }
 
 export type RecordRoundResult =
   | { score: Awaited<ReturnType<typeof prisma.score.create>> }
   | { error: string; status: number }
+  | { duplicate: { gross: number; course_name: string; play_date: string; id: string } }
 
 /**
  * Record a completed round: validate, compute points + WHS differential, create
@@ -35,7 +37,7 @@ export async function recordRound(input: RecordRoundInput): Promise<RecordRoundR
   const {
     member_id, course_name, play_date,
     course_id = null, group_member_ids = [], notes = null, additional_points = 0,
-    league_pin,
+    league_pin, confirm_duplicate = false,
   } = input
 
   // Validate league PIN (required for unauthenticated submits)
@@ -49,6 +51,45 @@ export async function recordRound(input: RecordRoundInput): Promise<RecordRoundR
 
   const holesNum = Number(input.holes) as 9 | 18
   const grossNum = Number(input.gross_score)
+
+  // Check for possible duplicate unless confirmation was provided
+  if (!confirm_duplicate) {
+    const playDateObj = new Date(play_date + 'T12:00:00')
+    const existingRounds = await prisma.score.findMany({
+      where: {
+        member_id,
+        play_date: playDateObj,
+      },
+      select: {
+        id: true,
+        gross_score: true,
+        course_name: true,
+        play_date: true,
+        course_id: true,
+      },
+    })
+
+    for (const existing of existingRounds) {
+      const sameOrSimilarCourse =
+        existing.course_name.toLowerCase() === course_name.toLowerCase() ||
+        (course_id && existing.course_id === course_id)
+      
+      if (sameOrSimilarCourse) {
+        const grossDiff = Math.abs(existing.gross_score - grossNum)
+        if (grossDiff <= 3) {
+          // Possible duplicate found
+          return {
+            duplicate: {
+              gross: existing.gross_score,
+              course_name: existing.course_name,
+              play_date: existing.play_date.toISOString().slice(0, 10),
+              id: existing.id,
+            },
+          }
+        }
+      }
+    }
+  }
 
   // Fetch main player (also gives us a default handicap).
   const player = await prisma.member.findUnique({ where: { id: member_id } })
