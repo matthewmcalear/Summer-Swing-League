@@ -20,6 +20,16 @@ export function difficultyFromSlope(slope: number): 'easy' | 'average' | 'tough'
 export const SEASON_START = '2026-04-15'
 export const SEASON_END   = '2026-10-10'
 
+/**
+ * Whole days from now until the end-of-day on the given date string.
+ * When past the end-of-day, uses Math.floor so the day after is negative (not 0).
+ */
+export function daysUntil(dateStr: string): number {
+  const end = new Date(`${dateStr}T23:59:59`)
+  const diff = end.getTime() - Date.now()
+  return diff >= 0 ? Math.ceil(diff / 86_400_000) : Math.floor(diff / 86_400_000)
+}
+
 /** Sanity ranges for submitted rounds — wide enough for any real score, tight enough to catch typos. */
 export const ROUND_LIMITS = {
   9:  { minGross: 25, maxGross: 90 },

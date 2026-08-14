@@ -1,39 +1,25 @@
-'use client'
-
-import { useEffect, useState } from 'react'
 import { CalendarDays, Flag, Users, type LucideIcon } from 'lucide-react'
 import CountUp from './CountUp'
 import type { StandingEntry } from '@/types'
-import { SEASON_END } from '@/lib/scoring'
+import { SEASON_END, daysUntil } from '@/lib/scoring'
 
-// Whole days from now until the end of the season (end-of-day on SEASON_END).
-function daysUntil(dateStr: string): number {
-  const end = new Date(`${dateStr}T23:59:59`)
-  return Math.ceil((end.getTime() - Date.now()) / 86_400_000)
+interface SeasonStatsProps {
+  standings: StandingEntry[]
 }
 
 /**
  * Live season signal — three real numbers pulled from actual data.
  * Any stat whose value can't be determined is omitted, never faked.
  */
-export default function SeasonStats() {
-  const [data, setData] = useState<StandingEntry[] | null>(null)
-
-  useEffect(() => {
-    fetch('/api/standings')
-      .then((r) => r.json())
-      .then((d: StandingEntry[]) => setData(Array.isArray(d) ? d : null))
-      .catch(() => setData(null))
-  }, [])
-
+export default function SeasonStats({ standings }: SeasonStatsProps) {
   const daysLeft = daysUntil(SEASON_END)
-  const rounds = data ? data.reduce((sum, p) => sum + p.totalRounds, 0) : null
-  const members = data ? data.length : null
+  const rounds = standings.reduce((sum, p) => sum + p.totalRounds, 0)
+  const members = standings.length
 
   const tiles: { icon: LucideIcon; value: number; label: string; full: string }[] = []
   if (daysLeft >= 0) tiles.push({ icon: CalendarDays, value: daysLeft, label: 'Days left', full: 'Days left in the season' })
-  if (rounds !== null) tiles.push({ icon: Flag, value: rounds, label: 'Rounds', full: 'Rounds submitted' })
-  if (members !== null) tiles.push({ icon: Users, value: members, label: 'Members', full: 'Members registered' })
+  tiles.push({ icon: Flag, value: rounds, label: 'Rounds', full: 'Rounds submitted' })
+  tiles.push({ icon: Users, value: members, label: 'Members', full: 'Members registered' })
 
   if (tiles.length === 0) return null
 

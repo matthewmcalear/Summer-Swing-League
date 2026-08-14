@@ -1,12 +1,11 @@
-'use client'
-
 import Link from 'next/link'
 import Image from 'next/image'
-import dynamic from 'next/dynamic'
 import { Sprout, CalendarDays, Trophy, Medal, Award, ListChecks } from 'lucide-react'
 import SeasonStats from '@/components/SeasonStats'
+import StandingsChart from '@/components/StandingsChart'
+import { getStandings } from '@/lib/standings'
 
-const StandingsChart = dynamic(() => import('@/components/StandingsChart'), { ssr: false })
+export const dynamic = 'force-dynamic'
 
 const HOW_IT_WORKS: [string, string][] = [
   ['Register', 'Join the league for free. No signup fees.'],
@@ -17,7 +16,9 @@ const HOW_IT_WORKS: [string, string][] = [
   ['Win cash', 'The top three players split $475 after October 10.'],
 ]
 
-export default function Home() {
+export default async function Home() {
+  const standings = await getStandings()
+
   return (
     <div className="space-y-8">
 
@@ -114,7 +115,7 @@ export default function Home() {
       </div>
 
       {/* ── LIVE SEASON SIGNAL ── */}
-      <SeasonStats />
+      <SeasonStats standings={standings} />
 
       {/* ── HOW IT WORKS ── */}
       <div className="card">
@@ -146,7 +147,7 @@ export default function Home() {
             Full standings →
           </Link>
         </div>
-        <StandingsChart />
+        <StandingsChart standings={standings} />
       </div>
 
       {/* ── TOM'S MUD MOMENT — the payoff at the bottom. Do not sanitize. ── */}
