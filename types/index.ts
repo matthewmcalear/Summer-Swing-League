@@ -6,6 +6,7 @@ export interface Member {
   starting_handicap: number | null
   is_active: boolean
   created_at: string
+  round_count?: number
 }
 
 export interface Score {
