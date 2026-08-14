@@ -40,6 +40,9 @@ export async function POST(request: Request, { params }: { params: { id: string 
     if ('error' in result) {
       return NextResponse.json({ error: result.error }, { status: result.status })
     }
+    if ('possibleDuplicate' in result) {
+      return NextResponse.json({ error: 'Possible duplicate round detected', existing: result.existing }, { status: 409 })
+    }
 
     await prisma.liveRound.update({
       where: { id: round.id },
