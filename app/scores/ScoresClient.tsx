@@ -301,7 +301,7 @@ export default function ScoresClient({ scores, bonuses }: Props) {
   const totalRounds = scores.length
   const avgPts      = totalRounds ? Math.round(scores.reduce((s, r) => s + Number(r.total_points), 0) / totalRounds * 10) / 10 : 0
   const bestRound   = totalRounds ? Math.max(...scores.map((r) => Number(r.total_points))) : 0
-  const withBonus   = scores.filter((r) => Number(r.additional_points) > 0).length
+  const withBonus   = bonuses.length
 
   return (
     <div className="space-y-6">
@@ -315,10 +315,10 @@ export default function ScoresClient({ scores, bonuses }: Props) {
       {scores.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Rounds',          value: scores.length },
-            { label: 'Avg Points',      value: avgPts || '—' },
-            { label: 'Best Round',      value: bestRound > 0 ? bestRound.toFixed(1) : '—' },
-            { label: '⭐ Bonus Rounds', value: withBonus },
+            { label: 'Rounds',      value: scores.length },
+            { label: 'Avg Points',  value: avgPts || '—' },
+            { label: 'Best Round',  value: bestRound > 0 ? bestRound.toFixed(1) : '—' },
+            { label: '⭐ Bonuses',  value: withBonus },
           ].map(({ label, value }) => (
             <div key={label} className="card text-center py-3">
               <div className="text-2xl font-bold text-green-700">{value}</div>

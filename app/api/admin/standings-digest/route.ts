@@ -38,7 +38,7 @@ export async function POST() {
       ...lines,
       '',
       'Season score = best 5 rounds × participation multiplier + improvement bonus + tournament bonuses.',
-      'Full standings, charts, and head-to-heads: https://www.sslgolf.com/standings',
+      'Full standings, charts, and head-to-heads: https://sslgolf.com/standings',
       '',
       'Play more, earn more. See you out there! 🏌️',
     ].join('\n')

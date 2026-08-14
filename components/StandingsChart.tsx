@@ -1,29 +1,14 @@
-'use client'
-
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
 import { Flag } from 'lucide-react'
 import type { StandingEntry } from '@/types'
 
+interface StandingsChartProps {
+  standings: StandingEntry[]
+}
+
 // Top-five mini leaderboard for the home page. Full detail lives on /standings.
-export default function StandingsChart() {
-  const [players, setPlayers] = useState<StandingEntry[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetch('/api/standings')
-      .then((r) => r.json())
-      .then((d: StandingEntry[]) => { setPlayers(Array.isArray(d) ? d : []); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [])
-
-  if (loading) return (
-    <div className="flex justify-center py-8">
-      <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
-    </div>
-  )
-
-  const active = players.filter((p) => p.totalRounds > 0).slice(0, 5)
+export default function StandingsChart({ standings }: StandingsChartProps) {
+  const active = standings.filter((p) => p.totalRounds > 0).slice(0, 5)
 
   // Real empty state — an invitation to act, not a blank.
   if (active.length === 0) return (
