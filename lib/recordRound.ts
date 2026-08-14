@@ -1,6 +1,7 @@
 import { prisma } from './prisma'
 import { calculatePoints, validateRound, difficultyFromSlope } from './scoring'
 import { scoreDifferential } from './handicap'
+import { validateLeaguePin } from './auth'
 
 function toTitleCase(str: string): string {
   return str.trim().split(/\s+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
@@ -18,6 +19,7 @@ export type RecordRoundInput = {
   group_member_ids?:  string[]
   notes?:             string | null
   additional_points?: number
+  league_pin?:        string   // required for unauthenticated submits
 }
 
 export type RecordRoundResult =
@@ -33,7 +35,13 @@ export async function recordRound(input: RecordRoundInput): Promise<RecordRoundR
   const {
     member_id, course_name, play_date,
     course_id = null, group_member_ids = [], notes = null, additional_points = 0,
+    league_pin,
   } = input
+
+  // Validate league PIN (required for unauthenticated submits)
+  if (!validateLeaguePin(league_pin)) {
+    return { error: 'Invalid or missing league PIN. Ask the commissioner if you need it.', status: 403 }
+  }
 
   if (!member_id || !input.holes || !input.gross_score || !course_name || !play_date) {
     return { error: 'Missing required fields', status: 400 }

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getStandings, participationMultiplier } from '@/lib/standings'
+import { displayName, displayHandicap } from '@/lib/nameUtils'
 
 export const dynamic = 'force-dynamic'
 
@@ -55,7 +56,7 @@ export default async function Standings() {
                   <td className="px-3 py-3">
                     <div className="font-semibold flex items-center gap-1.5">
                       <Link href={`/analytics?tab=player&id=${p.id}`} className="hover:text-green-700 hover:underline">
-                        {p.name}
+                        {displayName(p.name)}
                       </Link>
                       {tiedIds.has(p.id) && (
                         <span className="text-[10px] font-bold text-gray-400 bg-gray-100 rounded px-1 py-0.5 leading-none">TIE</span>
@@ -68,7 +69,7 @@ export default async function Standings() {
                     )}
                     <div className="sm:hidden mt-1 space-y-0.5">
                       <div className="text-xs text-gray-400 flex flex-wrap gap-x-2">
-                        <span>Hdcp {p.currentHandicap}</span>
+                        <span>Hdcp {displayHandicap(p.currentHandicap, p.totalRounds > 0)}</span>
                         <span>· {p.totalRounds} {p.totalRounds === 1 ? 'round' : 'rounds'}</span>
                       </div>
                       {p.topScores.length > 0 && (
@@ -77,20 +78,20 @@ export default async function Standings() {
                         </div>
                       )}
                       {p.handicapImprovement > 0 && (
-                        <div className="text-xs text-blue-600 font-medium">✨ −{p.handicapImprovement} hdcp improvement</div>
+                        <div className="text-xs text-blue-600 font-medium">✨ {p.handicapImprovement} strokes improved · +{p.improvementBonus.toFixed(1)} pts</div>
                       )}
                       {p.seasonBonusPoints > 0 && (
                         <div className="text-xs text-amber-600 font-medium">🏆 +{p.seasonBonusPoints.toFixed(1)} tournament bonus</div>
                       )}
                     </div>
                   </td>
-                  <td className="px-3 py-3 hidden sm:table-cell text-gray-600">{p.currentHandicap}</td>
+                  <td className="px-3 py-3 hidden sm:table-cell text-gray-600">{displayHandicap(p.currentHandicap, p.totalRounds > 0)}</td>
                   <td className="px-3 py-3 hidden sm:table-cell text-gray-600">{p.totalRounds}</td>
                   <td className="px-3 py-3 hidden md:table-cell text-gray-600">{p.totalPoints.toFixed(1)}</td>
                   <td className="px-3 py-3 hidden md:table-cell">
                     {p.handicapImprovement > 0 ? (
                       <span className="text-blue-700 font-semibold">
-                        −{p.handicapImprovement} (+{p.improvementBonus.toFixed(1)} pts)
+                        {p.handicapImprovement} strokes · +{p.improvementBonus.toFixed(1)} pts
                       </span>
                     ) : p.startingHandicap == null ? (
                       <span className="text-gray-300 text-xs">no rounds yet</span>

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import type { Member, HandicapHistory } from '@/types'
+import { displayName, displayHandicap } from '@/lib/nameUtils'
 
 type Suggestion = { index: number; differentialsConsidered: number }
 
@@ -61,7 +62,7 @@ export default function MembersClient({
                   href={`/analytics?tab=player&id=${m.id}`}
                   className="font-semibold text-gray-900 hover:text-green-700 hover:underline text-sm flex-1 min-w-0 truncate"
                 >
-                  {m.full_name}
+                  {displayName(m.full_name)}
                 </Link>
                 {suggestions[m.id] && (
                   <span
@@ -72,7 +73,7 @@ export default function MembersClient({
                   </span>
                 )}
                 <span className="text-xs text-gray-400 shrink-0">Hdcp</span>
-                <span className="font-bold text-green-700 text-sm w-8 text-right shrink-0">{m.current_handicap}</span>
+                <span className="font-bold text-green-700 text-sm w-8 text-right shrink-0">{displayHandicap(m.current_handicap, (m.round_count ?? 0) > 0)}</span>
                 <button
                   onClick={() => toggleHistory(m.id)}
                   className="text-xs text-green-700 hover:text-green-900 font-medium shrink-0 w-4 text-center"
@@ -111,16 +112,16 @@ export default function MembersClient({
             <div key={m.id} className="card p-4 space-y-2">
               <div className="flex items-start justify-between">
                 <div>
-                  <Link
-                    href={`/analytics?tab=player&id=${m.id}`}
-                    className="font-semibold text-gray-900 hover:text-green-700 hover:underline transition-colors"
-                  >
-                    {m.full_name}
-                  </Link>
+                <Link
+                  href={`/analytics?tab=player&id=${m.id}`}
+                  className="font-semibold text-gray-900 hover:text-green-700 hover:underline transition-colors"
+                >
+                  {displayName(m.full_name)}
+                </Link>
                 </div>
                 <div className="text-right">
                   <div className="text-xs text-gray-400">Handicap</div>
-                  <div className="text-xl font-bold text-green-700">{m.current_handicap}</div>
+                  <div className="text-xl font-bold text-green-700">{displayHandicap(m.current_handicap, (m.round_count ?? 0) > 0)}</div>
                   {suggestions[m.id] && (
                     <div className="text-[11px] text-gray-400 mt-0.5" title={`From your ${suggestions[m.id].differentialsConsidered} most recent rated rounds. Compare with The Grint, etc.`}>
                       WHS est. <span className="font-semibold text-gray-600">{suggestions[m.id].index.toFixed(1)}</span>

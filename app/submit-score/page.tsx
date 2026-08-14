@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { calculatePoints, difficultyFromSlope } from '@/lib/scoring'
+import { displayName } from '@/lib/nameUtils'
 import type { Member } from '@/types'
 
 type LibraryCourse = {
@@ -36,6 +37,7 @@ export default function SubmitScore() {
   const [courseMode, setCourseMode] = useState<'select' | 'new'>('select')
   const [liveRoundId, setLiveRoundId] = useState<string | null>(null)
   const [imported, setImported]       = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const [form, setForm] = useState({
     member_id:        '',
@@ -45,8 +47,8 @@ export default function SubmitScore() {
     course_name:      '',
     course_difficulty: 'average',
     play_date:        new Date().toISOString().split('T')[0],
-    additional_points: '0',
     notes:            '',
+    league_pin:       '',
   })
 
   useEffect(() => {
@@ -121,7 +123,7 @@ export default function SubmitScore() {
       handicap,
       difficulty:              form.course_difficulty,
       otherLeagueMembersCount: groupIds.length,
-      additionalPoints:        Number(form.additional_points) || 0,
+      additionalPoints:        0,
     })
     setPreviewPoints(totalPoints)
   }, [form, groupIds])
@@ -135,6 +137,13 @@ export default function SubmitScore() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    // Show confirmation step first
+    if (!showConfirm) {
+      setShowConfirm(true)
+      return
+    }
+
     setSubmitting(true)
 
     try {
@@ -146,7 +155,7 @@ export default function SubmitScore() {
           holes:             Number(form.holes),
           gross_score:       Number(form.gross_score),
           handicap_used:     Number(form.handicap_used),
-          additional_points: Number(form.additional_points) || 0,
+          additional_points: 0,
           group_member_ids:  groupIds,
           // Course library fields (present only when a library course is picked) —
           // let the server compute a WHS score differential for handicap suggestions.
@@ -160,20 +169,28 @@ export default function SubmitScore() {
       if (res.ok) {
         // Submitted from a live round → save its pars to the course and clear it.
         if (liveRoundId) {
-          fetch(`/api/live/${liveRoundId}/finalize`, { method: 'POST' }).catch(() => {})
+          fetch(`/api/live/${liveRoundId}/finalize`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ league_pin: form.league_pin }),
+          }).catch(() => {})
           if (typeof window !== 'undefined') localStorage.removeItem('ssl_live_round_id')
         }
         router.push('/success')
       } else {
         const body = await res.json()
         setError(body.error || 'Failed to submit. Please try again.')
+        setShowConfirm(false)
       }
     } catch {
       setError('Network error. Please try again.')
+      setShowConfirm(false)
     } finally {
       setSubmitting(false)
     }
   }
+
+  const selectedMember = members.find((m) => m.id === form.member_id)
 
   const availableGroupMembers = members.filter((m) => m.id !== form.member_id)
 
@@ -193,6 +210,45 @@ export default function SubmitScore() {
       )}
 
       <form onSubmit={handleSubmit} className="card space-y-5">
+        {showConfirm ? (
+          /* ── Confirmation Step ── */
+          <div className="space-y-5">
+            <div className="rounded-lg bg-green-50 border border-green-200 p-4">
+              <h2 className="text-lg font-bold text-green-900 mb-3">Confirm submission</h2>
+              <div className="space-y-2 text-sm text-green-800">
+                <div><strong>Player:</strong> {selectedMember ? displayName(selectedMember.full_name) : ''}</div>
+                <div><strong>Score:</strong> {form.gross_score} ({form.holes} holes)</div>
+                <div><strong>Course:</strong> {form.course_name}</div>
+                <div><strong>Date:</strong> {new Date(form.play_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                {previewPoints !== null && (
+                  <div><strong>Est. points:</strong> {previewPoints.toFixed(1)}</div>
+                )}
+              </div>
+            </div>
+
+            {error && (
+              <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowConfirm(false)}
+                disabled={submitting}
+                className="btn-secondary flex-1 py-3 text-base"
+              >
+                ← Back to edit
+              </button>
+              <button type="submit" disabled={submitting} className="btn-primary flex-1 py-3 text-base">
+                {submitting ? 'Submitting…' : 'Confirm & Submit'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* ── Form Fields ── */
+          <>
         {/* Player */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Player *</label>
@@ -205,7 +261,7 @@ export default function SubmitScore() {
             <option value="">Select your name…</option>
             {members.map((m) => (
               <option key={m.id} value={m.id}>
-                {m.full_name}
+                {displayName(m.full_name)}
               </option>
             ))}
           </select>
@@ -428,13 +484,32 @@ export default function SubmitScore() {
                       onChange={() => toggleGroup(m.id)}
                       className="accent-green-600"
                     />
-                    {m.full_name}
+                    {displayName(m.full_name)}
                   </label>
                 )
               })}
             </div>
           </div>
         )}
+
+        {/* Commissioner Bonus */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Commissioner Bonus <span className="text-gray-400 font-normal">(optional)</span>
+          </label>
+          <input
+            type="number"
+            step="0.5"
+            min="0"
+            placeholder="0"
+            className="form-input"
+            value={form.additional_points}
+            onChange={(e) => setForm({ ...form, additional_points: e.target.value })}
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Extra points awarded by the commissioner — e.g. for winning a special tournament. Leave at 0 if none.
+          </p>
+        </div>
 
         {/* Commissioner Bonus */}
         <div>
@@ -467,6 +542,22 @@ export default function SubmitScore() {
           />
         </div>
 
+        {/* League PIN */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">League PIN *</label>
+          <input
+            type="password"
+            required
+            placeholder="Enter league PIN"
+            className="form-input"
+            value={form.league_pin}
+            onChange={(e) => setForm({ ...form, league_pin: e.target.value })}
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Required to submit scores. Ask the commissioner if you don&apos;t have it.
+          </p>
+        </div>
+
         {/* Point preview */}
         {previewPoints !== null && (
           <div className="rounded-lg bg-green-50 border border-green-200 p-4 text-center">
@@ -475,7 +566,6 @@ export default function SubmitScore() {
             <p className="text-xs text-gray-500 mt-1">
               Group bonus: +{groupIds.length} · Difficulty: ×
               {({ easy: '0.95', average: '1.00', tough: '1.05' })[form.course_difficulty]}
-              {Number(form.additional_points) > 0 && ` · Commissioner bonus: +${form.additional_points}`}
             </p>
           </div>
         )}
@@ -487,8 +577,10 @@ export default function SubmitScore() {
         )}
 
         <button type="submit" disabled={submitting} className="btn-primary w-full py-3 text-base">
-          {submitting ? 'Submitting…' : 'Submit Round'}
+          {submitting ? 'Submitting…' : 'Review & Submit'}
         </button>
+        </>
+        )}
       </form>
     </div>
   )
