@@ -20,11 +20,13 @@ export type RecordRoundInput = {
   notes?:             string | null
   additional_points?: number
   league_pin?:        string   // required for unauthenticated submits
+  confirm_duplicate?: boolean  // set to true to bypass duplicate check
 }
 
 export type RecordRoundResult =
   | { score: Awaited<ReturnType<typeof prisma.score.create>> }
   | { error: string; status: number }
+  | { possibleDuplicate: true; existing: { id: string; play_date: string; course_name: string; gross_score: number; total_points: number } }
 
 /**
  * Record a completed round: validate, compute points + WHS differential, create
@@ -35,7 +37,7 @@ export async function recordRound(input: RecordRoundInput): Promise<RecordRoundR
   const {
     member_id, course_name, play_date,
     course_id = null, group_member_ids = [], notes = null, additional_points = 0,
-    league_pin,
+    league_pin, confirm_duplicate = false,
   } = input
 
   // Validate league PIN (required for unauthenticated submits)
@@ -62,6 +64,40 @@ export async function recordRound(input: RecordRoundInput): Promise<RecordRoundR
     holes: holesNum, gross: grossNum, handicap: handicapNum, playDate: String(play_date),
   })
   if (validationError) return { error: validationError, status: 400 }
+
+  // Check for potential duplicate (unless confirming)
+  if (!confirm_duplicate) {
+    const existingRounds = await prisma.score.findMany({
+      where: {
+        member_id,
+        play_date: new Date(play_date + 'T12:00:00'),
+        course_name,
+      },
+      select: {
+        id: true,
+        play_date: true,
+        course_name: true,
+        gross_score: true,
+        total_points: true,
+      },
+    })
+
+    for (const existing of existingRounds) {
+      // Check if gross scores are within 3 strokes
+      if (Math.abs(existing.gross_score - grossNum) <= 3) {
+        return {
+          possibleDuplicate: true,
+          existing: {
+            id: existing.id,
+            play_date: existing.play_date.toISOString().slice(0, 10),
+            course_name: existing.course_name,
+            gross_score: existing.gross_score,
+            total_points: Number(existing.total_points),
+          },
+        }
+      }
+    }
+  }
 
   // Group members (other league members in the playing group).
   const otherIds = Array.isArray(group_member_ids)

@@ -27,6 +27,9 @@ export async function POST(request: Request) {
     if ('error' in result) {
       return NextResponse.json({ error: result.error }, { status: result.status })
     }
+    if ('possibleDuplicate' in result) {
+      return NextResponse.json(result, { status: 409 })
+    }
     return NextResponse.json({ success: true, score: result.score }, { status: 201 })
   } catch (e) {
     console.error(e)

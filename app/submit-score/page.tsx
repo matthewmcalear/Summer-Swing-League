@@ -38,6 +38,9 @@ export default function SubmitScore() {
   const [liveRoundId, setLiveRoundId] = useState<string | null>(null)
   const [imported, setImported]       = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [duplicateWarning, setDuplicateWarning] = useState<{
+    existing: { play_date: string; course_name: string; gross_score: number; total_points: number }
+  } | null>(null)
 
   const [form, setForm] = useState({
     member_id:        '',
@@ -138,8 +141,8 @@ export default function SubmitScore() {
     e.preventDefault()
     setError('')
 
-    // Show confirmation step first
-    if (!showConfirm) {
+    // Show confirmation step first (unless we're confirming a duplicate)
+    if (!showConfirm && !duplicateWarning) {
       setShowConfirm(true)
       return
     }
@@ -157,6 +160,7 @@ export default function SubmitScore() {
           handicap_used:     Number(form.handicap_used),
           additional_points: 0,
           group_member_ids:  groupIds,
+          confirm_duplicate: !!duplicateWarning,
           // Course library fields (present only when a library course is picked) —
           // let the server compute a WHS score differential for handicap suggestions.
           course_id:     selectedCourse?.id ?? null,
@@ -179,12 +183,21 @@ export default function SubmitScore() {
         router.push('/success')
       } else {
         const body = await res.json()
-        setError(body.error || 'Failed to submit. Please try again.')
-        setShowConfirm(false)
+        
+        // Check for duplicate warning
+        if (body.possibleDuplicate && body.existing) {
+          setDuplicateWarning({ existing: body.existing })
+          setShowConfirm(false)
+        } else {
+          setError(body.error || 'Failed to submit. Please try again.')
+          setShowConfirm(false)
+          setDuplicateWarning(null)
+        }
       }
     } catch {
       setError('Network error. Please try again.')
       setShowConfirm(false)
+      setDuplicateWarning(null)
     } finally {
       setSubmitting(false)
     }
@@ -210,7 +223,47 @@ export default function SubmitScore() {
       )}
 
       <form onSubmit={handleSubmit} className="card space-y-5">
-        {showConfirm ? (
+        {duplicateWarning ? (
+          /* ── Duplicate Warning ── */
+          <div className="space-y-5">
+            <div className="rounded-lg bg-amber-50 border border-amber-300 p-4">
+              <h2 className="text-lg font-bold text-amber-900 mb-3">⚠️ Possible duplicate round</h2>
+              <p className="text-sm text-amber-800 mb-3">
+                You already submitted a round on{' '}
+                <strong>{new Date(duplicateWarning.existing.play_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</strong>{' '}
+                at <strong>{duplicateWarning.existing.course_name}</strong> with a gross score of{' '}
+                <strong>{duplicateWarning.existing.gross_score}</strong>{' '}
+                ({duplicateWarning.existing.total_points.toFixed(1)} pts).
+              </p>
+              <p className="text-sm text-amber-800">
+                Are you sure you want to submit this as a separate round? Late backfills are allowed.
+              </p>
+            </div>
+
+            {error && (
+              <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setDuplicateWarning(null)
+                  setShowConfirm(false)
+                }}
+                disabled={submitting}
+                className="btn-secondary flex-1 py-3 text-base"
+              >
+                ← Cancel
+              </button>
+              <button type="submit" disabled={submitting} className="btn-primary flex-1 py-3 text-base">
+                {submitting ? 'Submitting…' : 'Submit Anyway'}
+              </button>
+            </div>
+          </div>
+        ) : showConfirm ? (
           /* ── Confirmation Step ── */
           <div className="space-y-5">
             <div className="rounded-lg bg-green-50 border border-green-200 p-4">
@@ -235,7 +288,10 @@ export default function SubmitScore() {
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => setShowConfirm(false)}
+                onClick={() => {
+                  setShowConfirm(false)
+                  setDuplicateWarning(null)
+                }}
                 disabled={submitting}
                 className="btn-secondary flex-1 py-3 text-base"
               >

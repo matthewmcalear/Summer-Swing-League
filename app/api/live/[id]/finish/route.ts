@@ -5,8 +5,10 @@ import { recordRound } from '@/lib/recordRound'
 export const dynamic = 'force-dynamic'
 
 // POST /api/live/[id]/finish → total the holes, create the Score, close the round
-export async function POST(_: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
+    const body = await request.json().catch(() => ({}))
+    
     const round = await prisma.liveRound.findUnique({
       where:   { id: params.id },
       include: { hole_scores: true },
@@ -33,6 +35,7 @@ export async function POST(_: Request, { params }: { params: { id: string } }) {
       group_member_ids: round.group_member_ids,
       play_date:        playDate,
       notes:            'Logged live, hole-by-hole',
+      league_pin:       body.league_pin,
     })
     if ('error' in result) {
       return NextResponse.json({ error: result.error }, { status: result.status })

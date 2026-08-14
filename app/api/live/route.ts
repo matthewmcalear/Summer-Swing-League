@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { validateLeaguePin } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,7 +27,15 @@ export async function GET(request: Request) {
 // POST /api/live  → start a round (or resume the member's existing one)
 export async function POST(request: Request) {
   try {
-    const { member_id, course_id = null, course_name, holes, play_date, group_member_ids = [] } = await request.json()
+    const { member_id, course_id = null, course_name, holes, play_date, group_member_ids = [], league_pin } = await request.json()
+
+    // Validate league PIN
+    if (!validateLeaguePin(league_pin)) {
+      return NextResponse.json(
+        { error: 'Invalid or missing league PIN. Ask the commissioner if you need it.' },
+        { status: 403 }
+      )
+    }
 
     if (!member_id || !course_name || !holes || !play_date) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })

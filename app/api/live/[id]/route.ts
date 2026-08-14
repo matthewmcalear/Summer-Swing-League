@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { validateLeaguePin } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,8 +20,18 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
 }
 
 // DELETE /api/live/[id] → abandon an in-progress round (cascades hole scores)
-export async function DELETE(_: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
+    const body = await request.json().catch(() => ({}))
+    
+    // Validate league PIN
+    if (!validateLeaguePin(body.league_pin)) {
+      return NextResponse.json(
+        { error: 'Invalid or missing league PIN. Ask the commissioner if you need it.' },
+        { status: 403 }
+      )
+    }
+    
     await prisma.liveRound.delete({ where: { id: params.id } })
     return NextResponse.json({ success: true })
   } catch (e) {
