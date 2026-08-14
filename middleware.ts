@@ -24,7 +24,16 @@ export function middleware(request: NextRequest) {
 
   // For document pages (not static assets), set Cache-Control: no-store to prevent HTML caching
   const response = NextResponse.next()
-  if (!pathname.startsWith('/_next/static') && !pathname.startsWith('/_next/image')) {
+  
+  // Check if this is a static asset (images, fonts, manifest, etc.)
+  const staticExtensions = /\.(jpeg|jpg|png|gif|webp|svg|ico|woff|woff2|ttf|eot|otf)$/i
+  const isStaticAsset = 
+    pathname.startsWith('/_next/static') ||
+    pathname.startsWith('/_next/image') ||
+    staticExtensions.test(pathname) ||
+    pathname === '/manifest.json'
+  
+  if (!isStaticAsset) {
     response.headers.set('Cache-Control', 'no-store, must-revalidate')
   }
   

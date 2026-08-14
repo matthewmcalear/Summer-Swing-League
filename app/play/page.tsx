@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Member } from '@/types'
+import { displayName } from '@/lib/nameUtils'
 
 type LibraryCourse = {
   id: string; name: string; tee_name: string
@@ -18,7 +19,6 @@ type LiveRound = {
 }
 
 const LS_KEY = 'ssl_live_round_id'
-const PIN_KEY = 'ssl_league_pin_session'
 
 // Per-hole pars for courses we have full scorecards for (prefill; editable in-app).
 const HOLE_PARS: Record<string, number[]> = {
@@ -53,12 +53,6 @@ export default function PlayLive() {
   const [scorecardOpen, setScorecardOpen] = useState(false)
 
   useEffect(() => {
-    // Load saved PIN from sessionStorage
-    if (typeof window !== 'undefined') {
-      const savedPin = sessionStorage.getItem(PIN_KEY)
-      if (savedPin) setLeaguePin(savedPin)
-    }
-
     Promise.all([
       fetch('/api/members').then((r) => r.json()).catch(() => []),
       fetch('/api/courses').then((r) => r.json()).catch(() => ({ courses: [] })),
@@ -110,11 +104,6 @@ export default function PlayLive() {
     setError('')
     if (!memberId || !selectedCourse) { setError('Pick a player and course.'); return }
     setStarting(true)
-    
-    // Save PIN to sessionStorage for this session
-    if (typeof window !== 'undefined' && leaguePin) {
-      sessionStorage.setItem(PIN_KEY, leaguePin)
-    }
     
     const res = await fetch('/api/live', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -174,13 +163,12 @@ export default function PlayLive() {
     const s = strokesMap[currentHole]
     if (s === undefined) return
     const t = setTimeout(() => {
-      const savedPin = typeof window !== 'undefined' ? sessionStorage.getItem(PIN_KEY) : null
       fetch(`/api/live/${round.id}/hole`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           hole: currentHole, strokes: s,
           putts: puttsMap[currentHole] ?? null, par: parFor(currentHole),
-          current_hole: currentHole, league_pin: savedPin || leaguePin,
+          current_hole: currentHole,
         }),
       }).then(() => setRound((r) => r ? { ...r, hole_scores: mergeHole(r.hole_scores, currentHole, s) } : r)).catch(() => {})
     }, 400)
@@ -203,8 +191,11 @@ export default function PlayLive() {
 
   const abandon = async () => {
     if (!round || !confirm('Discard this in-progress round? Nothing will be saved.')) return
-    const savedPin = typeof window !== 'undefined' ? sessionStorage.getItem(PIN_KEY) : null
-    await fetch(`/api/live/${round.id}?league_pin=${encodeURIComponent(savedPin || leaguePin || '')}`, { method: 'DELETE' }).catch(() => {})
+    await fetch(`/api/live/${round.id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    }).catch(() => {})
     if (typeof window !== 'undefined') localStorage.removeItem(LS_KEY)
     setRound(null); setStrokesMap({}); setPuttsMap({}); setParsMap({}); setCurrentHole(1); setView('setup')
   }
@@ -226,7 +217,7 @@ export default function PlayLive() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Player *</label>
             <select required className="form-input" value={memberId} onChange={(e) => setMemberId(e.target.value)}>
               <option value="">Select your name…</option>
-              {members.map((m) => <option key={m.id} value={m.id}>{m.full_name}</option>)}
+              {members.map((m) => <option key={m.id} value={m.id}>{displayName(m.full_name)}</option>)}
             </select>
           </div>
           <div>
@@ -259,7 +250,7 @@ export default function PlayLive() {
                   const on = groupIds.includes(m.id)
                   return (
                     <label key={m.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm cursor-pointer ${on ? 'bg-green-50 border-green-500 text-green-800' : 'bg-white border-gray-200 text-gray-700'}`}>
-                      <input type="checkbox" checked={on} onChange={() => toggleGroup(m.id)} className="accent-green-600" />{m.full_name}
+                      <input type="checkbox" checked={on} onChange={() => toggleGroup(m.id)} className="accent-green-600" />{displayName(m.full_name)}
                     </label>
                   )
                 })}
