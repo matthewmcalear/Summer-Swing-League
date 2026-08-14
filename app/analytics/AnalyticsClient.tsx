@@ -47,7 +47,7 @@ export default function AnalyticsClient({
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Analytics</h1>
         <p className="text-gray-500 mt-1 text-sm">
-          {data.totalRounds} rounds · avg {data.avgPoints} pts · best round {data.maxPoints} pts
+          {data.totalRounds} rounds · avg {data.avgPoints} pts · best {data.maxPoints} pts (all rounds)
         </p>
       </div>
 

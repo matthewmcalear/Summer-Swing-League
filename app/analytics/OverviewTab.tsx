@@ -126,14 +126,14 @@ export default function OverviewTab({ data, selected, setSelected }: {
     <div className="space-y-6">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Total Rounds',   value: data.totalRounds },
-          { label: 'Active Players', value: withScores.length },
-          { label: 'Avg Points',     value: data.avgPoints },
-          { label: 'Best Round',     value: data.maxPoints },
-        ].map(({ label, value }) => (
+          { label: 'Total Rounds',   value: data.totalRounds, sublabel: '(all)' },
+          { label: 'Active Players', value: withScores.length, sublabel: '' },
+          { label: 'Avg Points',     value: data.avgPoints, sublabel: '(all)' },
+          { label: 'Best Round',     value: data.maxPoints, sublabel: '(all)' },
+        ].map(({ label, value, sublabel }) => (
           <div key={label} className="card text-center">
             <div className="text-2xl font-bold text-green-700"><CountUp value={Number(value)} /></div>
-            <div className="text-xs text-gray-500 mt-1">{label}</div>
+            <div className="text-xs text-gray-500 mt-1">{label} {sublabel && <span className="text-gray-400">{sublabel}</span>}</div>
           </div>
         ))}
       </div>
