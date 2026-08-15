@@ -13,10 +13,13 @@ async function compressImage(inputPath, outputPath, targetSizeKB = 400, maxWidth
   console.log(`  Original dimensions: ${metadata.width}x${metadata.height}`);
   
   // Resize to max width while preserving aspect ratio
-  const resized = sharp(inputPath).resize(maxWidth, null, {
-    withoutEnlargement: true,
-    fit: 'inside',
-  });
+  // Apply EXIF rotation BEFORE resize to prevent orientation issues
+  const resized = sharp(inputPath)
+    .rotate() // Auto-orient from EXIF before resize
+    .resize(maxWidth, null, {
+      withoutEnlargement: true,
+      fit: 'inside',
+    });
   
   // Start with quality 75 and adjust down if needed
   let quality = 75;
