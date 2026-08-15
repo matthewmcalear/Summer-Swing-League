@@ -189,6 +189,7 @@ export default function PlayerTab({ data, initialPlayerId }: { data: Analytics; 
           </div>
         )}
       </div>
+      )}
 
       {hasRounds && (
         <div className="card p-0 overflow-hidden">
