@@ -35,7 +35,6 @@ export async function POST(request: Request, { params }: { params: { id: string 
       group_member_ids: round.group_member_ids,
       play_date:        playDate,
       notes:            'Logged live, hole-by-hole',
-      league_pin:       body.league_pin,
     })
     if ('error' in result) {
       return NextResponse.json({ error: result.error }, { status: result.status })

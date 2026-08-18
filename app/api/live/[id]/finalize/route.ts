@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { validateLeaguePin } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,18 +7,8 @@ export const dynamic = 'force-dynamic'
 // Called after a live round is submitted via the score form. Persists the
 // round's per-hole pars back to its course (so they prefill next time), then
 // removes the now-consumed live round.
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(_: Request, { params }: { params: { id: string } }) {
   try {
-    const body = await request.json().catch(() => ({}))
-
-    // Validate league PIN
-    if (!validateLeaguePin(body.league_pin)) {
-      return NextResponse.json(
-        { error: 'Invalid or missing league PIN. Ask the commissioner if you need it.' },
-        { status: 403 }
-      )
-    }
-
     const round = await prisma.liveRound.findUnique({
       where:   { id: params.id },
       include: { hole_scores: { orderBy: { hole: 'asc' } } },

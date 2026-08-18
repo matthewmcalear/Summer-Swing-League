@@ -51,7 +51,6 @@ export default function SubmitScore() {
     course_difficulty: 'average',
     play_date:        new Date().toISOString().split('T')[0],
     notes:            '',
-    league_pin:       '',
   })
 
   useEffect(() => {
@@ -176,7 +175,7 @@ export default function SubmitScore() {
           fetch(`/api/live/${liveRoundId}/finalize`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ league_pin: form.league_pin }),
+            body: JSON.stringify({}),
           }).catch(() => {})
           if (typeof window !== 'undefined') localStorage.removeItem('ssl_live_round_id')
         }
@@ -558,22 +557,6 @@ export default function SubmitScore() {
             value={form.notes}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
           />
-        </div>
-
-        {/* League PIN */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">League PIN *</label>
-          <input
-            type="password"
-            required
-            placeholder="Enter league PIN"
-            className="form-input"
-            value={form.league_pin}
-            onChange={(e) => setForm({ ...form, league_pin: e.target.value })}
-          />
-          <p className="text-xs text-gray-400 mt-1">
-            Required to submit scores. Ask the commissioner if you don&apos;t have it.
-          </p>
         </div>
 
         {/* Point preview */}

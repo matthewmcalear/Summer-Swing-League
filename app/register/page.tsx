@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 
 export default function Register() {
   const router = useRouter()
-  const [form, setForm] = useState({ full_name: '', email: '', current_handicap: '', league_pin: '' })
+  const [form, setForm] = useState({ full_name: '', email: '', current_handicap: '' })
   const [submitting, setSubmitting] = useState(false)
   const [error, setError]           = useState('')
 
@@ -22,7 +22,6 @@ export default function Register() {
           full_name:        form.full_name.trim(),
           email:            form.email.trim(),
           current_handicap: Number(form.current_handicap),
-          league_pin:       form.league_pin,
         }),
       })
 
@@ -88,21 +87,6 @@ export default function Register() {
           />
           <p className="text-xs text-gray-400 mt-1">
             Use your GHIN/WHS handicap index. You can update it each time you submit a round.
-          </p>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">League PIN *</label>
-          <input
-            type="password"
-            required
-            placeholder="Enter league PIN"
-            className="form-input"
-            value={form.league_pin}
-            onChange={(e) => setForm({ ...form, league_pin: e.target.value })}
-          />
-          <p className="text-xs text-gray-400 mt-1">
-            Required to register. Ask the commissioner if you don&apos;t have it.
           </p>
         </div>
 

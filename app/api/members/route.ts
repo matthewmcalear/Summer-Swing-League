@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { validateLeaguePin } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,15 +25,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { full_name, email, current_handicap, league_pin } = await request.json()
-
-    // Validate league PIN
-    if (!validateLeaguePin(league_pin)) {
-      return NextResponse.json(
-        { error: 'Invalid or missing league PIN. Ask the commissioner if you need it.' },
-        { status: 403 }
-      )
-    }
+    const { full_name, email, current_handicap } = await request.json()
 
     if (!full_name || !email) {
       return NextResponse.json({ error: 'full_name and email are required' }, { status: 400 })
