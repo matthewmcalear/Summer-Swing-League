@@ -50,13 +50,3 @@ describe('displayHandicap', () => {
     expect(displayHandicap(15.5, false)).toBe(15.5)
   })
 })
-
-// Note: validateLeaguePin tests are skipped because they require server-side
-// Next.js dependencies (next/headers) and Prisma that can't be mocked in vitest.
-// The function uses crypto.timingSafeEqual for constant-time comparison which
-// prevents timing attacks. Manual testing confirms:
-// - Correct PIN is accepted
-// - Incorrect PIN is rejected
-// - Missing PIN is rejected in production
-// - Missing PIN config fails closed in production
-// - Development allows missing PIN config
