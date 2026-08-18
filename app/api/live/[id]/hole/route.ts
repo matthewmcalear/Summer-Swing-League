@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { validateLeaguePinOrSession, getLeaguePinSessionCookie } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,16 +7,8 @@ export const dynamic = 'force-dynamic'
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     const body = await request.json()
-    const { hole, strokes, putts, par, current_hole, league_pin } = body
+    const { hole, strokes, putts, par, current_hole } = body
 
-    // Validate league PIN or session
-    const pinCheck = validateLeaguePinOrSession(league_pin)
-    if (!pinCheck.valid) {
-      return NextResponse.json(
-        { error: 'Invalid or missing league PIN. Ask the commissioner if you need it.' },
-        { status: 403 }
-      )
-    }
     const holeNum    = Number(hole)
     const strokesNum = Number(strokes)
 
@@ -55,15 +46,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       include: { hole_scores: { orderBy: { hole: 'asc' } } },
     })
 
-    const response = NextResponse.json(round)
-    
-    // Set session cookie if PIN was just validated
-    if (pinCheck.newSession) {
-      const cookie = getLeaguePinSessionCookie()
-      if (cookie) response.headers.set('Set-Cookie', cookie)
-    }
-
-    return response
+    return NextResponse.json(round)
   } catch (e) {
     console.error(e)
     return NextResponse.json({ error: 'Failed to save hole' }, { status: 500 })
