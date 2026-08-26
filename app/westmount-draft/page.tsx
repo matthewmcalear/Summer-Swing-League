@@ -14,6 +14,7 @@ interface DraftState {
   pickHistory: Array<{ team: Team; player: string }>;
   yetiPickSlot: number;
   keepFamily: boolean;
+  projectedRanks?: Record<string, number>; // Frozen at page load
 }
 
 const TEAMS: Team[] = ['Yeti', 'Devils', 'Kings', 'Flyers', 'Hawks'];
@@ -120,16 +121,32 @@ export default function WestmountDraftPage() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [showHelp, setShowHelp] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('board');
+  const [sortByProj, setSortByProj] = useState(false);
 
-  // Load from localStorage
+  // Load from localStorage and set projected ranks on mount
   useEffect(() => {
     const saved = localStorage.getItem('wsl-draft-v1');
+    let loadedState = state;
     if (saved) {
       try {
-        setState(JSON.parse(saved));
+        loadedState = JSON.parse(saved);
+        setState(loadedState);
       } catch (e) {
         console.error('Failed to load draft state', e);
       }
+    }
+    
+    // Freeze projected ranks at page load (opening board)
+    if (!loadedState.projectedRanks) {
+      const rankedPlayers = [...westmountPlayers]
+        .sort((a, b) => calculateValue(b) - calculateValue(a));
+      
+      const ranks: Record<string, number> = {};
+      rankedPlayers.forEach((p, idx) => {
+        ranks[p.name] = idx + 1;
+      });
+      
+      setState(prev => ({ ...prev, projectedRanks: ranks }));
     }
   }, []);
 
@@ -311,9 +328,15 @@ export default function WestmountDraftPage() {
       return true;
     });
     
-    // Sort by value descending
-    return players.sort((a, b) => calculateValue(b) - calculateValue(a));
-  }, [filter, draftedPlayers]);
+    // Sort by projected rank or current value
+    if (sortByProj && state.projectedRanks) {
+      return players.sort((a, b) => 
+        (state.projectedRanks![a.name] || 999) - (state.projectedRanks![b.name] || 999)
+      );
+    } else {
+      return players.sort((a, b) => calculateValue(b) - calculateValue(a));
+    }
+  }, [filter, draftedPlayers, sortByProj, state.projectedRanks]);
 
   // Draft a player
   const draftPlayer = (playerName: string) => {
@@ -586,7 +609,7 @@ export default function WestmountDraftPage() {
         <>
           {/* Filters */}
           <div className="max-w-4xl mx-auto px-4 mt-3">
-            <div className="flex flex-wrap gap-1.5 text-xs">
+            <div className="flex flex-wrap gap-1.5 text-xs items-center">
               {(['all', 'available', 'F', 'D', 'G', 'yeti'] as FilterType[]).map(f => (
                 <button
                   key={f}
@@ -600,6 +623,17 @@ export default function WestmountDraftPage() {
                   {f === 'all' ? 'All' : f === 'available' ? 'Available' : f === 'yeti' ? 'Yeti' : f}
                 </button>
               ))}
+              <span className="text-gray-400 mx-1">|</span>
+              <button
+                onClick={() => setSortByProj(!sortByProj)}
+                className={`px-2 py-1 rounded transition ${
+                  sortByProj
+                    ? 'bg-green-700 text-white'
+                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Sort by Proj
+              </button>
             </div>
           </div>
 
@@ -610,8 +644,11 @@ export default function WestmountDraftPage() {
                 <table className="w-full text-xs">
                   <thead className="bg-gray-50 text-gray-600 border-b border-gray-200">
                     <tr>
-                      <th className="px-3 py-1.5 text-left font-medium">Name</th>
-                      <th className="px-2 py-1.5 text-center font-medium">Pos</th>
+                      <th className="px-3 py-1.5 text-left font-medium">Player</th>
+                      <th className="px-1 py-1.5 text-center font-medium">P</th>
+                      <th className="px-1 py-1.5 text-center font-medium" title="Projected rank (frozen at load)">Proj</th>
+                      <th className="px-1 py-1.5 text-center font-medium" title="Pick number (C=captain)">Pick</th>
+                      <th className="px-1 py-1.5 text-center font-medium" title="Last year ADP">ADP</th>
                       <th className="px-2 py-1.5 text-center font-medium">Val</th>
                       <th className="px-2 py-1.5 text-center font-medium">PTS</th>
                     </tr>
@@ -620,6 +657,18 @@ export default function WestmountDraftPage() {
                     {filteredPlayers.map((p, idx) => {
                       const value = calculateValue(p);
                       const isRecommended = recommendations.length > 0 && recommendations[0].player.name === p.name;
+                      const projRank = state.projectedRanks?.[p.name];
+                      
+                      // Find pick number (C for captain, number for drafted, — for available)
+                      let pickDisplay = '—';
+                      if (p.name === 'McAlear, Steven') {
+                        pickDisplay = 'C';
+                      } else {
+                        const pickIdx = state.pickHistory.findIndex(h => h.player === p.name);
+                        if (pickIdx >= 0) {
+                          pickDisplay = (pickIdx + 1).toString();
+                        }
+                      }
                       
                       return (
                         <tr
@@ -632,11 +681,13 @@ export default function WestmountDraftPage() {
                           <td className="px-3 py-1.5 text-gray-900">
                             {isRecommended && <span className="mr-1 text-green-600">★</span>}
                             {p.name}
-                            {p.ly_adp && <span className="ml-1 text-gray-400">{p.ly_adp}</span>}
                             {p.traded && <span className="ml-1 text-purple-600">↔</span>}
                             {p.missedHalf && <span className="ml-1 text-red-600">½</span>}
                           </td>
-                          <td className="px-2 py-1.5 text-center text-gray-600">{getPosition(p)}</td>
+                          <td className="px-1 py-1.5 text-center text-gray-600">{getPosition(p)}</td>
+                          <td className="px-1 py-1.5 text-center text-gray-500 font-mono">{projRank || '—'}</td>
+                          <td className="px-1 py-1.5 text-center text-gray-700 font-medium">{pickDisplay}</td>
+                          <td className="px-1 py-1.5 text-center text-gray-400 text-[10px]">{p.ly_adp || '—'}</td>
                           <td className="px-2 py-1.5 text-center font-semibold text-green-700">{value.toFixed(1)}</td>
                           <td className="px-2 py-1.5 text-center text-gray-600">{p.pts || '—'}</td>
                         </tr>
@@ -646,6 +697,7 @@ export default function WestmountDraftPage() {
                 </table>
               </div>
             </div>
+            <p className="text-xs text-gray-500 mt-1 text-center">Proj is the opening board, Pick is where they went</p>
           </div>
         </>
       ) : (
