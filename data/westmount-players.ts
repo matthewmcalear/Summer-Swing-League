@@ -5,6 +5,7 @@ export interface WestmountPlayer {
   returning: boolean;
   assumed?: boolean; // Player from last year not on this year's incoming list
   traded?: boolean; // Traded after draft (reunion follows season team, not draft team)
+  missedHalf?: boolean; // Missed >half season, likely again (discount value)
   ly_name?: string;
   ly_pos?: string;
   ly_team?: string; // Season team (post-trade)
@@ -83,7 +84,7 @@ export const westmountPlayers: WestmountPlayer[] = [
   { name: "Timmins, Brendan", age: 35, role: "skater", returning: true, ly_name: "Brendan Timmins", ly_pos: "D", ly_team: "Kings", gp: 27, g: 3, a: 6, pts: 9, ppg: 0.33, pim: 8 },
   { name: "Timmins, Nicholas", age: 37, role: "skater", returning: true, ly_name: "Nick Timmins", ly_pos: "F", ly_team: "Devils", gp: 33, g: 12, a: 24, pts: 36, ppg: 1.09, pim: 28 },
   { name: "Toledano, David", age: 45, role: "skater", returning: true, ly_name: "David Toledano", ly_pos: "", ly_team: "Yeti", gp: 30, g: 15, a: 26, pts: 41, ppg: 1.37, pim: 6 },
-  { name: "Uhthoff, Nicholas", age: 30, role: "skater", returning: true, ly_name: "Nicholas Uhthoff", ly_pos: "", ly_team: "Kings", gp: 24, g: 4, a: 11, pts: 15, ppg: 0.62, pim: 8 },
+  { name: "Uhthoff, Nicholas", age: 30, role: "skater", returning: true, traded: true, ly_name: "Nicholas Uhthoff", ly_pos: "", ly_draft_team: "Yeti", ly_team: "Kings", gp: 24, g: 4, a: 11, pts: 15, ppg: 0.62, pim: 8 },
   { name: "Viens, Luca", age: 24, role: "skater", returning: true, ly_name: "Luca Viens", ly_pos: "F", ly_team: "Devils", gp: 32, g: 24, a: 17, pts: 41, ppg: 1.28, pim: 12 },
   { name: "Yatrou, Evan", age: 25, role: "skater", returning: false },
   { name: "Young, Cooper", age: 26, role: "skater", returning: true, ly_name: "Cooper Young", ly_pos: "D", ly_team: "Kings", gp: 22, g: 1, a: 6, pts: 7, ppg: 0.32, pim: 10 },
@@ -108,7 +109,7 @@ export const westmountPlayers: WestmountPlayer[] = [
   { name: "Roskies, Liam", role: "skater", returning: true, assumed: true, ly_name: "Liam Roskies", ly_pos: "", ly_team: "Flyers", gp: 25, g: 5, a: 10, pts: 15, ppg: 0.6, pim: 0 },
   { name: "Kertzer, Richard", role: "skater", returning: true, assumed: true, ly_name: "Richard Kertzer", ly_pos: "D", ly_team: "Devils", gp: 9, g: 1, a: 7, pts: 8, ppg: 0.89, pim: 0 },
   { name: "Price, Tom", role: "skater", returning: true, assumed: true, ly_name: "Tom Price", ly_pos: "D", ly_team: "Kings", gp: 8, g: 3, a: 2, pts: 5, ppg: 0.62, pim: 0 },
-  { name: "Friedman, David", role: "skater", returning: true, assumed: true, ly_name: "David Friedman", ly_pos: "F", ly_team: "Yeti", gp: 10, g: 3, a: 2, pts: 5, ppg: 0.5, pim: 0 },
+  { name: "Friedman, David", role: "skater", returning: true, assumed: true, traded: true, missedHalf: true, ly_name: "David Friedman", ly_pos: "F", ly_draft_team: "Kings", ly_team: "Yeti", gp: 10, g: 3, a: 2, pts: 5, ppg: 0.5, pim: 0 },
   { name: "Cohen, Stephane", role: "skater", returning: true, assumed: true, ly_name: "Stephane Cohen", ly_pos: "F", ly_team: "Flyers", gp: 25, g: 2, a: 3, pts: 5, ppg: 0.2, pim: 0 },
   { name: "Fox, Dan \"Fire\"", role: "skater", returning: true, assumed: true, ly_name: "Dan \"Fire\" Fox", ly_pos: "F", ly_team: "Flyers", gp: 27, g: 1, a: 4, pts: 5, ppg: 0.19, pim: 0 },
   { name: "Saleh, Fred", role: "skater", returning: true, assumed: true, ly_name: "Fred Saleh", ly_pos: "D", ly_team: "Flyers", gp: 5, g: 1, a: 1, pts: 2, ppg: 0.4, pim: 0 },

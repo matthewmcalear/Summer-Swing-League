@@ -28,7 +28,14 @@ function calculateValue(p: WestmountPlayer): number {
   if (!p.returning) {
     return 8 + Math.max(0, 28 - (p.age || 25)) * 0.3;
   }
-  return (p.pts || 0) * 0.6 + (p.ppg || 0) * (p.gp || 0) * 0.4;
+  let value = (p.pts || 0) * 0.6 + (p.ppg || 0) * (p.gp || 0) * 0.4;
+  
+  // Discount for players who missed half+ and likely to miss again (expected 10/32 GP)
+  if (p.missedHalf) {
+    value *= 0.45; // ~45% discount for attendance risk
+  }
+  
+  return value;
 }
 
 // Determine position from player data
@@ -384,7 +391,7 @@ export default function WestmountDraftPage() {
           <h1 className="text-2xl font-bold text-center mb-2">Westmount Senior B Draft</h1>
           <div className="text-center text-sm text-gray-400 mb-3">
             Pick {currentPick.pickNum} · Round {currentPick.round} · <span className="text-blue-400 font-semibold">{currentPick.team}</span> on the clock
-            <div className="text-xs text-gray-500 mt-1">Post-draft trade: Kings traded Lach to Yeti for Yarrow</div>
+            <div className="text-xs text-gray-500 mt-1">Four-man swap: Yeti got Lach+Friedman; Kings got Yarrow+Uhthoff · Yeti's season goalie was Lach</div>
           </div>
           
           {/* View Mode Toggle */}
@@ -508,6 +515,9 @@ export default function WestmountDraftPage() {
                   </span>
                   {recommendations[0].player.traded && (
                     <span className="text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded font-bold">TRADED</span>
+                  )}
+                  {recommendations[0].player.missedHalf && (
+                    <span className="text-xs bg-red-700 text-white px-1.5 py-0.5 rounded font-bold">MISSED HALF</span>
                   )}
                   {recommendations[0].player.ly_team === 'Yeti' && (
                     <span className="text-xs bg-yellow-600 text-black px-1.5 py-0.5 rounded font-bold">YETI</span>
@@ -646,6 +656,7 @@ export default function WestmountDraftPage() {
                             {p.name}
                             {p.ly_adp && <span className="ml-2 text-xs bg-gray-600 text-gray-300 px-1 py-0.5 rounded font-medium">{p.ly_adp}</span>}
                             {p.traded && <span className="ml-2 text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded font-bold">TRADED</span>}
+                            {p.missedHalf && <span className="ml-2 text-xs bg-red-700 text-white px-1.5 py-0.5 rounded font-bold">MISSED HALF</span>}
                             {isYeti && <span className="ml-2 text-xs bg-yellow-600 text-black px-1.5 py-0.5 rounded font-bold">YETI</span>}
                             {isAssumed && <span className="ml-2 text-xs bg-orange-600 text-white px-1.5 py-0.5 rounded font-bold">ASSUMED</span>}
                           </td>
@@ -725,6 +736,7 @@ export default function WestmountDraftPage() {
                                   {p.name.split(', ').reverse().join(' ')}
                                   {p.ly_adp && <span className="ml-2 text-xs bg-gray-600 text-gray-300 px-1 py-0.5 rounded">{p.ly_adp}</span>}
                                   {p.traded && <span className="ml-2 text-xs bg-purple-600 text-white px-1 py-0.5 rounded font-bold">TRADED</span>}
+                                  {p.missedHalf && <span className="ml-2 text-xs bg-red-700 text-white px-1 py-0.5 rounded">MISSED HALF</span>}
                                   {isYeti && <span className="ml-2 text-xs bg-yellow-600 text-black px-1 py-0.5 rounded font-bold">YETI</span>}
                                   {isAssumed && <span className="ml-2 text-xs bg-orange-600 text-white px-1 py-0.5 rounded font-bold">ASSUMED</span>}
                                 </td>
