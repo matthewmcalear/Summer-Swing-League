@@ -19,9 +19,12 @@ header details.fold{font-size:12px;color:var(--muted)}
 header details.fold summary{cursor:pointer}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 select,button,input{background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font:inherit}
-.order-row{display:flex;gap:4px;flex-wrap:nowrap;align-items:center;margin-top:4px}
-.order-row label{display:flex;align-items:center;gap:3px;font-size:12px;color:var(--muted);min-width:0;flex:1}
-.order-row select{width:100%;min-width:0;padding:4px 2px;font-size:12px}
+.order{display:flex;gap:4px;flex-wrap:wrap;margin:6px 0 0}
+.order-slot{display:flex;align-items:center;gap:4px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:4px 6px;flex:1;min-width:132px}
+.order-slot .n{font-size:11px;color:var(--muted);font-weight:700;min-width:0.9em}
+.order-slot .nm{font-size:12px;font-weight:650;flex:1;white-space:nowrap}
+.order-slot button{padding:2px 7px;line-height:1.1;font-size:12px}
+.order-slot.sel{border-color:var(--ice);background:#eef3f7}
 button{background:#fff}
 button.primary{background:var(--go);color:#fff;font-weight:700;border-color:var(--go)}
 button.ghost{background:transparent}
@@ -88,6 +91,17 @@ tr.yeti td:first-child{box-shadow:inset 3px 0 0 #c5d4de}
 .empty-net{color:var(--warn);font-size:12px;margin:4px 0}
 .player-line{display:flex;gap:6px;flex-wrap:wrap;padding:3px 0;border-bottom:1px solid #eee}
 .player-line:last-child{border-bottom:0}
+.live-rosters{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin:8px 0 2px}
+.live-col{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:5px 6px;min-width:0}
+.live-col.on{border-color:var(--ice);background:#eef3f7}
+.live-col.yeti{box-shadow:inset 3px 0 0 #c5d4de}
+.live-col h3{margin:0 0 3px;font-size:11px;font-weight:750;letter-spacing:-0.02em}
+.live-col ol{margin:0;padding:0;list-style:none}
+.live-col li{font-size:11px;line-height:1.25;padding:1px 0;display:flex;gap:4px;border-bottom:1px solid #f0f0ec}
+.live-col li:last-child{border-bottom:0}
+.live-col .n{color:var(--muted);min-width:1.15em;font-variant-numeric:tabular-nums}
+.live-col .g{color:#2a5070}
+.live-col .none{color:#bbb;font-size:11px}
 </style>
 </head>
 <body>
@@ -100,25 +114,7 @@ tr.yeti td:first-child{box-shadow:inset 3px 0 0 #c5d4de}
       <button id="tab-results">Results</button>
     </div>
   </div>
-  <details class="fold"><summary>Draft order</summary>
-  <div class="row order-row" id="order-row">
-    <label>1 <select data-ord="0">
-      <option>Devils</option><option>Kings</option><option>Flyers</option><option>Yeti</option><option>Hawks</option>
-    </select></label>
-    <label>2 <select data-ord="1">
-      <option>Devils</option><option>Kings</option><option>Flyers</option><option>Yeti</option><option>Hawks</option>
-    </select></label>
-    <label>3 <select data-ord="2">
-      <option>Devils</option><option>Kings</option><option>Flyers</option><option>Yeti</option><option>Hawks</option>
-    </select></label>
-    <label>4 <select data-ord="3">
-      <option>Devils</option><option>Kings</option><option>Flyers</option><option>Yeti</option><option>Hawks</option>
-    </select></label>
-    <label>5 <select data-ord="4">
-      <option>Devils</option><option>Kings</option><option>Flyers</option><option>Yeti</option><option>Hawks</option>
-    </select></label>
-  </div>
-  </details>
+  <div class="order" id="order-row"></div>
   <div class="row">
     <label>Sort <select id="sort">
       <option value="score">value</option>
@@ -140,6 +136,7 @@ tr.yeti td:first-child{box-shadow:inset 3px 0 0 #c5d4de}
       <option value="yeti">last-year Yeti</option>
     </select></label>
   </div>
+  <div id="live-rosters" class="live-rosters"></div>
 </header>
 <main>
   <div id="clock" class="clock"></div>
@@ -275,11 +272,34 @@ function deriveSlot(){
   const i = state.order.indexOf("Yeti");
   state.slot = i >= 0 ? i+1 : 4;
 }
-function syncOrderSelects(){
-  document.querySelectorAll("#order-row select[data-ord]").forEach(sel=>{
-    const i = +sel.dataset.ord;
-    if (state.order[i]) sel.value = state.order[i];
-  });
+function renderOrder(){
+  const el = document.getElementById("order-row");
+  if (!el) return;
+  el.innerHTML = (state.order||[]).map((t,i)=>`<div class="order-slot" data-i="${i}">
+    <span class="n">${i+1}</span>
+    <span class="nm">${teamLabel(t)}</span>
+    <button type="button" data-move="-1" ${i===0?"disabled":""}>↑</button>
+    <button type="button" data-move="1" ${i===4?"disabled":""}>↓</button>
+  </div>`).join("");
+}
+function moveOrder(i, dir){
+  const j = i + dir;
+  if (j<0 || j>=state.order.length) return;
+  const o = state.order.slice();
+  const tmp = o[i]; o[i]=o[j]; o[j]=tmp;
+  state.order = o;
+  deriveSlot();
+  save();
+  render();
+}
+function swapOrder(i, j){
+  if (i===j) return;
+  const o = state.order.slice();
+  const tmp = o[i]; o[i]=o[j]; o[j]=tmp;
+  state.order = o;
+  deriveSlot();
+  save();
+  render();
 }
 function load(){
   try { const s = JSON.parse(localStorage.getItem(KEY)); if(s) Object.assign(state,s); } catch(e){}
@@ -288,7 +308,7 @@ function load(){
   const have = new Set(state.order);
   if (TEAMS.some(t=>!have.has(t))) state.order = def.slice();
   deriveSlot();
-  syncOrderSelects();
+  renderOrder();
 }
 function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
 
@@ -380,19 +400,20 @@ function goalieScramble(pool, rosters){
   return needers >= 2 && remG === 1;
 }
 function goalieIfPass(p, pool, rosters){
-  const still = remainingGsSorted(pool);
+  const still = remainingGsSorted(pool).filter(x=>x.id!==p.id);
   const needers = teamsNeedingG(rosters);
   if (needers <= 1) return p;
-  const others = needers - 1;
-  if (still.length <= others) return null;
-  return still[others];
+  if (!still.length) return null;
+  return still[still.length-1];
 }
 function goalieNeedBonus(p, pool, pickNum, rosters){
   const needers = teamsNeedingG(rosters);
-  if (needers <= 1) return -24;
+  const remG = remainingStarterGs(pool);
+  if (needers <= 1) return -score(p);
+  if (remG <= 1 && needers >= 2) return 40;
   const pass = goalieIfPass(p, pool, rosters);
   if (!pass) return 40;
-  return score(p) - score(pass);
+  return -score(p) + (score(p) - score(pass));
 }
 function needBumpOn(p, r, ctx){
   const d = r.filter(x=>posOf(x)==="D").length;
@@ -517,7 +538,7 @@ function renderClock(){
   const el = document.getElementById("clock");
   el.classList.toggle("mine", team==="Yeti" && left>0);
   const help = `<details class="help"><summary>How picks work</summary>
-    <div class="small">Skaters: last-year + 5-year blend as expected 28-game points, then positional VORP vs the last starter (9 F / 4 D / 1 G per team), times attendance (GP/32), then convex so elites swing games. Goalies: 18 + 0.6×max(0, 40−age) — modest talent (Martin/Lach above backups), not empty-net first-round VORP. Everyone gets a starter (5×1). A goalie's pick value is only the extra quality you keep by taking him now vs the net you still get if you pass (Martin minus the leftover). Last year Steven took Peter at 17 and Martin went 18, then sat through Walter/Gironne/Lach and took Yarrow at 67. If you are the last team without a net, that extra is zero: take skaters. Only jump if passing means you get shut out. A 2nd goalie is −28.</div>
+    <div class="small">Skaters: last-year + 5-year blend as expected 28-game points, then positional VORP vs the last starter (9 F / 4 D / 1 G per team), times attendance (GP/32), then convex so elites swing games. Goalies: 18 + 0.6×max(0, 40−age) — modest talent (Martin/Lach above backups), not empty-net first-round VORP. Everyone gets a starter (5×1). A goalie's pick value is only the extra quality vs the leftover net (Martin minus Gironne), not his raw 18–29 talent. Four goalies, five teams: one team misses a net, but that is a last-G scramble, not a pick-1 emergency. If you are the last team without a net, extra is zero: take skaters. Only jump if the last G is on the board and another team still needs one. A 2nd goalie is −28.</div>
     <div class="small">Captains re-draft last-year teammates: +12 if they drafted them, +8 if they only played together. After a post-draft trade, skip the +12 and use the season team only (+8). Yeti +18 on Daniel/Matthew/Thomas. Hawks +10 Angelini/Orsini/Ciampini. Phil (Flyers) +22 on Yarrow.</div>
     <div class="small">After last year’s draft, a four-man swap: Lach + Friedman (drafted Kings) to Yeti; Yarrow + Uhthoff (drafted Yeti) to Kings. Yeti’s season/playoff goalie was Lach. League undervalued goalies vs our model. Friedman is not back.</div>
     <div class="small">Playoffs: Devils (R4 Martin) won the final vs Kings. Yeti (Lach) beat Flyers 5–4 then barely lost to Devils in the semis. Goalies matter, but last year they clustered R4–R7 and Yeti took the leftover at 67. Suggested Pick copies that: sit through the run, take skaters, take Yarrow last unless passing gets you no net at all.</div>
@@ -543,6 +564,18 @@ function renderClock(){
     ${help}`;
 }
 
+function renderLiveRosters(){
+  const clock = teamOnClock();
+  const cols = (state.order||TEAMS).map(t=>{
+    const r = rosterPickOrder(t);
+    const on = t===clock ? " on" : "";
+    const me = t==="Yeti" ? " yeti" : "";
+    const rows = r.map((p,i)=>`<li><span class="n">${i+1}</span><span${p.role==="goalie"?' class="g"':""}>${shortName(p.name)} <span class="small">${posOf(p)}</span></span></li>`).join("")
+      || `<li class="none">no picks yet</li>`;
+    return `<div class="live-col${on}${me}"><h3>${teamLabel(t)}</h3><ol>${rows}</ol></div>`;
+  }).join("");
+  document.getElementById("live-rosters").innerHTML = cols;
+}
 function renderStandings(st){
   const rows = st.ranked.map(t=>{
     const me = t==="Yeti" ? " me":"";
@@ -820,9 +853,10 @@ function renderResults(){
 
 function render(){
   deriveSlot();
-  syncOrderSelects();
+  renderOrder();
   const st = computeStandings();
   renderClock();
+  renderLiveRosters();
   renderStandings(st);
   renderBoard();
   renderTeams(st);
@@ -832,6 +866,8 @@ function render(){
   const onTeams = view==="teams";
   const onResults = view==="results";
   document.getElementById("clock").hidden = onResults;
+  document.getElementById("live-rosters").hidden = !onBoard;
+  document.getElementById("standings-fold").hidden = !onBoard;
   document.getElementById("standings").hidden = onResults;
   document.getElementById("board").hidden = !onBoard;
   document.getElementById("teams").hidden = !onTeams;
@@ -862,19 +898,24 @@ document.getElementById("standings").addEventListener("click", e=>{
 document.getElementById("btn-undo").onclick = undo;
 document.getElementById("btn-reset").onclick = ()=>{ if(confirm("Reset the whole draft?")) reset(); };
 document.getElementById("btn-mock").onclick = mock;
-document.getElementById("order-row").addEventListener("change", e=>{
-  const sel = e.target.closest("select[data-ord]");
-  if (!sel) return;
-  const i = +sel.dataset.ord;
-  const team = sel.value;
-  const cur = state.order[i];
-  if (team === cur) return;
-  const j = state.order.indexOf(team);
-  state.order[i] = team;
-  if (j >= 0) state.order[j] = cur;
-  deriveSlot();
-  save();
-  render();
+let orderPick = null;
+document.getElementById("order-row").addEventListener("click", e=>{
+  const btn = e.target.closest("button[data-move]");
+  const slot = e.target.closest(".order-slot");
+  if (btn && slot){
+    moveOrder(+slot.dataset.i, +btn.dataset.move);
+    orderPick = null;
+    return;
+  }
+  if (!slot) return;
+  const i = +slot.dataset.i;
+  if (orderPick==null){
+    orderPick = i;
+    slot.classList.add("sel");
+    return;
+  }
+  swapOrder(orderPick, i);
+  orderPick = null;
 });
 document.getElementById("sort").onchange = render;
 document.getElementById("filter").onchange = render;
