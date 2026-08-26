@@ -1,13 +1,6 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { NextResponse } from "next/server";
 
-export async function GET() {
-  const htmlPath = join(process.cwd(), 'public', 'westmount-draft.html');
-  const html = readFileSync(htmlPath, 'utf-8');
-  
-  return new Response(html, {
-    headers: {
-      'content-type': 'text/html; charset=utf-8',
-    },
-  });
+export function GET(request: Request) {
+  const url = new URL("/westmount-draft.html", request.url);
+  return NextResponse.redirect(url, 302);
 }
