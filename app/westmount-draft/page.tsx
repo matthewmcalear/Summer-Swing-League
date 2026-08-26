@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { westmountPlayers, WestmountPlayer } from '@/data/westmount-players';
-import { ChevronDown, ChevronUp, RotateCcw, Zap, Info, TrendingUp } from 'lucide-react';
 
 type Team = 'Yeti' | 'Devils' | 'Kings' | 'Flyers' | 'Hawks';
 type FilterType = 'all' | 'available' | 'F' | 'D' | 'G' | 'no-stats' | 'yeti' | 'assumed';
@@ -14,56 +13,45 @@ interface DraftState {
   pickHistory: Array<{ team: Team; player: string }>;
   yetiPickSlot: number;
   keepFamily: boolean;
-  projectedRanks?: Record<string, number>; // Frozen at page load
+  projectedRanks?: Record<string, number>;
 }
 
 const TEAMS: Team[] = ['Yeti', 'Devils', 'Kings', 'Flyers', 'Hawks'];
+const CAPTAINS = ['McAlear, Steven', 'Ciampini, Adam', 'Murciano, Emile', 'Mashaal, Alexander'];
 
-// Calculate player value for draft with non-linear surplus scoring
 function calculateValue(p: WestmountPlayer): number {
   if (p.role === 'goalie') {
-    // 4 goalies, 5 teams. A starter is a first-round asset.
     const ageAdj = Math.max(0, 40 - (p.age || 25)) * 0.6;
     return 52 + ageAdj;
   }
   if (!p.returning) {
-    // New skaters: placeholder ~8 (negative vs 18 pt replacement)
     return 8 + Math.max(0, 28 - (p.age || 25)) * 0.3;
   }
   
-  // Returning skaters: blend last-year stats as raw expected points
   let raw = (p.pts || 0) * 0.6 + (p.ppg || 0) * (p.gp || 0) * 0.4;
-  
-  // Discount for players who missed half+ and likely to miss again (expected 10/32 GP)
   if (p.missedHalf) {
-    raw *= (10 / 32); // Expected GP ratio
+    raw *= (10 / 32);
   }
   
-  // Replacement level: 18 pts / 28 GP (0.64 P/G)
   const replacement = 18;
   const surplus = raw - replacement;
   
-  // Non-linear scoring: elites and duds swing games more than linear points
   let score: number;
   if (surplus >= 0) {
-    // Above replacement: convex bonus for elites
     score = surplus + 0.008 * surplus * surplus;
   } else {
-    // Below replacement: penalty for duds (1.4x)
     score = surplus * 1.4;
   }
   
   return score;
 }
 
-// Determine position from player data
 function getPosition(p: WestmountPlayer): Position {
   if (p.role === 'goalie') return 'G';
   if (p.ly_pos === 'D') return 'D';
   return 'F';
 }
 
-// Calculate need-based adjustment for teams with communal reunion preferences
 function needBump(p: WestmountPlayer, roster: string[], team: Team): number {
   const players = roster.map(name => westmountPlayers.find(pl => pl.name === name)).filter(Boolean) as WestmountPlayer[];
   const dCount = players.filter(x => getPosition(x) === 'D').length;
@@ -72,33 +60,26 @@ function needBump(p: WestmountPlayer, roster: string[], team: Team): number {
   
   let bump = 0;
   
-  // Positional needs (universal)
-  if (pos === 'G' && gCount === 0) bump += 18;  // take a starter early
-  if (pos === 'G' && gCount >= 1) bump -= 25;  // don't stockpile
-  if (pos === 'D' && dCount === 0) bump += 8;   // need a defenseman
+  if (pos === 'G' && gCount === 0) bump += 18;
+  if (pos === 'G' && gCount >= 1) bump -= 25;
+  if (pos === 'D' && dCount === 0) bump += 8;
   
-  // MAIN AFFINITY: Reunion - captains re-draft last year's teammates
   if (p.ly_team === team) {
-    bump += 8; // Last-year teammate reunion
+    bump += 8;
   }
   
-  // SPECIFIC EXCEPTIONS layered on top:
-  
-  // Yeti/Steven: extra bump for McAlear family
   if (team === 'Yeti' && p.name.includes('McAlear')) {
-    bump += 18; // Total +26 if also last-year Yeti, or +18 if not
+    bump += 18;
   }
   
-  // Hawks/Ciampini: extra bump for his guys
   if (team === 'Hawks') {
     if (p.name.includes('Angelini') || p.name.includes('Orsini') || p.name.includes('Ciampini')) {
-      bump += 10; // Total +18 if also last-year Hawks, or +10 if not
+      bump += 10;
     }
   }
   
-  // Devils/Phil: extra bump for Yarrow goalie specifically
   if (team === 'Devils' && p.name.includes('Yarrow') && p.role === 'goalie') {
-    bump += 22; // Total +30 if also last-year Devils, or +22 if not (Phil takes Yarrow)
+    bump += 22;
   }
   
   return bump;
@@ -107,23 +88,21 @@ function needBump(p: WestmountPlayer, roster: string[], team: Team): number {
 export default function WestmountDraftPage() {
   const [state, setState] = useState<DraftState>({
     rosters: {
-      Yeti: ['McAlear, Steven'],
+      Yeti: [],
       Devils: [],
       Kings: [],
       Flyers: [],
       Hawks: [],
     },
     pickHistory: [],
-    yetiPickSlot: 4, // Last year's position
+    yetiPickSlot: 4,
     keepFamily: false,
   });
-  
-  const [filter, setFilter] = useState<FilterType>('all');
-  const [showHelp, setShowHelp] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('board');
-  const [sortByProj, setSortByProj] = useState(false);
 
-  // Load from localStorage and set projected ranks on mount
+  const [filter, setFilter] = useState<FilterType>('all');
+  const [sortByProj, setSortByProj] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('board');
+
   useEffect(() => {
     const saved = localStorage.getItem('wsl-draft-v1');
     let loadedState = state;
@@ -136,7 +115,6 @@ export default function WestmountDraftPage() {
       }
     }
     
-    // Freeze projected ranks at page load (opening board)
     if (!loadedState.projectedRanks) {
       const rankedPlayers = [...westmountPlayers]
         .sort((a, b) => calculateValue(b) - calculateValue(a));
@@ -150,614 +128,538 @@ export default function WestmountDraftPage() {
     }
   }, []);
 
-  // Save to localStorage
   useEffect(() => {
     localStorage.setItem('wsl-draft-v1', JSON.stringify(state));
   }, [state]);
 
-  // Get team order for a given round/pick
-  // Last year order: Kings-Hawks-Devils-Yeti-Flyers
-  const getTeamOrder = useMemo(() => {
-    return (pickNum: number, yetiPickSlot: number): Team => {
-      const round = Math.floor((pickNum - 1) / 5) + 1;
-      const posInRound = ((pickNum - 1) % 5) + 1;
-      
-      let pickOrder: number[];
-      if (round % 2 === 1) {
-        pickOrder = [1, 2, 3, 4, 5];
-      } else {
-        pickOrder = [5, 4, 3, 2, 1];
-      }
-      
-      const teamOrder: Team[] = [];
-      for (let slot of pickOrder) {
-        if (slot === yetiPickSlot) {
-          teamOrder.push('Yeti');
-        } else {
-          const others = TEAMS.filter(t => t !== 'Yeti');
-          const otherSlots = [1, 2, 3, 4, 5].filter(s => s !== yetiPickSlot);
-          const idx = otherSlots.indexOf(slot);
-          teamOrder.push(others[idx]);
-        }
-      }
-      
-      return teamOrder[posInRound - 1];
+  const draftOrder = useMemo(() => {
+    const order: Team[] = [];
+    const slots = [
+      state.yetiPickSlot,
+      (state.yetiPickSlot === 1 || state.yetiPickSlot === 5) ? 2 : (state.yetiPickSlot === 2 || state.yetiPickSlot === 4) ? 1 : 5,
+      state.yetiPickSlot === 3 ? 4 : state.yetiPickSlot <= 2 ? 5 : 2,
+      state.yetiPickSlot === 1 ? 4 : state.yetiPickSlot === 5 ? 5 : state.yetiPickSlot === 2 ? 3 : 4,
+      state.yetiPickSlot === 1 ? 5 : state.yetiPickSlot === 5 ? 1 : 3,
+    ];
+    const slotToTeam: Record<number, Team> = {
+      [slots[0]]: 'Yeti',
+      [slots[1]]: 'Devils',
+      [slots[2]]: 'Kings',
+      [slots[3]]: 'Flyers',
+      [slots[4]]: 'Hawks',
     };
-  }, []);
+    for (let round = 0; round < 30; round++) {
+      const picks = round % 2 === 0 ? [1, 2, 3, 4, 5] : [5, 4, 3, 2, 1];
+      picks.forEach(slot => order.push(slotToTeam[slot]));
+    }
+    return order;
+  }, [state.yetiPickSlot]);
 
-  // Calculate current pick
   const currentPick = useMemo(() => {
-    const { pickHistory, yetiPickSlot } = state;
-    const pickNum = pickHistory.length + 1;
-    const round = Math.floor((pickNum - 1) / 5) + 1;
-    
-    return {
-      pickNum,
-      round,
-      team: getTeamOrder(pickNum, yetiPickSlot),
-    };
-  }, [state.pickHistory, state.yetiPickSlot, getTeamOrder]);
+    const pickNum = state.pickHistory.length + 1;
+    const round = Math.floor(state.pickHistory.length / 5) + 1;
+    const team = draftOrder[state.pickHistory.length] || 'Yeti';
+    return { pickNum, round, team };
+  }, [state.pickHistory.length, draftOrder]);
 
-  // Get drafted players
-  const draftedPlayers = useMemo(() => {
-    return new Set(Object.values(state.rosters).flat());
-  }, [state.rosters]);
+  const availablePlayers = useMemo(() => {
+    const drafted = new Set(state.pickHistory.map(p => p.player));
+    return westmountPlayers.filter(p => !drafted.has(p.name));
+  }, [state.pickHistory]);
 
-  // Team standings with projections
-  const standings = useMemo(() => {
-    // Simulate remaining picks to calculate projected values
-    const simulateDraft = () => {
-      const simRosters = { ...state.rosters };
-      Object.keys(simRosters).forEach(team => {
-        simRosters[team as Team] = [...simRosters[team as Team]];
-      });
-      
-      const drafted = new Set(Object.values(simRosters).flat());
-      const totalPicks = westmountPlayers.length;
-      
-      for (let pickNum = state.pickHistory.length + 1; pickNum <= totalPicks; pickNum++) {
-        const team = getTeamOrder(pickNum, state.yetiPickSlot);
-        const available = westmountPlayers.filter(p => !drafted.has(p.name));
-        
-        if (available.length === 0) break;
-        
-        // BPA with needBump
-        const scoredPlayers = available.map(p => {
-          let score = calculateValue(p);
-          score += needBump(p, simRosters[team], team);
-          return { player: p, score };
-        });
-        
-        scoredPlayers.sort((a, b) => b.score - a.score);
-        const pick = scoredPlayers[0].player;
-        
-        simRosters[team].push(pick.name);
-        drafted.add(pick.name);
-      }
-      
-      return simRosters;
-    };
-    
-    const projectedRosters = simulateDraft();
-    
-    const teamStats = TEAMS.map(team => {
-      const roster = state.rosters[team];
-      const projRoster = projectedRosters[team];
-      const players = roster.map(name => westmountPlayers.find(p => p.name === name)).filter(Boolean) as WestmountPlayer[];
-      const projPlayers = projRoster.map(name => westmountPlayers.find(p => p.name === name)).filter(Boolean) as WestmountPlayer[];
-      
-      const nowValue = players.reduce((sum, p) => sum + calculateValue(p), 0);
-      const projValue = projPlayers.reduce((sum, p) => sum + calculateValue(p), 0);
-      const lastYearPts = players.reduce((sum, p) => sum + (p.pts || 0), 0);
-      
-      const goalies = players.filter(p => p.role === 'goalie');
-      const goalieName = goalies.length > 0 ? goalies[0].name.split(', ').reverse().join(' ') : null;
-      
-      return {
-        team,
-        nowValue,
-        projValue,
-        lastYearPts,
-        goalie: goalieName,
-        rosterSize: roster.length,
-      };
-    });
-    
-    // Calculate win probabilities using softmax
-    const expValues = teamStats.map(t => Math.exp(t.projValue / 80));
-    const sumExp = expValues.reduce((a, b) => a + b, 0);
-    const winProbs = expValues.map(v => Math.round((v / sumExp) * 100));
-    
-    const withProbs = teamStats.map((t, i) => ({ ...t, winPct: winProbs[i] }));
-    withProbs.sort((a, b) => b.projValue - a.projValue);
-    
-    return withProbs;
-  }, [state.rosters, state.pickHistory, state.yetiPickSlot, getTeamOrder]);
-
-  // Calculate recommendations for current pick
   const recommendations = useMemo(() => {
-    const available = westmountPlayers.filter(p => !draftedPlayers.has(p.name));
-    if (available.length === 0) return [];
-    
+    if (availablePlayers.length === 0) return [];
     const team = currentPick.team;
     const roster = state.rosters[team];
     
-    // Score all available players with needBump
-    const scored = available.map(p => {
-      let score = calculateValue(p);
+    const scored = availablePlayers.map(p => {
+      const base = calculateValue(p);
       const bump = needBump(p, roster, team);
-      score += bump;
+      let why = 'Value';
       
-      // Keep family bonus if enabled and Yeti is picking
-      if (team === 'Yeti' && state.keepFamily && p.name.includes('McAlear')) {
-        score += 5;
+      if (team === 'Yeti' && p.name.includes('McAlear') && bump >= 18) {
+        why = 'Family';
+      } else if (bump >= 22) {
+        why = 'Must-have';
+      } else if (p.ly_team === team && bump >= 8) {
+        why = 'Reunion';
+      } else if (bump >= 18) {
+        why = 'Need goalie';
+      } else if (bump >= 8) {
+        why = 'Need D';
       }
       
-      // Determine why this is recommended
-      let why = 'Best value';
-      const pos = getPosition(p);
-      const rosterPlayers = roster.map(name => westmountPlayers.find(pl => pl.name === name)).filter(Boolean) as WestmountPlayer[];
-      const gCount = rosterPlayers.filter(x => getPosition(x) === 'G').length;
-      const dCount = rosterPlayers.filter(x => getPosition(x) === 'D').length;
-      
-      if (team === 'Yeti' && p.name.includes('McAlear') && bump >= 18) why = 'Family';
-      else if (pos === 'G' && gCount === 0 && bump > 15) why = 'Need a goalie';
-      else if (pos === 'D' && dCount === 0 && bump > 5) why = 'Need a D';
-      else if (p.ly_team === team) why = `Last-year ${team}`;
-      else if (bump > 5) why = 'Positional need';
-      
-      return { player: p, score, why };
+      return { player: p, score: base + bump, why };
     });
     
     scored.sort((a, b) => b.score - a.score);
-    return scored.slice(0, 3); // Top 3 recommendations
-  }, [draftedPlayers, currentPick.team, state.rosters, state.keepFamily]);
+    return scored.slice(0, 3);
+  }, [availablePlayers, currentPick.team, state.rosters]);
 
-  // Filter and sort players
-  const filteredPlayers = useMemo(() => {
-    let players = westmountPlayers.filter(p => {
-      if (draftedPlayers.has(p.name)) return false;
+  const standings = useMemo(() => {
+    const stats = TEAMS.map(team => {
+      const roster = state.rosters[team];
+      const players = roster.map(name => westmountPlayers.find(p => p.name === name)).filter(Boolean) as WestmountPlayer[];
       
-      if (filter === 'available') return true;
-      if (filter === 'F') return getPosition(p) === 'F';
-      if (filter === 'D') return getPosition(p) === 'D';
-      if (filter === 'G') return p.role === 'goalie';
-      if (filter === 'no-stats') return !p.returning;
-      if (filter === 'yeti') return p.ly_team === 'Yeti';
-      if (filter === 'assumed') return p.assumed === true;
-      return true;
+      const now = players.reduce((sum, p) => sum + calculateValue(p), 0);
+      const lastYearPts = players.reduce((sum, p) => sum + (p.pts || 0), 0);
+      const hasGoalie = players.some(p => getPosition(p) === 'G');
+      const remainingPicks = Math.floor((150 - state.pickHistory.length) / 5);
+      const proj = now + remainingPicks * 8;
+      
+      return { team, now, proj, lastYearPts, hasGoalie, rosterSize: roster.length };
     });
     
-    // Sort by projected rank or current value
-    if (sortByProj && state.projectedRanks) {
-      return players.sort((a, b) => 
-        (state.projectedRanks![a.name] || 999) - (state.projectedRanks![b.name] || 999)
-      );
-    } else {
-      return players.sort((a, b) => calculateValue(b) - calculateValue(a));
-    }
-  }, [filter, draftedPlayers, sortByProj, state.projectedRanks]);
+    stats.sort((a, b) => b.proj - a.proj);
+    
+    const totalProj = stats.reduce((sum, s) => sum + Math.exp(s.proj / 50), 0);
+    stats.forEach(s => {
+      (s as any).winPct = ((Math.exp(s.proj / 50) / totalProj) * 100).toFixed(0);
+    });
+    
+    return stats;
+  }, [state.rosters, state.pickHistory.length, state.yetiPickSlot]);
 
-  // Draft a player
+  const filteredPlayers = useMemo(() => {
+    let players = availablePlayers;
+    
+    if (filter === 'F') players = players.filter(p => getPosition(p) === 'F');
+    if (filter === 'D') players = players.filter(p => getPosition(p) === 'D');
+    if (filter === 'G') players = players.filter(p => getPosition(p) === 'G');
+    if (filter === 'no-stats') players = players.filter(p => !p.returning);
+    if (filter === 'yeti') players = players.filter(p => p.ly_team === 'Yeti');
+    if (filter === 'assumed') players = players.filter(p => p.assumed);
+    
+    if (sortByProj && state.projectedRanks) {
+      players = [...players].sort((a, b) => {
+        const rankA = state.projectedRanks![a.name] || 999;
+        const rankB = state.projectedRanks![b.name] || 999;
+        return rankA - rankB;
+      });
+    } else {
+      players = [...players].sort((a, b) => calculateValue(b) - calculateValue(a));
+    }
+    
+    return players;
+  }, [availablePlayers, filter, sortByProj, state.projectedRanks]);
+
   const draftPlayer = (playerName: string) => {
+    const team = currentPick.team;
     setState(prev => ({
       ...prev,
       rosters: {
         ...prev.rosters,
-        [currentPick.team]: [...prev.rosters[currentPick.team], playerName],
+        [team]: [...prev.rosters[team], playerName],
       },
-      pickHistory: [...prev.pickHistory, { team: currentPick.team, player: playerName }],
+      pickHistory: [...prev.pickHistory, { team, player: playerName }],
     }));
   };
 
-  // Undo last pick
   const undoLastPick = () => {
     if (state.pickHistory.length === 0) return;
-    
-    const lastPick = state.pickHistory[state.pickHistory.length - 1];
+    const last = state.pickHistory[state.pickHistory.length - 1];
     setState(prev => ({
       ...prev,
       rosters: {
         ...prev.rosters,
-        [lastPick.team]: prev.rosters[lastPick.team].filter(p => p !== lastPick.player),
+        [last.team]: prev.rosters[last.team].filter(p => p !== last.player),
       },
       pickHistory: prev.pickHistory.slice(0, -1),
     }));
   };
 
-  // Reset draft
+  const mockDraft = () => {
+    if (availablePlayers.length === 0) return;
+    const team = currentPick.team;
+    const roster = state.rosters[team];
+    
+    const scored = availablePlayers.map(p => {
+      const base = calculateValue(p);
+      const bump = needBump(p, roster, team);
+      return { player: p, score: base + bump };
+    });
+    
+    scored.sort((a, b) => b.score - a.score);
+    draftPlayer(scored[0].player.name);
+  };
+
   const resetDraft = () => {
-    if (confirm('Reset the entire draft? This cannot be undone.')) {
+    if (confirm('Reset the entire draft?')) {
       setState({
-        rosters: {
-          Yeti: ['McAlear, Steven'],
-          Devils: [],
-          Kings: [],
-          Flyers: [],
-          Hawks: [],
-        },
+        rosters: { Yeti: [], Devils: [], Kings: [], Flyers: [], Hawks: [] },
         pickHistory: [],
-        yetiPickSlot: state.yetiPickSlot,
-        keepFamily: state.keepFamily,
+        yetiPickSlot: 4,
+        keepFamily: false,
+        projectedRanks: state.projectedRanks,
       });
     }
   };
 
-  // Mock draft (CPU picks)
-  const mockDraft = () => {
-    setState(prev => {
-      const newState = { ...prev };
-      const maxPicks = westmountPlayers.length;
-      
-      while (newState.pickHistory.length < maxPicks) {
-        const pickNum = newState.pickHistory.length + 1;
-        const team = getTeamOrder(pickNum, newState.yetiPickSlot);
-        const drafted = new Set(Object.values(newState.rosters).flat());
-        const available = westmountPlayers.filter(p => !drafted.has(p.name));
-        
-        if (available.length === 0) break;
-        
-        // CPU logic: BPA with positional need and political preferences
-        const scoredPlayers = available.map(p => {
-          let score = calculateValue(p);
-          
-          // Apply need bump for ALL teams with political preferences
-          score += needBump(p, newState.rosters[team], team);
-          
-          // Keep family logic (only if toggle is ON and Yeti is picking)
-          if (team === 'Yeti' && newState.keepFamily && p.name.includes('McAlear')) {
-            score += 5;
-          }
-          
-          return { player: p, score };
-        });
-        
-        scoredPlayers.sort((a, b) => b.score - a.score);
-        const pick = scoredPlayers[0].player;
-        
-        newState.rosters[team] = [...newState.rosters[team], pick.name];
-        newState.pickHistory.push({ team, player: pick.name });
-      }
-      
-      return newState;
-    });
-  };
-
   return (
-    <div className="min-h-screen bg-stone-50 text-gray-900 pb-8">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-3">
-          <h1 className="text-xl font-bold text-center text-gray-900">Westmount Senior B Draft</h1>
-          <div className="text-center text-sm text-gray-600 mt-1">
-            Pick {currentPick.pickNum} · Round {currentPick.round} · <span className="text-green-700 font-semibold">{currentPick.team}</span> on the clock
-          </div>
+    <>
+      <style jsx global>{`
+        :root {
+          --bg: #f5f4f0;
+          --card: #fff;
+          --ink: #1a1a1a;
+          --muted: #6a6a64;
+          --line: #ddd;
+          --ice: #3a7ca5;
+          --go: #2d8a5e;
+        }
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          background: var(--bg);
+          color: var(--ink);
+          font-size: 14px;
+          line-height: 1.5;
+          margin: 0;
+          padding: 0;
+        }
+      `}</style>
 
-          {/* View Mode Toggle */}
-          <div className="flex gap-2 justify-center mt-2">
-            <button
-              onClick={() => setViewMode('board')}
-              className={`px-3 py-1.5 rounded text-sm font-medium transition ${
-                viewMode === 'board'
-                  ? 'bg-green-700 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Board
-            </button>
-            <button
-              onClick={() => setViewMode('teams')}
-              className={`px-3 py-1.5 rounded text-sm font-medium transition ${
-                viewMode === 'teams'
-                  ? 'bg-green-700 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Teams
-            </button>
-          </div>
-
-          {/* Controls */}
-          <div className="flex flex-wrap gap-2 justify-center mt-2">
-            <button
-              onClick={undoLastPick}
-              disabled={state.pickHistory.length === 0}
-              className="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed rounded text-xs font-medium transition text-gray-700"
-            >
-              <RotateCcw className="inline w-3 h-3 mr-1" /> Undo
-            </button>
-            <button
-              onClick={mockDraft}
-              className="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 rounded text-xs font-medium transition text-gray-700"
-            >
-              <Zap className="inline w-3 h-3 mr-1" /> Mock
-            </button>
-            <button
-              onClick={resetDraft}
-              className="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 rounded text-xs font-medium transition text-gray-700"
-            >
-              Reset
-            </button>
-            <button
-              onClick={() => setShowHelp(!showHelp)}
-              className="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 rounded text-xs font-medium transition text-gray-700"
-            >
-              <Info className="inline w-3 h-3 mr-1" /> Info
-            </button>
-          </div>
-          
-          {/* Settings */}
-          <div className="mt-3 flex flex-wrap gap-4 justify-center text-sm">
-            <label className="flex items-center gap-2">
-              <span className="text-gray-400">Yeti picks at:</span>
-              <select
-                value={state.yetiPickSlot}
-                onChange={(e) => setState(prev => ({ ...prev, yetiPickSlot: Number(e.target.value) }))}
-                disabled={state.pickHistory.length > 0}
-                className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white disabled:opacity-50"
+      <div style={{ background: 'var(--bg)', minHeight: '100vh', paddingBottom: '80px' }}>
+        {/* Header */}
+        <div style={{ background: 'var(--card)', borderBottom: '1px solid var(--line)', position: 'sticky', top: 0, zIndex: 100, padding: '12px 0' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 16px' }}>
+            <div style={{ fontSize: '18px', fontWeight: 600, textAlign: 'center', marginBottom: '8px' }}>
+              Westmount Senior B · Draft Board
+            </div>
+            <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--muted)' }}>
+              Pick {currentPick.pickNum} · Round {currentPick.round} · <span style={{ color: 'var(--ice)', fontWeight: 600 }}>{currentPick.team}</span> on the clock
+            </div>
+            
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', marginTop: '8px' }}>
+              <button
+                onClick={() => setViewMode('board')}
+                style={{
+                  padding: '6px 16px',
+                  border: '1px solid var(--line)',
+                  background: viewMode === 'board' ? 'var(--ice)' : 'var(--card)',
+                  color: viewMode === 'board' ? 'white' : 'var(--ink)',
+                  borderRadius: '4px',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                }}
               >
-                {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={state.keepFamily}
-                onChange={(e) => setState(prev => ({ ...prev, keepFamily: e.target.checked }))}
-                className="w-4 h-4"
-              />
-              <span className="text-gray-400">Keep McAlear family together</span>
-            </label>
+                Board
+              </button>
+              <button
+                onClick={() => setViewMode('teams')}
+                style={{
+                  padding: '6px 16px',
+                  border: '1px solid var(--line)',
+                  background: viewMode === 'teams' ? 'var(--ice)' : 'var(--card)',
+                  color: viewMode === 'teams' ? 'white' : 'var(--ink)',
+                  borderRadius: '4px',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                }}
+              >
+                Teams
+              </button>
+            </div>
+
+            {/* Controls */}
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '8px', alignItems: 'center' }}>
+              <label style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                Yeti slot:
+                <select
+                  value={state.yetiPickSlot}
+                  onChange={(e) => setState(prev => ({ ...prev, yetiPickSlot: Number(e.target.value) }))}
+                  disabled={state.pickHistory.length > 0}
+                  style={{ marginLeft: '6px', padding: '4px', fontSize: '12px', border: '1px solid var(--line)', borderRadius: '4px' }}
+                >
+                  {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </label>
+            </div>
           </div>
-          
-          {/* Help Text */}
-          {showHelp && (
-            <div className="mt-3 p-3 bg-gray-700 rounded text-xs space-y-2">
-              <p><strong>Value Formula:</strong></p>
-              <ul className="ml-4 space-y-1 text-gray-300">
-                <li>• Skaters (returning): 0.6×PTS + 0.4×P/G×GP (last year)</li>
-                <li>• Skaters (new): 8 + 0.3×max(0, 28-age)</li>
-                <li>• Goalies: 52 + 0.6×max(0, 40-age), because 4 G / 5 teams</li>
-              </ul>
-              <p><strong>Draft Adjustments (all teams):</strong></p>
-              <ul className="ml-4 space-y-1 text-gray-300">
-                <li>• Empty-net teams get +18 to grab a starter</li>
-                <li>• Second goalies get -25 (don't stockpile)</li>
-                <li>• Teams without D get +8</li>
-              </ul>
-              <p className="mt-2"><strong>Projections:</strong></p>
-              <ul className="ml-4 space-y-1 text-gray-300">
-                <li>• Model win% = projected chance of finishing 1st (not betting odds)</li>
-                <li>• Proj value = current + simulated remaining picks (BPA + needBump)</li>
-                <li>• Win% = softmax(exp(projValue/80))</li>
-              </ul>
+        </div>
+
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 16px' }}>
+          {/* Suggested Pick */}
+          {recommendations.length > 0 && (
+            <div style={{ margin: '16px 0', background: 'var(--card)', border: '2px solid var(--ice)', borderRadius: '6px', padding: '12px' }}>
+              <div style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 600 }}>
+                Suggested Pick:
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '16px', fontWeight: 600 }}>
+                    {recommendations[0].player.name.split(', ').reverse().join(' ')}
+                    {recommendations[0].player.traded && <span style={{ marginLeft: '6px', fontSize: '11px', color: '#9333ea' }}>↔</span>}
+                    {recommendations[0].player.missedHalf && <span style={{ marginLeft: '6px', fontSize: '11px', color: '#dc2626' }}>½</span>}
+                    {CAPTAINS.includes(recommendations[0].player.name) && <span style={{ marginLeft: '6px', fontSize: '10px', background: '#fbbf24', color: '#000', padding: '2px 4px', borderRadius: '3px', fontWeight: 600 }}>C</span>}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
+                    {getPosition(recommendations[0].player)} · {calculateValue(recommendations[0].player).toFixed(1)} · {recommendations[0].why}
+                  </div>
+                </div>
+                <button
+                  onClick={() => draftPlayer(recommendations[0].player.name)}
+                  style={{
+                    padding: '8px 16px',
+                    background: 'var(--go)',
+                    color: 'white',
+                    border: '1px solid var(--go)',
+                    borderRadius: '4px',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  PICK
+                </button>
+              </div>
+              {recommendations.length > 1 && (
+                <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--line)', display: 'flex', gap: '6px', flexWrap: 'wrap', fontSize: '11px' }}>
+                  {recommendations.slice(1).map((rec, idx) => (
+                    <button
+                      key={rec.player.name}
+                      onClick={() => draftPlayer(rec.player.name)}
+                      style={{
+                        padding: '3px 8px',
+                        border: '1px solid var(--line)',
+                        background: 'var(--card)',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {idx + 2}. {rec.player.name.split(', ').pop()} ({calculateValue(rec.player).toFixed(0)})
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Recommendation Card - Compact */}
-      {recommendations.length > 0 && (
-        <div className="max-w-4xl mx-auto px-4 mt-3">
-          <div className="bg-white border-2 border-green-600 rounded-lg p-3 shadow-md">
-            <div className="text-xs text-gray-500 font-medium mb-1">Suggested Pick:</div>
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="text-base font-bold text-gray-900 truncate">
-                  {recommendations[0].player.name.split(', ').reverse().join(' ')}
-                  {recommendations[0].player.traded && <span className="ml-2 text-xs text-purple-600">↔</span>}
-                  {recommendations[0].player.missedHalf && <span className="ml-2 text-xs text-red-600">½</span>}
-                </div>
-                <div className="text-xs text-gray-600 mt-0.5">
-                  {getPosition(recommendations[0].player)} · {calculateValue(recommendations[0].player).toFixed(1)} · {recommendations[0].why}
-                </div>
-              </div>
-              <button
-                onClick={() => draftPlayer(recommendations[0].player.name)}
-                className="px-4 py-2 bg-green-700 text-white rounded font-bold text-sm hover:bg-green-800 transition whitespace-nowrap shadow-sm"
-              >
-                PICK
-              </button>
-            </div>
-            {recommendations.length > 1 && (
-              <div className="mt-2 pt-2 border-t border-gray-200 flex flex-wrap gap-1 text-xs">
-                {recommendations.slice(1).map((rec, idx) => (
+          {/* Standings */}
+          <div style={{ margin: '16px 0', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '6px', overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead style={{ background: '#f8f8f8', borderBottom: '1px solid var(--line)' }}>
+                <tr>
+                  <th style={{ padding: '8px 6px', textAlign: 'left', fontSize: '11px', fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase' }}>Rank</th>
+                  <th style={{ padding: '8px 6px', textAlign: 'left', fontSize: '11px', fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase' }}>Team</th>
+                  <th style={{ padding: '8px 6px', textAlign: 'center', fontSize: '11px', fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase' }}>Win%</th>
+                  <th style={{ padding: '8px 6px', textAlign: 'right', fontSize: '11px', fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase' }}>Now</th>
+                  <th style={{ padding: '8px 6px', textAlign: 'right', fontSize: '11px', fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase' }}>Proj</th>
+                  <th style={{ padding: '8px 6px', textAlign: 'center', fontSize: '11px', fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase' }}>G</th>
+                  <th style={{ padding: '8px 6px', textAlign: 'center', fontSize: '11px', fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase' }}>N</th>
+                </tr>
+              </thead>
+              <tbody>
+                {standings.map((s, idx) => (
+                  <tr key={s.team} style={{ background: s.team === 'Yeti' ? '#f0f7fa' : 'transparent' }}>
+                    <td style={{ padding: '6px 6px', borderTop: '1px solid #f0f0f0', fontSize: '12px' }}>{idx + 1}</td>
+                    <td style={{ padding: '6px 6px', borderTop: '1px solid #f0f0f0', fontSize: '12px', fontWeight: s.team === 'Yeti' ? 600 : 400 }}>{s.team}</td>
+                    <td style={{ padding: '6px 6px', borderTop: '1px solid #f0f0f0', fontSize: '12px', textAlign: 'center' }}>{(s as any).winPct}%</td>
+                    <td style={{ padding: '6px 6px', borderTop: '1px solid #f0f0f0', fontSize: '12px', textAlign: 'right' }}>{s.now.toFixed(0)}</td>
+                    <td style={{ padding: '6px 6px', borderTop: '1px solid #f0f0f0', fontSize: '12px', textAlign: 'right' }}>{s.proj.toFixed(0)}</td>
+                    <td style={{ padding: '6px 6px', borderTop: '1px solid #f0f0f0', fontSize: '12px', textAlign: 'center' }}>{s.hasGoalie ? '✓' : '—'}</td>
+                    <td style={{ padding: '6px 6px', borderTop: '1px solid #f0f0f0', fontSize: '12px', textAlign: 'center' }}>{s.rosterSize}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Board View */}
+          {viewMode === 'board' && (
+            <>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px', alignItems: 'center' }}>
+                {(['all', 'available', 'F', 'D', 'G', 'assumed'] as FilterType[]).map(f => (
                   <button
-                    key={rec.player.name}
-                    onClick={() => draftPlayer(rec.player.name)}
-                    className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition"
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    style={{
+                      padding: '4px 10px',
+                      fontSize: '11px',
+                      border: '1px solid var(--line)',
+                      background: filter === f ? 'var(--ice)' : 'var(--card)',
+                      color: filter === f ? 'white' : 'var(--ink)',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                    }}
                   >
-                    {idx + 2}. {rec.player.name.split(', ').pop()} ({calculateValue(rec.player).toFixed(0)})
+                    {f === 'all' ? 'All' : f === 'available' ? 'Available' : f === 'assumed' ? 'Assumed' : f}
                   </button>
                 ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Standings Strip - Compact */}
-      <div className="max-w-4xl mx-auto px-4 mt-3">
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-          <table className="w-full text-xs">
-            <thead className="bg-gray-50 text-gray-600 border-b border-gray-200">
-              <tr>
-                <th className="px-2 py-1.5 text-left font-medium">Team</th>
-                <th className="px-2 py-1.5 text-center font-medium">Win%</th>
-                <th className="px-2 py-1.5 text-right font-medium">Proj</th>
-                <th className="px-2 py-1.5 text-center font-medium">G</th>
-              </tr>
-            </thead>
-            <tbody>
-              {standings.map((s, idx) => (
-                <tr
-                  key={s.team}
-                  className={`border-t border-gray-100 ${s.team === 'Yeti' ? 'bg-green-50' : ''} ${currentPick.team === s.team ? 'bg-yellow-50' : ''}`}
-                >
-                  <td className="px-2 py-1.5 font-medium text-gray-900">{idx + 1}. {s.team}</td>
-                  <td className="px-2 py-1.5 text-center text-green-700 font-semibold">{s.winPct}%</td>
-                  <td className="px-2 py-1.5 text-right text-gray-700">{s.projValue.toFixed(0)}</td>
-                  <td className="px-2 py-1.5 text-center text-gray-500">{s.goalie ? s.goalie.split(' ').pop() : '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {viewMode === 'board' ? (
-        <>
-          {/* Filters */}
-          <div className="max-w-4xl mx-auto px-4 mt-3">
-            <div className="flex flex-wrap gap-1.5 text-xs items-center">
-              {(['all', 'available', 'F', 'D', 'G', 'yeti'] as FilterType[]).map(f => (
                 <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`px-2 py-1 rounded transition ${
-                    filter === f
-                      ? 'bg-green-700 text-white'
-                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
+                  onClick={() => setSortByProj(!sortByProj)}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: '11px',
+                    border: '1px solid var(--line)',
+                    background: sortByProj ? 'var(--ice)' : 'var(--card)',
+                    color: sortByProj ? 'white' : 'var(--ink)',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                  }}
                 >
-                  {f === 'all' ? 'All' : f === 'available' ? 'Available' : f === 'yeti' ? 'Yeti' : f}
+                  Sort by Proj
                 </button>
-              ))}
-              <span className="text-gray-400 mx-1">|</span>
-              <button
-                onClick={() => setSortByProj(!sortByProj)}
-                className={`px-2 py-1 rounded transition ${
-                  sortByProj
-                    ? 'bg-green-700 text-white'
-                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                Sort by Proj
-              </button>
-            </div>
-          </div>
+              </div>
 
-          {/* Player Board */}
-          <div className="max-w-4xl mx-auto px-4 mt-2">
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead className="bg-gray-50 text-gray-600 border-b border-gray-200">
+              <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '6px', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead style={{ background: '#f8f8f8', borderBottom: '1px solid var(--line)' }}>
                     <tr>
-                      <th className="px-3 py-1.5 text-left font-medium">Player</th>
-                      <th className="px-1 py-1.5 text-center font-medium">P</th>
-                      <th className="px-1 py-1.5 text-center font-medium" title="Projected rank (frozen at load)">Proj</th>
-                      <th className="px-1 py-1.5 text-center font-medium" title="Pick number (C=captain)">Pick</th>
-                      <th className="px-1 py-1.5 text-center font-medium" title="Last year ADP">ADP</th>
-                      <th className="px-2 py-1.5 text-center font-medium">Val</th>
-                      <th className="px-2 py-1.5 text-center font-medium">PTS</th>
+                      <th style={{ padding: '8px 6px', textAlign: 'left', fontSize: '11px', fontWeight: 600, color: 'var(--muted)' }}>Player</th>
+                      <th style={{ padding: '8px 6px', textAlign: 'center', fontSize: '11px', fontWeight: 600, color: 'var(--muted)' }}>P</th>
+                      <th style={{ padding: '8px 6px', textAlign: 'center', fontSize: '11px', fontWeight: 600, color: 'var(--muted)' }} title="Projected rank (frozen at load)">Proj</th>
+                      <th style={{ padding: '8px 6px', textAlign: 'center', fontSize: '11px', fontWeight: 600, color: 'var(--muted)' }} title="Pick number (C=captain)">Pick</th>
+                      <th style={{ padding: '8px 6px', textAlign: 'center', fontSize: '11px', fontWeight: 600, color: 'var(--muted)' }} title="Last year ADP">ADP</th>
+                      <th style={{ padding: '8px 6px', textAlign: 'center', fontSize: '11px', fontWeight: 600, color: 'var(--muted)' }}>Val</th>
+                      <th style={{ padding: '8px 6px', textAlign: 'center', fontSize: '11px', fontWeight: 600, color: 'var(--muted)' }}>PTS</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredPlayers.map((p, idx) => {
-                      const value = calculateValue(p);
-                      const isRecommended = recommendations.length > 0 && recommendations[0].player.name === p.name;
+                    {filteredPlayers.map(p => {
+                      const isRec = recommendations[0]?.player.name === p.name;
                       const projRank = state.projectedRanks?.[p.name];
-                      
-                      // Find pick number (C for captain, number for drafted, — for available)
-                      let pickDisplay = '—';
-                      if (p.name === 'McAlear, Steven') {
-                        pickDisplay = 'C';
-                      } else {
-                        const pickIdx = state.pickHistory.findIndex(h => h.player === p.name);
-                        if (pickIdx >= 0) {
-                          pickDisplay = (pickIdx + 1).toString();
-                        }
-                      }
+                      const pickIdx = state.pickHistory.findIndex(h => h.player === p.name);
+                      const pickDisplay = CAPTAINS.includes(p.name) ? 'C' : pickIdx >= 0 ? String(pickIdx + 1) : '—';
                       
                       return (
                         <tr
                           key={p.name}
+                          style={{
+                            background: isRec ? '#e8f4f8' : 'transparent',
+                            borderLeft: isRec ? '3px solid var(--ice)' : 'none',
+                            cursor: 'pointer',
+                          }}
                           onClick={() => draftPlayer(p.name)}
-                          className={`border-t border-gray-100 hover:bg-gray-50 cursor-pointer transition ${
-                            isRecommended ? 'bg-green-50 border-l-4 border-l-green-600' : ''
-                          }`}
                         >
-                          <td className="px-3 py-1.5 text-gray-900">
-                            {isRecommended && <span className="mr-1 text-green-600">★</span>}
-                            {p.name}
-                            {p.traded && <span className="ml-1 text-purple-600">↔</span>}
-                            {p.missedHalf && <span className="ml-1 text-red-600">½</span>}
+                          <td style={{ padding: '6px 6px', borderTop: '1px solid #f0f0f0', fontSize: '12px' }}>
+                            {p.name.split(', ').reverse().join(' ')}
+                            {p.assumed && <span style={{ marginLeft: '4px', fontSize: '9px', color: 'var(--muted)' }}>*</span>}
+                            {p.traded && <span style={{ marginLeft: '4px', fontSize: '10px', color: '#9333ea' }}>↔</span>}
+                            {p.missedHalf && <span style={{ marginLeft: '4px', fontSize: '10px', color: '#dc2626' }}>½</span>}
                           </td>
-                          <td className="px-1 py-1.5 text-center text-gray-600">{getPosition(p)}</td>
-                          <td className="px-1 py-1.5 text-center text-gray-500 font-mono">{projRank || '—'}</td>
-                          <td className="px-1 py-1.5 text-center text-gray-700 font-medium">{pickDisplay}</td>
-                          <td className="px-1 py-1.5 text-center text-gray-400 text-[10px]">{p.ly_adp || '—'}</td>
-                          <td className="px-2 py-1.5 text-center font-semibold text-green-700">{value.toFixed(1)}</td>
-                          <td className="px-2 py-1.5 text-center text-gray-600">{p.pts || '—'}</td>
+                          <td style={{ padding: '6px 6px', borderTop: '1px solid #f0f0f0', fontSize: '12px', textAlign: 'center' }}>{getPosition(p)}</td>
+                          <td style={{ padding: '6px 6px', borderTop: '1px solid #f0f0f0', fontSize: '12px', textAlign: 'center' }}>{projRank || '—'}</td>
+                          <td style={{ padding: '6px 6px', borderTop: '1px solid #f0f0f0', fontSize: '12px', textAlign: 'center' }}>{pickDisplay}</td>
+                          <td style={{ padding: '6px 6px', borderTop: '1px solid #f0f0f0', fontSize: '12px', textAlign: 'center' }}>{p.ly_adp || '—'}</td>
+                          <td style={{ padding: '6px 6px', borderTop: '1px solid #f0f0f0', fontSize: '12px', textAlign: 'center' }}>{calculateValue(p).toFixed(0)}</td>
+                          <td style={{ padding: '6px 6px', borderTop: '1px solid #f0f0f0', fontSize: '12px', textAlign: 'center' }}>{p.pts || '—'}</td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
               </div>
-            </div>
-            <p className="text-xs text-gray-500 mt-1 text-center">Proj is the opening board, Pick is where they went</p>
-          </div>
-        </>
-      ) : (
-        /* Teams View */
-        <div className="max-w-4xl mx-auto px-4 mt-3">
-          <div className="space-y-3">
-            {standings.map((s) => {
-              const roster = state.rosters[s.team];
-              const players = roster.map(name => westmountPlayers.find(p => p.name === name)).filter(Boolean) as WestmountPlayer[];
-              const hasGoalie = players.some(p => p.role === 'goalie');
-              
-              return (
-                <div 
-                  key={s.team} 
-                  className={`bg-white rounded-lg border p-3 shadow-sm ${s.team === 'Yeti' ? 'border-green-500 bg-green-50' : 'border-gray-200'} ${currentPick.team === s.team ? 'border-yellow-500 bg-yellow-50' : ''}`}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="font-bold text-lg text-gray-900">{s.team}</h3>
-                      <div className="text-xs text-gray-600">
-                        #{standings.findIndex(st => st.team === s.team) + 1} · 
-                        {s.winPct}% · 
-                        Proj {s.projValue.toFixed(0)}
-                      </div>
-                    </div>
-                    {!hasGoalie && roster.length > 0 && (
-                      <div className="bg-red-100 border border-red-300 px-2 py-0.5 rounded text-xs font-semibold text-red-700">
-                        NO G
-                      </div>
+
+              <div style={{ margin: '12px 0', fontSize: '11px', color: 'var(--muted)' }}>
+                Proj is the opening board, Pick is where they went
+              </div>
+
+              <details style={{ margin: '12px 0', padding: '12px', background: '#f8f8f8', border: '1px solid var(--line)', borderRadius: '4px', fontSize: '11px' }}>
+                <summary style={{ cursor: 'pointer', fontWeight: 600, marginBottom: '8px' }}>Draft Details</summary>
+                <div style={{ marginTop: '8px', color: 'var(--muted)' }}>
+                  <p>Four-man swap: Yeti got Lach+Friedman; Kings got Yarrow+Uhthoff. Yeti's season goalie was Lach.</p>
+                  <p style={{ marginTop: '8px' }}><strong>Value:</strong> Raw = 0.6×PTS + 0.4×P/G×GP. Surplus vs replacement (18 pts). Elites: convex 0.008×surplus². Duds: 1.4× penalty. Goalies: 52 + age.</p>
+                  <p style={{ marginTop: '8px' }}><strong>Reunion:</strong> +8 for last-year teammates. Yeti +18 on McAlears. Hawks +10 on Angelini/Orsini/Ciampini. Devils +22 on Yarrow.</p>
+                </div>
+              </details>
+            </>
+          )}
+
+          {/* Teams View */}
+          {viewMode === 'teams' && (
+            <div style={{ display: 'grid', gap: '16px' }}>
+              {TEAMS.map(team => {
+                const roster = state.rosters[team];
+                const players = roster.map(name => westmountPlayers.find(p => p.name === name)).filter(Boolean) as WestmountPlayer[];
+                const hasGoalie = players.some(p => getPosition(p) === 'G');
+                
+                return (
+                  <div key={team} style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '6px', padding: '12px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>
+                      {team} {!hasGoalie && roster.length > 0 && <span style={{ fontSize: '12px', color: '#dc2626' }}>(No goalie!)</span>}
+                    </h3>
+                    {roster.length === 0 ? (
+                      <p style={{ fontSize: '12px', color: 'var(--muted)' }}>No picks yet</p>
+                    ) : (
+                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid var(--line)' }}>
+                            <th style={{ padding: '4px 6px', textAlign: 'left', fontSize: '10px', color: 'var(--muted)' }}>Player</th>
+                            <th style={{ padding: '4px 6px', textAlign: 'center', fontSize: '10px', color: 'var(--muted)' }}>P</th>
+                            <th style={{ padding: '4px 6px', textAlign: 'right', fontSize: '10px', color: 'var(--muted)' }}>Val</th>
+                            <th style={{ padding: '4px 6px', textAlign: 'right', fontSize: '10px', color: 'var(--muted)' }}>PTS</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {players.map(p => (
+                            <tr key={p.name}>
+                              <td style={{ padding: '4px 6px', fontSize: '11px' }}>{p.name.split(', ').reverse().join(' ')}</td>
+                              <td style={{ padding: '4px 6px', fontSize: '11px', textAlign: 'center' }}>{getPosition(p)}</td>
+                              <td style={{ padding: '4px 6px', fontSize: '11px', textAlign: 'right' }}>{calculateValue(p).toFixed(0)}</td>
+                              <td style={{ padding: '4px 6px', fontSize: '11px', textAlign: 'right' }}>{p.pts || '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     )}
                   </div>
-                  
-                  {roster.length === 0 ? (
-                    <p className="text-gray-400 text-xs italic">No players drafted</p>
-                  ) : (
-                    <div className="space-y-1">
-                      {players.map((p, idx) => {
-                        const value = calculateValue(p);
-                        
-                        return (
-                          <div key={idx} className="text-xs flex justify-between items-center py-0.5 border-t border-gray-100">
-                            <span className="text-gray-900">
-                              {idx + 1}. {p.name.split(', ').reverse().join(' ')}
-                              {p.traded && <span className="ml-1 text-purple-600">↔</span>}
-                              {p.missedHalf && <span className="ml-1 text-red-600">½</span>}
-                            </span>
-                            <span className="text-gray-600">
-                              {getPosition(p)} · {value.toFixed(0)}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
-    </div>
+
+        {/* Bottom Bar */}
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--card)', borderTop: '1px solid var(--line)', padding: '12px 16px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
+          <button
+            onClick={mockDraft}
+            style={{
+              padding: '6px 12px',
+              border: '1px solid var(--line)',
+              background: 'var(--ice)',
+              color: 'white',
+              borderRadius: '4px',
+              fontSize: '12px',
+              cursor: 'pointer',
+              fontWeight: 500,
+            }}
+          >
+            Mock
+          </button>
+          <button
+            onClick={undoLastPick}
+            disabled={state.pickHistory.length === 0}
+            style={{
+              padding: '6px 12px',
+              border: '1px solid var(--line)',
+              background: 'var(--card)',
+              borderRadius: '4px',
+              fontSize: '12px',
+              cursor: state.pickHistory.length === 0 ? 'not-allowed' : 'pointer',
+              fontWeight: 500,
+              opacity: state.pickHistory.length === 0 ? 0.4 : 1,
+            }}
+          >
+            Undo
+          </button>
+          <button
+            onClick={resetDraft}
+            style={{
+              padding: '6px 12px',
+              border: '1px solid var(--line)',
+              background: 'var(--card)',
+              borderRadius: '4px',
+              fontSize: '12px',
+              cursor: 'pointer',
+              fontWeight: 500,
+            }}
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+    </>
   );
 }
