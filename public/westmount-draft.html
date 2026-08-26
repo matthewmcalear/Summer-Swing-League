@@ -156,14 +156,55 @@
         <button class="tab" onclick="switchTab('results')">Results</button>
       </div>
       <div class="controls">
-        <label style="font-size: 12px; color: var(--muted);">
-          Yeti slot:
-          <select id="yetiSlot" onchange="updateYetiSlot()">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4" selected>4</option>
-            <option value="5">5</option>
+        <label style="font-size: 12px; color: var(--muted); margin-right: 4px;">Draft order:</label>
+        <label style="font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 2px;">
+          <span style="color: var(--muted);">1st</span>
+          <select id="order0" onchange="updateDraftOrder(0)" style="font-size: 11px; padding: 2px 4px;">
+            <option value="Devils">Devils</option>
+            <option value="Kings">Kings</option>
+            <option value="Flyers">Flyers</option>
+            <option value="Yeti">Yeti</option>
+            <option value="Hawks">Hawks</option>
+          </select>
+        </label>
+        <label style="font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 2px;">
+          <span style="color: var(--muted);">2nd</span>
+          <select id="order1" onchange="updateDraftOrder(1)" style="font-size: 11px; padding: 2px 4px;">
+            <option value="Devils">Devils</option>
+            <option value="Kings">Kings</option>
+            <option value="Flyers">Flyers</option>
+            <option value="Yeti">Yeti</option>
+            <option value="Hawks">Hawks</option>
+          </select>
+        </label>
+        <label style="font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 2px;">
+          <span style="color: var(--muted);">3rd</span>
+          <select id="order2" onchange="updateDraftOrder(2)" style="font-size: 11px; padding: 2px 4px;">
+            <option value="Devils">Devils</option>
+            <option value="Kings">Kings</option>
+            <option value="Flyers">Flyers</option>
+            <option value="Yeti">Yeti</option>
+            <option value="Hawks">Hawks</option>
+          </select>
+        </label>
+        <label style="font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 2px;">
+          <span style="color: var(--muted);">4th</span>
+          <select id="order3" onchange="updateDraftOrder(3)" style="font-size: 11px; padding: 2px 4px;">
+            <option value="Devils">Devils</option>
+            <option value="Kings">Kings</option>
+            <option value="Flyers">Flyers</option>
+            <option value="Yeti">Yeti</option>
+            <option value="Hawks">Hawks</option>
+          </select>
+        </label>
+        <label style="font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 2px;">
+          <span style="color: var(--muted);">5th</span>
+          <select id="order4" onchange="updateDraftOrder(4)" style="font-size: 11px; padding: 2px 4px;">
+            <option value="Devils">Devils</option>
+            <option value="Kings">Kings</option>
+            <option value="Flyers">Flyers</option>
+            <option value="Yeti">Yeti</option>
+            <option value="Hawks">Hawks</option>
           </select>
         </label>
       </div>
@@ -216,7 +257,7 @@
     let state = {
       rosters: { Yeti: [], Devils: [], Kings: [], Flyers: [], Hawks: [] },
       pickHistory: [],
-      yetiPickSlot: 4,
+      order: ['Devils', 'Kings', 'Flyers', 'Yeti', 'Hawks'],
       projectedRanks: null,
       simResults: null
     };
@@ -302,23 +343,12 @@
 
     function getDraftOrder() {
       const order = [];
-      const slots = [
-        state.yetiPickSlot,
-        (state.yetiPickSlot === 1 || state.yetiPickSlot === 5) ? 2 : (state.yetiPickSlot === 2 || state.yetiPickSlot === 4) ? 1 : 5,
-        state.yetiPickSlot === 3 ? 4 : state.yetiPickSlot <= 2 ? 5 : 2,
-        state.yetiPickSlot === 1 ? 4 : state.yetiPickSlot === 5 ? 5 : state.yetiPickSlot === 2 ? 3 : 4,
-        state.yetiPickSlot === 1 ? 5 : state.yetiPickSlot === 5 ? 1 : 3,
-      ];
-      const slotToTeam = {
-        [slots[0]]: 'Yeti',
-        [slots[1]]: 'Devils',
-        [slots[2]]: 'Kings',
-        [slots[3]]: 'Flyers',
-        [slots[4]]: 'Hawks',
-      };
       for (let round = 0; round < 14; round++) {
-        const picks = round % 2 === 0 ? [1, 2, 3, 4, 5] : [5, 4, 3, 2, 1];
-        picks.forEach(slot => order.push(slotToTeam[slot]));
+        if (round % 2 === 0) {
+          order.push(...state.order);
+        } else {
+          order.push(...[...state.order].reverse());
+        }
       }
       return order;
     }
@@ -437,9 +467,19 @@
       }
     }
 
-    function updateYetiSlot() {
+    function updateDraftOrder(slotIdx) {
       if (state.pickHistory.length > 0) return;
-      state.yetiPickSlot = parseInt(document.getElementById('yetiSlot').value);
+      
+      const newTeam = document.getElementById(`order${slotIdx}`).value;
+      const oldTeam = state.order[slotIdx];
+      
+      if (newTeam === oldTeam) return;
+      
+      // Find where newTeam currently is and swap
+      const newTeamIdx = state.order.indexOf(newTeam);
+      state.order[slotIdx] = newTeam;
+      state.order[newTeamIdx] = oldTeam;
+      
       saveState();
       render();
     }
@@ -640,7 +680,14 @@
       }
       
       document.getElementById('undoBtn').disabled = state.pickHistory.length === 0;
-      document.getElementById('yetiSlot').disabled = state.pickHistory.length > 0;
+      
+      // Update draft order dropdowns
+      const orderDisabled = state.pickHistory.length > 0;
+      for (let i = 0; i < 5; i++) {
+        const select = document.getElementById(`order${i}`);
+        select.value = state.order[i];
+        select.disabled = orderDisabled;
+      }
     }
 
     function renderClock() {
@@ -892,6 +939,15 @@
       if (saved) {
         try {
           const loaded = JSON.parse(saved);
+          
+          // Migrate old yetiPickSlot to order if needed
+          if (loaded.yetiPickSlot && !loaded.order) {
+            // Map old yetiPickSlot to new default order with Yeti at that position
+            const defaultOrder = ['Devils', 'Kings', 'Flyers', 'Yeti', 'Hawks'];
+            loaded.order = defaultOrder;
+            delete loaded.yetiPickSlot;
+          }
+          
           state = { ...state, ...loaded };
         } catch (e) {
           console.error('Failed to load state', e);
