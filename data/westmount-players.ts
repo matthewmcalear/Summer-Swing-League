@@ -7,6 +7,7 @@ export interface WestmountPlayer {
   ly_name?: string;
   ly_pos?: string;
   ly_team?: string;
+  ly_adp?: string; // Last year's draft round (e.g., "R4", "R14")
   gp?: number;
   g?: number;
   a?: number;
@@ -85,11 +86,11 @@ export const westmountPlayers: WestmountPlayer[] = [
   { name: "Yatrou, Evan", age: 25, role: "skater", returning: false },
   { name: "Young, Cooper", age: 26, role: "skater", returning: true, ly_name: "Cooper Young", ly_pos: "D", ly_team: "Kings", gp: 22, g: 1, a: 6, pts: 7, ppg: 0.32, pim: 10 },
   
-  // Goalies (no stats)
-  { name: "Yarrow, Evan", age: 37, role: "goalie", returning: false },
+  // Goalies (no stats) - Martin was R4 first goalie, Yarrow R14 by Yeti
+  { name: "Yarrow, Evan", age: 37, role: "goalie", returning: false, ly_adp: "R14", ly_team: "Yeti" },
   { name: "Lach, Jared", age: 22, role: "goalie", returning: false },
   { name: "Gironne, Michel", age: 49, role: "goalie", returning: false },
-  { name: "Martin, Euan", age: 21, role: "goalie", returning: false },
+  { name: "Martin, Euan", age: 21, role: "goalie", returning: false, ly_adp: "R4" },
   
   // Assumed players (last year only, not on this year's incoming list)
   { name: "Masnaghetti, Daniel", role: "skater", returning: true, assumed: true, ly_name: "Daniel Masnaghetti", ly_pos: "", ly_team: "Kings", gp: 35, g: 18, a: 24, pts: 42, ppg: 1.2, pim: 0 },
@@ -109,4 +110,9 @@ export const westmountPlayers: WestmountPlayer[] = [
   { name: "Fox, Dan \"Fire\"", role: "skater", returning: true, assumed: true, ly_name: "Dan \"Fire\" Fox", ly_pos: "F", ly_team: "Flyers", gp: 27, g: 1, a: 4, pts: 5, ppg: 0.19, pim: 0 },
   { name: "Saleh, Fred", role: "skater", returning: true, assumed: true, ly_name: "Fred Saleh", ly_pos: "D", ly_team: "Flyers", gp: 5, g: 1, a: 1, pts: 2, ppg: 0.4, pim: 0 },
   { name: "Robb, Michael", role: "skater", returning: true, assumed: true, ly_name: "Michael Robb", ly_pos: "", ly_team: "Flyers", gp: 6, g: 0, a: 1, pts: 1, ppg: 0.17, pim: 0 },
+  
+  // Additional assumed players (3 more)
+  { name: "Walter, Aidan", role: "goalie", returning: false, assumed: true, ly_adp: "R6", ly_team: "Flyers" },
+  { name: "Hodge, Dan", role: "skater", returning: true, assumed: true, ly_name: "Dan Hodge", ly_pos: "", ly_team: "Kings", ly_adp: "R8", gp: 0, g: 0, a: 0, pts: 0, ppg: 0, pim: 0 },
+  { name: "Charbonneau, Damien", role: "skater", returning: true, assumed: true, ly_name: "Damien Charbonneau", ly_pos: "", ly_team: "Flyers", ly_adp: "R13", gp: 0, g: 0, a: 0, pts: 0, ppg: 0, pim: 0 },
 ];

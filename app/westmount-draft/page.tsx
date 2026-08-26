@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { westmountPlayers, WestmountPlayer } from '@/data/westmount-players';
 import { ChevronDown, ChevronUp, RotateCcw, Zap, Info, TrendingUp } from 'lucide-react';
 
-type Team = 'McAlear' | 'Devils' | 'Kings' | 'Flyers' | 'Hawks';
+type Team = 'Yeti' | 'Devils' | 'Kings' | 'Flyers' | 'Hawks';
 type FilterType = 'all' | 'available' | 'F' | 'D' | 'G' | 'no-stats' | 'yeti' | 'assumed';
 type Position = 'F' | 'D' | 'G';
 type ViewMode = 'board' | 'teams';
@@ -12,11 +12,11 @@ type ViewMode = 'board' | 'teams';
 interface DraftState {
   rosters: Record<Team, string[]>;
   pickHistory: Array<{ team: Team; player: string }>;
-  mcalearPickSlot: number;
+  yetiPickSlot: number;
   keepFamily: boolean;
 }
 
-const TEAMS: Team[] = ['McAlear', 'Devils', 'Kings', 'Flyers', 'Hawks'];
+const TEAMS: Team[] = ['Yeti', 'Devils', 'Kings', 'Flyers', 'Hawks'];
 
 // Calculate player value for draft
 function calculateValue(p: WestmountPlayer): number {
@@ -38,30 +38,59 @@ function getPosition(p: WestmountPlayer): Position {
   return 'F';
 }
 
-// Calculate need-based adjustment for teams
-function needBump(p: WestmountPlayer, roster: string[]): number {
+// Calculate need-based adjustment for teams with political/communal preferences
+function needBump(p: WestmountPlayer, roster: string[], team: Team): number {
   const players = roster.map(name => westmountPlayers.find(pl => pl.name === name)).filter(Boolean) as WestmountPlayer[];
   const dCount = players.filter(x => getPosition(x) === 'D').length;
   const gCount = players.filter(x => getPosition(x) === 'G').length;
   const pos = getPosition(p);
   
-  if (pos === 'G' && gCount === 0) return 18;  // take a starter early
-  if (pos === 'G' && gCount >= 1) return -25;  // don't stockpile
-  if (pos === 'D' && dCount === 0) return 8;   // need a defenseman
-  return 0;
+  let bump = 0;
+  
+  // Positional needs (universal)
+  if (pos === 'G' && gCount === 0) bump += 18;  // take a starter early
+  if (pos === 'G' && gCount >= 1) bump -= 25;  // don't stockpile
+  if (pos === 'D' && dCount === 0) bump += 8;   // need a defenseman
+  
+  // POLITICAL/COMMUNAL preferences
+  
+  // Yeti/Steven: family preference
+  if (team === 'Yeti' && p.name.includes('McAlear')) {
+    bump += 15; // Will prefer McAlear if within ~15 value of BPA
+  }
+  
+  // Hawks/Ciampini: his guys (Angelini, Orsini, Ciampini, last-year Hawks)
+  if (team === 'Hawks') {
+    if (p.name.includes('Angelini') || p.name.includes('Orsini') || p.name.includes('Ciampini')) {
+      bump += 10;
+    }
+    if (p.ly_team === 'Hawks') bump += 5;
+  }
+  
+  // Devils/Phil: Yarrow the goalie specifically
+  if (team === 'Devils' && p.name.includes('Yarrow') && p.role === 'goalie') {
+    bump += 25; // Big bump on Yarrow specifically
+  }
+  
+  // Small bump for last-year teammates (all teams)
+  if (p.ly_team === team) {
+    bump += 3;
+  }
+  
+  return bump;
 }
 
 export default function WestmountDraftPage() {
   const [state, setState] = useState<DraftState>({
     rosters: {
-      McAlear: ['McAlear, Steven'],
+      Yeti: ['McAlear, Steven'],
       Devils: [],
       Kings: [],
       Flyers: [],
       Hawks: [],
     },
     pickHistory: [],
-    mcalearPickSlot: 3,
+    yetiPickSlot: 4, // Last year's position
     keepFamily: false,
   });
   
@@ -87,8 +116,9 @@ export default function WestmountDraftPage() {
   }, [state]);
 
   // Get team order for a given round/pick
+  // Last year order: Kings-Hawks-Devils-Yeti-Flyers
   const getTeamOrder = useMemo(() => {
-    return (pickNum: number, mcalearPickSlot: number): Team => {
+    return (pickNum: number, yetiPickSlot: number): Team => {
       const round = Math.floor((pickNum - 1) / 5) + 1;
       const posInRound = ((pickNum - 1) % 5) + 1;
       
@@ -101,11 +131,11 @@ export default function WestmountDraftPage() {
       
       const teamOrder: Team[] = [];
       for (let slot of pickOrder) {
-        if (slot === mcalearPickSlot) {
-          teamOrder.push('McAlear');
+        if (slot === yetiPickSlot) {
+          teamOrder.push('Yeti');
         } else {
-          const others = TEAMS.filter(t => t !== 'McAlear');
-          const otherSlots = [1, 2, 3, 4, 5].filter(s => s !== mcalearPickSlot);
+          const others = TEAMS.filter(t => t !== 'Yeti');
+          const otherSlots = [1, 2, 3, 4, 5].filter(s => s !== yetiPickSlot);
           const idx = otherSlots.indexOf(slot);
           teamOrder.push(others[idx]);
         }
@@ -117,16 +147,16 @@ export default function WestmountDraftPage() {
 
   // Calculate current pick
   const currentPick = useMemo(() => {
-    const { pickHistory, mcalearPickSlot } = state;
+    const { pickHistory, yetiPickSlot } = state;
     const pickNum = pickHistory.length + 1;
     const round = Math.floor((pickNum - 1) / 5) + 1;
     
     return {
       pickNum,
       round,
-      team: getTeamOrder(pickNum, mcalearPickSlot),
+      team: getTeamOrder(pickNum, yetiPickSlot),
     };
-  }, [state.pickHistory, state.mcalearPickSlot, getTeamOrder]);
+  }, [state.pickHistory, state.yetiPickSlot, getTeamOrder]);
 
   // Get drafted players
   const draftedPlayers = useMemo(() => {
@@ -146,7 +176,7 @@ export default function WestmountDraftPage() {
       const totalPicks = westmountPlayers.length;
       
       for (let pickNum = state.pickHistory.length + 1; pickNum <= totalPicks; pickNum++) {
-        const team = getTeamOrder(pickNum, state.mcalearPickSlot);
+        const team = getTeamOrder(pickNum, state.yetiPickSlot);
         const available = westmountPlayers.filter(p => !drafted.has(p.name));
         
         if (available.length === 0) break;
@@ -154,7 +184,7 @@ export default function WestmountDraftPage() {
         // BPA with needBump
         const scoredPlayers = available.map(p => {
           let score = calculateValue(p);
-          score += needBump(p, simRosters[team]);
+          score += needBump(p, simRosters[team], team);
           return { player: p, score };
         });
         
@@ -202,7 +232,7 @@ export default function WestmountDraftPage() {
     withProbs.sort((a, b) => b.projValue - a.projValue);
     
     return withProbs;
-  }, [state.rosters, state.pickHistory, state.mcalearPickSlot, getTeamOrder]);
+  }, [state.rosters, state.pickHistory, state.yetiPickSlot, getTeamOrder]);
 
   // Calculate recommendations for current pick
   const recommendations = useMemo(() => {
@@ -215,11 +245,11 @@ export default function WestmountDraftPage() {
     // Score all available players with needBump
     const scored = available.map(p => {
       let score = calculateValue(p);
-      const bump = needBump(p, roster);
+      const bump = needBump(p, roster, team);
       score += bump;
       
-      // Keep family bonus if enabled and McAlear is picking
-      if (team === 'McAlear' && state.keepFamily && p.name.includes('McAlear')) {
+      // Keep family bonus if enabled and Yeti is picking
+      if (team === 'Yeti' && state.keepFamily && p.name.includes('McAlear')) {
         score += 5;
       }
       
@@ -230,7 +260,8 @@ export default function WestmountDraftPage() {
       const gCount = rosterPlayers.filter(x => getPosition(x) === 'G').length;
       const dCount = rosterPlayers.filter(x => getPosition(x) === 'D').length;
       
-      if (pos === 'G' && gCount === 0 && bump > 0) why = 'Need a goalie';
+      if (team === 'Yeti' && p.name.includes('McAlear') && bump > 10) why = 'Family';
+      else if (pos === 'G' && gCount === 0 && bump > 0) why = 'Need a goalie';
       else if (pos === 'D' && dCount === 0 && bump > 0) why = 'Need a D';
       else if (bump > 0) why = 'Positional need';
       
@@ -292,14 +323,14 @@ export default function WestmountDraftPage() {
     if (confirm('Reset the entire draft? This cannot be undone.')) {
       setState({
         rosters: {
-          McAlear: ['McAlear, Steven'],
+          Yeti: ['McAlear, Steven'],
           Devils: [],
           Kings: [],
           Flyers: [],
           Hawks: [],
         },
         pickHistory: [],
-        mcalearPickSlot: state.mcalearPickSlot,
+        yetiPickSlot: state.yetiPickSlot,
         keepFamily: state.keepFamily,
       });
     }
@@ -313,21 +344,21 @@ export default function WestmountDraftPage() {
       
       while (newState.pickHistory.length < maxPicks) {
         const pickNum = newState.pickHistory.length + 1;
-        const team = getTeamOrder(pickNum, newState.mcalearPickSlot);
+        const team = getTeamOrder(pickNum, newState.yetiPickSlot);
         const drafted = new Set(Object.values(newState.rosters).flat());
         const available = westmountPlayers.filter(p => !drafted.has(p.name));
         
         if (available.length === 0) break;
         
-        // CPU logic: BPA with positional need
+        // CPU logic: BPA with positional need and political preferences
         const scoredPlayers = available.map(p => {
           let score = calculateValue(p);
           
-          // Apply need bump for ALL teams
-          score += needBump(p, newState.rosters[team]);
+          // Apply need bump for ALL teams with political preferences
+          score += needBump(p, newState.rosters[team], team);
           
-          // Keep family logic (only if toggle is ON and McAlear is picking)
-          if (team === 'McAlear' && newState.keepFamily && p.name.includes('McAlear')) {
+          // Keep family logic (only if toggle is ON and Yeti is picking)
+          if (team === 'Yeti' && newState.keepFamily && p.name.includes('McAlear')) {
             score += 5;
           }
           
@@ -411,10 +442,10 @@ export default function WestmountDraftPage() {
           {/* Settings */}
           <div className="mt-3 flex flex-wrap gap-4 justify-center text-sm">
             <label className="flex items-center gap-2">
-              <span className="text-gray-400">McAlear picks at:</span>
+              <span className="text-gray-400">Yeti picks at:</span>
               <select
-                value={state.mcalearPickSlot}
-                onChange={(e) => setState(prev => ({ ...prev, mcalearPickSlot: Number(e.target.value) }))}
+                value={state.yetiPickSlot}
+                onChange={(e) => setState(prev => ({ ...prev, yetiPickSlot: Number(e.target.value) }))}
                 disabled={state.pickHistory.length > 0}
                 className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white disabled:opacity-50"
               >
@@ -428,7 +459,7 @@ export default function WestmountDraftPage() {
                 onChange={(e) => setState(prev => ({ ...prev, keepFamily: e.target.checked }))}
                 className="w-4 h-4"
               />
-              <span className="text-gray-400">Keep family together (McAlear)</span>
+              <span className="text-gray-400">Keep McAlear family together</span>
             </label>
           </div>
           
@@ -468,7 +499,7 @@ export default function WestmountDraftPage() {
                   Pick #{currentPick.pickNum} · Round {currentPick.round}
                 </div>
                 <div className="text-xl font-bold text-white mb-2">
-                  {currentPick.team === 'McAlear' ? 'Steven should take' : `Next for ${currentPick.team}`}
+                  {currentPick.team === 'Yeti' ? 'Steven should take' : `Next for ${currentPick.team}`}
                 </div>
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="text-2xl font-bold text-green-100">
@@ -534,10 +565,10 @@ export default function WestmountDraftPage() {
               </thead>
               <tbody>
                 {standings.map((s, idx) => (
-                  <tr
-                    key={s.team}
-                    className={`border-t border-gray-700 ${s.team === 'McAlear' ? 'bg-blue-900/30' : ''} ${currentPick.team === s.team ? 'ring-2 ring-blue-500' : ''}`}
-                  >
+                <tr
+                  key={s.team}
+                  className={`border-t border-gray-700 ${s.team === 'Yeti' ? 'bg-blue-900/30' : ''} ${currentPick.team === s.team ? 'ring-2 ring-blue-500' : ''}`}
+                >
                     <td className="px-2 py-2 text-gray-400">{idx + 1}</td>
                     <td className="px-2 py-2 font-semibold">{s.team}</td>
                     <td className="px-2 py-2 text-center text-green-400">{s.winPct}%</td>
@@ -609,6 +640,7 @@ export default function WestmountDraftPage() {
                           <td className="px-3 py-2 font-medium">
                             {isRecommended && <span className="mr-2 text-green-400">★</span>}
                             {p.name}
+                            {p.ly_adp && <span className="ml-2 text-xs bg-gray-600 text-gray-300 px-1 py-0.5 rounded font-medium">{p.ly_adp}</span>}
                             {isYeti && <span className="ml-2 text-xs bg-yellow-600 text-black px-1.5 py-0.5 rounded font-bold">YETI</span>}
                             {isAssumed && <span className="ml-2 text-xs bg-orange-600 text-white px-1.5 py-0.5 rounded font-bold">ASSUMED</span>}
                           </td>
@@ -643,7 +675,7 @@ export default function WestmountDraftPage() {
               return (
                 <div 
                   key={s.team} 
-                  className={`bg-gray-800 rounded-lg p-4 ${s.team === 'McAlear' ? 'ring-2 ring-blue-500' : ''} ${currentPick.team === s.team ? 'ring-2 ring-yellow-500' : ''}`}
+                  className={`bg-gray-800 rounded-lg p-4 ${s.team === 'Yeti' ? 'ring-2 ring-blue-500' : ''} ${currentPick.team === s.team ? 'ring-2 ring-yellow-500' : ''}`}
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div>
@@ -686,6 +718,7 @@ export default function WestmountDraftPage() {
                                 <td className="py-2 pr-2 text-gray-500">{idx + 1}</td>
                                 <td className="py-2 px-2 font-medium">
                                   {p.name.split(', ').reverse().join(' ')}
+                                  {p.ly_adp && <span className="ml-2 text-xs bg-gray-600 text-gray-300 px-1 py-0.5 rounded">{p.ly_adp}</span>}
                                   {isYeti && <span className="ml-2 text-xs bg-yellow-600 text-black px-1 py-0.5 rounded font-bold">YETI</span>}
                                   {isAssumed && <span className="ml-2 text-xs bg-orange-600 text-white px-1 py-0.5 rounded font-bold">ASSUMED</span>}
                                 </td>
