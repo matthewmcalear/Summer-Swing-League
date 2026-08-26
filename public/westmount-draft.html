@@ -161,16 +161,7 @@ const TEAM_CAPTAIN = {Yeti:"Steven", Devils:"Emile", Kings:"Mashaal", Flyers:"Ph
 const TEAM_CAPTAIN_ID = {Yeti:"McAlear, Steven", Devils:"Murciano, Emile", Kings:"Mashaal, Alexander", Hawks:"Ciampini, Adam"};
 function teamLabel(t){ return TEAM_CAPTAIN[t] ? t+" ("+TEAM_CAPTAIN[t]+")" : t; }
 function ownCaptainId(team){ return TEAM_CAPTAIN_ID[team] || null; }
-function captainSelfBonus(p, team, ctx){
-  if (p.id !== ownCaptainId(team)) return 0;
-  const others = (ctx.pool||[]).filter(x=>x.id!==p.id);
-  if (!others.length) return 18;
-  let bestSc = -Infinity;
-  for (const x of others){ const s=score(x); if (s>bestSc) bestSc=s; }
-  const gap = bestSc - score(p);
-  return Math.max(-12, Math.min(18, 18 - gap));
-}
-const KEY = "wsl-draft-v14";
+const KEY = "wsl-draft-v15";
 
 const FAMILY = new Set(["McAlear, Daniel","McAlear, Matthew","McAlear, Thomas"]);
 const HAWKS_CORE = new Set(["Angelini, Christopher","Angelini, Michael","Orsini, Mark","Ciampini, Adam"]);
@@ -205,10 +196,10 @@ function attendanceR(p){
   if (p.y5gp) return Math.min(1, (p.y5gp/5)/32);
   return 0;
 }
-function replAt(arr, intended){
+function replPct(arr, pctl){
   if (!arr.length) return 0;
-  const cap = Math.max(0, Math.floor(arr.length * 0.65) - 1);
-  return arr[Math.min(intended - 1, cap, arr.length - 1)];
+  const i = Math.round((arr.length - 1) * pctl);
+  return arr[Math.max(0, Math.min(arr.length - 1, i))];
 }
 function replacementLevels(){
   const fs = [], ds = [];
@@ -223,8 +214,8 @@ function replacementLevels(){
   fs.sort((a,b)=>b-a);
   ds.sort((a,b)=>b-a);
   return {
-    replF: replAt(fs, 45),
-    replD: replAt(ds, 8),
+    replF: replPct(fs, 0.65),
+    replD: replPct(ds, 0.50),
     nF: fs.length,
     nD: ds.length,
   };
@@ -236,7 +227,8 @@ function score(p){
   }
   const raw = rawExpected(p);
   if (raw==null) return 0;
-  const repl = skaterSlot(p)==="D" ? REPL.replD : REPL.replF;
+  const slot = skaterSlot(p);
+  const repl = slot==="D" ? REPL.replD : slot==="F" ? REPL.replF : (REPL.replF + REPL.replD) / 2;
   return (raw - repl) * attendanceR(p);
 }
 
@@ -410,7 +402,7 @@ function goalieIfPass(p, pool, rosters){
   const needers = teamsNeedingG(rosters);
   if (needers <= 1) return p;
   if (!still.length) return null;
-  return still[still.length-1];
+  return still[0];
 }
 function goalieNeedBonus(p, pool, pickNum, rosters){
   const needers = teamsNeedingG(rosters);
@@ -426,8 +418,6 @@ function needBumpOn(p, r, ctx){
   let bump = 0;
   if (posOf(p)==="G" && g>=1) bump += -28;
   else if (posOf(p)==="G" && g===0) bump += goalieNeedBonus(p, ctx.pool, ctx.pickNum, ctx.rosters);
-  
-  bump += captainSelfBonus(p, ctx.team, ctx);
   return bump;
 }
 function liveCtx(){
@@ -454,31 +444,32 @@ function recommend(){
   return chooseFrom(available(), team, roster(team), state.pick, rostersFromState());
 }
 function whyPick(p, team){
-  if (p.id === ownCaptainId(team)) return "own captain";
-  if (team==="Yeti" && FAMILY.has(p.id)) return "family";
-  if (team==="Flyers" && p.id==="Yarrow, Evan") return "Phil takes Yarrow";
-  if (p.tradedAfterDraft) {
-    if (p.lyTeam === team) return "last-year "+team;
-  } else if (p.lyDraftTeam === team || p.lyTeam === team) return "last-year "+team;
-  if (team==="Hawks" && HAWKS_CORE.has(p.id)) return "Hawks core";
   const bump = needBumpOn(p, roster(team), liveCtx());
-  if (posOf(p)==="G" && bump>=40) return "don't get shut out";
-  if (posOf(p)==="G" && bump>0) return "goalie gap";
+  if (posOf(p)==="G" && bump>=40) return "last G, don't get shut out";
+  if (posOf(p)==="G") return "goalie gap vs next net";
+  if (state.usePolitics){
+    if (team==="Yeti" && FAMILY.has(p.id)) return "family";
+    if (team==="Flyers" && p.id==="Yarrow, Evan") return "Phil takes Yarrow";
+    if (p.tradedAfterDraft) {
+      if (p.lyTeam === team) return "last-year "+team;
+    } else if (p.lyDraftTeam === team || p.lyTeam === team) return "last-year "+team;
+    if (team==="Hawks" && HAWKS_CORE.has(p.id)) return "Hawks core";
+  }
   return "best value";
 }
 function whyExplain(p, team, runner){
   const r = roster(team);
   const ctx = liveCtx();
-  if (p.id === ownCaptainId(team)){
-    const vs = runner ? ` Next is ${shortName(runner.name)}.` : "";
-    return `Captains draft themselves. ${shortName(p.name)} is ${teamLabel(team)}'s C. Board is in his talent range.`+vs;
-  }
   const pv = pickValueOn(p, team, r, ctx);
   const need = needBumpOn(p, r, ctx);
-  const pol = politics(p, team);
+  const pol = state.usePolitics ? politics(p, team) : 0;
   const sc = score(p);
+  const runV = runner ? pickValueOn(runner, team, r, ctx) : null;
+  const margin = runV==null ? null : pv - runV;
   const vs = runner
-    ? ` Next is ${shortName(runner.name)} (${posOf(runner)}, pick value ${pickValueOn(runner,team,r,ctx).toFixed(1)}).`
+    ? (margin!=null && margin < 1
+        ? ` Essentially tied with ${shortName(runner.name)} (margin ${margin.toFixed(2)}).`
+        : ` Next is ${shortName(runner.name)} (${posOf(runner)}, pick value ${runV.toFixed(1)}).`)
     : "";
   if (p.role==="goalie") {
     if (need >= 40) return `Last starter on the board and another team still needs a net. Take ${shortName(p.name)} or you get shut out.`+vs;
@@ -541,10 +532,8 @@ function renderClock(){
   const el = document.getElementById("clock");
   el.classList.toggle("mine", team==="Yeti" && left>0);
   const help = `<details class="help"><summary>The formula</summary>
-    <div class="small">LY = (PTS / GP) × 28<br>Y5 = (Y5PTS / Y5GP) × 28<br>RAW = (GP×LY + Y5GP×Y5) / (GP + Y5GP)<br>REPL_F = 45th known F, capped at the 65th F so a short pool does not make replacement the worst forward<br>REPL_D = 8th known D, same cap<br>score = (RAW − REPL_pos) × (GP / 32)</div>
-    <div class="small">Unknown position is not dumped into the F pool. Those guys score vs REPL_F (no D premium) until someone labels them. Same points on D beat the same points at F when REPL_D &lt; REPL_F. No box score → 0. Matthew’s D-year counting stats × 1.3 because he is F.</div>
-    <div class="small">Goalies have no GAA here. G = 0.6 × max(0, 40 − age). Pick value = G − G_leftover (worst remaining net). Last G + another team needs one: +40. Already have a G: −28. Last team without a G: pick value 0, take skaters.</div>
-    <div class="small">pick value = score + need. Politics (reunion / family) is the checkbox, off by default, not in the formula.</div>
+    <div class="small">LY = (PTS / GP) × 28<br>Y5 = (Y5PTS / Y5GP) × 28<br>RAW = (GP×LY + Y5GP×Y5) / (GP + Y5GP)<br>REPL_F = 65th-percentile known F&nbsp;&nbsp;REPL_D = median known D<br>Unknown pos uses the midpoint of those two.<br>score = (RAW − REPL_pos) × (GP / 32)</div>
+    <div class="small">Goalies have no GAA. G = 0.6 × max(0, 40 − age). Pick value = G − G_next (the next-best remaining net, not Gironne). Last G + another team still needs one: +40. Already have a G: −28. Last team without a G: 0. No captain bonus. Politics is the checkbox.</div>
   </details>`;
   if (!left){ el.innerHTML = "<strong>Draft complete.</strong> Check Teams."+help; return; }
   if (!rec){ el.innerHTML = `<div class="onclock">On the clock · pick ${state.pick+1}</div>`+help; return; }
