@@ -204,6 +204,43 @@ export default function WestmountDraftPage() {
     return withProbs;
   }, [state.rosters, state.pickHistory, state.mcalearPickSlot, getTeamOrder]);
 
+  // Calculate recommendations for current pick
+  const recommendations = useMemo(() => {
+    const available = westmountPlayers.filter(p => !draftedPlayers.has(p.name));
+    if (available.length === 0) return [];
+    
+    const team = currentPick.team;
+    const roster = state.rosters[team];
+    
+    // Score all available players with needBump
+    const scored = available.map(p => {
+      let score = calculateValue(p);
+      const bump = needBump(p, roster);
+      score += bump;
+      
+      // Keep family bonus if enabled and McAlear is picking
+      if (team === 'McAlear' && state.keepFamily && p.name.includes('McAlear')) {
+        score += 5;
+      }
+      
+      // Determine why this is recommended
+      let why = 'Best value';
+      const pos = getPosition(p);
+      const rosterPlayers = roster.map(name => westmountPlayers.find(pl => pl.name === name)).filter(Boolean) as WestmountPlayer[];
+      const gCount = rosterPlayers.filter(x => getPosition(x) === 'G').length;
+      const dCount = rosterPlayers.filter(x => getPosition(x) === 'D').length;
+      
+      if (pos === 'G' && gCount === 0 && bump > 0) why = 'Need a goalie';
+      else if (pos === 'D' && dCount === 0 && bump > 0) why = 'Need a D';
+      else if (bump > 0) why = 'Positional need';
+      
+      return { player: p, score, why };
+    });
+    
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, 3); // Top 3 recommendations
+  }, [draftedPlayers, currentPick.team, state.rosters, state.keepFamily]);
+
   // Filter and sort players
   const filteredPlayers = useMemo(() => {
     let players = westmountPlayers.filter(p => {
@@ -421,6 +458,63 @@ export default function WestmountDraftPage() {
         </div>
       </div>
 
+      {/* Recommendation Card */}
+      {recommendations.length > 0 && (
+        <div className="max-w-4xl mx-auto px-4 mt-4">
+          <div className="bg-gradient-to-r from-green-900 to-green-800 border-2 border-green-600 rounded-lg p-4 shadow-xl">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <div className="flex-1">
+                <div className="text-xs text-green-300 uppercase font-bold tracking-wide mb-1">
+                  Pick #{currentPick.pickNum} · Round {currentPick.round}
+                </div>
+                <div className="text-xl font-bold text-white mb-2">
+                  {currentPick.team === 'McAlear' ? 'Steven should take' : `Next for ${currentPick.team}`}
+                </div>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <span className="text-2xl font-bold text-green-100">
+                    {recommendations[0].player.name.split(', ').reverse().join(' ')}
+                  </span>
+                  {recommendations[0].player.ly_team === 'Yeti' && (
+                    <span className="text-xs bg-yellow-600 text-black px-1.5 py-0.5 rounded font-bold">YETI</span>
+                  )}
+                  {recommendations[0].player.assumed && (
+                    <span className="text-xs bg-orange-600 text-white px-1.5 py-0.5 rounded font-bold">ASSUMED</span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-3 text-sm text-green-200">
+                  <span><strong>Pos:</strong> {getPosition(recommendations[0].player)}</span>
+                  <span><strong>Value:</strong> {calculateValue(recommendations[0].player).toFixed(1)}</span>
+                  <span><strong>LY PTS:</strong> {recommendations[0].player.pts || '—'}</span>
+                  <span className="text-green-300 italic">· {recommendations[0].why}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => draftPlayer(recommendations[0].player.name)}
+                className="px-6 py-3 bg-white text-green-900 rounded-lg font-bold text-lg hover:bg-green-50 transition-all shadow-lg hover:shadow-xl whitespace-nowrap"
+              >
+                PICK
+              </button>
+            </div>
+            
+            {/* Alternative picks */}
+            {recommendations.length > 1 && (
+              <div className="mt-3 pt-3 border-t border-green-700 flex flex-wrap gap-2">
+                <span className="text-xs text-green-400 uppercase font-semibold mr-2">Alternatives:</span>
+                {recommendations.slice(1).map((rec, idx) => (
+                  <button
+                    key={rec.player.name}
+                    onClick={() => draftPlayer(rec.player.name)}
+                    className="px-3 py-1 bg-green-800 hover:bg-green-700 text-white rounded text-sm font-medium transition border border-green-600"
+                  >
+                    {idx + 2}. {rec.player.name.split(', ').reverse().join(' ')} ({getPosition(rec.player)}, {calculateValue(rec.player).toFixed(1)})
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Standings Strip */}
       <div className="max-w-4xl mx-auto px-4 mt-4">
         <div className="bg-gray-800 rounded-lg overflow-hidden">
@@ -502,14 +596,18 @@ export default function WestmountDraftPage() {
                       const isYeti = p.ly_team === 'Yeti';
                       const isAssumed = p.assumed === true;
                       const value = calculateValue(p);
+                      const isRecommended = recommendations.length > 0 && recommendations[0].player.name === p.name;
                       
                       return (
                         <tr
                           key={p.name}
                           onClick={() => draftPlayer(p.name)}
-                          className="border-t border-gray-700 hover:bg-gray-700 cursor-pointer transition"
+                          className={`border-t border-gray-700 hover:bg-gray-700 cursor-pointer transition ${
+                            isRecommended ? 'bg-green-900/40 ring-2 ring-green-600' : ''
+                          }`}
                         >
                           <td className="px-3 py-2 font-medium">
+                            {isRecommended && <span className="mr-2 text-green-400">★</span>}
                             {p.name}
                             {isYeti && <span className="ml-2 text-xs bg-yellow-600 text-black px-1.5 py-0.5 rounded font-bold">YETI</span>}
                             {isAssumed && <span className="ml-2 text-xs bg-orange-600 text-white px-1.5 py-0.5 rounded font-bold">ASSUMED</span>}
