@@ -500,6 +500,7 @@ export default function WestmountDraftPage() {
       {recommendations.length > 0 && (
         <div className="max-w-4xl mx-auto px-4 mt-3">
           <div className="bg-white border-2 border-green-600 rounded-lg p-3 shadow-md">
+            <div className="text-xs text-gray-500 font-medium mb-1">Suggested Pick:</div>
             <div className="flex items-center justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="text-base font-bold text-gray-900 truncate">
@@ -632,77 +633,54 @@ export default function WestmountDraftPage() {
         </>
       ) : (
         /* Teams View */
-        <div className="max-w-4xl mx-auto px-4 mt-6">
-          <h2 className="text-xl font-bold mb-3 flex items-center gap-2">
-            <TrendingUp size={22} /> Full Rosters
-          </h2>
-          <div className="space-y-4">
+        <div className="max-w-4xl mx-auto px-4 mt-3">
+          <div className="space-y-3">
             {standings.map((s) => {
               const roster = state.rosters[s.team];
               const players = roster.map(name => westmountPlayers.find(p => p.name === name)).filter(Boolean) as WestmountPlayer[];
               const hasGoalie = players.some(p => p.role === 'goalie');
               
-              // Sort by pick order (order in roster array)
               return (
                 <div 
                   key={s.team} 
-                  className={`bg-gray-800 rounded-lg p-4 ${s.team === 'Yeti' ? 'ring-2 ring-blue-500' : ''} ${currentPick.team === s.team ? 'ring-2 ring-yellow-500' : ''}`}
+                  className={`bg-white rounded-lg border p-3 shadow-sm ${s.team === 'Yeti' ? 'border-green-500 bg-green-50' : 'border-gray-200'} ${currentPick.team === s.team ? 'border-yellow-500 bg-yellow-50' : ''}`}
                 >
-                  <div className="flex justify-between items-start mb-3">
+                  <div className="flex justify-between items-start mb-2">
                     <div>
-                      <h3 className="font-bold text-xl">{s.team}</h3>
-                      <div className="text-xs text-gray-400 mt-1">
-                        Rank #{standings.findIndex(st => st.team === s.team) + 1} · 
-                        Win% {s.winPct}% · 
+                      <h3 className="font-bold text-lg text-gray-900">{s.team}</h3>
+                      <div className="text-xs text-gray-600">
+                        #{standings.findIndex(st => st.team === s.team) + 1} · 
+                        {s.winPct}% · 
                         Proj {s.projValue.toFixed(0)}
                       </div>
                     </div>
                     {!hasGoalie && roster.length > 0 && (
-                      <div className="bg-red-900/50 border border-red-700 px-2 py-1 rounded text-xs font-semibold text-red-300">
-                        ⚠️ NO GOALIE
+                      <div className="bg-red-100 border border-red-300 px-2 py-0.5 rounded text-xs font-semibold text-red-700">
+                        NO G
                       </div>
                     )}
                   </div>
                   
                   {roster.length === 0 ? (
-                    <p className="text-gray-500 text-sm italic">No players drafted yet</p>
+                    <p className="text-gray-400 text-xs italic">No players drafted</p>
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead className="text-xs text-gray-400 border-b border-gray-700">
-                          <tr>
-                            <th className="text-left py-2 pr-2">#</th>
-                            <th className="text-left py-2 px-2">Player</th>
-                            <th className="text-center py-2 px-2">Pos</th>
-                            <th className="text-right py-2 px-2">Value</th>
-                            <th className="text-right py-2 pl-2">LY PTS</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {players.map((p, idx) => {
-                            const value = calculateValue(p);
-                            const isYeti = p.ly_team === 'Yeti';
-                            const isAssumed = p.assumed === true;
-                            
-                            return (
-                              <tr key={idx} className="border-t border-gray-700/50">
-                                <td className="py-2 pr-2 text-gray-500">{idx + 1}</td>
-                                <td className="py-2 px-2 font-medium">
-                                  {p.name.split(', ').reverse().join(' ')}
-                                  {p.ly_adp && <span className="ml-2 text-xs bg-gray-600 text-gray-300 px-1 py-0.5 rounded">{p.ly_adp}</span>}
-                                  {p.traded && <span className="ml-2 text-xs bg-purple-600 text-white px-1 py-0.5 rounded font-bold">TRADED</span>}
-                                  {p.missedHalf && <span className="ml-2 text-xs bg-red-700 text-white px-1 py-0.5 rounded">MISSED HALF</span>}
-                                  {isYeti && <span className="ml-2 text-xs bg-yellow-600 text-black px-1 py-0.5 rounded font-bold">YETI</span>}
-                                  {isAssumed && <span className="ml-2 text-xs bg-orange-600 text-white px-1 py-0.5 rounded font-bold">ASSUMED</span>}
-                                </td>
-                                <td className="py-2 px-2 text-center text-gray-400">{getPosition(p)}</td>
-                                <td className="py-2 px-2 text-right text-blue-400 font-semibold">{value.toFixed(1)}</td>
-                                <td className="py-2 pl-2 text-right text-gray-400">{p.pts || '—'}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                    <div className="space-y-1">
+                      {players.map((p, idx) => {
+                        const value = calculateValue(p);
+                        
+                        return (
+                          <div key={idx} className="text-xs flex justify-between items-center py-0.5 border-t border-gray-100">
+                            <span className="text-gray-900">
+                              {idx + 1}. {p.name.split(', ').reverse().join(' ')}
+                              {p.traded && <span className="ml-1 text-purple-600">↔</span>}
+                              {p.missedHalf && <span className="ml-1 text-red-600">½</span>}
+                            </span>
+                            <span className="text-gray-600">
+                              {getPosition(p)} · {value.toFixed(0)}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
