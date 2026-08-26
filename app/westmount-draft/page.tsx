@@ -5,7 +5,7 @@ import { westmountPlayers, WestmountPlayer } from '@/data/westmount-players';
 import { ChevronDown, ChevronUp, RotateCcw, Zap, Info, TrendingUp } from 'lucide-react';
 
 type Team = 'McAlear' | 'Devils' | 'Kings' | 'Flyers' | 'Hawks';
-type FilterType = 'all' | 'available' | 'F' | 'D' | 'G' | 'no-stats' | 'yeti';
+type FilterType = 'all' | 'available' | 'F' | 'D' | 'G' | 'no-stats' | 'yeti' | 'assumed';
 type Position = 'F' | 'D' | 'G';
 type ViewMode = 'board' | 'teams';
 
@@ -215,6 +215,7 @@ export default function WestmountDraftPage() {
       if (filter === 'G') return p.role === 'goalie';
       if (filter === 'no-stats') return !p.returning;
       if (filter === 'yeti') return p.ly_team === 'Yeti';
+      if (filter === 'assumed') return p.assumed === true;
       return true;
     });
     
@@ -464,7 +465,7 @@ export default function WestmountDraftPage() {
           {/* Filters */}
           <div className="max-w-4xl mx-auto px-4 mt-4">
             <div className="flex flex-wrap gap-2 text-sm">
-              {(['all', 'available', 'F', 'D', 'G', 'no-stats', 'yeti'] as FilterType[]).map(f => (
+              {(['all', 'available', 'F', 'D', 'G', 'no-stats', 'yeti', 'assumed'] as FilterType[]).map(f => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
@@ -474,7 +475,7 @@ export default function WestmountDraftPage() {
                       : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                   }`}
                 >
-                  {f === 'all' ? 'All' : f === 'available' ? 'Available' : f === 'F' ? 'Forwards' : f === 'D' ? 'Defense' : f === 'G' ? 'Goalies' : f === 'no-stats' ? 'No Stats' : 'Last Year Yeti'}
+                  {f === 'all' ? 'All' : f === 'available' ? 'Available' : f === 'F' ? 'Forwards' : f === 'D' ? 'Defense' : f === 'G' ? 'Goalies' : f === 'no-stats' ? 'No Stats' : f === 'yeti' ? 'Last Year Yeti' : 'Assumed'}
                 </button>
               ))}
             </div>
@@ -499,6 +500,7 @@ export default function WestmountDraftPage() {
                   <tbody>
                     {filteredPlayers.map((p, idx) => {
                       const isYeti = p.ly_team === 'Yeti';
+                      const isAssumed = p.assumed === true;
                       const value = calculateValue(p);
                       
                       return (
@@ -510,6 +512,7 @@ export default function WestmountDraftPage() {
                           <td className="px-3 py-2 font-medium">
                             {p.name}
                             {isYeti && <span className="ml-2 text-xs bg-yellow-600 text-black px-1.5 py-0.5 rounded font-bold">YETI</span>}
+                            {isAssumed && <span className="ml-2 text-xs bg-orange-600 text-white px-1.5 py-0.5 rounded font-bold">ASSUMED</span>}
                           </td>
                           <td className="px-2 py-2 text-center text-gray-400">{getPosition(p)}</td>
                           <td className="px-2 py-2 text-center text-gray-400">{p.age || '—'}</td>
@@ -578,6 +581,7 @@ export default function WestmountDraftPage() {
                           {players.map((p, idx) => {
                             const value = calculateValue(p);
                             const isYeti = p.ly_team === 'Yeti';
+                            const isAssumed = p.assumed === true;
                             
                             return (
                               <tr key={idx} className="border-t border-gray-700/50">
@@ -585,6 +589,7 @@ export default function WestmountDraftPage() {
                                 <td className="py-2 px-2 font-medium">
                                   {p.name.split(', ').reverse().join(' ')}
                                   {isYeti && <span className="ml-2 text-xs bg-yellow-600 text-black px-1 py-0.5 rounded font-bold">YETI</span>}
+                                  {isAssumed && <span className="ml-2 text-xs bg-orange-600 text-white px-1 py-0.5 rounded font-bold">ASSUMED</span>}
                                 </td>
                                 <td className="py-2 px-2 text-center text-gray-400">{getPosition(p)}</td>
                                 <td className="py-2 px-2 text-right text-blue-400 font-semibold">{value.toFixed(1)}</td>
