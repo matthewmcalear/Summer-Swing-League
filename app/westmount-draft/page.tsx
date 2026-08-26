@@ -18,7 +18,7 @@ interface DraftState {
 
 const TEAMS: Team[] = ['Yeti', 'Devils', 'Kings', 'Flyers', 'Hawks'];
 
-// Calculate player value for draft
+// Calculate player value for draft with non-linear surplus scoring
 function calculateValue(p: WestmountPlayer): number {
   if (p.role === 'goalie') {
     // 4 goalies, 5 teams. A starter is a first-round asset.
@@ -26,16 +26,33 @@ function calculateValue(p: WestmountPlayer): number {
     return 52 + ageAdj;
   }
   if (!p.returning) {
+    // New skaters: placeholder ~8 (negative vs 18 pt replacement)
     return 8 + Math.max(0, 28 - (p.age || 25)) * 0.3;
   }
-  let value = (p.pts || 0) * 0.6 + (p.ppg || 0) * (p.gp || 0) * 0.4;
+  
+  // Returning skaters: blend last-year stats as raw expected points
+  let raw = (p.pts || 0) * 0.6 + (p.ppg || 0) * (p.gp || 0) * 0.4;
   
   // Discount for players who missed half+ and likely to miss again (expected 10/32 GP)
   if (p.missedHalf) {
-    value *= 0.45; // ~45% discount for attendance risk
+    raw *= (10 / 32); // Expected GP ratio
   }
   
-  return value;
+  // Replacement level: 18 pts / 28 GP (0.64 P/G)
+  const replacement = 18;
+  const surplus = raw - replacement;
+  
+  // Non-linear scoring: elites and duds swing games more than linear points
+  let score: number;
+  if (surplus >= 0) {
+    // Above replacement: convex bonus for elites
+    score = surplus + 0.008 * surplus * surplus;
+  } else {
+    // Below replacement: penalty for duds (1.4x)
+    score = surplus * 1.4;
+  }
+  
+  return score;
 }
 
 // Determine position from player data
