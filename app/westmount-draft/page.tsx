@@ -38,7 +38,7 @@ function getPosition(p: WestmountPlayer): Position {
   return 'F';
 }
 
-// Calculate need-based adjustment for teams with political/communal preferences
+// Calculate need-based adjustment for teams with communal reunion preferences
 function needBump(p: WestmountPlayer, roster: string[], team: Team): number {
   const players = roster.map(name => westmountPlayers.find(pl => pl.name === name)).filter(Boolean) as WestmountPlayer[];
   const dCount = players.filter(x => getPosition(x) === 'D').length;
@@ -52,29 +52,28 @@ function needBump(p: WestmountPlayer, roster: string[], team: Team): number {
   if (pos === 'G' && gCount >= 1) bump -= 25;  // don't stockpile
   if (pos === 'D' && dCount === 0) bump += 8;   // need a defenseman
   
-  // POLITICAL/COMMUNAL preferences
-  
-  // Yeti/Steven: family preference
-  if (team === 'Yeti' && p.name.includes('McAlear')) {
-    bump += 15; // Will prefer McAlear if within ~15 value of BPA
+  // MAIN AFFINITY: Reunion - captains re-draft last year's teammates
+  if (p.ly_team === team) {
+    bump += 8; // Last-year teammate reunion
   }
   
-  // Hawks/Ciampini: his guys (Angelini, Orsini, Ciampini, last-year Hawks)
+  // SPECIFIC EXCEPTIONS layered on top:
+  
+  // Yeti/Steven: extra bump for McAlear family
+  if (team === 'Yeti' && p.name.includes('McAlear')) {
+    bump += 18; // Total +26 if also last-year Yeti, or +18 if not
+  }
+  
+  // Hawks/Ciampini: extra bump for his guys
   if (team === 'Hawks') {
     if (p.name.includes('Angelini') || p.name.includes('Orsini') || p.name.includes('Ciampini')) {
-      bump += 10;
+      bump += 10; // Total +18 if also last-year Hawks, or +10 if not
     }
-    if (p.ly_team === 'Hawks') bump += 5;
   }
   
-  // Devils/Phil: Yarrow the goalie specifically
+  // Devils/Phil: extra bump for Yarrow goalie specifically
   if (team === 'Devils' && p.name.includes('Yarrow') && p.role === 'goalie') {
-    bump += 25; // Big bump on Yarrow specifically
-  }
-  
-  // Small bump for last-year teammates (all teams)
-  if (p.ly_team === team) {
-    bump += 3;
+    bump += 22; // Total +30 if also last-year Devils, or +22 if not (Phil takes Yarrow)
   }
   
   return bump;
@@ -260,10 +259,11 @@ export default function WestmountDraftPage() {
       const gCount = rosterPlayers.filter(x => getPosition(x) === 'G').length;
       const dCount = rosterPlayers.filter(x => getPosition(x) === 'D').length;
       
-      if (team === 'Yeti' && p.name.includes('McAlear') && bump > 10) why = 'Family';
-      else if (pos === 'G' && gCount === 0 && bump > 0) why = 'Need a goalie';
-      else if (pos === 'D' && dCount === 0 && bump > 0) why = 'Need a D';
-      else if (bump > 0) why = 'Positional need';
+      if (team === 'Yeti' && p.name.includes('McAlear') && bump >= 18) why = 'Family';
+      else if (pos === 'G' && gCount === 0 && bump > 15) why = 'Need a goalie';
+      else if (pos === 'D' && dCount === 0 && bump > 5) why = 'Need a D';
+      else if (p.ly_team === team) why = `Last-year ${team}`;
+      else if (bump > 5) why = 'Positional need';
       
       return { player: p, score, why };
     });
