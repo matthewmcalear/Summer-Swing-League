@@ -384,6 +384,7 @@ export default function WestmountDraftPage() {
           <h1 className="text-2xl font-bold text-center mb-2">Westmount Senior B Draft</h1>
           <div className="text-center text-sm text-gray-400 mb-3">
             Pick {currentPick.pickNum} · Round {currentPick.round} · <span className="text-blue-400 font-semibold">{currentPick.team}</span> on the clock
+            <div className="text-xs text-gray-500 mt-1">Post-draft trade: Kings traded Lach to Yeti for Yarrow</div>
           </div>
           
           {/* View Mode Toggle */}
@@ -505,6 +506,9 @@ export default function WestmountDraftPage() {
                   <span className="text-2xl font-bold text-green-100">
                     {recommendations[0].player.name.split(', ').reverse().join(' ')}
                   </span>
+                  {recommendations[0].player.traded && (
+                    <span className="text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded font-bold">TRADED</span>
+                  )}
                   {recommendations[0].player.ly_team === 'Yeti' && (
                     <span className="text-xs bg-yellow-600 text-black px-1.5 py-0.5 rounded font-bold">YETI</span>
                   )}
@@ -641,6 +645,7 @@ export default function WestmountDraftPage() {
                             {isRecommended && <span className="mr-2 text-green-400">★</span>}
                             {p.name}
                             {p.ly_adp && <span className="ml-2 text-xs bg-gray-600 text-gray-300 px-1 py-0.5 rounded font-medium">{p.ly_adp}</span>}
+                            {p.traded && <span className="ml-2 text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded font-bold">TRADED</span>}
                             {isYeti && <span className="ml-2 text-xs bg-yellow-600 text-black px-1.5 py-0.5 rounded font-bold">YETI</span>}
                             {isAssumed && <span className="ml-2 text-xs bg-orange-600 text-white px-1.5 py-0.5 rounded font-bold">ASSUMED</span>}
                           </td>
@@ -719,6 +724,7 @@ export default function WestmountDraftPage() {
                                 <td className="py-2 px-2 font-medium">
                                   {p.name.split(', ').reverse().join(' ')}
                                   {p.ly_adp && <span className="ml-2 text-xs bg-gray-600 text-gray-300 px-1 py-0.5 rounded">{p.ly_adp}</span>}
+                                  {p.traded && <span className="ml-2 text-xs bg-purple-600 text-white px-1 py-0.5 rounded font-bold">TRADED</span>}
                                   {isYeti && <span className="ml-2 text-xs bg-yellow-600 text-black px-1 py-0.5 rounded font-bold">YETI</span>}
                                   {isAssumed && <span className="ml-2 text-xs bg-orange-600 text-white px-1 py-0.5 rounded font-bold">ASSUMED</span>}
                                 </td>

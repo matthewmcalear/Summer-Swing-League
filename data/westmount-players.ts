@@ -4,9 +4,11 @@ export interface WestmountPlayer {
   role: 'skater' | 'goalie';
   returning: boolean;
   assumed?: boolean; // Player from last year not on this year's incoming list
+  traded?: boolean; // Traded after draft (reunion follows season team, not draft team)
   ly_name?: string;
   ly_pos?: string;
-  ly_team?: string;
+  ly_team?: string; // Season team (post-trade)
+  ly_draft_team?: string; // Original draft team (if traded)
   ly_adp?: string; // Last year's draft round (e.g., "R4", "R14")
   gp?: number;
   g?: number;
@@ -86,9 +88,10 @@ export const westmountPlayers: WestmountPlayer[] = [
   { name: "Yatrou, Evan", age: 25, role: "skater", returning: false },
   { name: "Young, Cooper", age: 26, role: "skater", returning: true, ly_name: "Cooper Young", ly_pos: "D", ly_team: "Kings", gp: 22, g: 1, a: 6, pts: 7, ppg: 0.32, pim: 10 },
   
-  // Goalies (no stats) - Martin was R4 first goalie, Yarrow R14 by Yeti
-  { name: "Yarrow, Evan", age: 37, role: "goalie", returning: false, ly_adp: "R14", ly_team: "Yeti" },
-  { name: "Lach, Jared", age: 22, role: "goalie", returning: false },
+  // Goalies (no stats) - Martin R4, Yarrow R14 by Yeti, Lach R7 by Kings
+  // POST-DRAFT TRADE: Kings traded Lach to Yeti for Yarrow (Lach was Yeti's season/playoff goalie)
+  { name: "Yarrow, Evan", age: 37, role: "goalie", returning: false, traded: true, ly_adp: "R14", ly_draft_team: "Yeti", ly_team: "Kings" },
+  { name: "Lach, Jared", age: 22, role: "goalie", returning: false, traded: true, ly_adp: "R7", ly_draft_team: "Kings", ly_team: "Yeti" },
   { name: "Gironne, Michel", age: 49, role: "goalie", returning: false },
   { name: "Martin, Euan", age: 21, role: "goalie", returning: false, ly_adp: "R4" },
   
