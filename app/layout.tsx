@@ -112,7 +112,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
 
             <div className="border-t border-green-800 mt-8 pt-4">
-              <p className="text-green-400 text-xs">sslgolf.com · Season 2</p>
+              <p className="text-green-400 text-xs">
+                sslgolf.com · Season 2
+                <span className="mx-2">·</span>
+                <a href="/westmount-draft" className="text-green-500 hover:text-green-300 transition-colors">Westmount Draft</a>
+              </p>
             </div>
           </div>
         </footer>
