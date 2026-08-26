@@ -182,7 +182,7 @@
         <summary>Draft Details</summary>
         <div style="margin-top: 8px; color: var(--muted);">
           <p>Four-man swap: Yeti got Lach+Friedman; Kings got Yarrow+Uhthoff. Yeti's season goalie was Lach.</p>
-          <p style="margin-top: 8px;"><strong>Value:</strong> Raw = 0.6×PTS + 0.4×P/G×GP. Surplus vs replacement (18 pts). Elites: convex 0.008×surplus². Duds: 1.4× penalty. Goalies: 52 + age.</p>
+          <p style="margin-top: 8px;"><strong>Value:</strong> Raw = 0.6×PTS + 0.4×P/G×GP. VORP vs last starter (45th F, 20th D, 5th G). Talent = VORP × (GP/32). Elites: +0.008×talent². Duds: ×1.4. Goalies: 52 + age.</p>
           <p style="margin-top: 8px;"><strong>Reunion:</strong> +8 for last-year teammates. Yeti +18 on McAlears. Hawks +10 on Angelini/Orsini/Ciampini. Devils +22 on Yarrow.</p>
         </div>
       </details>
@@ -225,28 +225,56 @@
     let currentFilter = 'all';
     let sortByProj = false;
 
+    let replacementLevels = null;
+
+    function initReplacementLevels() {
+      const byPos = { F: [], D: [], G: [] };
+      
+      PLAYERS.forEach(p => {
+        if (!p.returning) return;
+        const pos = getPosition(p);
+        const raw = (p.pts || 0) * 0.6 + (p.ppg || 0) * (p.gp || 0) * 0.4;
+        byPos[pos].push(raw);
+      });
+      
+      byPos.F.sort((a, b) => b - a);
+      byPos.D.sort((a, b) => b - a);
+      byPos.G.sort((a, b) => b - a);
+      
+      replacementLevels = {
+        F: byPos.F[44] || 0,  // 45th forward (5 teams × 9 F)
+        D: byPos.D[19] || 0,  // 20th defenseman (5 teams × 4 D)
+        G: byPos.G[4] || 0,   // 5th goalie (5 teams × 1 G)
+      };
+    }
+
     function calculateValue(p) {
       if (p.role === 'goalie') {
         const ageAdj = Math.max(0, 40 - (p.age || 25)) * 0.6;
         return 52 + ageAdj;
       }
+      
       if (!p.returning) {
         return 8 + Math.max(0, 28 - (p.age || 25)) * 0.3;
       }
       
+      const pos = getPosition(p);
       let raw = (p.pts || 0) * 0.6 + (p.ppg || 0) * (p.gp || 0) * 0.4;
+      
+      let R = (p.gp || 32) / 32;
       if (p.missedHalf) {
-        raw *= (10 / 32);
+        R = 10 / 32;
       }
       
-      const replacement = 18;
-      const surplus = raw - replacement;
+      const replacement = replacementLevels[pos];
+      const vorp = raw - replacement;
+      const talent = vorp * R;
       
       let score;
-      if (surplus >= 0) {
-        score = surplus + 0.008 * surplus * surplus;
+      if (talent >= 0) {
+        score = talent + 0.008 * talent * talent;
       } else {
-        score = surplus * 1.4;
+        score = talent * 1.4;
       }
       
       return score;
@@ -292,6 +320,7 @@
     }
 
     function initProjectedRanks() {
+      initReplacementLevels();
       const ranked = [...PLAYERS].sort((a, b) => calculateValue(b) - calculateValue(a));
       const ranks = {};
       ranked.forEach((p, idx) => {
