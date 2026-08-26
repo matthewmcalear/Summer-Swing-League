@@ -384,66 +384,65 @@ export default function WestmountDraftPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white pb-8">
+    <div className="min-h-screen bg-stone-50 text-gray-900 pb-8">
       {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-center mb-2">Westmount Senior B Draft</h1>
-          <div className="text-center text-sm text-gray-400 mb-3">
-            Pick {currentPick.pickNum} · Round {currentPick.round} · <span className="text-blue-400 font-semibold">{currentPick.team}</span> on the clock
-            <div className="text-xs text-gray-500 mt-1">Four-man swap: Yeti got Lach+Friedman; Kings got Yarrow+Uhthoff · Yeti's season goalie was Lach</div>
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <h1 className="text-xl font-bold text-center text-gray-900">Westmount Senior B Draft</h1>
+          <div className="text-center text-sm text-gray-600 mt-1">
+            Pick {currentPick.pickNum} · Round {currentPick.round} · <span className="text-green-700 font-semibold">{currentPick.team}</span> on the clock
           </div>
-          
+
           {/* View Mode Toggle */}
-          <div className="flex gap-2 justify-center mb-3">
+          <div className="flex gap-2 justify-center mt-2">
             <button
               onClick={() => setViewMode('board')}
-              className={`px-4 py-2 rounded font-medium transition ${
+              className={`px-3 py-1.5 rounded text-sm font-medium transition ${
                 viewMode === 'board'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  ? 'bg-green-700 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               Board
             </button>
             <button
               onClick={() => setViewMode('teams')}
-              className={`px-4 py-2 rounded font-medium transition ${
+              className={`px-3 py-1.5 rounded text-sm font-medium transition ${
                 viewMode === 'teams'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  ? 'bg-green-700 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               Teams
             </button>
           </div>
-          
+
           {/* Controls */}
-          <div className="flex flex-wrap gap-2 justify-center">
+          <div className="flex flex-wrap gap-2 justify-center mt-2">
             <button
               onClick={undoLastPick}
               disabled={state.pickHistory.length === 0}
-              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 rounded text-sm font-medium transition"
+              className="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed rounded text-xs font-medium transition text-gray-700"
             >
-              <RotateCcw className="inline w-4 h-4 mr-1" /> Undo
+              <RotateCcw className="inline w-3 h-3 mr-1" /> Undo
             </button>
             <button
               onClick={mockDraft}
-              className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 rounded text-sm font-medium transition"
+              className="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 rounded text-xs font-medium transition text-gray-700"
             >
-              <Zap className="inline w-4 h-4 mr-1" /> Mock Draft
+              <Zap className="inline w-3 h-3 mr-1" /> Mock
             </button>
             <button
               onClick={resetDraft}
-              className="px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded text-sm font-medium transition"
+              className="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 rounded text-xs font-medium transition text-gray-700"
             >
               Reset
             </button>
             <button
               onClick={() => setShowHelp(!showHelp)}
-              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded text-sm font-medium transition"
+              className="px-3 py-1 bg-white border border-gray-300 hover:bg-gray-50 rounded text-xs font-medium transition text-gray-700"
             >
-              <Info className="inline w-4 h-4 mr-1" /> {showHelp ? 'Hide' : 'Help'}
+              <Info className="inline w-3 h-3 mr-1" /> Info
             </button>
           </div>
           
@@ -497,61 +496,37 @@ export default function WestmountDraftPage() {
         </div>
       </div>
 
-      {/* Recommendation Card */}
+      {/* Recommendation Card - Compact */}
       {recommendations.length > 0 && (
-        <div className="max-w-4xl mx-auto px-4 mt-4">
-          <div className="bg-gradient-to-r from-green-900 to-green-800 border-2 border-green-600 rounded-lg p-4 shadow-xl">
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-              <div className="flex-1">
-                <div className="text-xs text-green-300 uppercase font-bold tracking-wide mb-1">
-                  Pick #{currentPick.pickNum} · Round {currentPick.round}
+        <div className="max-w-4xl mx-auto px-4 mt-3">
+          <div className="bg-white border-2 border-green-600 rounded-lg p-3 shadow-md">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="text-base font-bold text-gray-900 truncate">
+                  {recommendations[0].player.name.split(', ').reverse().join(' ')}
+                  {recommendations[0].player.traded && <span className="ml-2 text-xs text-purple-600">↔</span>}
+                  {recommendations[0].player.missedHalf && <span className="ml-2 text-xs text-red-600">½</span>}
                 </div>
-                <div className="text-xl font-bold text-white mb-2">
-                  {currentPick.team === 'Yeti' ? 'Steven should take' : `Next for ${currentPick.team}`}
-                </div>
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="text-2xl font-bold text-green-100">
-                    {recommendations[0].player.name.split(', ').reverse().join(' ')}
-                  </span>
-                  {recommendations[0].player.traded && (
-                    <span className="text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded font-bold">TRADED</span>
-                  )}
-                  {recommendations[0].player.missedHalf && (
-                    <span className="text-xs bg-red-700 text-white px-1.5 py-0.5 rounded font-bold">MISSED HALF</span>
-                  )}
-                  {recommendations[0].player.ly_team === 'Yeti' && (
-                    <span className="text-xs bg-yellow-600 text-black px-1.5 py-0.5 rounded font-bold">YETI</span>
-                  )}
-                  {recommendations[0].player.assumed && (
-                    <span className="text-xs bg-orange-600 text-white px-1.5 py-0.5 rounded font-bold">ASSUMED</span>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-3 text-sm text-green-200">
-                  <span><strong>Pos:</strong> {getPosition(recommendations[0].player)}</span>
-                  <span><strong>Value:</strong> {calculateValue(recommendations[0].player).toFixed(1)}</span>
-                  <span><strong>LY PTS:</strong> {recommendations[0].player.pts || '—'}</span>
-                  <span className="text-green-300 italic">· {recommendations[0].why}</span>
+                <div className="text-xs text-gray-600 mt-0.5">
+                  {getPosition(recommendations[0].player)} · {calculateValue(recommendations[0].player).toFixed(1)} · {recommendations[0].why}
                 </div>
               </div>
               <button
                 onClick={() => draftPlayer(recommendations[0].player.name)}
-                className="px-6 py-3 bg-white text-green-900 rounded-lg font-bold text-lg hover:bg-green-50 transition-all shadow-lg hover:shadow-xl whitespace-nowrap"
+                className="px-4 py-2 bg-green-700 text-white rounded font-bold text-sm hover:bg-green-800 transition whitespace-nowrap shadow-sm"
               >
                 PICK
               </button>
             </div>
-            
-            {/* Alternative picks */}
             {recommendations.length > 1 && (
-              <div className="mt-3 pt-3 border-t border-green-700 flex flex-wrap gap-2">
-                <span className="text-xs text-green-400 uppercase font-semibold mr-2">Alternatives:</span>
+              <div className="mt-2 pt-2 border-t border-gray-200 flex flex-wrap gap-1 text-xs">
                 {recommendations.slice(1).map((rec, idx) => (
                   <button
                     key={rec.player.name}
                     onClick={() => draftPlayer(rec.player.name)}
-                    className="px-3 py-1 bg-green-800 hover:bg-green-700 text-white rounded text-sm font-medium transition border border-green-600"
+                    className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition"
                   >
-                    {idx + 2}. {rec.player.name.split(', ').reverse().join(' ')} ({getPosition(rec.player)}, {calculateValue(rec.player).toFixed(1)})
+                    {idx + 2}. {rec.player.name.split(', ').pop()} ({calculateValue(rec.player).toFixed(0)})
                   </button>
                 ))}
               </div>
@@ -560,86 +535,71 @@ export default function WestmountDraftPage() {
         </div>
       )}
 
-      {/* Standings Strip */}
-      <div className="max-w-4xl mx-auto px-4 mt-4">
-        <div className="bg-gray-800 rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead className="bg-gray-700 text-gray-300 uppercase">
-                <tr>
-                  <th className="px-2 py-2 text-left">Rk</th>
-                  <th className="px-2 py-2 text-left">Team</th>
-                  <th className="px-2 py-2 text-center" title="Model projected win probability">Win%</th>
-                  <th className="px-2 py-2 text-right">Now</th>
-                  <th className="px-2 py-2 text-right">Proj</th>
-                  <th className="px-2 py-2 text-right">LY PTS</th>
-                  <th className="px-2 py-2 text-center">G</th>
-                  <th className="px-2 py-2 text-center">#</th>
-                </tr>
-              </thead>
-              <tbody>
-                {standings.map((s, idx) => (
+      {/* Standings Strip - Compact */}
+      <div className="max-w-4xl mx-auto px-4 mt-3">
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+          <table className="w-full text-xs">
+            <thead className="bg-gray-50 text-gray-600 border-b border-gray-200">
+              <tr>
+                <th className="px-2 py-1.5 text-left font-medium">Team</th>
+                <th className="px-2 py-1.5 text-center font-medium">Win%</th>
+                <th className="px-2 py-1.5 text-right font-medium">Proj</th>
+                <th className="px-2 py-1.5 text-center font-medium">G</th>
+              </tr>
+            </thead>
+            <tbody>
+              {standings.map((s, idx) => (
                 <tr
                   key={s.team}
-                  className={`border-t border-gray-700 ${s.team === 'Yeti' ? 'bg-blue-900/30' : ''} ${currentPick.team === s.team ? 'ring-2 ring-blue-500' : ''}`}
+                  className={`border-t border-gray-100 ${s.team === 'Yeti' ? 'bg-green-50' : ''} ${currentPick.team === s.team ? 'bg-yellow-50' : ''}`}
                 >
-                    <td className="px-2 py-2 text-gray-400">{idx + 1}</td>
-                    <td className="px-2 py-2 font-semibold">{s.team}</td>
-                    <td className="px-2 py-2 text-center text-green-400">{s.winPct}%</td>
-                    <td className="px-2 py-2 text-right text-gray-300">{s.nowValue.toFixed(0)}</td>
-                    <td className="px-2 py-2 text-right text-blue-400 font-semibold">{s.projValue.toFixed(0)}</td>
-                    <td className="px-2 py-2 text-right text-gray-400">{s.lastYearPts}</td>
-                    <td className="px-2 py-2 text-center text-xs text-gray-400">{s.goalie ? s.goalie.split(' ').pop() : '—'}</td>
-                    <td className="px-2 py-2 text-center text-gray-400">{s.rosterSize}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  <td className="px-2 py-1.5 font-medium text-gray-900">{idx + 1}. {s.team}</td>
+                  <td className="px-2 py-1.5 text-center text-green-700 font-semibold">{s.winPct}%</td>
+                  <td className="px-2 py-1.5 text-right text-gray-700">{s.projValue.toFixed(0)}</td>
+                  <td className="px-2 py-1.5 text-center text-gray-500">{s.goalie ? s.goalie.split(' ').pop() : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
       {viewMode === 'board' ? (
         <>
           {/* Filters */}
-          <div className="max-w-4xl mx-auto px-4 mt-4">
-            <div className="flex flex-wrap gap-2 text-sm">
-              {(['all', 'available', 'F', 'D', 'G', 'no-stats', 'yeti', 'assumed'] as FilterType[]).map(f => (
+          <div className="max-w-4xl mx-auto px-4 mt-3">
+            <div className="flex flex-wrap gap-1.5 text-xs">
+              {(['all', 'available', 'F', 'D', 'G', 'yeti'] as FilterType[]).map(f => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`px-3 py-1.5 rounded font-medium transition ${
+                  className={`px-2 py-1 rounded transition ${
                     filter === f
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      ? 'bg-green-700 text-white'
+                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  {f === 'all' ? 'All' : f === 'available' ? 'Available' : f === 'F' ? 'Forwards' : f === 'D' ? 'Defense' : f === 'G' ? 'Goalies' : f === 'no-stats' ? 'No Stats' : f === 'yeti' ? 'Last Year Yeti' : 'Assumed'}
+                  {f === 'all' ? 'All' : f === 'available' ? 'Available' : f === 'yeti' ? 'Yeti' : f}
                 </button>
               ))}
             </div>
           </div>
 
           {/* Player Board */}
-          <div className="max-w-4xl mx-auto px-4 mt-4">
-            <div className="bg-gray-800 rounded-lg overflow-hidden">
+          <div className="max-w-4xl mx-auto px-4 mt-2">
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-700 text-gray-300 text-xs uppercase">
+                <table className="w-full text-xs">
+                  <thead className="bg-gray-50 text-gray-600 border-b border-gray-200">
                     <tr>
-                      <th className="px-3 py-2 text-left">Name</th>
-                      <th className="px-2 py-2 text-center">Pos</th>
-                      <th className="px-2 py-2 text-center">Age</th>
-                      <th className="px-2 py-2 text-center">Value</th>
-                      <th className="px-2 py-2 text-center">PTS</th>
-                      <th className="px-2 py-2 text-center">P/G</th>
-                      <th className="px-2 py-2 text-center">G</th>
+                      <th className="px-3 py-1.5 text-left font-medium">Name</th>
+                      <th className="px-2 py-1.5 text-center font-medium">Pos</th>
+                      <th className="px-2 py-1.5 text-center font-medium">Val</th>
+                      <th className="px-2 py-1.5 text-center font-medium">PTS</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredPlayers.map((p, idx) => {
-                      const isYeti = p.ly_team === 'Yeti';
-                      const isAssumed = p.assumed === true;
                       const value = calculateValue(p);
                       const isRecommended = recommendations.length > 0 && recommendations[0].player.name === p.name;
                       
@@ -647,25 +607,20 @@ export default function WestmountDraftPage() {
                         <tr
                           key={p.name}
                           onClick={() => draftPlayer(p.name)}
-                          className={`border-t border-gray-700 hover:bg-gray-700 cursor-pointer transition ${
-                            isRecommended ? 'bg-green-900/40 ring-2 ring-green-600' : ''
+                          className={`border-t border-gray-100 hover:bg-gray-50 cursor-pointer transition ${
+                            isRecommended ? 'bg-green-50 border-l-4 border-l-green-600' : ''
                           }`}
                         >
-                          <td className="px-3 py-2 font-medium">
-                            {isRecommended && <span className="mr-2 text-green-400">★</span>}
+                          <td className="px-3 py-1.5 text-gray-900">
+                            {isRecommended && <span className="mr-1 text-green-600">★</span>}
                             {p.name}
-                            {p.ly_adp && <span className="ml-2 text-xs bg-gray-600 text-gray-300 px-1 py-0.5 rounded font-medium">{p.ly_adp}</span>}
-                            {p.traded && <span className="ml-2 text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded font-bold">TRADED</span>}
-                            {p.missedHalf && <span className="ml-2 text-xs bg-red-700 text-white px-1.5 py-0.5 rounded font-bold">MISSED HALF</span>}
-                            {isYeti && <span className="ml-2 text-xs bg-yellow-600 text-black px-1.5 py-0.5 rounded font-bold">YETI</span>}
-                            {isAssumed && <span className="ml-2 text-xs bg-orange-600 text-white px-1.5 py-0.5 rounded font-bold">ASSUMED</span>}
+                            {p.ly_adp && <span className="ml-1 text-gray-400">{p.ly_adp}</span>}
+                            {p.traded && <span className="ml-1 text-purple-600">↔</span>}
+                            {p.missedHalf && <span className="ml-1 text-red-600">½</span>}
                           </td>
-                          <td className="px-2 py-2 text-center text-gray-400">{getPosition(p)}</td>
-                          <td className="px-2 py-2 text-center text-gray-400">{p.age || '—'}</td>
-                          <td className="px-2 py-2 text-center font-semibold text-blue-400">{value.toFixed(1)}</td>
-                          <td className="px-2 py-2 text-center text-gray-400">{p.pts || '—'}</td>
-                          <td className="px-2 py-2 text-center text-gray-400">{p.ppg?.toFixed(2) || '—'}</td>
-                          <td className="px-2 py-2 text-center text-gray-400">{p.g || '—'}</td>
+                          <td className="px-2 py-1.5 text-center text-gray-600">{getPosition(p)}</td>
+                          <td className="px-2 py-1.5 text-center font-semibold text-green-700">{value.toFixed(1)}</td>
+                          <td className="px-2 py-1.5 text-center text-gray-600">{p.pts || '—'}</td>
                         </tr>
                       );
                     })}
