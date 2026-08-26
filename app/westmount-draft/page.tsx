@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { westmountPlayers, WestmountPlayer } from '@/data/westmount-players';
-import { ChevronDown, ChevronUp, RotateCcw, Zap, Info } from 'lucide-react';
+import { ChevronDown, ChevronUp, RotateCcw, Zap, Info, TrendingUp } from 'lucide-react';
 
 type Team = 'McAlear' | 'Devils' | 'Kings' | 'Flyers' | 'Hawks';
 type FilterType = 'all' | 'available' | 'F' | 'D' | 'G' | 'no-stats' | 'yeti';
 type Position = 'F' | 'D' | 'G';
+type ViewMode = 'board' | 'teams';
 
 interface DraftState {
   rosters: Record<Team, string[]>;
@@ -66,6 +67,7 @@ export default function WestmountDraftPage() {
   
   const [filter, setFilter] = useState<FilterType>('all');
   const [showHelp, setShowHelp] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('board');
 
   // Load from localStorage
   useEffect(() => {
@@ -84,46 +86,123 @@ export default function WestmountDraftPage() {
     localStorage.setItem('wsl-draft-v1', JSON.stringify(state));
   }, [state]);
 
+  // Get team order for a given round/pick
+  const getTeamOrder = useMemo(() => {
+    return (pickNum: number, mcalearPickSlot: number): Team => {
+      const round = Math.floor((pickNum - 1) / 5) + 1;
+      const posInRound = ((pickNum - 1) % 5) + 1;
+      
+      let pickOrder: number[];
+      if (round % 2 === 1) {
+        pickOrder = [1, 2, 3, 4, 5];
+      } else {
+        pickOrder = [5, 4, 3, 2, 1];
+      }
+      
+      const teamOrder: Team[] = [];
+      for (let slot of pickOrder) {
+        if (slot === mcalearPickSlot) {
+          teamOrder.push('McAlear');
+        } else {
+          const others = TEAMS.filter(t => t !== 'McAlear');
+          const otherSlots = [1, 2, 3, 4, 5].filter(s => s !== mcalearPickSlot);
+          const idx = otherSlots.indexOf(slot);
+          teamOrder.push(others[idx]);
+        }
+      }
+      
+      return teamOrder[posInRound - 1];
+    };
+  }, []);
+
   // Calculate current pick
   const currentPick = useMemo(() => {
     const { pickHistory, mcalearPickSlot } = state;
     const pickNum = pickHistory.length + 1;
     const round = Math.floor((pickNum - 1) / 5) + 1;
-    const posInRound = ((pickNum - 1) % 5) + 1;
-    
-    // Snake draft: odd rounds go 1→5, even rounds go 5→1
-    let pickOrder: number[];
-    if (round % 2 === 1) {
-      pickOrder = [1, 2, 3, 4, 5];
-    } else {
-      pickOrder = [5, 4, 3, 2, 1];
-    }
-    
-    // Map mcalearPickSlot to team order
-    const teamOrder: Team[] = [];
-    for (let slot of pickOrder) {
-      if (slot === mcalearPickSlot) {
-        teamOrder.push('McAlear');
-      } else {
-        // Other teams in order
-        const others = TEAMS.filter(t => t !== 'McAlear');
-        const otherSlots = [1, 2, 3, 4, 5].filter(s => s !== mcalearPickSlot);
-        const idx = otherSlots.indexOf(slot);
-        teamOrder.push(others[idx]);
-      }
-    }
     
     return {
       pickNum,
       round,
-      team: teamOrder[posInRound - 1],
+      team: getTeamOrder(pickNum, mcalearPickSlot),
     };
-  }, [state.pickHistory, state.mcalearPickSlot]);
+  }, [state.pickHistory, state.mcalearPickSlot, getTeamOrder]);
 
   // Get drafted players
   const draftedPlayers = useMemo(() => {
     return new Set(Object.values(state.rosters).flat());
   }, [state.rosters]);
+
+  // Team standings with projections
+  const standings = useMemo(() => {
+    // Simulate remaining picks to calculate projected values
+    const simulateDraft = () => {
+      const simRosters = { ...state.rosters };
+      Object.keys(simRosters).forEach(team => {
+        simRosters[team as Team] = [...simRosters[team as Team]];
+      });
+      
+      const drafted = new Set(Object.values(simRosters).flat());
+      const totalPicks = westmountPlayers.length;
+      
+      for (let pickNum = state.pickHistory.length + 1; pickNum <= totalPicks; pickNum++) {
+        const team = getTeamOrder(pickNum, state.mcalearPickSlot);
+        const available = westmountPlayers.filter(p => !drafted.has(p.name));
+        
+        if (available.length === 0) break;
+        
+        // BPA with needBump
+        const scoredPlayers = available.map(p => {
+          let score = calculateValue(p);
+          score += needBump(p, simRosters[team]);
+          return { player: p, score };
+        });
+        
+        scoredPlayers.sort((a, b) => b.score - a.score);
+        const pick = scoredPlayers[0].player;
+        
+        simRosters[team].push(pick.name);
+        drafted.add(pick.name);
+      }
+      
+      return simRosters;
+    };
+    
+    const projectedRosters = simulateDraft();
+    
+    const teamStats = TEAMS.map(team => {
+      const roster = state.rosters[team];
+      const projRoster = projectedRosters[team];
+      const players = roster.map(name => westmountPlayers.find(p => p.name === name)).filter(Boolean) as WestmountPlayer[];
+      const projPlayers = projRoster.map(name => westmountPlayers.find(p => p.name === name)).filter(Boolean) as WestmountPlayer[];
+      
+      const nowValue = players.reduce((sum, p) => sum + calculateValue(p), 0);
+      const projValue = projPlayers.reduce((sum, p) => sum + calculateValue(p), 0);
+      const lastYearPts = players.reduce((sum, p) => sum + (p.pts || 0), 0);
+      
+      const goalies = players.filter(p => p.role === 'goalie');
+      const goalieName = goalies.length > 0 ? goalies[0].name.split(', ').reverse().join(' ') : null;
+      
+      return {
+        team,
+        nowValue,
+        projValue,
+        lastYearPts,
+        goalie: goalieName,
+        rosterSize: roster.length,
+      };
+    });
+    
+    // Calculate win probabilities using softmax
+    const expValues = teamStats.map(t => Math.exp(t.projValue / 80));
+    const sumExp = expValues.reduce((a, b) => a + b, 0);
+    const winProbs = expValues.map(v => Math.round((v / sumExp) * 100));
+    
+    const withProbs = teamStats.map((t, i) => ({ ...t, winPct: winProbs[i] }));
+    withProbs.sort((a, b) => b.projValue - a.projValue);
+    
+    return withProbs;
+  }, [state.rosters, state.pickHistory, state.mcalearPickSlot, getTeamOrder]);
 
   // Filter and sort players
   const filteredPlayers = useMemo(() => {
@@ -196,30 +275,7 @@ export default function WestmountDraftPage() {
       
       while (newState.pickHistory.length < maxPicks) {
         const pickNum = newState.pickHistory.length + 1;
-        const round = Math.floor((pickNum - 1) / 5) + 1;
-        const posInRound = ((pickNum - 1) % 5) + 1;
-        
-        // Snake draft order
-        let pickOrder: number[];
-        if (round % 2 === 1) {
-          pickOrder = [1, 2, 3, 4, 5];
-        } else {
-          pickOrder = [5, 4, 3, 2, 1];
-        }
-        
-        const teamOrder: Team[] = [];
-        for (let slot of pickOrder) {
-          if (slot === newState.mcalearPickSlot) {
-            teamOrder.push('McAlear');
-          } else {
-            const others = TEAMS.filter(t => t !== 'McAlear');
-            const otherSlots = [1, 2, 3, 4, 5].filter(s => s !== newState.mcalearPickSlot);
-            const idx = otherSlots.indexOf(slot);
-            teamOrder.push(others[idx]);
-          }
-        }
-        
-        const team = teamOrder[posInRound - 1];
+        const team = getTeamOrder(pickNum, newState.mcalearPickSlot);
         const drafted = new Set(Object.values(newState.rosters).flat());
         const available = westmountPlayers.filter(p => !drafted.has(p.name));
         
@@ -259,6 +315,30 @@ export default function WestmountDraftPage() {
           <h1 className="text-2xl font-bold text-center mb-2">Westmount Senior B Draft</h1>
           <div className="text-center text-sm text-gray-400 mb-3">
             Pick {currentPick.pickNum} · Round {currentPick.round} · <span className="text-blue-400 font-semibold">{currentPick.team}</span> on the clock
+          </div>
+          
+          {/* View Mode Toggle */}
+          <div className="flex gap-2 justify-center mb-3">
+            <button
+              onClick={() => setViewMode('board')}
+              className={`px-4 py-2 rounded font-medium transition ${
+                viewMode === 'board'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              Board
+            </button>
+            <button
+              onClick={() => setViewMode('teams')}
+              className={`px-4 py-2 rounded font-medium transition ${
+                viewMode === 'teams'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              Teams
+            </button>
           </div>
           
           {/* Controls */}
@@ -329,109 +409,199 @@ export default function WestmountDraftPage() {
                 <li>• Second goalies get -25 (don't stockpile)</li>
                 <li>• Teams without D get +8</li>
               </ul>
+              <p className="mt-2"><strong>Projections:</strong></p>
+              <ul className="ml-4 space-y-1 text-gray-300">
+                <li>• Model win% = projected chance of finishing 1st (not betting odds)</li>
+                <li>• Proj value = current + simulated remaining picks (BPA + needBump)</li>
+                <li>• Win% = softmax(exp(projValue/80))</li>
+              </ul>
             </div>
           )}
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="max-w-4xl mx-auto px-4 mt-4">
-        <div className="flex flex-wrap gap-2 text-sm">
-          {(['all', 'available', 'F', 'D', 'G', 'no-stats', 'yeti'] as FilterType[]).map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded font-medium transition ${
-                filter === f
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
-            >
-              {f === 'all' ? 'All' : f === 'available' ? 'Available' : f === 'F' ? 'Forwards' : f === 'D' ? 'Defense' : f === 'G' ? 'Goalies' : f === 'no-stats' ? 'No Stats' : 'Last Year Yeti'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Player Board */}
+      {/* Standings Strip */}
       <div className="max-w-4xl mx-auto px-4 mt-4">
         <div className="bg-gray-800 rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-700 text-gray-300 text-xs uppercase">
+            <table className="w-full text-xs">
+              <thead className="bg-gray-700 text-gray-300 uppercase">
                 <tr>
-                  <th className="px-3 py-2 text-left">Name</th>
-                  <th className="px-2 py-2 text-center">Pos</th>
-                  <th className="px-2 py-2 text-center">Age</th>
-                  <th className="px-2 py-2 text-center">Value</th>
-                  <th className="px-2 py-2 text-center">PTS</th>
-                  <th className="px-2 py-2 text-center">P/G</th>
+                  <th className="px-2 py-2 text-left">Rk</th>
+                  <th className="px-2 py-2 text-left">Team</th>
+                  <th className="px-2 py-2 text-center" title="Model projected win probability">Win%</th>
+                  <th className="px-2 py-2 text-right">Now</th>
+                  <th className="px-2 py-2 text-right">Proj</th>
+                  <th className="px-2 py-2 text-right">LY PTS</th>
                   <th className="px-2 py-2 text-center">G</th>
+                  <th className="px-2 py-2 text-center">#</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredPlayers.map((p, idx) => {
-                  const isYeti = p.ly_team === 'Yeti';
-                  const value = calculateValue(p);
-                  
-                  return (
-                    <tr
-                      key={p.name}
-                      onClick={() => draftPlayer(p.name)}
-                      className="border-t border-gray-700 hover:bg-gray-700 cursor-pointer transition"
-                    >
-                      <td className="px-3 py-2 font-medium">
-                        {p.name}
-                        {isYeti && <span className="ml-2 text-xs bg-yellow-600 text-black px-1.5 py-0.5 rounded font-bold">YETI</span>}
-                      </td>
-                      <td className="px-2 py-2 text-center text-gray-400">{getPosition(p)}</td>
-                      <td className="px-2 py-2 text-center text-gray-400">{p.age || '—'}</td>
-                      <td className="px-2 py-2 text-center font-semibold text-blue-400">{value.toFixed(1)}</td>
-                      <td className="px-2 py-2 text-center text-gray-400">{p.pts || '—'}</td>
-                      <td className="px-2 py-2 text-center text-gray-400">{p.ppg?.toFixed(2) || '—'}</td>
-                      <td className="px-2 py-2 text-center text-gray-400">{p.g || '—'}</td>
-                    </tr>
-                  );
-                })}
+                {standings.map((s, idx) => (
+                  <tr
+                    key={s.team}
+                    className={`border-t border-gray-700 ${s.team === 'McAlear' ? 'bg-blue-900/30' : ''} ${currentPick.team === s.team ? 'ring-2 ring-blue-500' : ''}`}
+                  >
+                    <td className="px-2 py-2 text-gray-400">{idx + 1}</td>
+                    <td className="px-2 py-2 font-semibold">{s.team}</td>
+                    <td className="px-2 py-2 text-center text-green-400">{s.winPct}%</td>
+                    <td className="px-2 py-2 text-right text-gray-300">{s.nowValue.toFixed(0)}</td>
+                    <td className="px-2 py-2 text-right text-blue-400 font-semibold">{s.projValue.toFixed(0)}</td>
+                    <td className="px-2 py-2 text-right text-gray-400">{s.lastYearPts}</td>
+                    <td className="px-2 py-2 text-center text-xs text-gray-400">{s.goalie ? s.goalie.split(' ').pop() : '—'}</td>
+                    <td className="px-2 py-2 text-center text-gray-400">{s.rosterSize}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
-      {/* Rosters */}
-      <div className="max-w-4xl mx-auto px-4 mt-6">
-        <h2 className="text-xl font-bold mb-3">Rosters</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {TEAMS.map(team => {
-            const roster = state.rosters[team];
-            const players = roster.map(name => westmountPlayers.find(p => p.name === name)).filter(Boolean) as WestmountPlayer[];
-            const fCount = players.filter(p => getPosition(p) === 'F').length;
-            const dCount = players.filter(p => getPosition(p) === 'D').length;
-            const gCount = players.filter(p => getPosition(p) === 'G').length;
-            
-            return (
-              <div key={team} className={`bg-gray-800 rounded-lg p-3 ${currentPick.team === team ? 'ring-2 ring-blue-500' : ''}`}>
-                <h3 className="font-bold text-lg mb-1">{team}</h3>
-                <div className="text-xs text-gray-400 mb-2">
-                  {roster.length} players · F:{fCount} D:{dCount} G:{gCount}
-                </div>
-                <ul className="space-y-1 text-sm">
-                  {roster.map((name, idx) => {
-                    const player = westmountPlayers.find(p => p.name === name);
-                    return (
-                      <li key={idx} className="text-gray-300">
-                        {idx + 1}. {name.split(', ').reverse().join(' ')} 
-                        {player && <span className="text-gray-500 ml-1">({getPosition(player)})</span>}
-                      </li>
-                    );
-                  })}
-                </ul>
+      {viewMode === 'board' ? (
+        <>
+          {/* Filters */}
+          <div className="max-w-4xl mx-auto px-4 mt-4">
+            <div className="flex flex-wrap gap-2 text-sm">
+              {(['all', 'available', 'F', 'D', 'G', 'no-stats', 'yeti'] as FilterType[]).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`px-3 py-1.5 rounded font-medium transition ${
+                    filter === f
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  {f === 'all' ? 'All' : f === 'available' ? 'Available' : f === 'F' ? 'Forwards' : f === 'D' ? 'Defense' : f === 'G' ? 'Goalies' : f === 'no-stats' ? 'No Stats' : 'Last Year Yeti'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Player Board */}
+          <div className="max-w-4xl mx-auto px-4 mt-4">
+            <div className="bg-gray-800 rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-700 text-gray-300 text-xs uppercase">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Name</th>
+                      <th className="px-2 py-2 text-center">Pos</th>
+                      <th className="px-2 py-2 text-center">Age</th>
+                      <th className="px-2 py-2 text-center">Value</th>
+                      <th className="px-2 py-2 text-center">PTS</th>
+                      <th className="px-2 py-2 text-center">P/G</th>
+                      <th className="px-2 py-2 text-center">G</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredPlayers.map((p, idx) => {
+                      const isYeti = p.ly_team === 'Yeti';
+                      const value = calculateValue(p);
+                      
+                      return (
+                        <tr
+                          key={p.name}
+                          onClick={() => draftPlayer(p.name)}
+                          className="border-t border-gray-700 hover:bg-gray-700 cursor-pointer transition"
+                        >
+                          <td className="px-3 py-2 font-medium">
+                            {p.name}
+                            {isYeti && <span className="ml-2 text-xs bg-yellow-600 text-black px-1.5 py-0.5 rounded font-bold">YETI</span>}
+                          </td>
+                          <td className="px-2 py-2 text-center text-gray-400">{getPosition(p)}</td>
+                          <td className="px-2 py-2 text-center text-gray-400">{p.age || '—'}</td>
+                          <td className="px-2 py-2 text-center font-semibold text-blue-400">{value.toFixed(1)}</td>
+                          <td className="px-2 py-2 text-center text-gray-400">{p.pts || '—'}</td>
+                          <td className="px-2 py-2 text-center text-gray-400">{p.ppg?.toFixed(2) || '—'}</td>
+                          <td className="px-2 py-2 text-center text-gray-400">{p.g || '—'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-            );
-          })}
+            </div>
+          </div>
+        </>
+      ) : (
+        /* Teams View */
+        <div className="max-w-4xl mx-auto px-4 mt-6">
+          <h2 className="text-xl font-bold mb-3 flex items-center gap-2">
+            <TrendingUp size={22} /> Full Rosters
+          </h2>
+          <div className="space-y-4">
+            {standings.map((s) => {
+              const roster = state.rosters[s.team];
+              const players = roster.map(name => westmountPlayers.find(p => p.name === name)).filter(Boolean) as WestmountPlayer[];
+              const hasGoalie = players.some(p => p.role === 'goalie');
+              
+              // Sort by pick order (order in roster array)
+              return (
+                <div 
+                  key={s.team} 
+                  className={`bg-gray-800 rounded-lg p-4 ${s.team === 'McAlear' ? 'ring-2 ring-blue-500' : ''} ${currentPick.team === s.team ? 'ring-2 ring-yellow-500' : ''}`}
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="font-bold text-xl">{s.team}</h3>
+                      <div className="text-xs text-gray-400 mt-1">
+                        Rank #{standings.findIndex(st => st.team === s.team) + 1} · 
+                        Win% {s.winPct}% · 
+                        Proj {s.projValue.toFixed(0)}
+                      </div>
+                    </div>
+                    {!hasGoalie && roster.length > 0 && (
+                      <div className="bg-red-900/50 border border-red-700 px-2 py-1 rounded text-xs font-semibold text-red-300">
+                        ⚠️ NO GOALIE
+                      </div>
+                    )}
+                  </div>
+                  
+                  {roster.length === 0 ? (
+                    <p className="text-gray-500 text-sm italic">No players drafted yet</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="text-xs text-gray-400 border-b border-gray-700">
+                          <tr>
+                            <th className="text-left py-2 pr-2">#</th>
+                            <th className="text-left py-2 px-2">Player</th>
+                            <th className="text-center py-2 px-2">Pos</th>
+                            <th className="text-right py-2 px-2">Value</th>
+                            <th className="text-right py-2 pl-2">LY PTS</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {players.map((p, idx) => {
+                            const value = calculateValue(p);
+                            const isYeti = p.ly_team === 'Yeti';
+                            
+                            return (
+                              <tr key={idx} className="border-t border-gray-700/50">
+                                <td className="py-2 pr-2 text-gray-500">{idx + 1}</td>
+                                <td className="py-2 px-2 font-medium">
+                                  {p.name.split(', ').reverse().join(' ')}
+                                  {isYeti && <span className="ml-2 text-xs bg-yellow-600 text-black px-1 py-0.5 rounded font-bold">YETI</span>}
+                                </td>
+                                <td className="py-2 px-2 text-center text-gray-400">{getPosition(p)}</td>
+                                <td className="py-2 px-2 text-right text-blue-400 font-semibold">{value.toFixed(1)}</td>
+                                <td className="py-2 pl-2 text-right text-gray-400">{p.pts || '—'}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
