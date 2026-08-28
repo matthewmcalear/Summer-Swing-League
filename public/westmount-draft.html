@@ -108,6 +108,15 @@ tr.yeti td:first-child{box-shadow:inset 3px 0 0 #c5d4de}
 .live-col .n{color:var(--muted);min-width:1.15em;font-variant-numeric:tabular-nums}
 .live-col .g{color:#2a5070}
 .live-col .none{color:#bbb;font-size:11px}
+.surplus{font-variant-numeric:tabular-nums;font-weight:700;margin-left:auto}
+.surplus.plus{color:var(--go)}
+.surplus.minus{color:var(--bad)}
+.surplus.flat{color:var(--muted)}
+.live-col .surplus{font-size:11px;margin-left:auto}
+.player-line .surplus{font-size:12px}
+.card .val-sum{font-weight:700}
+.card .val-sum.plus{color:var(--go)}
+.card .val-sum.minus{color:var(--bad)}
 </style>
 </head>
 <body>
@@ -310,6 +319,21 @@ function score(p){
 const PROJ_RANK = {};
 PLAYERS.slice().sort((a,b)=> (score(b)-score(a)) || a.name.localeCompare(b.name))
   .forEach((p,i)=> PROJ_RANK[p.id]=i+1);
+const RANKED = PLAYERS.slice().sort((a,b)=> (score(b)-score(a)) || a.name.localeCompare(b.name));
+const SLOT_SCORE = [0].concat(RANKED.map(p=>score(p)));
+
+function pickNumOf(id){ const i = state.history.indexOf(id); return i>=0 ? i+1 : 0; }
+function pickSurplus(p){
+  const n = pickNumOf(p.id);
+  if (!n) return 0;
+  const expect = SLOT_SCORE[n] != null ? SLOT_SCORE[n] : 0;
+  return score(p) - expect;
+}
+function fmtSurplus(x){
+  const n = (x>=0?"+":"") + x.toFixed(1);
+  const cls = x>=0.5 ? "plus" : x<=-0.5 ? "minus" : "flat";
+  return `<span class="surplus ${cls}">${n}</span>`;
+}
 
 function shortName(n){
   const [last, first] = n.split(",").map(s=>s.trim());
@@ -646,9 +670,11 @@ function renderLiveRosters(){
     const r = rosterPickOrder(t);
     const on = t===clock ? " on" : "";
     const me = t==="Yeti" ? " yeti" : "";
-    const rows = r.map((p,i)=>`<li><span class="n">${i+1}</span><span${p.role==="goalie"?' class="g"':""}>${shortName(p.name)} <span class="small">${posOf(p)}</span></span></li>`).join("")
+    const tot = r.reduce((s,p)=>s+pickSurplus(p),0);
+    const cls = tot>=0.5 ? "plus" : tot<=-0.5 ? "minus" : "flat";
+    const rows = r.map((p,i)=>`<li><span class="n">${pickNumOf(p.id)}</span><span${p.role==="goalie"?' class="g"':""}>${shortName(p.name)}</span>${fmtSurplus(pickSurplus(p))}</li>`).join("")
       || `<li class="none">no picks yet</li>`;
-    return `<div class="live-col${on}${me}"><h3>${teamLabel(t)}</h3><ol>${rows}</ol></div>`;
+    return `<div class="live-col${on}${me}"><h3>${teamLabel(t)} <span class="surplus ${cls}">${tot>=0?"+":""}${tot.toFixed(0)}</span></h3><ol>${rows}</ol></div>`;
   }).join("");
   document.getElementById("live-rosters").innerHTML = cols;
 }
@@ -756,17 +782,17 @@ function renderTeams(st){
   const wrap = document.getElementById("teams");
   wrap.innerHTML = teamCharts(st) + st.ranked.map(t=>{
     const r = rosterPickOrder(t);
+    const tot = r.reduce((s,p)=>s+pickSurplus(p),0);
     const mine = t==="Yeti" ? " mine":"";
     const g = r.some(p=>p.role==="goalie");
     const warn = g ? "" : `<div class="empty-net">Empty net — no goalie yet</div>`;
     const list = r.map(p=>{
       const cap = CAPTAINS.has(p.id) ? ' <span class="tag">captain</span>' : "";
-      const ly = p.returning ? p.pts+" pts" : "no stats";
-      return `<div class="player-line">${shortName(p.name)}${cap} <span class="small">${posOf(p)} · ${score(p).toFixed(1)} · ${ly}</span></div>`;
+      return `<div class="player-line"><span>${pickNumOf(p.id)}. ${shortName(p.name)}${cap} <span class="small">${posOf(p)} · ${score(p).toFixed(1)}</span></span>${fmtSurplus(pickSurplus(p))}</div>`;
     }).join("");
     return `<div class="card${mine}${g?"":" warn-g"}" id="team-${t}">
       <strong>${t}</strong> <span class="small">#${st.rank[t]} · ${Math.round(st.win[t]*100)}% proj 1st</span>
-      <div class="small">Now ${st.now[t].toFixed(1)} · Proj ${st.proj[t].toFixed(1)} · ${lyPts(t)} LY pts · ${r.length} players</div>
+      <div class="small">Now ${st.now[t].toFixed(1)} · Proj ${st.proj[t].toFixed(1)} · ${lyPts(t)} LY pts · ${r.length} players · <span class="val-sum ${tot>=0.5?"plus":tot<=-0.5?"minus":""}">Value ${tot>=0?"+":""}${tot.toFixed(1)}</span></div>
       ${warn}${list||"<div class='small'>empty</div>"}
     </div>`;
   }).join("");
