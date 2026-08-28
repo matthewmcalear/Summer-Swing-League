@@ -49,7 +49,13 @@ main{padding:10px 12px 90px}
 tr.rec{background:#bfe3c9}
 tr.rec td{font-weight:650}
 tr.rec td:first-child{color:var(--go);font-weight:800}
+tr.lock{background:#f4d7a8}
+tr.lock td{font-weight:650}
+tr.lock td:first-child{color:#c47a14;font-weight:800}
 .tag.sug{background:var(--go);color:#fff}
+.tag.lock{background:#c47a14;color:#fff}
+.clock.lock{border-color:#c47a14;background:#f8efe3}
+button.fixed{background:#c47a14;color:#fff;font-weight:700;border-color:#c47a14}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
 th{color:var(--muted);font-weight:600;position:sticky;top:168px;background:var(--bg)}
@@ -137,6 +143,17 @@ tr.yeti td:first-child{box-shadow:inset 3px 0 0 #c5d4de}
     </select></label>
   </div>
   <label class="small"><input type="checkbox" id="opt-pol"/> politics (family / reunion, not in the formula)</label>
+  <label class="small"><input type="checkbox" id="opt-intel" checked/> Steven intel (force other teams' queues + captains)</label>
+  <details class="fold" id="intel-fold"><summary>Steven's locks</summary>
+    <div class="small" id="intel-note">
+      Kings: Smith, Cottingham, Mashaal, Uhthoff, then Papich (he said ~12).<br>
+      Hawks: Angelini, Avraam, Morganti. Ciampini drafts himself at pick 9.<br>
+      Flyers: Philippe Martin (Phil) drafts himself at pick 10.<br>
+      Devils: math until pick 11, then Emile himself, then Descotes.<br>
+      Yeti: Tom R9, Matt R11, Dan R13 if they are still there. Other Yeti picks stay on the math.<br>
+      If the snake slot does not match a pick number, that captain takes himself on his next pick after that number.
+    </div>
+  </details>
   <div id="live-rosters" class="live-rosters"></div>
 </header>
 <main>
@@ -154,17 +171,66 @@ tr.yeti td:first-child{box-shadow:inset 3px 0 0 #c5d4de}
   <button id="btn-sim">Run sims</button>
 </div>
 <script>
-const PLAYERS = [{"id": "Angelini, Christopher", "name": "Angelini, Christopher", "age": 36, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Hawks", "gp": 31, "g": 21, "a": 22, "pts": 43, "ppg": 1.39, "pim": 18, "lyRound": 1, "lyPick": 2, "lyDraftTeam": "Hawks", "y5gp": 146, "y5g": 101, "y5a": 118, "y5pts": 219, "y5ppg": 1.5}, {"id": "Angelini, Michael", "name": "Angelini, Michael", "age": 39, "role": "skater", "returning": true, "pos": "D", "lyTeam": "Hawks", "gp": 32, "g": 6, "a": 13, "pts": 19, "ppg": 0.59, "pim": 40, "lyRound": 10, "lyPick": 49, "lyDraftTeam": "Hawks", "y5gp": 148, "y5g": 30, "y5a": 84, "y5pts": 114, "y5ppg": 0.77}, {"id": "Avraam, Sean", "name": "Avraam, Sean", "age": 45, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Hawks", "gp": 25, "g": 14, "a": 10, "pts": 24, "ppg": 0.96, "pim": 22, "lyRound": 7, "lyPick": 32, "lyDraftTeam": "Hawks", "y5gp": 125, "y5g": 68, "y5a": 78, "y5pts": 146, "y5ppg": 1.17}, {"id": "Balazinski, Alexander", "name": "Balazinski, Alexander", "age": 41, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Hawks", "gp": 35, "g": 12, "a": 10, "pts": 22, "ppg": 0.63, "pim": 19, "lyRound": 14, "lyPick": 69, "lyDraftTeam": "Hawks", "y5gp": 161, "y5g": 52, "y5a": 55, "y5pts": 107, "y5ppg": 0.66}, {"id": "Bernier, Christophe", "name": "Bernier, Christophe", "age": 30, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Devils", "gp": 23, "g": 8, "a": 12, "pts": 20, "ppg": 0.87, "pim": 6, "lyRound": 12, "lyPick": 58, "lyDraftTeam": "Devils", "y5gp": 96, "y5g": 15, "y5a": 46, "y5pts": 61, "y5ppg": 0.64}, {"id": "Chazonoff, Noah", "name": "Chazonoff, Noah", "age": 26, "role": "skater", "returning": false, "pos": "", "lyTeam": "", "gp": 0, "g": 0, "a": 0, "pts": 0, "ppg": 0, "pim": 0}, {"id": "Chetrit, Daniel", "name": "Chetrit, Daniel", "age": 24, "role": "skater", "returning": false, "pos": "", "lyTeam": "", "gp": 0, "g": 0, "a": 0, "pts": 0, "ppg": 0, "pim": 0}, {"id": "Ciampini, Adam", "name": "Ciampini, Adam", "age": 42, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Hawks", "gp": 31, "g": 10, "a": 14, "pts": 24, "ppg": 0.77, "pim": 16, "lyRound": 9, "lyPick": 42, "lyDraftTeam": "Hawks", "y5gp": 115, "y5g": 28, "y5a": 82, "y5pts": 110, "y5ppg": 0.96}, {"id": "Clarke, Lucas", "name": "Clarke, Lucas", "age": 26, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Flyers", "gp": 27, "g": 20, "a": 26, "pts": 46, "ppg": 1.7, "pim": 22, "lyRound": 1, "lyPick": 5, "lyDraftTeam": "Flyers", "y5gp": 68, "y5g": 53, "y5a": 72, "y5pts": 125, "y5ppg": 1.84}, {"id": "Clarke, Noah", "name": "Clarke, Noah", "age": 22, "role": "skater", "returning": true, "pos": "D", "lyTeam": "Kings", "gp": 20, "g": 5, "a": 9, "pts": 14, "ppg": 0.7, "pim": 12, "lyRound": 4, "lyPick": 20, "lyDraftTeam": "Kings", "y5gp": 114, "y5g": 35, "y5a": 72, "y5pts": 107, "y5ppg": 0.94}, {"id": "Cottingham, David", "name": "Cottingham, David", "age": 30, "role": "skater", "returning": true, "pos": "", "lyTeam": "Kings", "gp": 23, "g": 19, "a": 19, "pts": 38, "ppg": 1.65, "pim": 6, "lyRound": 2, "lyPick": 10, "lyDraftTeam": "Kings", "y5gp": 83, "y5g": 75, "y5a": 77, "y5pts": 152, "y5ppg": 1.83}, {"id": "Culver, Hugo", "name": "Culver, Hugo", "age": 21, "role": "skater", "returning": false, "pos": "", "lyTeam": "", "gp": 0, "g": 0, "a": 0, "pts": 0, "ppg": 0, "pim": 0}, {"id": "Delisle, Vincent", "name": "Delisle, Vincent", "age": 35, "role": "skater", "returning": true, "pos": "D", "lyTeam": "Hawks", "gp": 24, "g": 2, "a": 9, "pts": 11, "ppg": 0.46, "pim": 28, "lyRound": 4, "lyPick": 19, "lyDraftTeam": "Hawks", "y5gp": 104, "y5g": 23, "y5a": 40, "y5pts": 63, "y5ppg": 0.61}, {"id": "D'Ermo, Kallio", "name": "D'Ermo, Kallio", "age": 24, "role": "skater", "returning": true, "pos": "D", "lyTeam": "Flyers", "gp": 31, "g": 4, "a": 7, "pts": 11, "ppg": 0.35, "pim": 24, "lyRound": 8, "lyPick": 36, "lyDraftTeam": "Flyers", "y5gp": 106, "y5g": 9, "y5a": 35, "y5pts": 44, "y5ppg": 0.42}, {"id": "Descotes, William", "name": "Descotes, William", "age": 41, "role": "skater", "returning": true, "pos": "", "lyTeam": "Hawks", "gp": 33, "g": 6, "a": 16, "pts": 22, "ppg": 0.67, "pim": 18, "lyRound": 12, "lyPick": 59, "lyDraftTeam": "Hawks", "y5gp": 59, "y5g": 12, "y5a": 25, "y5pts": 37, "y5ppg": 0.63}, {"id": "Dimentberg, Evan", "name": "Dimentberg, Evan", "age": 26, "role": "skater", "returning": false, "pos": "", "lyTeam": "", "gp": 0, "g": 0, "a": 0, "pts": 0, "ppg": 0, "pim": 0}, {"id": "Fersten, Mitchell", "name": "Fersten, Mitchell", "age": 55, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Flyers", "gp": 19, "g": 2, "a": 5, "pts": 7, "ppg": 0.37, "pim": 20, "lyRound": 11, "lyPick": 55, "lyDraftTeam": "Flyers", "y5gp": 120, "y5g": 15, "y5a": 33, "y5pts": 48, "y5ppg": 0.4}, {"id": "Fox, Lucas", "name": "Fox, Lucas", "age": 31, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Flyers", "gp": 19, "g": 6, "a": 7, "pts": 13, "ppg": 0.68, "pim": 10, "lyRound": 5, "lyPick": 25, "lyDraftTeam": "Flyers", "y5gp": 136, "y5g": 68, "y5a": 103, "y5pts": 171, "y5ppg": 1.26}, {"id": "Gaiotti, Daniele", "name": "Gaiotti, Daniele", "age": 37, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Yeti", "gp": 31, "g": 5, "a": 18, "pts": 23, "ppg": 0.74, "pim": 14, "lyRound": 10, "lyPick": 47, "lyDraftTeam": "Yeti", "y5gp": 146, "y5g": 42, "y5a": 68, "y5pts": 110, "y5ppg": 0.75}, {"id": "Galeone, Alessandro", "name": "Galeone, Alessandro", "age": 35, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Devils", "gp": 35, "g": 8, "a": 18, "pts": 26, "ppg": 0.74, "pim": 28, "lyRound": 6, "lyPick": 28, "lyDraftTeam": "Devils", "y5gp": 58, "y5g": 24, "y5a": 31, "y5pts": 55, "y5ppg": 0.95}, {"id": "Gilman, Dustin", "name": "Gilman, Dustin", "age": 40, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Hawks", "gp": 31, "g": 1, "a": 12, "pts": 13, "ppg": 0.42, "pim": 14, "lyRound": 13, "lyPick": 62, "lyDraftTeam": "Hawks", "y5gp": 127, "y5g": 13, "y5a": 50, "y5pts": 63, "y5ppg": 0.5}, {"id": "Goodman, Justin", "name": "Goodman, Justin", "age": 25, "role": "skater", "returning": true, "pos": "", "lyTeam": "Flyers", "gp": 25, "g": 10, "a": 15, "pts": 25, "ppg": 1.0, "pim": 4, "lyRound": 2, "lyPick": 6, "lyDraftTeam": "Flyers", "y5gp": 92, "y5g": 54, "y5a": 79, "y5pts": 133, "y5ppg": 1.45}, {"id": "Horner-Borsu, Konrad", "name": "Horner-Borsu, Konrad", "age": 23, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Hawks", "gp": 30, "g": 24, "a": 20, "pts": 44, "ppg": 1.47, "pim": 12, "lyRound": 2, "lyPick": 9, "lyDraftTeam": "Hawks", "y5gp": 107, "y5g": 87, "y5a": 70, "y5pts": 157, "y5ppg": 1.47}, {"id": "Kaplan, Jeremy", "name": "Kaplan, Jeremy", "age": 34, "role": "skater", "returning": false, "pos": "", "lyTeam": "", "gp": 0, "g": 0, "a": 0, "pts": 0, "ppg": 0, "pim": 0}, {"id": "Kelly-Menard, Keane", "name": "Kelly-Menard, Keane", "age": 25, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Devils", "gp": 34, "g": 39, "a": 48, "pts": 87, "ppg": 2.56, "pim": 14, "lyRound": 2, "lyPick": 8, "lyDraftTeam": "Devils", "y5gp": 149, "y5g": 203, "y5a": 157, "y5pts": 360, "y5ppg": 2.42}, {"id": "Larose, Michael", "name": "Larose, Michael", "age": 28, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Devils", "gp": 32, "g": 57, "a": 47, "pts": 104, "ppg": 3.25, "pim": 10, "lyRound": 1, "lyPick": 3, "lyDraftTeam": "Devils", "y5gp": 32, "y5g": 57, "y5a": 47, "y5pts": 104, "y5ppg": 3.25}, {"id": "Madar, Matthew", "name": "Madar, Matthew", "age": 25, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Flyers", "gp": 13, "g": 1, "a": 3, "pts": 4, "ppg": 0.31, "pim": 0, "lyRound": 9, "lyPick": 45, "lyDraftTeam": "Flyers", "y5gp": 13, "y5g": 1, "y5a": 3, "y5pts": 4, "y5ppg": 0.31}, {"id": "Martin, Philippe", "name": "Martin, Philippe", "age": 36, "role": "skater", "returning": true, "pos": "D", "lyTeam": "Devils", "gp": 27, "g": 0, "a": 21, "pts": 21, "ppg": 0.78, "pim": 16, "lyRound": 10, "lyPick": 48, "lyDraftTeam": "Devils", "y5gp": 147, "y5g": 28, "y5a": 91, "y5pts": 119, "y5ppg": 0.81}, {"id": "Mashaal, Alexander", "name": "Mashaal, Alexander", "age": 33, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Kings", "gp": 33, "g": 14, "a": 16, "pts": 30, "ppg": 0.91, "pim": 18, "lyRound": 3, "lyPick": 11, "lyDraftTeam": "Kings", "y5gp": 96, "y5g": 63, "y5a": 60, "y5pts": 123, "y5ppg": 1.28}, {"id": "McAlear, Daniel", "name": "McAlear, Daniel", "age": 33, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Yeti", "gp": 23, "g": 11, "a": 12, "pts": 23, "ppg": 1.0, "pim": 0, "lyRound": 13, "lyPick": 64, "lyDraftTeam": "Yeti", "y5gp": 65, "y5g": 28, "y5a": 33, "y5pts": 61, "y5ppg": 0.94}, {"id": "McAlear, Matthew", "name": "McAlear, Matthew", "age": 34, "role": "skater", "returning": true, "pos": "F", "playedD": true, "lyTeam": "Yeti", "gp": 23, "g": 6, "a": 9, "pts": 15, "ppg": 0.65, "pim": 2, "lyRound": 11, "lyPick": 54, "lyDraftTeam": "Yeti", "y5gp": 23, "y5g": 6, "y5a": 9, "y5pts": 15, "y5ppg": 0.65}, {"id": "McAlear, Steven", "name": "McAlear, Steven", "age": 30, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Yeti", "gp": 31, "g": 13, "a": 15, "pts": 28, "ppg": 0.9, "pim": 14, "lyRound": 2, "lyPick": 7, "lyDraftTeam": "Yeti", "y5gp": 114, "y5g": 50, "y5a": 89, "y5pts": 139, "y5ppg": 1.22}, {"id": "McAlear, Thomas", "name": "McAlear, Thomas", "age": 31, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Yeti", "gp": 32, "g": 15, "a": 21, "pts": 36, "ppg": 1.12, "pim": 20, "lyRound": 9, "lyPick": 44, "lyDraftTeam": "Yeti", "y5gp": 117, "y5g": 46, "y5a": 80, "y5pts": 126, "y5ppg": 1.08}, {"id": "Meltzer, Ryan", "name": "Meltzer, Ryan", "age": 30, "role": "skater", "returning": true, "pos": "", "lyTeam": "Hawks", "gp": 25, "g": 10, "a": 12, "pts": 22, "ppg": 0.88, "pim": 6, "lyRound": 8, "lyPick": 39, "lyDraftTeam": "Hawks", "y5gp": 119, "y5g": 37, "y5a": 60, "y5pts": 97, "y5ppg": 0.82}, {"id": "MORGANTI, MARCO", "name": "MORGANTI, MARCO", "age": 40, "role": "skater", "returning": true, "pos": "", "lyTeam": "Hawks", "gp": 27, "g": 4, "a": 13, "pts": 17, "ppg": 0.63, "pim": 12, "lyRound": 5, "lyPick": 22, "lyDraftTeam": "Hawks", "y5gp": 54, "y5g": 7, "y5a": 26, "y5pts": 33, "y5ppg": 0.61}, {"id": "Murciano, Emile", "name": "Murciano, Emile", "age": 35, "role": "skater", "returning": true, "pos": "D", "lyTeam": "Devils", "gp": 34, "g": 2, "a": 17, "pts": 19, "ppg": 0.56, "pim": 10, "lyRound": 11, "lyPick": 53, "lyDraftTeam": "Devils", "y5gp": 154, "y5g": 10, "y5a": 52, "y5pts": 62, "y5ppg": 0.4}, {"id": "Neeposh-Iserhoff, Shawn Trevor", "name": "Neeposh-Iserhoff, Shawn Trevor", "age": 41, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Devils", "gp": 24, "g": 10, "a": 26, "pts": 36, "ppg": 1.5, "pim": 12, "lyRound": 7, "lyPick": 33, "lyDraftTeam": "Devils", "y5gp": 81, "y5g": 50, "y5a": 59, "y5pts": 109, "y5ppg": 1.35}, {"id": "Ong Tone, Christopher", "name": "Ong Tone, Christopher", "age": 41, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Yeti", "gp": 27, "g": 21, "a": 31, "pts": 52, "ppg": 1.93, "pim": 26, "lyRound": 1, "lyPick": 4, "lyDraftTeam": "Yeti", "y5gp": 35, "y5g": 24, "y5a": 44, "y5pts": 68, "y5ppg": 1.94}, {"id": "Orsini, Mark", "name": "Orsini, Mark", "age": 48, "role": "skater", "returning": true, "pos": "D", "lyTeam": "Hawks", "gp": 31, "g": 2, "a": 8, "pts": 10, "ppg": 0.32, "pim": 10, "lyRound": 11, "lyPick": 52, "lyDraftTeam": "Hawks", "y5gp": 142, "y5g": 8, "y5a": 49, "y5pts": 57, "y5ppg": 0.4}, {"id": "Papich, Nikola", "name": "Papich, Nikola", "age": 31, "role": "skater", "returning": true, "pos": "", "lyTeam": "Kings", "gp": 23, "g": 11, "a": 10, "pts": 21, "ppg": 0.91, "pim": 6, "lyRound": 12, "lyPick": 60, "lyDraftTeam": "Kings", "y5gp": 23, "y5g": 11, "y5a": 10, "y5pts": 21, "y5ppg": 0.91}, {"id": "Petersen, David", "name": "Petersen, David", "age": 42, "role": "skater", "returning": true, "pos": "", "lyTeam": "Flyers", "gp": 14, "g": 2, "a": 4, "pts": 6, "ppg": 0.43, "pim": 6, "y5gp": 14, "y5g": 2, "y5a": 4, "y5pts": 6, "y5ppg": 0.43}, {"id": "Pilon, Jean-François", "name": "Pilon, Jean-François", "age": 41, "role": "skater", "returning": false, "pos": "", "lyTeam": "", "gp": 0, "g": 0, "a": 0, "pts": 0, "ppg": 0, "pim": 0}, {"id": "Romary, Thomas", "name": "Romary, Thomas", "age": 24, "role": "skater", "returning": true, "pos": "D", "lyTeam": "Yeti", "gp": 29, "g": 14, "a": 18, "pts": 32, "ppg": 1.1, "pim": 18, "lyRound": 3, "lyPick": 14, "lyDraftTeam": "Yeti", "y5gp": 55, "y5g": 26, "y5a": 31, "y5pts": 57, "y5ppg": 1.04}, {"id": "Sala, Jacob (Yuri)", "name": "Sala, Jacob (Yuri)", "age": 18, "role": "skater", "returning": false, "pos": "", "lyTeam": "", "gp": 0, "g": 0, "a": 0, "pts": 0, "ppg": 0, "pim": 0}, {"id": "Salvo, Anthony", "name": "Salvo, Anthony", "age": 33, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Kings", "gp": 25, "g": 10, "a": 16, "pts": 26, "ppg": 1.04, "pim": 0, "lyRound": 6, "lyPick": 30, "lyDraftTeam": "Kings", "y5gp": 117, "y5g": 45, "y5a": 60, "y5pts": 105, "y5ppg": 0.9}, {"id": "Sawa, Jacob", "name": "Sawa, Jacob", "age": 41, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Kings", "gp": 25, "g": 5, "a": 16, "pts": 21, "ppg": 0.84, "pim": 2, "lyRound": 9, "lyPick": 41, "lyDraftTeam": "Kings", "y5gp": 65, "y5g": 15, "y5a": 27, "y5pts": 42, "y5ppg": 0.65}, {"id": "Semionov, Ilya", "name": "Semionov, Ilya", "age": 23, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Yeti", "gp": 26, "g": 2, "a": 10, "pts": 12, "ppg": 0.46, "pim": 6, "lyRound": 12, "lyPick": 57, "lyDraftTeam": "Yeti", "y5gp": 56, "y5g": 10, "y5a": 24, "y5pts": 34, "y5ppg": 0.61}, {"id": "Semionov, Leo", "name": "Semionov, Leo", "age": 18, "role": "skater", "returning": false, "pos": "", "lyTeam": "", "gp": 0, "g": 0, "a": 0, "pts": 0, "ppg": 0, "pim": 0}, {"id": "Semionov, Nathan", "name": "Semionov, Nathan", "age": 20, "role": "skater", "returning": false, "pos": "", "lyTeam": "", "gp": 0, "g": 0, "a": 0, "pts": 0, "ppg": 0, "pim": 0}, {"id": "Shved, Max", "name": "Shved, Max", "age": 35, "role": "skater", "returning": true, "pos": "", "lyTeam": "Yeti", "gp": 21, "g": 7, "a": 7, "pts": 14, "ppg": 0.67, "pim": 10, "lyRound": 5, "lyPick": 24, "lyDraftTeam": "Yeti", "y5gp": 21, "y5g": 7, "y5a": 7, "y5pts": 14, "y5ppg": 0.67}, {"id": "Smith, Michael", "name": "Smith, Michael", "age": 33, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Kings", "gp": 28, "g": 22, "a": 27, "pts": 49, "ppg": 1.75, "pim": 4, "lyRound": 1, "lyPick": 1, "lyDraftTeam": "Kings", "y5gp": 100, "y5g": 95, "y5a": 85, "y5pts": 180, "y5ppg": 1.8}, {"id": "Stenason, David I.", "name": "Stenason, David I.", "age": 34, "role": "skater", "returning": true, "pos": "", "lyTeam": "Kings", "gp": 34, "g": 7, "a": 12, "pts": 19, "ppg": 0.56, "pim": 24, "lyRound": 14, "lyPick": 70, "lyDraftTeam": "Kings", "y5gp": 142, "y5g": 23, "y5a": 56, "y5pts": 79, "y5ppg": 0.56}, {"id": "Tichoux, Xavier", "name": "Tichoux, Xavier", "age": 34, "role": "skater", "returning": true, "pos": "D", "lyTeam": "Yeti", "gp": 34, "g": 3, "a": 14, "pts": 17, "ppg": 0.5, "pim": 18, "lyRound": 8, "lyPick": 37, "lyDraftTeam": "Yeti", "y5gp": 148, "y5g": 8, "y5a": 51, "y5pts": 59, "y5ppg": 0.4}, {"id": "Timmins, Brendan", "name": "Timmins, Brendan", "age": 35, "role": "skater", "returning": true, "pos": "D", "lyTeam": "Kings", "gp": 27, "g": 3, "a": 6, "pts": 9, "ppg": 0.33, "pim": 8, "lyRound": 5, "lyPick": 21, "lyDraftTeam": "Kings", "y5gp": 140, "y5g": 17, "y5a": 52, "y5pts": 69, "y5ppg": 0.49}, {"id": "Timmins, Nicholas", "name": "Timmins, Nicholas", "age": 37, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Devils", "gp": 33, "g": 12, "a": 24, "pts": 36, "ppg": 1.09, "pim": 28, "lyRound": 5, "lyPick": 23, "lyDraftTeam": "Devils", "y5gp": 131, "y5g": 55, "y5a": 89, "y5pts": 144, "y5ppg": 1.1}, {"id": "Toledano, David", "name": "Toledano, David", "age": 45, "role": "skater", "returning": true, "pos": "", "lyTeam": "Yeti", "gp": 30, "g": 15, "a": 26, "pts": 41, "ppg": 1.37, "pim": 6, "lyRound": 6, "lyPick": 27, "lyDraftTeam": "Yeti", "y5gp": 30, "y5g": 15, "y5a": 26, "y5pts": 41, "y5ppg": 1.37}, {"id": "Uhthoff, Nicholas", "name": "Uhthoff, Nicholas", "age": 30, "role": "skater", "returning": true, "pos": "", "lyTeam": "Kings", "gp": 24, "g": 4, "a": 11, "pts": 15, "ppg": 0.62, "pim": 8, "lyRound": 7, "lyPick": 34, "lyDraftTeam": "Yeti", "y5gp": 24, "y5g": 4, "y5a": 11, "y5pts": 15, "y5ppg": 0.62, "tradedAfterDraft": true}, {"id": "Viens, Luca", "name": "Viens, Luca", "age": 24, "role": "skater", "returning": true, "pos": "F", "lyTeam": "Devils", "gp": 32, "g": 24, "a": 17, "pts": 41, "ppg": 1.28, "pim": 12, "lyRound": 3, "lyPick": 13, "lyDraftTeam": "Devils", "y5gp": 100, "y5g": 82, "y5a": 49, "y5pts": 131, "y5ppg": 1.31}, {"id": "Yatrou, Evan", "name": "Yatrou, Evan", "age": 25, "role": "skater", "returning": false, "pos": "D", "lyTeam": "", "gp": 0, "g": 0, "a": 0, "pts": 0, "ppg": 0, "pim": 0, "lyRound": 13, "y5gp": 64, "y5g": 9, "y5a": 21, "y5pts": 30, "y5ppg": 0.47}, {"id": "Young, Cooper", "name": "Young, Cooper", "age": 26, "role": "skater", "returning": true, "pos": "D", "lyTeam": "Kings", "gp": 22, "g": 1, "a": 6, "pts": 7, "ppg": 0.32, "pim": 10, "lyRound": 10, "lyPick": 50, "lyDraftTeam": "Kings", "y5gp": 22, "y5g": 1, "y5a": 6, "y5pts": 7, "y5ppg": 0.32}, {"id": "Yarrow, Evan", "name": "Yarrow, Evan", "age": 37, "role": "goalie", "returning": false, "pos": "G", "lyTeam": "Kings", "gp": 0, "g": 0, "a": 0, "pts": 0, "ppg": 0, "pim": 0, "lyRound": 14, "lyPick": 67, "lyDraftTeam": "Yeti", "y5gp": 119, "y5g": 0, "y5a": 2, "y5pts": 2, "y5ppg": 0.02, "tradedAfterDraft": true}, {"id": "Lach, Jared", "name": "Lach, Jared", "age": 22, "role": "goalie", "returning": false, "pos": "G", "lyTeam": "Yeti", "gp": 0, "g": 0, "a": 0, "pts": 0, "ppg": 0, "pim": 0, "lyRound": 7, "lyPick": 31, "lyDraftTeam": "Kings", "y5gp": 92, "y5g": 1, "y5a": 3, "y5pts": 4, "y5ppg": 0.04, "tradedAfterDraft": true}, {"id": "Gironne, Michel", "name": "Gironne, Michel", "age": 49, "role": "goalie", "returning": false, "pos": "G", "lyTeam": "Hawks", "gp": 0, "g": 0, "a": 0, "pts": 0, "ppg": 0, "pim": 0, "lyRound": 6, "lyPick": 29, "lyDraftTeam": "Hawks", "y5gp": 56, "y5g": 0, "y5a": 2, "y5pts": 2, "y5ppg": 0.04}, {"id": "Martin, Euan", "name": "Martin, Euan", "age": 21, "role": "goalie", "returning": false, "pos": "G", "lyTeam": "Devils", "gp": 0, "g": 0, "a": 0, "pts": 0, "ppg": 0, "pim": 0, "lyRound": 4, "lyPick": 18, "lyDraftTeam": "Devils", "y5gp": 32, "y5g": 2, "y5a": 5, "y5pts": 7, "y5ppg": 0.22}];
+const PLAYERS = [{"id":"Angelini, Christopher","name":"Angelini, Christopher","age":36,"role":"skater","returning":true,"pos":"F","lyTeam":"Hawks","gp":31,"g":21,"a":22,"pts":43,"ppg":1.39,"pim":18,"lyRound":1,"lyPick":2,"lyDraftTeam":"Hawks","y5gp":146,"y5g":101,"y5a":118,"y5pts":219,"y5ppg":1.5},{"id":"Angelini, Michael","name":"Angelini, Michael","age":39,"role":"skater","returning":true,"pos":"D","lyTeam":"Hawks","gp":32,"g":6,"a":13,"pts":19,"ppg":0.59,"pim":40,"lyRound":10,"lyPick":49,"lyDraftTeam":"Hawks","y5gp":148,"y5g":30,"y5a":84,"y5pts":114,"y5ppg":0.77},{"id":"Avraam, Sean","name":"Avraam, Sean","age":45,"role":"skater","returning":true,"pos":"F","lyTeam":"Hawks","gp":25,"g":14,"a":10,"pts":24,"ppg":0.96,"pim":22,"lyRound":7,"lyPick":32,"lyDraftTeam":"Hawks","y5gp":125,"y5g":68,"y5a":78,"y5pts":146,"y5ppg":1.17},{"id":"Balazinski, Alexander","name":"Balazinski, Alexander","age":41,"role":"skater","returning":true,"pos":"F","lyTeam":"Hawks","gp":35,"g":12,"a":10,"pts":22,"ppg":0.63,"pim":19,"lyRound":14,"lyPick":69,"lyDraftTeam":"Hawks","y5gp":161,"y5g":52,"y5a":55,"y5pts":107,"y5ppg":0.66},{"id":"Bernier, Christophe","name":"Bernier, Christophe","age":30,"role":"skater","returning":true,"pos":"F","lyTeam":"Devils","gp":23,"g":8,"a":12,"pts":20,"ppg":0.87,"pim":6,"lyRound":12,"lyPick":58,"lyDraftTeam":"Devils","y5gp":96,"y5g":15,"y5a":46,"y5pts":61,"y5ppg":0.64},{"id":"Chazonoff, Noah","name":"Chazonoff, Noah","age":26,"role":"skater","returning":false,"pos":"","lyTeam":"","gp":0,"g":0,"a":0,"pts":0,"ppg":0,"pim":0},{"id":"Chetrit, Daniel","name":"Chetrit, Daniel","age":24,"role":"skater","returning":false,"pos":"","lyTeam":"","gp":0,"g":0,"a":0,"pts":0,"ppg":0,"pim":0},{"id":"Ciampini, Adam","name":"Ciampini, Adam","age":42,"role":"skater","returning":true,"pos":"F","lyTeam":"Hawks","gp":31,"g":10,"a":14,"pts":24,"ppg":0.77,"pim":16,"lyRound":9,"lyPick":42,"lyDraftTeam":"Hawks","y5gp":115,"y5g":28,"y5a":82,"y5pts":110,"y5ppg":0.96},{"id":"Clarke, Lucas","name":"Clarke, Lucas","age":26,"role":"skater","returning":true,"pos":"F","lyTeam":"Flyers","gp":27,"g":20,"a":26,"pts":46,"ppg":1.7,"pim":22,"lyRound":1,"lyPick":5,"lyDraftTeam":"Flyers","y5gp":68,"y5g":53,"y5a":72,"y5pts":125,"y5ppg":1.84},{"id":"Clarke, Noah","name":"Clarke, Noah","age":22,"role":"skater","returning":true,"pos":"D","lyTeam":"Kings","gp":20,"g":5,"a":9,"pts":14,"ppg":0.7,"pim":12,"lyRound":4,"lyPick":20,"lyDraftTeam":"Kings","y5gp":114,"y5g":35,"y5a":72,"y5pts":107,"y5ppg":0.94},{"id":"Cottingham, David","name":"Cottingham, David","age":30,"role":"skater","returning":true,"pos":"","lyTeam":"Kings","gp":23,"g":19,"a":19,"pts":38,"ppg":1.65,"pim":6,"lyRound":2,"lyPick":10,"lyDraftTeam":"Kings","y5gp":83,"y5g":75,"y5a":77,"y5pts":152,"y5ppg":1.83},{"id":"Culver, Hugo","name":"Culver, Hugo","age":21,"role":"skater","returning":false,"pos":"","lyTeam":"","gp":0,"g":0,"a":0,"pts":0,"ppg":0,"pim":0},{"id":"Delisle, Vincent","name":"Delisle, Vincent","age":35,"role":"skater","returning":true,"pos":"D","lyTeam":"Hawks","gp":24,"g":2,"a":9,"pts":11,"ppg":0.46,"pim":28,"lyRound":4,"lyPick":19,"lyDraftTeam":"Hawks","y5gp":104,"y5g":23,"y5a":40,"y5pts":63,"y5ppg":0.61},{"id":"D'Ermo, Kallio","name":"D'Ermo, Kallio","age":24,"role":"skater","returning":true,"pos":"D","lyTeam":"Flyers","gp":31,"g":4,"a":7,"pts":11,"ppg":0.35,"pim":24,"lyRound":8,"lyPick":36,"lyDraftTeam":"Flyers","y5gp":106,"y5g":9,"y5a":35,"y5pts":44,"y5ppg":0.42},{"id":"Descotes, William","name":"Descotes, William","age":41,"role":"skater","returning":true,"pos":"","lyTeam":"Hawks","gp":33,"g":6,"a":16,"pts":22,"ppg":0.67,"pim":18,"lyRound":12,"lyPick":59,"lyDraftTeam":"Hawks","y5gp":59,"y5g":12,"y5a":25,"y5pts":37,"y5ppg":0.63},{"id":"Dimentberg, Evan","name":"Dimentberg, Evan","age":26,"role":"skater","returning":false,"pos":"","lyTeam":"","gp":0,"g":0,"a":0,"pts":0,"ppg":0,"pim":0},{"id":"Fersten, Mitchell","name":"Fersten, Mitchell","age":55,"role":"skater","returning":true,"pos":"F","lyTeam":"Flyers","gp":19,"g":2,"a":5,"pts":7,"ppg":0.37,"pim":20,"lyRound":11,"lyPick":55,"lyDraftTeam":"Flyers","y5gp":120,"y5g":15,"y5a":33,"y5pts":48,"y5ppg":0.4},{"id":"Fox, Lucas","name":"Fox, Lucas","age":31,"role":"skater","returning":true,"pos":"F","lyTeam":"Flyers","gp":19,"g":6,"a":7,"pts":13,"ppg":0.68,"pim":10,"lyRound":5,"lyPick":25,"lyDraftTeam":"Flyers","y5gp":136,"y5g":68,"y5a":103,"y5pts":171,"y5ppg":1.26},{"id":"Gaiotti, Daniele","name":"Gaiotti, Daniele","age":37,"role":"skater","returning":true,"pos":"F","lyTeam":"Yeti","gp":31,"g":5,"a":18,"pts":23,"ppg":0.74,"pim":14,"lyRound":10,"lyPick":47,"lyDraftTeam":"Yeti","y5gp":146,"y5g":42,"y5a":68,"y5pts":110,"y5ppg":0.75},{"id":"Galeone, Alessandro","name":"Galeone, Alessandro","age":35,"role":"skater","returning":true,"pos":"F","lyTeam":"Devils","gp":35,"g":8,"a":18,"pts":26,"ppg":0.74,"pim":28,"lyRound":6,"lyPick":28,"lyDraftTeam":"Devils","y5gp":58,"y5g":24,"y5a":31,"y5pts":55,"y5ppg":0.95},{"id":"Gilman, Dustin","name":"Gilman, Dustin","age":40,"role":"skater","returning":true,"pos":"F","lyTeam":"Hawks","gp":31,"g":1,"a":12,"pts":13,"ppg":0.42,"pim":14,"lyRound":13,"lyPick":62,"lyDraftTeam":"Hawks","y5gp":127,"y5g":13,"y5a":50,"y5pts":63,"y5ppg":0.5},{"id":"Goodman, Justin","name":"Goodman, Justin","age":25,"role":"skater","returning":true,"pos":"","lyTeam":"Flyers","gp":25,"g":10,"a":15,"pts":25,"ppg":1.0,"pim":4,"lyRound":2,"lyPick":6,"lyDraftTeam":"Flyers","y5gp":92,"y5g":54,"y5a":79,"y5pts":133,"y5ppg":1.45},{"id":"Horner-Borsu, Konrad","name":"Horner-Borsu, Konrad","age":23,"role":"skater","returning":true,"pos":"F","lyTeam":"Hawks","gp":30,"g":24,"a":20,"pts":44,"ppg":1.47,"pim":12,"lyRound":2,"lyPick":9,"lyDraftTeam":"Hawks","y5gp":107,"y5g":87,"y5a":70,"y5pts":157,"y5ppg":1.47},{"id":"Kaplan, Jeremy","name":"Kaplan, Jeremy","age":34,"role":"skater","returning":false,"pos":"","lyTeam":"","gp":0,"g":0,"a":0,"pts":0,"ppg":0,"pim":0},{"id":"Kelly-Menard, Keane","name":"Kelly-Menard, Keane","age":25,"role":"skater","returning":true,"pos":"F","lyTeam":"Devils","gp":34,"g":39,"a":48,"pts":87,"ppg":2.56,"pim":14,"lyRound":2,"lyPick":8,"lyDraftTeam":"Devils","y5gp":149,"y5g":203,"y5a":157,"y5pts":360,"y5ppg":2.42},{"id":"Larose, Michael","name":"Larose, Michael","age":28,"role":"skater","returning":true,"pos":"F","lyTeam":"Devils","gp":32,"g":57,"a":47,"pts":104,"ppg":3.25,"pim":10,"lyRound":1,"lyPick":3,"lyDraftTeam":"Devils","y5gp":32,"y5g":57,"y5a":47,"y5pts":104,"y5ppg":3.25},{"id":"Madar, Matthew","name":"Madar, Matthew","age":25,"role":"skater","returning":true,"pos":"F","lyTeam":"Flyers","gp":13,"g":1,"a":3,"pts":4,"ppg":0.31,"pim":0,"lyRound":9,"lyPick":45,"lyDraftTeam":"Flyers","y5gp":13,"y5g":1,"y5a":3,"y5pts":4,"y5ppg":0.31},{"id":"Martin, Philippe","name":"Martin, Philippe","age":36,"role":"skater","returning":true,"pos":"D","lyTeam":"Devils","gp":27,"g":0,"a":21,"pts":21,"ppg":0.78,"pim":16,"lyRound":10,"lyPick":48,"lyDraftTeam":"Devils","y5gp":147,"y5g":28,"y5a":91,"y5pts":119,"y5ppg":0.81},{"id":"Mashaal, Alexander","name":"Mashaal, Alexander","age":33,"role":"skater","returning":true,"pos":"F","lyTeam":"Kings","gp":33,"g":14,"a":16,"pts":30,"ppg":0.91,"pim":18,"lyRound":3,"lyPick":11,"lyDraftTeam":"Kings","y5gp":96,"y5g":63,"y5a":60,"y5pts":123,"y5ppg":1.28},{"id":"McAlear, Daniel","name":"McAlear, Daniel","age":33,"role":"skater","returning":true,"pos":"F","lyTeam":"Yeti","gp":23,"g":11,"a":12,"pts":23,"ppg":1.0,"pim":0,"lyRound":13,"lyPick":64,"lyDraftTeam":"Yeti","y5gp":65,"y5g":28,"y5a":33,"y5pts":61,"y5ppg":0.94},{"id":"McAlear, Matthew","name":"McAlear, Matthew","age":34,"role":"skater","returning":true,"pos":"F","playedD":true,"lyTeam":"Yeti","gp":23,"g":6,"a":9,"pts":15,"ppg":0.65,"pim":2,"lyRound":11,"lyPick":54,"lyDraftTeam":"Yeti","y5gp":23,"y5g":6,"y5a":9,"y5pts":15,"y5ppg":0.65},{"id":"McAlear, Steven","name":"McAlear, Steven","age":30,"role":"skater","returning":true,"pos":"F","lyTeam":"Yeti","gp":31,"g":13,"a":15,"pts":28,"ppg":0.9,"pim":14,"lyRound":2,"lyPick":7,"lyDraftTeam":"Yeti","y5gp":114,"y5g":50,"y5a":89,"y5pts":139,"y5ppg":1.22},{"id":"McAlear, Thomas","name":"McAlear, Thomas","age":31,"role":"skater","returning":true,"pos":"F","lyTeam":"Yeti","gp":32,"g":15,"a":21,"pts":36,"ppg":1.12,"pim":20,"lyRound":9,"lyPick":44,"lyDraftTeam":"Yeti","y5gp":117,"y5g":46,"y5a":80,"y5pts":126,"y5ppg":1.08},{"id":"Meltzer, Ryan","name":"Meltzer, Ryan","age":30,"role":"skater","returning":true,"pos":"","lyTeam":"Hawks","gp":25,"g":10,"a":12,"pts":22,"ppg":0.88,"pim":6,"lyRound":8,"lyPick":39,"lyDraftTeam":"Hawks","y5gp":119,"y5g":37,"y5a":60,"y5pts":97,"y5ppg":0.82},{"id":"MORGANTI, MARCO","name":"MORGANTI, MARCO","age":40,"role":"skater","returning":true,"pos":"","lyTeam":"Hawks","gp":27,"g":4,"a":13,"pts":17,"ppg":0.63,"pim":12,"lyRound":5,"lyPick":22,"lyDraftTeam":"Hawks","y5gp":54,"y5g":7,"y5a":26,"y5pts":33,"y5ppg":0.61},{"id":"Murciano, Emile","name":"Murciano, Emile","age":35,"role":"skater","returning":true,"pos":"D","lyTeam":"Devils","gp":34,"g":2,"a":17,"pts":19,"ppg":0.56,"pim":10,"lyRound":11,"lyPick":53,"lyDraftTeam":"Devils","y5gp":154,"y5g":10,"y5a":52,"y5pts":62,"y5ppg":0.4},{"id":"Neeposh-Iserhoff, Shawn Trevor","name":"Neeposh-Iserhoff, Shawn Trevor","age":41,"role":"skater","returning":true,"pos":"F","lyTeam":"Devils","gp":24,"g":10,"a":26,"pts":36,"ppg":1.5,"pim":12,"lyRound":7,"lyPick":33,"lyDraftTeam":"Devils","y5gp":81,"y5g":50,"y5a":59,"y5pts":109,"y5ppg":1.35},{"id":"Ong Tone, Christopher","name":"Ong Tone, Christopher","age":41,"role":"skater","returning":true,"pos":"F","lyTeam":"Yeti","gp":27,"g":21,"a":31,"pts":52,"ppg":1.93,"pim":26,"lyRound":1,"lyPick":4,"lyDraftTeam":"Yeti","y5gp":35,"y5g":24,"y5a":44,"y5pts":68,"y5ppg":1.94},{"id":"Orsini, Mark","name":"Orsini, Mark","age":48,"role":"skater","returning":true,"pos":"D","lyTeam":"Hawks","gp":31,"g":2,"a":8,"pts":10,"ppg":0.32,"pim":10,"lyRound":11,"lyPick":52,"lyDraftTeam":"Hawks","y5gp":142,"y5g":8,"y5a":49,"y5pts":57,"y5ppg":0.4},{"id":"Papich, Nikola","name":"Papich, Nikola","age":31,"role":"skater","returning":true,"pos":"","lyTeam":"Kings","gp":23,"g":11,"a":10,"pts":21,"ppg":0.91,"pim":6,"lyRound":12,"lyPick":60,"lyDraftTeam":"Kings","y5gp":23,"y5g":11,"y5a":10,"y5pts":21,"y5ppg":0.91},{"id":"Petersen, David","name":"Petersen, David","age":42,"role":"skater","returning":true,"pos":"","lyTeam":"Flyers","gp":14,"g":2,"a":4,"pts":6,"ppg":0.43,"pim":6,"y5gp":14,"y5g":2,"y5a":4,"y5pts":6,"y5ppg":0.43},{"id":"Pilon, Jean-Fran\u00e7ois","name":"Pilon, Jean-Fran\u00e7ois","age":41,"role":"skater","returning":false,"pos":"","lyTeam":"","gp":0,"g":0,"a":0,"pts":0,"ppg":0,"pim":0},{"id":"Romary, Thomas","name":"Romary, Thomas","age":24,"role":"skater","returning":true,"pos":"D","lyTeam":"Yeti","gp":29,"g":14,"a":18,"pts":32,"ppg":1.1,"pim":18,"lyRound":3,"lyPick":14,"lyDraftTeam":"Yeti","y5gp":55,"y5g":26,"y5a":31,"y5pts":57,"y5ppg":1.04},{"id":"Sala, Jacob (Yuri)","name":"Sala, Jacob (Yuri)","age":18,"role":"skater","returning":false,"pos":"","lyTeam":"","gp":0,"g":0,"a":0,"pts":0,"ppg":0,"pim":0},{"id":"Salvo, Anthony","name":"Salvo, Anthony","age":33,"role":"skater","returning":true,"pos":"F","lyTeam":"Kings","gp":25,"g":10,"a":16,"pts":26,"ppg":1.04,"pim":0,"lyRound":6,"lyPick":30,"lyDraftTeam":"Kings","y5gp":117,"y5g":45,"y5a":60,"y5pts":105,"y5ppg":0.9},{"id":"Sawa, Jacob","name":"Sawa, Jacob","age":41,"role":"skater","returning":true,"pos":"F","lyTeam":"Kings","gp":25,"g":5,"a":16,"pts":21,"ppg":0.84,"pim":2,"lyRound":9,"lyPick":41,"lyDraftTeam":"Kings","y5gp":65,"y5g":15,"y5a":27,"y5pts":42,"y5ppg":0.65},{"id":"Semionov, Ilya","name":"Semionov, Ilya","age":23,"role":"skater","returning":true,"pos":"F","lyTeam":"Yeti","gp":26,"g":2,"a":10,"pts":12,"ppg":0.46,"pim":6,"lyRound":12,"lyPick":57,"lyDraftTeam":"Yeti","y5gp":56,"y5g":10,"y5a":24,"y5pts":34,"y5ppg":0.61},{"id":"Semionov, Leo","name":"Semionov, Leo","age":18,"role":"skater","returning":false,"pos":"","lyTeam":"","gp":0,"g":0,"a":0,"pts":0,"ppg":0,"pim":0},{"id":"Semionov, Nathan","name":"Semionov, Nathan","age":20,"role":"skater","returning":false,"pos":"","lyTeam":"","gp":0,"g":0,"a":0,"pts":0,"ppg":0,"pim":0},{"id":"Shved, Max","name":"Shved, Max","age":35,"role":"skater","returning":true,"pos":"","lyTeam":"Yeti","gp":21,"g":7,"a":7,"pts":14,"ppg":0.67,"pim":10,"lyRound":5,"lyPick":24,"lyDraftTeam":"Yeti","y5gp":21,"y5g":7,"y5a":7,"y5pts":14,"y5ppg":0.67},{"id":"Smith, Michael","name":"Smith, Michael","age":33,"role":"skater","returning":true,"pos":"F","lyTeam":"Kings","gp":28,"g":22,"a":27,"pts":49,"ppg":1.75,"pim":4,"lyRound":1,"lyPick":1,"lyDraftTeam":"Kings","y5gp":100,"y5g":95,"y5a":85,"y5pts":180,"y5ppg":1.8},{"id":"Stenason, David I.","name":"Stenason, David I.","age":34,"role":"skater","returning":true,"pos":"","lyTeam":"Kings","gp":34,"g":7,"a":12,"pts":19,"ppg":0.56,"pim":24,"lyRound":14,"lyPick":70,"lyDraftTeam":"Kings","y5gp":142,"y5g":23,"y5a":56,"y5pts":79,"y5ppg":0.56},{"id":"Tichoux, Xavier","name":"Tichoux, Xavier","age":34,"role":"skater","returning":true,"pos":"D","lyTeam":"Yeti","gp":34,"g":3,"a":14,"pts":17,"ppg":0.5,"pim":18,"lyRound":8,"lyPick":37,"lyDraftTeam":"Yeti","y5gp":148,"y5g":8,"y5a":51,"y5pts":59,"y5ppg":0.4},{"id":"Timmins, Brendan","name":"Timmins, Brendan","age":35,"role":"skater","returning":true,"pos":"D","lyTeam":"Kings","gp":27,"g":3,"a":6,"pts":9,"ppg":0.33,"pim":8,"lyRound":5,"lyPick":21,"lyDraftTeam":"Kings","y5gp":140,"y5g":17,"y5a":52,"y5pts":69,"y5ppg":0.49},{"id":"Timmins, Nicholas","name":"Timmins, Nicholas","age":37,"role":"skater","returning":true,"pos":"F","lyTeam":"Devils","gp":33,"g":12,"a":24,"pts":36,"ppg":1.09,"pim":28,"lyRound":5,"lyPick":23,"lyDraftTeam":"Devils","y5gp":131,"y5g":55,"y5a":89,"y5pts":144,"y5ppg":1.1},{"id":"Toledano, David","name":"Toledano, David","age":45,"role":"skater","returning":true,"pos":"","lyTeam":"Yeti","gp":30,"g":15,"a":26,"pts":41,"ppg":1.37,"pim":6,"lyRound":6,"lyPick":27,"lyDraftTeam":"Yeti","y5gp":30,"y5g":15,"y5a":26,"y5pts":41,"y5ppg":1.37},{"id":"Uhthoff, Nicholas","name":"Uhthoff, Nicholas","age":30,"role":"skater","returning":true,"pos":"","lyTeam":"Kings","gp":24,"g":4,"a":11,"pts":15,"ppg":0.62,"pim":8,"lyRound":7,"lyPick":34,"lyDraftTeam":"Yeti","y5gp":24,"y5g":4,"y5a":11,"y5pts":15,"y5ppg":0.62,"tradedAfterDraft":true},{"id":"Viens, Luca","name":"Viens, Luca","age":24,"role":"skater","returning":true,"pos":"F","lyTeam":"Devils","gp":32,"g":24,"a":17,"pts":41,"ppg":1.28,"pim":12,"lyRound":3,"lyPick":13,"lyDraftTeam":"Devils","y5gp":100,"y5g":82,"y5a":49,"y5pts":131,"y5ppg":1.31},{"id":"Yatrou, Evan","name":"Yatrou, Evan","age":25,"role":"skater","returning":false,"pos":"D","lyTeam":"","gp":0,"g":0,"a":0,"pts":0,"ppg":0,"pim":0,"lyRound":13,"y5gp":64,"y5g":9,"y5a":21,"y5pts":30,"y5ppg":0.47},{"id":"Young, Cooper","name":"Young, Cooper","age":26,"role":"skater","returning":true,"pos":"D","lyTeam":"Kings","gp":22,"g":1,"a":6,"pts":7,"ppg":0.32,"pim":10,"lyRound":10,"lyPick":50,"lyDraftTeam":"Kings","y5gp":22,"y5g":1,"y5a":6,"y5pts":7,"y5ppg":0.32},{"id":"Yarrow, Evan","leftoverG":true,"name":"Yarrow, Evan","age":37,"role":"goalie","returning":true,"pos":"G","lyTeam":"Kings","gp":27,"g":0,"a":0,"pts":0,"ppg":0,"pim":0,"lyRound":14,"lyPick":67,"lyDraftTeam":"Yeti","y5gp":119,"y5g":0,"y5a":2,"y5pts":2,"y5ppg":0.02,"tradedAfterDraft":true,"w":14,"l":10,"t":3,"so":1,"mp":1620,"ga":103,"gaa":3.81},{"id":"Lach, Jared","name":"Lach, Jared","age":22,"role":"goalie","returning":true,"pos":"G","lyTeam":"Yeti","gp":31,"g":1,"a":3,"pts":4,"ppg":0,"pim":0,"lyRound":7,"lyPick":31,"lyDraftTeam":"Kings","y5gp":92,"y5g":1,"y5a":3,"y5pts":4,"y5ppg":0.04,"tradedAfterDraft":true,"w":13,"l":13,"t":4,"so":2,"mp":1860,"ga":117,"gaa":3.77},{"id":"Gironne, Michel","name":"Gironne, Michel","age":49,"role":"goalie","returning":true,"pos":"G","lyTeam":"Hawks","gp":29,"g":0,"a":0,"pts":0,"ppg":0,"pim":2,"lyRound":6,"lyPick":29,"lyDraftTeam":"Hawks","y5gp":56,"y5g":0,"y5a":2,"y5pts":2,"y5ppg":0.04,"w":14,"l":12,"t":3,"so":0,"mp":1720,"ga":96,"gaa":3.35},{"id":"Martin, Euan","name":"Martin, Euan","age":21,"role":"goalie","returning":true,"pos":"G","lyTeam":"Devils","gp":32,"g":2,"a":5,"pts":7,"ppg":0,"pim":3,"lyRound":4,"lyPick":18,"lyDraftTeam":"Devils","y5gp":32,"y5g":2,"y5a":5,"y5pts":7,"y5ppg":0.22,"w":16,"l":10,"t":5,"so":0,"mp":1910,"ga":96,"gaa":3.02}];
 const TEAMS = ["Yeti","Devils","Kings","Flyers","Hawks"];
-const CAPTAINS = new Set(["McAlear, Steven","Ciampini, Adam","Murciano, Emile","Mashaal, Alexander"]);
-const TEAM_CAPTAIN = {Yeti:"Steven", Devils:"Emile", Kings:"Mashaal", Flyers:"Phil", Hawks:"Ciampini"};
-const TEAM_CAPTAIN_ID = {Yeti:"McAlear, Steven", Devils:"Murciano, Emile", Kings:"Mashaal, Alexander", Hawks:"Ciampini, Adam"};
+const CAPTAINS = new Set(["McAlear, Steven","Ciampini, Adam","Murciano, Emile","Mashaal, Alexander","Martin, Philippe"]);
+const TEAM_CAPTAIN = {Yeti:"Steven", Devils:"Emile", Kings:"Mashaal", Flyers:"Martin, Philippe", Hawks:"Ciampini"};
+const TEAM_CAPTAIN_ID = {Yeti:"McAlear, Steven", Devils:"Murciano, Emile", Kings:"Mashaal, Alexander", Flyers:"Martin, Philippe", Hawks:"Ciampini, Adam"};
 function teamLabel(t){ return TEAM_CAPTAIN[t] ? t+" ("+TEAM_CAPTAIN[t]+")" : t; }
 function ownCaptainId(team){ return TEAM_CAPTAIN_ID[team] || null; }
 const KEY = "wsl-draft-v15";
 
 const FAMILY = new Set(["McAlear, Daniel","McAlear, Matthew","McAlear, Thomas"]);
 const HAWKS_CORE = new Set(["Angelini, Christopher","Angelini, Michael","Orsini, Mark","Ciampini, Adam"]);
+
+// Steven intel: other captains take these guys in order when they are on the clock.
+// at-pick numbers are overall picks (1-indexed). Family rounds are Yeti R9/R11/R13.
+const INTEL_QUEUE = {
+  Kings: ["Smith, Michael","Cottingham, David","Mashaal, Alexander","Uhthoff, Nicholas","Papich, Nikola"],
+  Hawks: ["Angelini, Christopher","Avraam, Sean","MORGANTI, MARCO"],
+  Devils: ["Descotes, William"],
+  Flyers: [],
+  Yeti: []
+};
+const INTEL_AFTER = {"Descotes, William": 11};
+const INTEL_AT_PICK = {
+  9:  {team:"Hawks",  id:"Ciampini, Adam"},
+  10: {team:"Flyers", id:"Martin, Philippe"},
+  11: {team:"Devils", id:"Murciano, Emile"}
+};
+const FAMILY_ROUNDS = {9:"McAlear, Thomas", 11:"McAlear, Matthew", 13:"McAlear, Daniel"};
+function roundOf(pickNum){ return Math.floor(pickNum / TEAMS.length) + 1; }
+function poolHas(pool, id){ return pool.some(p=>p.id===id); }
+function playerInPool(pool, id){ return pool.find(p=>p.id===id) || null; }
+function scriptedPick(pool, team, pickNum){
+  if (!state.useIntel) return null;
+  const overall = pickNum + 1;
+  const lock = INTEL_AT_PICK[overall];
+  if (lock && lock.team===team){
+    const p = playerInPool(pool, lock.id);
+    if (p) return p;
+  }
+  for (const pk of Object.keys(INTEL_AT_PICK)){
+    const L = INTEL_AT_PICK[pk];
+    if (L.team===team && overall >= +pk){
+      const p = playerInPool(pool, L.id);
+      if (p) return p;
+    }
+  }
+  if (team==="Yeti"){
+    const fid = FAMILY_ROUNDS[roundOf(pickNum)];
+    if (fid){
+      const p = playerInPool(pool, fid);
+      if (p) return p;
+    }
+  }
+  for (const id of (INTEL_QUEUE[team]||[])){
+    if ((INTEL_AFTER[id]||0) > overall) continue;
+    const p = playerInPool(pool, id);
+    if (p) return p;
+  }
+  return null;
+}
 
 function ly28(p){
   if (!p.gp) return null;
@@ -221,9 +287,18 @@ function replacementLevels(){
   };
 }
 const REPL = replacementLevels();
+function replacementGaa(){
+  const gs = PLAYERS.filter(p=>p.role==="goalie" && p.gaa!=null && !p.leftoverG).map(p=>p.gaa);
+  if (!gs.length) return 0;
+  return Math.max.apply(null, gs);
+}
+const REPL_GAA = replacementGaa();
+const LEFTOVER_G = 10;
 function score(p){
   if (p.role==="goalie") {
-    return 0.6 * Math.max(0, 40 - (p.age||40));
+    if (p.gaa==null || !p.gp) return 0;
+    const s = (REPL_GAA - p.gaa) * p.gp;
+    return p.leftoverG ? s - LEFTOVER_G : s;
   }
   const raw = rawExpected(p);
   if (raw==null) return 0;
@@ -250,6 +325,7 @@ let state = {
   history: [],
   view: "board",
   usePolitics: false,
+  useIntel: true,
 };
 
 function teamAtPick(pickNum){
@@ -303,8 +379,11 @@ function load(){
   const have = new Set(state.order);
   if (TEAMS.some(t=>!have.has(t))) state.order = def.slice();
   if (state.usePolitics == null) state.usePolitics = false;
+  if (state.useIntel == null) state.useIntel = true;
   const pol = document.getElementById("opt-pol");
   if (pol) pol.checked = !!state.usePolitics;
+  const intel = document.getElementById("opt-intel");
+  if (intel) intel.checked = !!state.useIntel;
   deriveSlot();
   renderOrder();
 }
@@ -329,7 +408,7 @@ function nowValue(team){
   return roster(team).reduce((s,p)=>s+score(p),0);
 }
 function lyPts(team){
-  return roster(team).reduce((s,p)=>s+(p.returning?p.pts:0),0);
+  return roster(team).reduce((s,p)=>s+(p.returning && p.role!=="goalie"?p.pts:0),0);
 }
 function goalieName(team){
   const g = roster(team).find(p=>p.role==="goalie");
@@ -425,6 +504,8 @@ function liveCtx(){
 }
 function pickValueOn(p, team, r, ctx){ return score(p) + needBumpOn(p, r, ctx) + (state.usePolitics ? politics(p, team) : 0); }
 function chooseFrom(pool, team, r, pickNum, rosters){
+  const locked = scriptedPick(pool, team, pickNum);
+  if (locked) return locked;
   const ctx = { pool, pickNum, rosters, team };
   let best = null, bestV = -Infinity;
   for (const p of pool){
@@ -444,6 +525,7 @@ function recommend(){
   return chooseFrom(available(), team, roster(team), state.pick, rostersFromState());
 }
 function whyPick(p, team){
+  if (state.useIntel && scriptedPick(available(), team, state.pick)===p) return "fixed";
   const bump = needBumpOn(p, roster(team), liveCtx());
   if (posOf(p)==="G" && bump>=40) return "last G, don't get shut out";
   if (posOf(p)==="G") return "goalie gap vs next net";
@@ -471,6 +553,8 @@ function whyExplain(p, team, runner){
         ? ` Essentially tied with ${shortName(runner.name)} (margin ${margin.toFixed(2)}).`
         : ` Next is ${shortName(runner.name)} (${posOf(runner)}, pick value ${runV.toFixed(1)}).`)
     : "";
+  if (state.useIntel && scriptedPick(available(), team, state.pick)===p)
+    return `Fixed by Steven's intel, not the formula. ${shortName(p.name)} is locked for ${team}.`+vs;
   if (p.role==="goalie") {
     if (need >= 40) return `Last starter on the board and another team still needs a net. Take ${shortName(p.name)} or you get shut out.`+vs;
     if (need <= -20) return `You are the last team without a goalie, so this net is yours anyway. That is the Steven wait: take a skater.`+vs;
@@ -483,7 +567,7 @@ function whyExplain(p, team, runner){
   return `Highest leftover talent (${sc.toFixed(1)}). Pick value ${pv.toFixed(1)} is score + need + politics.`+vs;
 }
 function recStat(p){
-  if (p.role==="goalie") return "goalie";
+  if (p.role==="goalie") return p.gaa!=null ? (p.gaa.toFixed(2)+" GAA · "+p.w+"-"+p.l+"-"+p.t) : "goalie";
   const bits = [];
   if (p.returning) bits.push(p.pts+" LY pts");
   if (p.y5ppg!=null) bits.push(p.y5ppg.toFixed(2)+" 5Y P/G");
@@ -530,22 +614,25 @@ function renderClock(){
   const alts = ranked.filter(p=>p!==rec).slice(0,2);
   const left = available().length;
   const el = document.getElementById("clock");
-  el.classList.toggle("mine", team==="Yeti" && left>0);
+  const locked = !!(rec && state.useIntel && scriptedPick(available(), team, state.pick)===rec);
+  el.classList.toggle("mine", team==="Yeti" && left>0 && !locked);
+  el.classList.toggle("lock", locked);
   const help = `<details class="help"><summary>The formula</summary>
     <div class="small">LY = (PTS / GP) × 28<br>Y5 = (Y5PTS / Y5GP) × 28<br>RAW = (GP×LY + Y5GP×Y5) / (GP + Y5GP)<br>REPL_F = 65th-percentile known F&nbsp;&nbsp;REPL_D = median known D<br>Unknown pos uses the midpoint of those two.<br>score = (RAW − REPL_pos) × (GP / 32)</div>
-    <div class="small">Goalies have no GAA. G = 0.6 × max(0, 40 − age). Pick value = G − G_next (the next-best remaining net, not Gironne). Last G + another team still needs one: +40. Already have a G: −28. Last team without a G: 0. No captain bonus. Politics is the checkbox.</div>
+    <div class="small">Goalies: last-year GAA from the league sheet (no SV%; shots were not tracked). REPL_GAA = worst of the other 3 nets (Lach 3.77). score = (REPL_GAA − GAA) × GP. Yarrow is the leftover starter (eye test; sheet GAA is only 0.04 worse than Lach) so he takes −10 and sits last among the four. Walter 5.70 is not in this draft. Pick value = G − G_next. Last G + another team still needs one: +40. Already have a G: −28. Last team without a G: 0. Politics is the checkbox.</div>
   </details>`;
   if (!left){ el.innerHTML = "<strong>Draft complete.</strong> Check Teams."+help; return; }
   if (!rec){ el.innerHTML = `<div class="onclock">On the clock · pick ${state.pick+1}</div>`+help; return; }
-  const headline = `Suggested Pick: ${shortName(rec.name)}`;
   const altBtns = alts.map(p=>`<button type="button" data-pick-id="${p.id}">${shortName(p.name)} · ${posOf(p)} · ${score(p).toFixed(1)}</button>`).join("");
   const runner = alts[0];
+  const takeLabel = locked ? "Fixed" : "Suggested";
+  const pickCls = locked ? "fixed" : "primary";
   el.innerHTML = `<div class="who">${teamLabel(team)}</div>
-    <div class="onclock">On the clock · pick ${state.pick+1} · ${left} left</div>
+    <div class="onclock">On the clock · pick ${state.pick+1} · ${left} left${locked ? " · Steven lock" : ""}</div>
     <div class="row2">
-      <div class="take">${shortName(rec.name)} · ${posOf(rec)} · ${whyPick(rec, team)}</div>
+      <div class="take">${takeLabel}: ${shortName(rec.name)} · ${posOf(rec)} · ${whyPick(rec, team)}</div>
       <div class="take-actions">
-        <button class="primary" type="button" data-pick-id="${rec.id}">Pick</button>
+        <button class="${pickCls}" type="button" data-pick-id="${rec.id}">Pick</button>
       </div>
       ${altBtns?`<div class="alts">${altBtns}</div>`:""}
     </div>
@@ -621,14 +708,18 @@ function renderBoard(){
     if (filter==="yeti") return p.lyTeam==="Yeti";
     return true;
   });
-  const recId = (recommend()||{}).id;
+  const rec = recommend();
+  const recId = (rec||{}).id;
+  const recLocked = !!(rec && state.useIntel && scriptedPick(available(), teamOnClock(), state.pick)===rec);
   const html = [`<table><thead><tr><th></th><th>Player</th><th>P</th><th>Proj</th><th>Pick</th><th>ADP</th><th>Val</th><th>PTS</th><th>P/G</th><th>5Y</th><th>GP</th></tr></thead><tbody>`];
   for (const p of rows){
     const gone = !!state.taken[p.id];
-    const cls = (gone ? "gone" : "avail") + (p.lyTeam==="Yeti" ? " yeti" : "") + (!gone && p.id===recId ? " rec" : "");
+    const hi = !gone && p.id===recId;
+    const cls = (gone ? "gone" : "avail") + (p.lyTeam==="Yeti" ? " yeti" : "") + (hi ? (recLocked ? " lock" : " rec") : "");
     const tags = [];
-    if (!gone && p.id===recId) tags.push('<span class="tag sug">suggested</span>');
+    if (hi) tags.push(recLocked ? '<span class="tag lock">fixed</span>' : '<span class="tag sug">suggested</span>');
     if (CAPTAINS.has(p.id)) tags.push('<span class="tag">captain</span>');
+    if (p.captainStub) tags.push('<span class="tag assumed">no stats</span>');
     if (gone) tags.push(`<span class="tag">${state.taken[p.id]}</span>`);
     if (p.assumed) tags.push('<span class="tag assumed">assumed</span>');
     if (p.role==="goalie") tags.push('<span class="tag g">G</span>');
@@ -643,9 +734,9 @@ function renderBoard(){
       <td>${state.history.indexOf(p.id)>=0?state.history.indexOf(p.id)+1:"—"}</td>
       <td>${p.lyRound?("R"+p.lyRound):"—"}</td>
       <td class="pts">${score(p).toFixed(1)}</td>
-      <td>${p.returning?p.pts:"—"}</td>
-      <td>${p.returning?p.ppg:"—"}</td>
-      <td>${p.y5ppg!=null?p.y5ppg.toFixed(2):"—"}</td>
+      <td>${p.role==="goalie"?(p.gaa!=null?p.gaa.toFixed(2):"—"):(p.returning?p.pts:"—")}</td>
+      <td>${p.role==="goalie"?(p.w!=null?p.w+"-"+p.l+"-"+p.t:"—"):(p.returning?p.ppg:"—")}</td>
+      <td>${p.role==="goalie"?"GAA":(p.y5ppg!=null?p.y5ppg.toFixed(2):"—")}</td>
       <td>${p.returning?p.gp:"—"}</td>
     </tr>`);
   }
@@ -907,6 +998,11 @@ document.getElementById("order-row").addEventListener("click", e=>{
 });
 document.getElementById("opt-pol").onchange = e=>{
   state.usePolitics = e.target.checked;
+  save();
+  render();
+};
+document.getElementById("opt-intel").onchange = e=>{
+  state.useIntel = e.target.checked;
   save();
   render();
 };
