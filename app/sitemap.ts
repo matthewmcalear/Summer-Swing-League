@@ -17,6 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/my-bag',
     '/rangefinder',
     '/ssl-open',
+    '/ssl-open/analysis',
     '/dans-bday',
   ]
 
