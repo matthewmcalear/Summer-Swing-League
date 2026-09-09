@@ -16,8 +16,11 @@ export default function SSLOpenPage() {
         <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight drop-shadow-sm mb-2">
           ⛳ SSL Open 2026
         </h1>
-        <p className="text-green-100 text-lg font-medium">
+        <p className="text-green-100 text-lg font-medium mb-2">
           Saturday, September 19, 2026
+        </p>
+        <p className="text-green-200 text-sm">
+          Event details and results live here
         </p>
       </div>
 
@@ -138,6 +141,19 @@ export default function SSLOpenPage() {
               League Rules
             </Link>.
           </p>
+        </div>
+      </div>
+
+      {/* ── Results ── */}
+      <div className="card">
+        <h2 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+          <Trophy size={20} strokeWidth={2} className="text-green-700" aria-hidden="true" />
+          Results
+        </h2>
+        <div className="text-center py-8 text-gray-500">
+          <Trophy size={48} strokeWidth={1.5} className="text-gray-300 mx-auto mb-3" aria-hidden="true" />
+          <p className="text-sm font-medium">Results will appear here after the Open</p>
+          <p className="text-xs mt-1">Net scores, rankings, and bonus points awarded</p>
         </div>
       </div>
 

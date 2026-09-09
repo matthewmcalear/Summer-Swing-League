@@ -22,6 +22,25 @@ export default async function Home() {
   return (
     <div className="space-y-8">
 
+      {/* ── SSL OPEN PROMO — Top priority visibility ── */}
+      <Link 
+        href="/ssl-open"
+        className="block rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-gray-900 px-6 py-5 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all border-2 border-amber-500"
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <CalendarDays size={18} strokeWidth={2.5} aria-hidden="true" className="text-amber-900" />
+              <span className="text-amber-900 text-xs font-black uppercase tracking-widest">Upcoming Event</span>
+            </div>
+            <h3 className="text-2xl sm:text-3xl font-extrabold leading-tight mb-1.5">⛳ SSL Open 2026</h3>
+            <p className="text-gray-900 text-base sm:text-lg font-bold mb-1">Saturday, September 19, 2026</p>
+            <p className="text-amber-900 text-sm font-semibold">Time & Location: Coming Soon · Tap for Details & Results</p>
+          </div>
+          <Trophy size={48} strokeWidth={2} className="text-amber-700/50 shrink-0 hidden sm:block" aria-hidden="true" />
+        </div>
+      </Link>
+
       {/* ── HERO with Carling Lake background ── */}
       <div className="relative rounded-2xl overflow-hidden shadow-xl" style={{ minHeight: '420px' }}>
         <Image
@@ -116,25 +135,6 @@ export default async function Home() {
 
       {/* ── LIVE SEASON SIGNAL ── */}
       <SeasonStats standings={standings} />
-
-      {/* ── UPCOMING EVENT: SSL OPEN ── */}
-      <Link 
-        href="/ssl-open"
-        className="block rounded-2xl bg-gradient-to-r from-green-700 to-green-800 text-white px-6 py-5 shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all"
-      >
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <CalendarDays size={16} strokeWidth={2} aria-hidden="true" />
-              <span className="text-green-200 text-xs font-bold uppercase tracking-widest">Upcoming Event</span>
-            </div>
-            <h3 className="text-xl sm:text-2xl font-extrabold leading-tight mb-1">⛳ SSL Open 2026</h3>
-            <p className="text-green-100 text-sm sm:text-base font-medium">Saturday, September 19, 2026</p>
-            <p className="text-green-200 text-xs mt-2">Course, tee times, format & RSVP coming soon</p>
-          </div>
-          <Trophy size={40} strokeWidth={1.5} className="text-green-300/40 shrink-0 hidden sm:block" aria-hidden="true" />
-        </div>
-      </Link>
 
       {/* ── HOW IT WORKS ── */}
       <div className="card">
