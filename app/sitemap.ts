@@ -16,6 +16,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/analytics',
     '/my-bag',
     '/rangefinder',
+    '/ssl-open',
+    '/ssl-open/analysis',
   ]
 
   return routes.map((route) => ({

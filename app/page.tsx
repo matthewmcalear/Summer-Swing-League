@@ -117,6 +117,22 @@ export default async function Home() {
       {/* ── LIVE SEASON SIGNAL ── */}
       <SeasonStats standings={standings} />
 
+      {/* ── SSL OPEN ANNOUNCEMENT ── */}
+      <Link
+        href="/ssl-open"
+        className="block card bg-yellow-50 border-2 border-yellow-400 hover:bg-yellow-100 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="text-3xl">⛳</div>
+          <div>
+            <h3 className="font-bold text-yellow-900 text-lg mb-1">SSL Open — September 19</h3>
+            <p className="text-sm text-yellow-800">
+              Rules posted — pick Normal, Hard, or God.
+            </p>
+          </div>
+        </div>
+      </Link>
+
       {/* ── HOW IT WORKS ── */}
       <div className="card">
         <h2 className="text-xl font-bold text-gray-900 mb-5 flex items-center gap-2">
