@@ -34,6 +34,7 @@ const MORE_GROUPS: { title: string; links: NavLink[] }[] = [
     { href: '/about',       label: 'About',       icon: Info },
   ] },
   { title: 'Events', links: [
+    { href: '/ssl-open', label: 'SSL Open', icon: Trophy },
     { href: '/dans-bday', label: "Dan's Bday", icon: Cake },
   ] },
 ]
