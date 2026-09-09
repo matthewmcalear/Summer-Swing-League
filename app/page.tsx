@@ -117,6 +117,25 @@ export default async function Home() {
       {/* ── LIVE SEASON SIGNAL ── */}
       <SeasonStats standings={standings} />
 
+      {/* ── UPCOMING EVENT: SSL OPEN ── */}
+      <Link 
+        href="/ssl-open"
+        className="block rounded-2xl bg-gradient-to-r from-green-700 to-green-800 text-white px-6 py-5 shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all"
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <CalendarDays size={16} strokeWidth={2} aria-hidden="true" />
+              <span className="text-green-200 text-xs font-bold uppercase tracking-widest">Upcoming Event</span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-extrabold leading-tight mb-1">⛳ SSL Open 2026</h3>
+            <p className="text-green-100 text-sm sm:text-base font-medium">Saturday, September 19, 2026</p>
+            <p className="text-green-200 text-xs mt-2">Course, tee times, format & RSVP coming soon</p>
+          </div>
+          <Trophy size={40} strokeWidth={1.5} className="text-green-300/40 shrink-0 hidden sm:block" aria-hidden="true" />
+        </div>
+      </Link>
+
       {/* ── HOW IT WORKS ── */}
       <div className="card">
         <h2 className="text-xl font-bold text-gray-900 mb-5 flex items-center gap-2">

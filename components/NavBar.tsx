@@ -33,6 +33,7 @@ const TOOLS: NavItem[] = [
 
 // League events — newest first. Mirror any change in BottomNav's More sheet.
 const EVENTS: NavItem[] = [
+  { href: '/ssl-open', label: 'SSL Open', icon: Trophy, sub: 'Sept 19 · Upcoming' },
   { href: '/dans-bday', label: "Dan's Bday", icon: Cake, sub: 'Jul 3 · Results' },
 ]
 
