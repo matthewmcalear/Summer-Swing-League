@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { BarChart3, ArrowLeft, AlertTriangle } from 'lucide-react'
 
 export const metadata = { title: 'SSL Open Analysis — Summer Swing League' }
@@ -78,14 +77,11 @@ export default function SSLOpenAnalysisPage() {
         <p className="text-sm text-gray-600 mb-4">
           Average season points earned per player, assuming random field mix and no Double Down.
         </p>
-        <div className="relative w-full aspect-[16/10] bg-gray-50 rounded-lg overflow-hidden">
-          <Image
-            src="/ssl-open/analysis/ev_by_tier.png"
-            alt="Bar chart showing expected Open season points by tier: Normal 0.69, Hard 0.64, God 0.44"
-            fill
-            className="object-contain"
-          />
-        </div>
+        <img
+          src="/ssl-open/analysis/ev_by_tier.png"
+          alt="Bar chart showing expected Open season points by tier: Normal 0.69, Hard 0.64, God 0.44"
+          className="w-full h-auto rounded-lg"
+        />
         <p className="text-xs text-gray-500 mt-2">
           N=10,000 sims · random ~50/35/15 Normal/Hard/God each sim · no DD · curse +1.9/+4.8 strokes
         </p>
@@ -97,14 +93,11 @@ export default function SSLOpenAnalysisPage() {
         <p className="text-sm text-gray-600 mb-4">
           Comparing Double Down strategies for the current season leader across all three tiers.
         </p>
-        <div className="relative w-full aspect-[16/10] bg-gray-50 rounded-lg overflow-hidden">
-          <Image
-            src="/ssl-open/analysis/matthew_ev.png"
-            alt="Bar chart showing Matthew's expected value: highest with No DD or conditional DD strategies"
-            fill
-            className="object-contain"
-          />
-        </div>
+        <img
+          src="/ssl-open/analysis/matthew_ev.png"
+          alt="Bar chart showing Matthew's expected value: highest with No DD or conditional DD strategies"
+          className="w-full h-auto rounded-lg"
+        />
         <p className="text-xs text-gray-500 mt-2">
           N=10,000 · others fixed mix B by standings rank · Matthew skill mean net=79.6 (n=7)
         </p>
@@ -116,14 +109,11 @@ export default function SSLOpenAnalysisPage() {
         <p className="text-sm text-gray-600 mb-4">
           Success rate needed for Double Down to outperform no-DD strategy, by place and tier.
         </p>
-        <div className="relative w-full aspect-[16/10] bg-gray-50 rounded-lg overflow-hidden">
-          <Image
-            src="/ssl-open/analysis/dd_breakeven.png"
-            alt="Chart showing DD success rates needed: ~50% baseline, but 71% for God 1st due to +14 cap"
-            fill
-            className="object-contain"
-          />
-        </div>
+        <img
+          src="/ssl-open/analysis/dd_breakeven.png"
+          alt="Chart showing DD success rates needed: ~50% baseline, but 71% for God 1st due to +14 cap"
+          className="w-full h-auto rounded-lg"
+        />
         <p className="text-xs text-gray-500 mt-2">
           Place-conditional: need p ≥ base / min(2·base, 14). Cap binds God 1st (20→14). Front/back corr=0.4.
         </p>
@@ -135,14 +125,11 @@ export default function SSLOpenAnalysisPage() {
         <p className="text-sm text-gray-600 mb-4">
           If the median player (Sophie Therien) picks each tier, what are her chances?
         </p>
-        <div className="relative w-full aspect-[16/10] bg-gray-50 rounded-lg overflow-hidden">
-          <Image
-            src="/ssl-open/analysis/win_prob_by_tier_choice.png"
-            alt="Bar chart: Normal gives 8.7% win / 24.9% top-3, Hard 5.1% / 17.1%, God 2.0% / 8.5%"
-            fill
-            className="object-contain"
-          />
-        </div>
+        <img
+          src="/ssl-open/analysis/win_prob_by_tier_choice.png"
+          alt="Bar chart: Normal gives 8.7% win / 24.9% top-3, Hard 5.1% / 17.1%, God 2.0% / 8.5%"
+          className="w-full h-auto rounded-lg"
+        />
         <p className="text-xs text-gray-500 mt-2">
           Median standings player: Sophie Therien · others on mix B · N=10,000 · no DD
         </p>
@@ -154,14 +141,11 @@ export default function SSLOpenAnalysisPage() {
         <p className="text-sm text-gray-600 mb-4">
           Who benefits most from Open bonuses? Matthew leads, Thomas close behind, Rachel third.
         </p>
-        <div className="relative w-full aspect-[16/10] bg-gray-50 rounded-lg overflow-hidden">
-          <Image
-            src="/ssl-open/analysis/standings_context.png"
-            alt="Horizontal bar chart of season standings: Matthew 235.7, Thomas 230.2, Rachel 225.5"
-            fill
-            className="object-contain"
-          />
-        </div>
+        <img
+          src="/ssl-open/analysis/standings_context.png"
+          alt="Horizontal bar chart of season standings: Matthew 235.7, Thomas 230.2, Rachel 225.5"
+          className="w-full h-auto rounded-lg"
+        />
         <p className="text-xs text-gray-500 mt-2">
           From standings.json · Matthew 235.7 · Thomas 230.2 · Rachel 225.5 · Dan 223.9
         </p>
@@ -173,14 +157,11 @@ export default function SSLOpenAnalysisPage() {
         <p className="text-sm text-gray-600 mb-4">
           How much do different curse penalties change the expected value for Hard and God modes?
         </p>
-        <div className="relative w-full aspect-[16/10] bg-gray-50 rounded-lg overflow-hidden">
-          <Image
-            src="/ssl-open/analysis/stroke_penalty_tornado.png"
-            alt="Tornado chart showing EV sensitivity to curse penalties: one-club dominates the range"
-            fill
-            className="object-contain"
-          />
-        </div>
+        <img
+          src="/ssl-open/analysis/stroke_penalty_tornado.png"
+          alt="Tornado chart showing EV sensitivity to curse penalties: one-club dominates the range"
+          className="w-full h-auto rounded-lg"
+        />
         <p className="text-xs text-gray-500 mt-2">
           One-at-a-time sweeps · mix B random · defaults one-club=1.2, gimme=0.3, mulligan=0.4, driver=0.5
         </p>
@@ -192,14 +173,11 @@ export default function SSLOpenAnalysisPage() {
         <p className="text-sm text-gray-600 mb-4">
           Does tier choice affect how evenly Open points are distributed, or how often the season leader wins?
         </p>
-        <div className="relative w-full aspect-[16/9] bg-gray-50 rounded-lg overflow-hidden">
-          <Image
-            src="/ssl-open/analysis/fairness_gini.png"
-            alt="Two charts: Gini ~0.37-0.39 across scenarios; season-leader capture ~37% all cases"
-            fill
-            className="object-contain"
-          />
-        </div>
+        <img
+          src="/ssl-open/analysis/fairness_gini.png"
+          alt="Two charts: Gini ~0.37-0.39 across scenarios; season-leader capture ~37% all cases"
+          className="w-full h-auto rounded-lg"
+        />
         <p className="text-xs text-gray-500 mt-2">
           N=10,000 · no DD · Gini on player EVs · top-5 by current seasonScore
         </p>
@@ -211,14 +189,11 @@ export default function SSLOpenAnalysisPage() {
         <p className="text-sm text-gray-600 mb-4">
           Distribution of total season points awarded and how they spread across the top-12 players.
         </p>
-        <div className="relative w-full aspect-[16/9] bg-gray-50 rounded-lg overflow-hidden">
-          <Image
-            src="/ssl-open/analysis/points_distribution.png"
-            alt="Histogram and box plots showing points distribution across simulations and players"
-            fill
-            className="object-contain"
-          />
-        </div>
+        <img
+          src="/ssl-open/analysis/points_distribution.png"
+          alt="Histogram and box plots showing points distribution across simulations and players"
+          className="w-full h-auto rounded-lg"
+        />
         <p className="text-xs text-gray-500 mt-2">
           N=10,000 · payout Normal 5/3/1 · Hard 7/4/2 · God 10/6/3 · field=17
         </p>
