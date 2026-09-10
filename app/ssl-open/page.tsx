@@ -64,16 +64,52 @@ export default function SSLOpenPage() {
       {/* ── RULES SECTION ── */}
       <div className="space-y-6 pt-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">How It Works</h2>
-          <div className="text-gray-700 space-y-2 leading-relaxed">
-            <p>
-              Everyone competes on <strong>one leaderboard</strong>, ranked by net score. 
-              Mixed groups. On the first tee, <strong>declare your difficulty tier</strong> 
-              (Normal, Hard, or God) — your choice is locked for the round.
-            </p>
-            <p className="text-gray-600 text-sm">
-              Higher tiers unlock bigger season bonuses if you finish top 3… but come with harder rules.
-            </p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">How It Works</h2>
+          <div className="text-gray-700 space-y-4 leading-relaxed text-sm sm:text-base">
+            
+            {/* What the day is */}
+            <div>
+              <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">What It Is</h3>
+              <p>
+                The SSL Open is a <strong>one-day tournament</strong> on Saturday, September 19, 2026. 
+                You'll play a regular round of golf that counts for the Open leaderboard. 
+                Course and tee time details are coming soon.
+              </p>
+            </div>
+
+            {/* One leaderboard */}
+            <div>
+              <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">One Leaderboard for Everyone</h3>
+              <p className="mb-2">
+                All players are ranked together on a <strong>single leaderboard by net score</strong> (your gross score minus your handicap). 
+                It doesn't matter if you picked Normal, Hard, or God tier — everyone competes on the same board.
+              </p>
+              <p>
+                Groups will be mixed on purpose. You'll be playing alongside people who chose different tiers.
+              </p>
+            </div>
+
+            {/* Pick a tier */}
+            <div>
+              <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">Pick Your Tier on the First Tee (Locked In)</h3>
+              <p className="mb-2">
+                Before you tee off, you must <strong>declare your tier out loud</strong> to your group: Normal, Hard, or God. 
+                Once you declare, that choice is <strong>locked for the entire round</strong> — no switching.
+              </p>
+              <p>
+                Higher tiers impose stricter personal rules (like no mulligans or one-club holes), but they also offer 
+                <strong> bigger season-point bonuses</strong> if you finish in the top 3 overall on the leaderboard.
+              </p>
+            </div>
+
+            {/* What each tier means - intro to the cards below */}
+            <div>
+              <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">The Three Tiers</h3>
+              <p>
+                Each tier has different rules and different season-point payouts for the top 3 finishers. 
+                Here's what you're signing up for:
+              </p>
+            </div>
           </div>
         </div>
 
@@ -186,44 +222,95 @@ export default function SSLOpenPage() {
           <div className="flex items-start gap-2 mb-3">
             <AlertCircle size={20} className="text-red-700 mt-0.5 flex-shrink-0" aria-hidden="true" />
             <div>
-              <h3 className="text-xl font-bold text-red-900">Double Down (optional)</h3>
-              <p className="text-xs text-red-700 mt-1">After hole 9, declare out loud</p>
+              <h3 className="text-xl font-bold text-red-900">Double Down (Optional Gamble)</h3>
+              <p className="text-xs text-red-700 mt-1">Declare at the turn — after hole 9</p>
             </div>
           </div>
-          <div className="space-y-2.5 text-sm text-red-800">
+          <div className="space-y-3 text-sm text-red-800">
+            <p>
+              At the turn (after you finish hole 9), you can optionally <strong>declare "Double Down" out loud</strong> to your group. 
+              This is a gamble on your back 9 performance:
+            </p>
+            
             <div className="bg-white rounded-lg p-3 border border-red-300">
-              <div className="font-bold text-red-900 mb-1">✅ If net back 9 &lt; net front 9:</div>
-              <div className="text-xs text-red-700">Your top-3 season payout ×2 (capped at +14)</div>
+              <div className="font-bold text-red-900 mb-2">✅ If you succeed:</div>
+              <p className="text-sm mb-1">
+                Your <strong>net back 9</strong> must be <strong>strictly better</strong> (lower score) than your <strong>net front 9</strong>.
+              </p>
+              <p className="text-sm">
+                If you finish top 3 overall, your Open season-point payout is <strong>doubled</strong> (capped at +14 points).
+              </p>
             </div>
+            
             <div className="bg-white rounded-lg p-3 border border-red-300">
-              <div className="font-bold text-red-900 mb-1">❌ If back 9 worse or tied:</div>
-              <div className="text-xs text-red-700">0 Open season points, even if you finish top 3. Still eligible for Incident / CTP.</div>
+              <div className="font-bold text-red-900 mb-2">❌ If you fail:</div>
+              <p className="text-sm mb-1">
+                Your net back 9 is <strong>worse or tied</strong> with your net front 9.
+              </p>
+              <p className="text-sm">
+                You get <strong>0 Open season points</strong>, even if you finish top 3. 
+                You're still eligible for Closest-to-Pin and Incident awards.
+              </p>
             </div>
+
+            <p className="text-xs text-red-700 italic">
+              Double Down is all-or-nothing. Bet wisely.
+            </p>
           </div>
         </div>
 
         {/* ── Side Prizes ── */}
         <div className="card border border-gray-200">
           <h3 className="text-lg font-bold text-gray-900 mb-3">Side Prizes</h3>
+          <p className="text-sm text-gray-700 mb-3">
+            These awards are <strong>field-wide</strong> — everyone is eligible regardless of tier:
+          </p>
           <div className="space-y-2 text-sm text-gray-700">
             <div className="flex items-start gap-2">
               <span className="text-green-700">🎯</span>
               <div>
-                <div className="font-semibold">Closest-to-pin</div>
-                <div className="text-xs text-gray-600">Field-wide competition</div>
+                <div className="font-semibold">Closest-to-Pin</div>
+                <div className="text-xs text-gray-600">Best shot on a designated par 3</div>
               </div>
             </div>
             <div className="flex items-start gap-2">
               <span className="text-orange-700">💀</span>
               <div>
-                <div className="font-semibold">Incident award</div>
-                <div className="text-xs text-gray-600">For the most memorable moment</div>
+                <div className="font-semibold">Incident Award</div>
+                <div className="text-xs text-gray-600">For the most memorable on-course moment</div>
               </div>
             </div>
           </div>
           <p className="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-200">
-            No fairness floor bonuses. No separate tier leaderboards.
+            Note: No fairness floor bonuses. No separate tier leaderboards.
           </p>
+        </div>
+
+        {/* ── Season Points ── */}
+        <div className="card bg-green-50 border-green-200">
+          <h3 className="text-lg font-bold text-green-900 mb-3">Season Points</h3>
+          <p className="text-sm text-gray-700 mb-3">
+            The SSL Open awards bonus points that get added to your overall <strong>Summer Swing League season score</strong>. 
+            If you finish in the top 3 on the Open leaderboard, you'll earn the season-point bonus for your tier 
+            (or double that if you successfully Double Down).
+          </p>
+          <p className="text-sm text-gray-700 mb-3">
+            These Open bonuses work just like other event bonuses in the league — they boost your standing for the full season.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-2 text-sm">
+            <Link 
+              href="/rules" 
+              className="text-green-700 hover:text-green-900 font-semibold hover:underline"
+            >
+              → See full SSL rules
+            </Link>
+            <Link 
+              href="/ssl-open/analysis" 
+              className="text-green-700 hover:text-green-900 font-semibold hover:underline"
+            >
+              → Check the tier stats
+            </Link>
+          </div>
         </div>
 
         {/* ── Stats Link ── */}
