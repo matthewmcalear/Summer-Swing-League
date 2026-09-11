@@ -225,10 +225,10 @@ export default function SSLOpenAnalysisPage() {
       {/* ── Back Link ── */}
       <Link
         href="/ssl-open"
-        className="card text-center hover:bg-green-50 transition-colors border border-transparent hover:border-green-200"
+        className="card text-center hover:bg-green-50 transition-colors border border-transparent hover:border-green-200 flex flex-col items-center"
       >
-        <ArrowLeft size={20} strokeWidth={2} className="text-green-700 mx-auto mb-1" aria-hidden="true" />
-        <span className="block font-bold text-gray-900 text-sm">Back to SSL Open</span>
+        <ArrowLeft size={20} strokeWidth={2} className="text-green-700 mb-1" aria-hidden="true" />
+        <span className="font-bold text-gray-900 text-sm">Back to SSL Open</span>
       </Link>
 
     </div>
