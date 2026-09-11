@@ -671,7 +671,7 @@ function renderClock(){
   el.classList.toggle("lock", locked);
   const help = `<details class="help"><summary>The formula</summary>
     <div class="small">LY = (PTS / GP) × 28<br>Y5 = (Y5PTS / Y5GP) × 28<br>RAW = (GP×LY + Y5GP×Y5) / (GP + Y5GP)<br>REPL_F = 65th-percentile known F&nbsp;&nbsp;REPL_D = median known D<br>Unknown pos uses the midpoint of those two.<br>score = (RAW − REPL_pos) × (GP / 32)</div>
-    <div class="small">Goalies: last-year GAA from the league sheet (no SV%; shots were not tracked). 6 teams. REPL_GAA = worst of the known nets (Yarrow 3.81). score = (REPL_GAA − GAA) × GP. Walter (5.70, 6-14-2, 23 GP) is still the leftover fifth-known / provisional until the league updates the list, so he takes −10 and sits last. New G has no numbers yet — one expansion net is a blank. Last G + another team still needs one: +40. Already have a G: −28. Last team without a G: 0 (they can still wait).</div>
+    <div class="small">Goalies: last-year GAA from the league sheet (no SV%; shots were not tracked). 6 teams, 5 known nets (Martin, Gironne, Lach, Yarrow, MacIver). REPL_GAA = worst of the known nets (Yarrow 3.81). score = (REPL_GAA − GAA) × GP. League still needs 1 more goalie. Last G + another team still needs one: +40. Already have a G: −28. Last team without a G: 0 (they can still wait).</div>
   </details>`;
   if (!left){ el.innerHTML = "<strong>Draft complete.</strong> Check Teams."+help; return; }
   if (!rec){ el.innerHTML = `<div class="onclock">On the clock · pick ${state.pick+1}</div>`+help; return; }
