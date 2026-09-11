@@ -132,6 +132,8 @@ tr.yeti td:first-child{box-shadow:inset 3px 0 0 #c5d4de}
 .order-card .btns{display:flex;gap:2px}
 .order-card button{padding:4px 8px;font-size:11px;line-height:1;border-radius:6px}
 @media(max-width:600px){.order-picker{flex-direction:column}.order-card{width:100%;min-width:0}}
+.name-new{color:#0b6e4f;font-weight:750}
+.name-new::after{content:" new";font-size:10px;font-weight:700;color:#0b6e4f;opacity:0.75;margin-left:3px}
 </style>
 </head>
 <body>
@@ -700,8 +702,10 @@ function renderLiveRosters(){
     const me = t==="Yeti" ? " yeti" : "";
     const tot = r.reduce((s,p)=>s+pickSurplus(p),0);
     const cls = tot>=0.5 ? "plus" : tot<=-0.5 ? "minus" : "flat";
-    const rows = r.map((p,i)=>`<li><span class="n">${pickNumOf(p.id)}</span><span${p.role==="goalie"?' class="g"':""}>${shortName(p.name)}</span>${fmtSurplus(pickSurplus(p))}</li>`).join("")
-      || `<li class="none">no picks yet</li>`;
+    const rows = r.map((p,i)=>{
+      const nameClass = [p.role==="goalie"?"g":"", p.returning===false?"name-new":""].filter(c=>c).join(" ");
+      return `<li><span class="n">${pickNumOf(p.id)}</span><span${nameClass?' class="'+nameClass+'"':""}>${shortName(p.name)}</span>${fmtSurplus(pickSurplus(p))}</li>`;
+    }).join("") || `<li class="none">no picks yet</li>`;
     return `<div class="live-col${on}${me}"><h3>${teamLabel(t)} <span class="surplus ${cls}">${tot>=0?"+":""}${tot.toFixed(0)}</span></h3><ol>${rows}</ol></div>`;
   }).join("");
   document.getElementById("live-rosters").innerHTML = cols;
@@ -784,7 +788,7 @@ function renderBoard(){
     if (p.playedD) tags.push('<span class="tag assumed">D last year → F</span>');
     html.push(`<tr class="${cls}" data-id="${p.id}">
       <td>${gone?"—":"+"}</td>
-      <td>${shortName(p.name)} <span class="small">${p.age?p.age:""}${p.lyTeam?(p.age?" · ":"")+p.lyTeam:""}</span> ${tags.join(" ")}</td>
+      <td><span class="${p.returning===false?"name-new":""}">${shortName(p.name)}</span> <span class="small">${p.age?p.age:""}${p.lyTeam?(p.age?" · ":"")+p.lyTeam:""}</span> ${tags.join(" ")}</td>
       <td>${posOf(p)}</td>
       <td>${PROJ_RANK[p.id]}</td>
       <td>${state.history.indexOf(p.id)>=0?state.history.indexOf(p.id)+1:"—"}</td>
@@ -818,7 +822,7 @@ function renderTeams(st){
     const warn = g ? "" : `<div class="empty-net">Empty net — no goalie yet</div>`;
     const list = r.map(p=>{
       const cap = CAPTAINS.has(p.id) ? ' <span class="tag">captain</span>' : "";
-      return `<div class="player-line"><span>${pickNumOf(p.id)}. ${shortName(p.name)}${cap} <span class="small">${posOf(p)} · ${score(p).toFixed(1)}</span></span>${fmtSurplus(pickSurplus(p))}</div>`;
+      return `<div class="player-line"><span>${pickNumOf(p.id)}. <span class="${p.returning===false?"name-new":""}">${shortName(p.name)}</span>${cap} <span class="small">${posOf(p)} · ${score(p).toFixed(1)}</span></span>${fmtSurplus(pickSurplus(p))}</div>`;
     }).join("");
     return `<div class="card${mine}${g?"":" warn-g"}" id="team-${t}">
       <strong>${t}</strong> <span class="small">#${st.rank[t]} · ${Math.round(st.win[t]*100)}% proj 1st</span>
