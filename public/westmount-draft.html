@@ -126,6 +126,7 @@ tr.yeti td:first-child{box-shadow:inset 3px 0 0 #c5d4de}
 .order-card:active{transform:scale(0.98)}
 .order-card.dragging{opacity:0.5}
 .order-card.drag-over{border-color:var(--ice);background:var(--me)}
+.order-card.sel{border-color:var(--ice);background:var(--me)}
 .order-card .pos{font-size:20px;font-weight:800;color:var(--ice);min-width:1.2em;text-align:center}
 .order-card .team-name{font-size:14px;font-weight:650;flex:1}
 .order-card .btns{display:flex;gap:2px}
@@ -388,14 +389,21 @@ function deriveSlot(){
   state.slot = i >= 0 ? i+1 : 4;
 }
 function renderOrder(){
-  const el = document.getElementById("order-row");
+  const el = document.getElementById("order-picker");
   if (!el) return;
-  el.innerHTML = (state.order||[]).map((t,i)=>`<div class="order-slot" data-i="${i}">
-    <span class="n">${i+1}</span>
-    <span class="nm">${teamLabel(t)}</span>
-    <button type="button" data-move="-1" ${i===0?"disabled":""}>↑</button>
-    <button type="button" data-move="1" ${i===state.order.length-1?"disabled":""}>↓</button>
-  </div>`).join("");
+  const hint = '<span class="inst">Set draft order (1 = first pick)</span>';
+  const cards = (state.order||[]).map((t,i)=>{
+    const captain = TEAM_CAPTAIN[t] ? ` (${TEAM_CAPTAIN[t]})` : "";
+    return `<div class="order-card" data-i="${i}">
+      <span class="pos">${i+1}</span>
+      <span class="team-name">${t}${captain}</span>
+      <div class="btns">
+        <button type="button" data-move="-1" ${i===0?"disabled":""}>↑</button>
+        <button type="button" data-move="1" ${i===state.order.length-1?"disabled":""}>↓</button>
+      </div>
+    </div>`;
+  }).join("");
+  el.innerHTML = hint + cards;
 }
 function moveOrder(i, dir){
   const j = i + dir;
@@ -1028,21 +1036,23 @@ document.getElementById("btn-mock").onclick = mock;
 let orderPick = null;
 document.getElementById("order-picker").addEventListener("click", e=>{
   const btn = e.target.closest("button[data-move]");
-  const slot = e.target.closest(".order-slot");
-  if (btn && slot){
-    moveOrder(+slot.dataset.i, +btn.dataset.move);
+  const card = e.target.closest(".order-card");
+  if (btn && card){
+    moveOrder(+card.dataset.i, +btn.dataset.move);
     orderPick = null;
+    document.querySelectorAll(".order-card.sel").forEach(c=>c.classList.remove("sel"));
     return;
   }
-  if (!slot) return;
-  const i = +slot.dataset.i;
+  if (!card) return;
+  const i = +card.dataset.i;
   if (orderPick==null){
     orderPick = i;
-    slot.classList.add("sel");
+    card.classList.add("sel");
     return;
   }
   swapOrder(orderPick, i);
   orderPick = null;
+  document.querySelectorAll(".order-card.sel").forEach(c=>c.classList.remove("sel"));
 });
 document.getElementById("opt-pol").onchange = e=>{
   state.usePolitics = e.target.checked;
