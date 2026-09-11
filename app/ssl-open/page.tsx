@@ -153,7 +153,7 @@ export default function SSLOpenPage() {
             <div className="space-y-1.5 text-sm text-gray-700">
               <div className="flex justify-between">
                 <span className="font-semibold">Mulligan:</span>
-                <span>1</span>
+                <span>1 per 9 holes</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-semibold">Gimme ≤18":</span>
