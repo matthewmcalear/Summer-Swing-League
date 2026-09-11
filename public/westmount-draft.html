@@ -124,6 +124,7 @@ tr.yeti td:first-child{box-shadow:inset 3px 0 0 #c5d4de}
 .banner a{color:var(--ice);text-decoration:underline}
 .order-picker{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 0;align-items:center}
 .order-picker .inst{font-size:11px;color:var(--muted);padding:0 4px}
+.order-summary{font-size:12px;color:var(--ink);font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .order-card{background:var(--card);border:2px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px;min-width:140px;cursor:pointer;transition:all 0.15s}
 .order-card:active{transform:scale(0.98)}
 .order-card.dragging{opacity:0.5}
@@ -373,6 +374,7 @@ let state = {
   view: "board",
   usePolitics: false,
   useIntel: true,
+  orderExpanded: false,
 };
 
 function teamAtPick(pickNum){
@@ -393,19 +395,29 @@ function deriveSlot(){
 function renderOrder(){
   const el = document.getElementById("order-picker");
   if (!el) return;
-  const hint = '<span class="inst">Set draft order (1 = first pick)</span>';
-  const cards = (state.order||[]).map((t,i)=>{
-    const captain = TEAM_CAPTAIN[t] ? ` (${TEAM_CAPTAIN[t]})` : "";
-    return `<div class="order-card" data-i="${i}">
-      <span class="pos">${i+1}</span>
-      <span class="team-name">${t}${captain}</span>
-      <div class="btns">
-        <button type="button" data-move="-1" ${i===0?"disabled":""}>↑</button>
-        <button type="button" data-move="1" ${i===state.order.length-1?"disabled":""}>↓</button>
-      </div>
-    </div>`;
-  }).join("");
-  el.innerHTML = hint + cards;
+  
+  const isMobile = window.innerWidth <= 600;
+  const showExpanded = !isMobile || state.orderExpanded;
+  
+  if (showExpanded) {
+    const hint = isMobile ? "" : '<span class="inst">Set draft order (1 = first pick)</span>';
+    const cards = (state.order||[]).map((t,i)=>{
+      const captain = TEAM_CAPTAIN[t] ? ` (${TEAM_CAPTAIN[t]})` : "";
+      return `<div class="order-card" data-i="${i}">
+        <span class="pos">${i+1}</span>
+        <span class="team-name">${t}${captain}</span>
+        <div class="btns">
+          <button type="button" data-move="-1" ${i===0?"disabled":""}>↑</button>
+          <button type="button" data-move="1" ${i===state.order.length-1?"disabled":""}>↓</button>
+        </div>
+      </div>`;
+    }).join("");
+    const doneBtn = isMobile ? `<button type="button" class="primary" id="order-done">Done</button>` : "";
+    el.innerHTML = hint + cards + doneBtn;
+  } else {
+    const summary = (state.order||[]).map((t,i)=>`${i+1} ${t.split(" ")[0]}`).join(" · ");
+    el.innerHTML = `<div class="order-summary">Order: ${summary}</div><button type="button" id="order-edit">Edit order</button>`;
+  }
 }
 function moveOrder(i, dir){
   const j = i + dir;
@@ -1039,6 +1051,16 @@ document.getElementById("btn-reset").onclick = ()=>{ if(confirm("Reset the whole
 document.getElementById("btn-mock").onclick = mock;
 let orderPick = null;
 document.getElementById("order-picker").addEventListener("click", e=>{
+  if (e.target.id === "order-edit") {
+    state.orderExpanded = true;
+    render();
+    return;
+  }
+  if (e.target.id === "order-done") {
+    state.orderExpanded = false;
+    render();
+    return;
+  }
   const btn = e.target.closest("button[data-move]");
   const card = e.target.closest(".order-card");
   if (btn && card){
