@@ -122,10 +122,8 @@ tr.yeti td:first-child{box-shadow:inset 3px 0 0 #c5d4de}
 .banner a{color:var(--ice);text-decoration:underline}
 .order-picker{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 0;align-items:center}
 .order-picker .inst{font-size:11px;color:var(--muted);padding:0 4px}
-.order-card{background:var(--card);border:2px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px;min-width:140px;cursor:pointer;transition:all 0.15s}
-.order-card:active{transform:scale(0.98)}
-.order-card.dragging{opacity:0.5}
-.order-card.drag-over{border-color:var(--ice);background:var(--me)}
+.order-summary{font-size:12px;color:var(--ink);font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.order-card{background:var(--card);border:2px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px;min-width:140px;transition:all 0.15s}
 .order-card .pos{font-size:20px;font-weight:800;color:var(--ice);min-width:1.2em;text-align:center}
 .order-card .team-name{font-size:14px;font-weight:650;flex:1}
 .order-card .btns{display:flex;gap:2px}
@@ -370,6 +368,7 @@ let state = {
   view: "board",
   usePolitics: false,
   useIntel: true,
+  orderExpanded: false,
 };
 
 function teamAtPick(pickNum){
@@ -388,14 +387,27 @@ function deriveSlot(){
   state.slot = i >= 0 ? i+1 : 4;
 }
 function renderOrder(){
-  const el = document.getElementById("order-row");
+  const el = document.getElementById("order-picker");
   if (!el) return;
-  el.innerHTML = (state.order||[]).map((t,i)=>`<div class="order-slot" data-i="${i}">
-    <span class="n">${i+1}</span>
-    <span class="nm">${teamLabel(t)}</span>
-    <button type="button" data-move="-1" ${i===0?"disabled":""}>↑</button>
-    <button type="button" data-move="1" ${i===state.order.length-1?"disabled":""}>↓</button>
-  </div>`).join("");
+  
+  const isMobile = window.innerWidth <= 600;
+  const showExpanded = !isMobile || state.orderExpanded;
+  
+  if (showExpanded) {
+    const cards = (state.order||[]).map((t,i)=>`<div class="order-card" data-i="${i}">
+      <span class="pos">${i+1}</span>
+      <span class="team-name">${teamLabel(t)}</span>
+      <div class="btns">
+        <button type="button" data-move="-1" ${i===0?"disabled":""}>↑</button>
+        <button type="button" data-move="1" ${i===state.order.length-1?"disabled":""}>↓</button>
+      </div>
+    </div>`).join("");
+    const doneBtn = isMobile ? `<button type="button" class="primary" id="order-done">Done</button>` : "";
+    el.innerHTML = cards + doneBtn;
+  } else {
+    const summary = (state.order||[]).map((t,i)=>`${i+1} ${t.split(" ")[0]}`).join(" · ");
+    el.innerHTML = `<div class="order-summary">Order: ${summary}</div><button type="button" id="order-edit">Edit order</button>`;
+  }
 }
 function moveOrder(i, dir){
   const j = i + dir;
@@ -1025,24 +1037,23 @@ document.getElementById("standings").addEventListener("click", e=>{
 document.getElementById("btn-undo").onclick = undo;
 document.getElementById("btn-reset").onclick = ()=>{ if(confirm("Reset the whole draft?")) reset(); };
 document.getElementById("btn-mock").onclick = mock;
-let orderPick = null;
 document.getElementById("order-picker").addEventListener("click", e=>{
+  if (e.target.id === "order-edit") {
+    state.orderExpanded = true;
+    render();
+    return;
+  }
+  if (e.target.id === "order-done") {
+    state.orderExpanded = false;
+    render();
+    return;
+  }
   const btn = e.target.closest("button[data-move]");
-  const slot = e.target.closest(".order-slot");
-  if (btn && slot){
-    moveOrder(+slot.dataset.i, +btn.dataset.move);
-    orderPick = null;
+  const card = e.target.closest(".order-card");
+  if (btn && card){
+    moveOrder(+card.dataset.i, +btn.dataset.move);
     return;
   }
-  if (!slot) return;
-  const i = +slot.dataset.i;
-  if (orderPick==null){
-    orderPick = i;
-    slot.classList.add("sel");
-    return;
-  }
-  swapOrder(orderPick, i);
-  orderPick = null;
 });
 document.getElementById("opt-pol").onchange = e=>{
   state.usePolitics = e.target.checked;
