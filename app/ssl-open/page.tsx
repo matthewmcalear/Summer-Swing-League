@@ -67,14 +67,31 @@ export default function SSLOpenPage() {
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">How It Works</h2>
           <div className="text-gray-700 space-y-4 leading-relaxed text-sm sm:text-base">
             
-            {/* What the day is */}
+            {/* Season scoring first */}
             <div>
-              <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">What It Is</h3>
-              <p>
-                The SSL Open is a <strong>one-day tournament</strong> on Saturday, September 19, 2026. 
-                You'll play a regular round of golf that counts for the Open leaderboard. 
-                Course and tee time details are coming soon.
+              <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">This Counts for Your SSL Season Score</h3>
+              <p className="mb-2">
+                The SSL Open is a <strong>regular league round</strong> on Saturday, September 19, 2026. 
+                Your round counts toward your <strong>Summer Swing League season score</strong> under the same scoring rules 
+                as any other league event (top-5 rounds, participation points, etc.).
               </p>
+              <p>
+                <Link href="/rules" className="text-green-700 hover:text-green-900 font-semibold hover:underline">
+                  → See full SSL season scoring rules
+                </Link>
+              </p>
+            </div>
+
+            {/* Open-specific twists */}
+            <div className="card bg-blue-50 border-blue-200">
+              <h3 className="font-bold text-base sm:text-lg text-blue-900 mb-2">The Only Open-Specific Twists</h3>
+              <p>
+                Everything else is standard SSL. The <strong>only</strong> special rules for the Open are:
+              </p>
+              <ul className="list-disc list-inside space-y-1 mt-2 text-blue-800">
+                <li><strong>Modes</strong> (Normal / Hard / God) — pick your difficulty and earn bonus points for top-3 finishes</li>
+                <li><strong>Double Down</strong> (optional gamble) — risk your Open bonus to double it</li>
+              </ul>
             </div>
 
             {/* One leaderboard */}
@@ -82,31 +99,31 @@ export default function SSLOpenPage() {
               <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">One Leaderboard for Everyone</h3>
               <p className="mb-2">
                 All players are ranked together on a <strong>single leaderboard by net score</strong> (your gross score minus your handicap). 
-                It doesn't matter if you picked Normal, Hard, or God tier — everyone competes on the same board.
+                It doesn't matter if you picked Normal, Hard, or God — everyone competes on the same board.
               </p>
               <p>
-                Groups will be mixed on purpose. You'll be playing alongside people who chose different tiers.
+                Groups will be mixed on purpose. You'll be playing alongside people who chose different modes.
               </p>
             </div>
 
             {/* Pick a tier */}
             <div>
-              <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">Pick Your Tier on the First Tee (Locked In)</h3>
+              <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">Pick Your Mode on the First Tee (Locked In)</h3>
               <p className="mb-2">
-                Before you tee off, you must <strong>declare your tier out loud</strong> to your group: Normal, Hard, or God. 
+                Before you tee off, you must <strong>declare your mode out loud</strong> to your group: Normal, Hard, or God. 
                 Once you declare, that choice is <strong>locked for the entire round</strong> — no switching.
               </p>
               <p>
-                Higher tiers impose stricter personal rules (like no mulligans or one-club holes), but they also offer 
-                <strong> bigger season-point bonuses</strong> if you finish in the top 3 overall on the leaderboard.
+                Each mode has its own personal rules (mulligans, gimmes, curses). If you finish in the top 3 overall on the 
+                leaderboard, you earn an <strong>Open finish bonus</strong> added to your season score — higher modes pay bigger bonuses.
               </p>
             </div>
 
             {/* What each tier means - intro to the cards below */}
             <div>
-              <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">The Three Tiers</h3>
+              <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">The Three Modes</h3>
               <p>
-                Each tier has different rules and different season-point payouts for the top 3 finishers. 
+                Each mode has different personal rules and different <strong>Open finish bonuses</strong> for the top 3 finishers. 
                 Here's what you're signing up for:
               </p>
             </div>
@@ -129,7 +146,7 @@ export default function SSLOpenPage() {
               </div>
               <div>
                 <h3 className="text-lg sm:text-xl font-bold text-green-900 mb-1">🏌️ Normal</h3>
-                <div className="text-xs text-green-700 font-semibold">Season payout:</div>
+                <div className="text-xs text-green-700 font-semibold">Open finish bonus:</div>
                 <div className="text-sm font-bold text-green-700">+5 / +3 / +1</div>
               </div>
             </div>
@@ -162,7 +179,7 @@ export default function SSLOpenPage() {
               </div>
               <div>
                 <h3 className="text-lg sm:text-xl font-bold text-orange-900 mb-1">⚡ Hard</h3>
-                <div className="text-xs text-orange-700 font-semibold">Season payout:</div>
+                <div className="text-xs text-orange-700 font-semibold">Open finish bonus:</div>
                 <div className="text-sm font-bold text-orange-700">+7 / +4 / +2</div>
               </div>
             </div>
@@ -195,7 +212,7 @@ export default function SSLOpenPage() {
               </div>
               <div>
                 <h3 className="text-lg sm:text-xl font-bold text-purple-900 mb-1">👑 God</h3>
-                <div className="text-xs text-purple-700 font-semibold">Season payout:</div>
+                <div className="text-xs text-purple-700 font-semibold">Open finish bonus:</div>
                 <div className="text-sm font-bold text-purple-700">+10 / +6 / +3</div>
               </div>
             </div>
@@ -238,7 +255,14 @@ export default function SSLOpenPage() {
                 Your <strong>net back 9</strong> must be <strong>strictly better</strong> (lower score) than your <strong>net front 9</strong>.
               </p>
               <p className="text-sm">
-                If you finish top 3 overall, your Open season-point payout is <strong>doubled</strong> (capped at +14 points).
+                If you finish top 3 overall, your <strong>Open finish bonus is doubled</strong>.
+              </p>
+            </div>
+
+            <div className="bg-red-900 text-white rounded-lg p-3 border-2 border-red-700 font-bold">
+              <div className="text-lg mb-1">⚠️ DOUBLE DOWN CAP: +14 POINTS MAXIMUM</div>
+              <p className="text-sm font-normal">
+                Even if your doubled bonus would be higher (e.g., God 1st = 10×2 = 20), you get a maximum of <strong>+14 total Open finish bonus</strong>.
               </p>
             </div>
             
@@ -248,7 +272,7 @@ export default function SSLOpenPage() {
                 Your net back 9 is <strong>worse or tied</strong> with your net front 9.
               </p>
               <p className="text-sm">
-                You get <strong>0 Open season points</strong>, even if you finish top 3. 
+                You get <strong>0 Open finish bonus</strong>, even if you finish top 3. 
                 You're still eligible for Closest-to-Pin and Incident awards.
               </p>
             </div>
@@ -288,27 +312,35 @@ export default function SSLOpenPage() {
 
         {/* ── Season Points ── */}
         <div className="card bg-green-50 border-green-200">
-          <h3 className="text-lg font-bold text-green-900 mb-3">Season Points</h3>
+          <h3 className="text-lg font-bold text-green-900 mb-3">How This Affects Your Season Score</h3>
           <p className="text-sm text-gray-700 mb-3">
-            The SSL Open awards bonus points that get added to your overall <strong>Summer Swing League season score</strong>. 
-            If you finish in the top 3 on the Open leaderboard, you'll earn the season-point bonus for your tier 
-            (or double that if you successfully Double Down).
+            <strong>Your Open round counts toward your SSL season score exactly like any other league round.</strong> Normal SSL 
+            scoring rules apply (top-5 rounds, participation points, etc.). See the{' '}
+            <Link href="/rules" className="text-green-700 hover:text-green-900 font-semibold hover:underline">
+              full SSL rules
+            </Link>.
           </p>
           <p className="text-sm text-gray-700 mb-3">
-            These Open bonuses work just like other event bonuses in the league — they boost your standing for the full season.
+            <strong>The only extra:</strong> If you finish in the top 3 on the Open leaderboard, you earn an <strong>Open finish bonus</strong> for 
+            your mode (+5/3/1 for Normal, +7/4/2 for Hard, +10/6/3 for God). This bonus is added to your season score on top of the normal 
+            points you already earned for playing the round.
+          </p>
+          <p className="text-sm text-gray-700 mb-3">
+            If you successfully Double Down, your Open finish bonus is doubled (hard capped at +14 points maximum). If you fail Double Down, 
+            you get 0 Open finish bonus (but still keep your normal round points).
           </p>
           <div className="flex flex-col sm:flex-row gap-2 text-sm">
             <Link 
               href="/rules" 
               className="text-green-700 hover:text-green-900 font-semibold hover:underline"
             >
-              → See full SSL rules
+              → See full SSL scoring rules
             </Link>
             <Link 
               href="/ssl-open/analysis" 
               className="text-green-700 hover:text-green-900 font-semibold hover:underline"
             >
-              → Check the tier stats
+              → Check the mode stats
             </Link>
           </div>
         </div>

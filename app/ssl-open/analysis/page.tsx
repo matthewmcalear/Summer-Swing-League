@@ -41,17 +41,17 @@ export default function SSLOpenAnalysisPage() {
             <div className="bg-green-50 rounded-lg p-3 border border-green-200">
               <div className="text-xs text-green-700 font-semibold mb-1">NORMAL</div>
               <div className="text-2xl font-bold text-green-900">0.69</div>
-              <div className="text-xs text-green-700 mt-1">Expected Open points</div>
+              <div className="text-xs text-green-700 mt-1">Expected Open finish bonus</div>
             </div>
             <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
               <div className="text-xs text-orange-700 font-semibold mb-1">HARD</div>
               <div className="text-2xl font-bold text-orange-900">0.64</div>
-              <div className="text-xs text-orange-700 mt-1">Expected Open points</div>
+              <div className="text-xs text-orange-700 mt-1">Expected Open finish bonus</div>
             </div>
             <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
               <div className="text-xs text-purple-700 font-semibold mb-1">GOD</div>
               <div className="text-2xl font-bold text-purple-900">0.42</div>
-              <div className="text-xs text-purple-700 mt-1">Expected Open points</div>
+              <div className="text-xs text-purple-700 mt-1">Expected Open finish bonus</div>
             </div>
           </div>
 
@@ -75,7 +75,7 @@ export default function SSLOpenAnalysisPage() {
       <div className="card">
         <h2 className="text-lg font-bold text-gray-900 mb-3">Expected Value by Tier</h2>
         <p className="text-sm text-gray-600 mb-4">
-          Average season points earned per player, assuming random field mix and no Double Down.
+          Average Open finish bonus points earned per player, assuming random field mix and no Double Down.
         </p>
         <img
           src="/ssl-open/analysis/ev_by_tier.png"
@@ -185,9 +185,9 @@ export default function SSLOpenAnalysisPage() {
 
       {/* ── Chart: Points Distribution ── */}
       <div className="card">
-        <h2 className="text-lg font-bold text-gray-900 mb-3">Open Points Under Mix B (Fixed by Rank, No DD)</h2>
+        <h2 className="text-lg font-bold text-gray-900 mb-3">Open Finish Bonus Points Under Mix B (Fixed by Rank, No DD)</h2>
         <p className="text-sm text-gray-600 mb-4">
-          Distribution of total season points awarded and how they spread across the top-12 players.
+          Distribution of Open finish bonus points awarded and how they spread across the top-12 players.
         </p>
         <img
           src="/ssl-open/analysis/points_distribution.png"
