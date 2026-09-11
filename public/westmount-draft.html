@@ -67,6 +67,8 @@ tr.avail:active{background:#ecebe6}
 .tag.assumed{background:#f3eee4;color:#8a6d1b}
 .tag.traded{background:#ece6f3;color:#5a4a78}
 .tag.family{background:#e8f3ec;color:#2d5a40}
+.name-new{color:#0b6e4f;font-weight:750}
+.name-new::after{content:" new";font-size:10px;font-weight:700;color:#0b6e4f;opacity:0.75;margin-left:3px}
 tr.yeti td:first-child{box-shadow:inset 3px 0 0 #c5d4de}
 .pts{font-variant-numeric:tabular-nums;font-weight:700}
 .team-grid{display:grid;gap:8px}
@@ -123,7 +125,11 @@ tr.yeti td:first-child{box-shadow:inset 3px 0 0 #c5d4de}
 .order-picker{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 0;align-items:center}
 .order-picker .inst{font-size:11px;color:var(--muted);padding:0 4px}
 .order-summary{font-size:12px;color:var(--ink);font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.order-card{background:var(--card);border:2px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px;min-width:140px;transition:all 0.15s}
+.order-card{background:var(--card);border:2px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px;min-width:140px;cursor:pointer;transition:all 0.15s}
+.order-card:active{transform:scale(0.98)}
+.order-card.dragging{opacity:0.5}
+.order-card.drag-over{border-color:var(--ice);background:var(--me)}
+.order-card.sel{border-color:var(--ice);background:var(--me)}
 .order-card .pos{font-size:20px;font-weight:800;color:var(--ice);min-width:1.2em;text-align:center}
 .order-card .team-name{font-size:14px;font-weight:650;flex:1}
 .order-card .btns{display:flex;gap:2px}
@@ -394,16 +400,20 @@ function renderOrder(){
   const showExpanded = !isMobile || state.orderExpanded;
   
   if (showExpanded) {
-    const cards = (state.order||[]).map((t,i)=>`<div class="order-card" data-i="${i}">
-      <span class="pos">${i+1}</span>
-      <span class="team-name">${teamLabel(t)}</span>
-      <div class="btns">
-        <button type="button" data-move="-1" ${i===0?"disabled":""}>↑</button>
-        <button type="button" data-move="1" ${i===state.order.length-1?"disabled":""}>↓</button>
-      </div>
-    </div>`).join("");
+    const hint = isMobile ? "" : '<span class="inst">Set draft order (1 = first pick)</span>';
+    const cards = (state.order||[]).map((t,i)=>{
+      const captain = TEAM_CAPTAIN[t] ? ` (${TEAM_CAPTAIN[t]})` : "";
+      return `<div class="order-card" data-i="${i}">
+        <span class="pos">${i+1}</span>
+        <span class="team-name">${t}${captain}</span>
+        <div class="btns">
+          <button type="button" data-move="-1" ${i===0?"disabled":""}>↑</button>
+          <button type="button" data-move="1" ${i===state.order.length-1?"disabled":""}>↓</button>
+        </div>
+      </div>`;
+    }).join("");
     const doneBtn = isMobile ? `<button type="button" class="primary" id="order-done">Done</button>` : "";
-    el.innerHTML = cards + doneBtn;
+    el.innerHTML = hint + cards + doneBtn;
   } else {
     const summary = (state.order||[]).map((t,i)=>`${i+1} ${t.split(" ")[0]}`).join(" · ");
     el.innerHTML = `<div class="order-summary">Order: ${summary}</div><button type="button" id="order-edit">Edit order</button>`;
@@ -675,7 +685,7 @@ function renderClock(){
   el.classList.toggle("lock", locked);
   const help = `<details class="help"><summary>The formula</summary>
     <div class="small">LY = (PTS / GP) × 28<br>Y5 = (Y5PTS / Y5GP) × 28<br>RAW = (GP×LY + Y5GP×Y5) / (GP + Y5GP)<br>REPL_F = 65th-percentile known F&nbsp;&nbsp;REPL_D = median known D<br>Unknown pos uses the midpoint of those two.<br>score = (RAW − REPL_pos) × (GP / 32)</div>
-    <div class="small">Goalies: last-year GAA from the league sheet (no SV%; shots were not tracked). 6 teams. REPL_GAA = worst of the known nets (Yarrow 3.81). score = (REPL_GAA − GAA) × GP. Walter (5.70, 6-14-2, 23 GP) is still the leftover fifth-known / provisional until the league updates the list, so he takes −10 and sits last. New G has no numbers yet — one expansion net is a blank. Last G + another team still needs one: +40. Already have a G: −28. Last team without a G: 0 (they can still wait).</div>
+    <div class="small">Goalies: last-year GAA from the league sheet (no SV%; shots were not tracked). 6 teams, 5 known nets (Martin, Gironne, Lach, Yarrow, MacIver) — league still needs 1 more. REPL_GAA = worst of the known nets with GAA (Yarrow 3.81). score = (REPL_GAA − GAA) × GP. MacIver has no GAA yet. Last G + another team still needs one: +40. Already have a G: −28. Last team without a G: 0 (they can still wait).</div>
   </details>`;
   if (!left){ el.innerHTML = "<strong>Draft complete.</strong> Check Teams."+help; return; }
   if (!rec){ el.innerHTML = `<div class="onclock">On the clock · pick ${state.pick+1}</div>`+help; return; }
@@ -704,8 +714,10 @@ function renderLiveRosters(){
     const me = t==="Yeti" ? " yeti" : "";
     const tot = r.reduce((s,p)=>s+pickSurplus(p),0);
     const cls = tot>=0.5 ? "plus" : tot<=-0.5 ? "minus" : "flat";
-    const rows = r.map((p,i)=>`<li><span class="n">${pickNumOf(p.id)}</span><span${p.role==="goalie"?' class="g"':""}>${shortName(p.name)}</span>${fmtSurplus(pickSurplus(p))}</li>`).join("")
-      || `<li class="none">no picks yet</li>`;
+    const rows = r.map((p,i)=>{
+      const nameClass = [p.role==="goalie"?"g":"", p.returning===false?"name-new":""].filter(c=>c).join(" ");
+      return `<li><span class="n">${pickNumOf(p.id)}</span><span${nameClass?' class="'+nameClass+'"':""}>${shortName(p.name)}</span>${fmtSurplus(pickSurplus(p))}</li>`;
+    }).join("") || `<li class="none">no picks yet</li>`;
     return `<div class="live-col${on}${me}"><h3>${teamLabel(t)} <span class="surplus ${cls}">${tot>=0?"+":""}${tot.toFixed(0)}</span></h3><ol>${rows}</ol></div>`;
   }).join("");
   document.getElementById("live-rosters").innerHTML = cols;
@@ -788,7 +800,7 @@ function renderBoard(){
     if (p.playedD) tags.push('<span class="tag assumed">D last year → F</span>');
     html.push(`<tr class="${cls}" data-id="${p.id}">
       <td>${gone?"—":"+"}</td>
-      <td>${shortName(p.name)} <span class="small">${p.age?p.age:""}${p.lyTeam?(p.age?" · ":"")+p.lyTeam:""}</span> ${tags.join(" ")}</td>
+      <td><span class="${p.returning===false?"name-new":""}">${shortName(p.name)}</span> <span class="small">${p.age?p.age:""}${p.lyTeam?(p.age?" · ":"")+p.lyTeam:""}</span> ${tags.join(" ")}</td>
       <td>${posOf(p)}</td>
       <td>${PROJ_RANK[p.id]}</td>
       <td>${state.history.indexOf(p.id)>=0?state.history.indexOf(p.id)+1:"—"}</td>
@@ -822,7 +834,7 @@ function renderTeams(st){
     const warn = g ? "" : `<div class="empty-net">Empty net — no goalie yet</div>`;
     const list = r.map(p=>{
       const cap = CAPTAINS.has(p.id) ? ' <span class="tag">captain</span>' : "";
-      return `<div class="player-line"><span>${pickNumOf(p.id)}. ${shortName(p.name)}${cap} <span class="small">${posOf(p)} · ${score(p).toFixed(1)}</span></span>${fmtSurplus(pickSurplus(p))}</div>`;
+      return `<div class="player-line"><span>${pickNumOf(p.id)}. <span class="${p.returning===false?"name-new":""}">${shortName(p.name)}</span>${cap} <span class="small">${posOf(p)} · ${score(p).toFixed(1)}</span></span>${fmtSurplus(pickSurplus(p))}</div>`;
     }).join("");
     return `<div class="card${mine}${g?"":" warn-g"}" id="team-${t}">
       <strong>${t}</strong> <span class="small">#${st.rank[t]} · ${Math.round(st.win[t]*100)}% proj 1st</span>
@@ -1037,6 +1049,7 @@ document.getElementById("standings").addEventListener("click", e=>{
 document.getElementById("btn-undo").onclick = undo;
 document.getElementById("btn-reset").onclick = ()=>{ if(confirm("Reset the whole draft?")) reset(); };
 document.getElementById("btn-mock").onclick = mock;
+let orderPick = null;
 document.getElementById("order-picker").addEventListener("click", e=>{
   if (e.target.id === "order-edit") {
     state.orderExpanded = true;
@@ -1052,8 +1065,20 @@ document.getElementById("order-picker").addEventListener("click", e=>{
   const card = e.target.closest(".order-card");
   if (btn && card){
     moveOrder(+card.dataset.i, +btn.dataset.move);
+    orderPick = null;
+    document.querySelectorAll(".order-card.sel").forEach(c=>c.classList.remove("sel"));
     return;
   }
+  if (!card) return;
+  const i = +card.dataset.i;
+  if (orderPick==null){
+    orderPick = i;
+    card.classList.add("sel");
+    return;
+  }
+  swapOrder(orderPick, i);
+  orderPick = null;
+  document.querySelectorAll(".order-card.sel").forEach(c=>c.classList.remove("sel"));
 });
 document.getElementById("opt-pol").onchange = e=>{
   state.usePolitics = e.target.checked;
