@@ -22,7 +22,7 @@ export default function SSLOpenPage() {
             Saturday, September 19, 2026
           </p>
           <p className="text-green-200 text-base sm:text-lg">
-            Time & Location: Coming soon
+            <strong>Golf Boucherville</strong> · Tee times: 11:20 & 11:28
           </p>
         </div>
         <p className="text-green-100 text-base sm:text-lg max-w-2xl leading-relaxed">
@@ -46,6 +46,33 @@ export default function SSLOpenPage() {
         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-100 text-orange-900 text-xs font-bold border border-orange-200">
           Declare tier first tee
         </span>
+      </div>
+
+      {/* ── Who's In ── */}
+      <div className="card bg-green-50 border-green-200">
+        <h2 className="text-xl font-bold text-green-900 mb-3 flex items-center gap-2">
+          <Trophy size={20} strokeWidth={2} className="text-green-700" aria-hidden="true" />
+          Who's In
+        </h2>
+        <p className="text-sm text-green-800 mb-3">
+          Confirmed players for the SSL Open 2026:
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-sm">
+          {[
+            'Matthew McAlear',
+            'Thomas McAlear',
+            'Dan McAlear',
+            'Connor Peltz',
+            'Alex Sokaris',
+            'Tibi Mitran',
+            'Shaun Anderson',
+          ].map((name) => (
+            <div key={name} className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-green-200">
+              <span className="text-green-700">✓</span>
+              <span className="font-medium text-gray-900">{name}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* ── Results (placeholder) ── */}

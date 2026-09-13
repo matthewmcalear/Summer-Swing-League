@@ -35,7 +35,7 @@ export default async function Home() {
             </div>
             <h3 className="text-2xl sm:text-3xl font-extrabold leading-tight mb-1.5">⛳ SSL Open 2026</h3>
             <p className="text-gray-900 text-base sm:text-lg font-bold mb-1">Saturday, September 19, 2026</p>
-            <p className="text-amber-900 text-sm font-semibold">Time & Location: Coming Soon · Tap for Details & Results</p>
+            <p className="text-amber-900 text-sm font-semibold">Golf Boucherville · 11:20 & 11:28 · Tap for Details & Results</p>
           </div>
           <Trophy size={48} strokeWidth={2} className="text-amber-700/50 shrink-0 hidden sm:block" aria-hidden="true" />
         </div>
