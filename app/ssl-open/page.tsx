@@ -207,7 +207,7 @@ export default function SSLOpenPage() {
               <div>
                 <h3 className="text-lg sm:text-xl font-bold text-orange-900 mb-1">⚡ Hard</h3>
                 <div className="text-xs text-orange-700 font-semibold">Open finish bonus:</div>
-                <div className="text-sm font-bold text-orange-700">+7 / +4 / +2</div>
+                <div className="text-sm font-bold text-orange-700">+10 / +6 / +2</div>
               </div>
             </div>
             <div className="space-y-1.5 text-sm text-gray-700">
@@ -240,7 +240,7 @@ export default function SSLOpenPage() {
               <div>
                 <h3 className="text-lg sm:text-xl font-bold text-purple-900 mb-1">👑 God</h3>
                 <div className="text-xs text-purple-700 font-semibold">Open finish bonus:</div>
-                <div className="text-sm font-bold text-purple-700">+10 / +6 / +3</div>
+                <div className="text-sm font-bold text-purple-700">+25 / +12 / +6</div>
               </div>
             </div>
             <div className="space-y-1.5 text-sm text-gray-700">
@@ -282,14 +282,7 @@ export default function SSLOpenPage() {
                 Your <strong>net back 9</strong> must be <strong>strictly better</strong> (lower score) than your <strong>net front 9</strong>.
               </p>
               <p className="text-sm">
-                If you finish top 3 overall, your <strong>Open finish bonus is doubled</strong>.
-              </p>
-            </div>
-
-            <div className="bg-red-900 text-white rounded-lg p-3 border-2 border-red-700 font-bold">
-              <div className="text-lg mb-1">⚠️ DOUBLE DOWN CAP: +14 POINTS MAXIMUM</div>
-              <p className="text-sm font-normal">
-                Even if your doubled bonus would be higher (e.g., God 1st = 10×2 = 20), you get a maximum of <strong>+14 total Open finish bonus</strong>.
+                If you finish top 3 overall, your <strong>Open finish bonus is doubled</strong> with <strong>no cap</strong>.
               </p>
             </div>
             
@@ -349,11 +342,11 @@ export default function SSLOpenPage() {
           </p>
           <p className="text-sm text-gray-700 mb-3">
             <strong>The only extra:</strong> If you finish in the top 3 on the Open leaderboard, you earn an <strong>Open finish bonus</strong> for 
-            your mode (+5/3/1 for Normal, +7/4/2 for Hard, +10/6/3 for God). This bonus is added to your season score on top of the normal 
+            your mode (+5/3/1 for Normal, +10/6/2 for Hard, +25/12/6 for God). This bonus is added to your season score on top of the normal 
             points you already earned for playing the round.
           </p>
           <p className="text-sm text-gray-700 mb-3">
-            If you successfully Double Down, your Open finish bonus is doubled (hard capped at +14 points maximum). If you fail Double Down, 
+            If you successfully Double Down, your Open finish bonus is doubled with no cap. If you fail Double Down, 
             you get 0 Open finish bonus (but still keep your normal round points).
           </p>
           <div className="flex flex-col sm:flex-row gap-2 text-sm">

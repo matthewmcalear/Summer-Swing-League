@@ -112,7 +112,7 @@ for patch in bp["boxes"]: patch.set_facecolor("#A8DADC")
 axes[1].tick_params(axis="x", rotation=45, labelsize=8)
 axes[1].set_ylabel("Open points / sim"); axes[1].set_title("Top-12 season: points distribution")
 fig.suptitle("Open points under mix B (fixed by rank, no DD)", fontweight="bold")
-fig.text(0.5, 0.01, "N=10,000 · payout Normal 5/3/1 · Hard 7/4/2 · God 10/6/3 · field=17", ha="center", fontsize=9, color="#444")
+fig.text(0.5, 0.01, "N=10,000 · payout Normal 5/3/1 · Hard 10/6/2 · God 25/12/6 · field=17", ha="center", fontsize=9, color="#444")
 fig.tight_layout(rect=[0, 0.05, 1, 0.95]); fig.savefig(OUT/"points_distribution.png", dpi=DPI); plt.close()
 
 # 6 fairness

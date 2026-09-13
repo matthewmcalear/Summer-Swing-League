@@ -62,7 +62,7 @@ export default function SSLOpenAnalysisPage() {
           
           <p>
             <strong>Double Down is -EV in general.</strong> Your back-nine needs to be strictly better than the front, 
-            but P(back&lt;front) ≈ 50% for most players. God 1st place needs ~71% success rate to break even due to the +14 cap.
+            but P(back&lt;front) ≈ 50% for most players. The 50% baseline rate makes it marginally negative EV for most scenarios.
           </p>
 
           <p className="text-xs text-gray-600 italic">
@@ -111,11 +111,11 @@ export default function SSLOpenAnalysisPage() {
         </p>
         <img
           src="/ssl-open/analysis/dd_breakeven.png"
-          alt="Chart showing DD success rates needed: ~50% baseline, but 71% for God 1st due to +14 cap"
+          alt="Chart showing DD success rates needed: ~50% baseline for breakeven across modes"
           className="w-full h-auto rounded-lg"
         />
         <p className="text-xs text-gray-500 mt-2">
-          Place-conditional: need p ≥ base / min(2·base, 14). Cap binds God 1st (20→14). Front/back corr=0.4.
+          Note: Chart shows old +14 cap analysis. With the cap removed, God 1st DD needs only ~50% success rate to break even, same as other positions. Front/back corr=0.4.
         </p>
       </div>
 
@@ -195,7 +195,7 @@ export default function SSLOpenAnalysisPage() {
           className="w-full h-auto rounded-lg"
         />
         <p className="text-xs text-gray-500 mt-2">
-          N=10,000 · payout Normal 5/3/1 · Hard 7/4/2 · God 10/6/3 · field=17
+          Note: Chart shows old payouts (Hard 7/4/2, God 10/6/3). Current payouts are Hard 10/6/2, God 25/12/6. N=10,000 · field=17
         </p>
       </div>
 
@@ -214,7 +214,7 @@ export default function SSLOpenAnalysisPage() {
           </li>
           <li>
             <strong>Skip Double Down.</strong> Unless you have strong evidence your back-nine is consistently better, 
-            the 50% base rate makes it -EV even without the cap.
+            the 50% base rate makes it marginally -EV for most scenarios.
           </li>
           <li>
             <strong>Field mix matters.</strong> If everyone picks Normal, winning gets harder. Strategic tier choice could help.
