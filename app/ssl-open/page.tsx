@@ -8,27 +8,38 @@ export default function SSLOpenPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
 
-      {/* ── HERO: Event Title First ── */}
-      <div className="rounded-2xl bg-gradient-to-br from-green-700 via-green-800 to-green-900 text-white px-6 sm:px-8 py-8 sm:py-12 shadow-xl">
-        <div className="mb-3 flex items-center gap-2 text-green-200 text-xs font-bold uppercase tracking-widest">
-          <Calendar size={14} strokeWidth={2} aria-hidden="true" />
-          Annual Event
-        </div>
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight drop-shadow-sm mb-4">
-          SSL Open 2026
-        </h1>
-        <div className="space-y-2 mb-5">
-          <p className="text-green-50 text-xl sm:text-2xl font-bold">
-            Saturday, September 19, 2026
+      {/* ── HERO: Gold Photo-Backed Banner ── */}
+      <div className="relative rounded-2xl overflow-hidden shadow-xl" style={{ minHeight: '340px' }}>
+        <Image
+          src="/IMG_1002.jpeg"
+          alt="SSL Open 2026"
+          fill
+          style={{ objectFit: 'cover', objectPosition: 'center' }}
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-900/85 via-yellow-900/75 to-amber-800/80" />
+        
+        <div className="relative z-10 px-6 sm:px-8 py-8 sm:py-12 text-white">
+          <div className="mb-3 flex items-center gap-2 text-amber-200 text-xs font-bold uppercase tracking-widest">
+            <Calendar size={14} strokeWidth={2} aria-hidden="true" />
+            Annual Event
+          </div>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight drop-shadow-lg mb-4">
+            ⛳ SSL Open 2026
+          </h1>
+          <div className="space-y-2 mb-5">
+            <p className="text-amber-50 text-xl sm:text-2xl font-bold drop-shadow-md">
+              Saturday, September 19, 2026
+            </p>
+            <p className="text-amber-100 text-base sm:text-lg drop-shadow">
+              <strong>Golf Boucherville</strong> · Tee times: 11:20 & 11:28
+            </p>
+          </div>
+          <p className="text-amber-50 text-base sm:text-lg max-w-2xl leading-relaxed drop-shadow">
+            One-day league Open with net scoring. Everyone competes on a single leaderboard. 
+            Pick your difficulty on the first tee and earn season bonuses.
           </p>
-          <p className="text-green-200 text-base sm:text-lg">
-            <strong>Golf Boucherville</strong> · Tee times: 11:20 & 11:28
-          </p>
         </div>
-        <p className="text-green-100 text-base sm:text-lg max-w-2xl leading-relaxed">
-          One-day league Open with net scoring. Everyone competes on a single leaderboard. 
-          Pick your difficulty on the first tee and earn season bonuses.
-        </p>
       </div>
 
       {/* ── Quick Facts Strip ── */}
@@ -75,17 +86,50 @@ export default function SSLOpenPage() {
         </div>
       </div>
 
-      {/* ── Results (placeholder) ── */}
+      {/* ── Results — Preliminary Leaderboard ── */}
       <div className="card">
-        <h2 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+        <h2 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
           <Trophy size={20} strokeWidth={2} className="text-green-700" aria-hidden="true" />
           Results
         </h2>
-        <div className="text-center py-8 text-gray-500">
-          <Trophy size={48} strokeWidth={1.5} className="text-gray-300 mx-auto mb-3" aria-hidden="true" />
-          <p className="text-sm font-medium">Results will appear here after the Open</p>
-          <p className="text-xs mt-1">Net scores, rankings, and bonus points awarded</p>
+        <p className="text-xs text-gray-500 mb-4 italic">Preliminary — starting scores before the event</p>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b-2 border-gray-200">
+                <th className="text-left py-2 px-2 font-bold text-gray-700">Rank</th>
+                <th className="text-left py-2 px-3 font-bold text-gray-700">Player</th>
+                <th className="text-center py-2 px-2 font-bold text-gray-700">Mode</th>
+                <th className="text-center py-2 px-2 font-bold text-gray-700">Net Score</th>
+                <th className="text-center py-2 px-2 font-bold text-gray-700">Open Bonus</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                'Matthew McAlear',
+                'Thomas McAlear',
+                'Dan McAlear',
+                'Connor Peltz',
+                'Alex Sokaris',
+                'Tibi Mitran',
+                'Shaun Anderson',
+              ].map((name, index) => (
+                <tr key={name} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="py-2.5 px-2 text-gray-600 font-medium">T1</td>
+                  <td className="py-2.5 px-3 font-semibold text-gray-900">{name}</td>
+                  <td className="py-2.5 px-2 text-center text-gray-400">—</td>
+                  <td className="py-2.5 px-2 text-center font-bold text-gray-900 tabular-nums">0</td>
+                  <td className="py-2.5 px-2 text-center text-gray-400">—</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+        
+        <p className="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-100">
+          Final results will be posted after September 19, 2026
+        </p>
       </div>
 
       {/* ── RULES SECTION ── */}
@@ -165,7 +209,7 @@ export default function SSLOpenPage() {
             <div className="flex items-start gap-3 mb-3">
               <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-green-100 shrink-0">
                 <Image
-                  src="/ssl-open/normal.png"
+                  src="/ssl-open/normal.jpg"
                   alt="Normal mode"
                   fill
                   className="object-cover"
@@ -198,7 +242,7 @@ export default function SSLOpenPage() {
             <div className="flex items-start gap-3 mb-3">
               <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-orange-100 shrink-0">
                 <Image
-                  src="/ssl-open/hard.png"
+                  src="/ssl-open/hard.jpg"
                   alt="Hard mode"
                   fill
                   className="object-cover"
@@ -207,7 +251,7 @@ export default function SSLOpenPage() {
               <div>
                 <h3 className="text-lg sm:text-xl font-bold text-orange-900 mb-1">⚡ Hard</h3>
                 <div className="text-xs text-orange-700 font-semibold">Open finish bonus:</div>
-                <div className="text-sm font-bold text-orange-700">+7 / +4 / +2</div>
+                <div className="text-sm font-bold text-orange-700">+10 / +6 / +2</div>
               </div>
             </div>
             <div className="space-y-1.5 text-sm text-gray-700">
@@ -231,7 +275,7 @@ export default function SSLOpenPage() {
             <div className="flex items-start gap-3 mb-3">
               <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-purple-100 shrink-0">
                 <Image
-                  src="/ssl-open/god.png"
+                  src="/ssl-open/god.jpg"
                   alt="God mode"
                   fill
                   className="object-cover"
@@ -240,7 +284,7 @@ export default function SSLOpenPage() {
               <div>
                 <h3 className="text-lg sm:text-xl font-bold text-purple-900 mb-1">👑 God</h3>
                 <div className="text-xs text-purple-700 font-semibold">Open finish bonus:</div>
-                <div className="text-sm font-bold text-purple-700">+10 / +6 / +3</div>
+                <div className="text-sm font-bold text-purple-700">+25 / +12 / +6</div>
               </div>
             </div>
             <div className="space-y-1.5 text-sm text-gray-700">
@@ -282,14 +326,7 @@ export default function SSLOpenPage() {
                 Your <strong>net back 9</strong> must be <strong>strictly better</strong> (lower score) than your <strong>net front 9</strong>.
               </p>
               <p className="text-sm">
-                If you finish top 3 overall, your <strong>Open finish bonus is doubled</strong>.
-              </p>
-            </div>
-
-            <div className="bg-red-900 text-white rounded-lg p-3 border-2 border-red-700 font-bold">
-              <div className="text-lg mb-1">⚠️ DOUBLE DOWN CAP: +14 POINTS MAXIMUM</div>
-              <p className="text-sm font-normal">
-                Even if your doubled bonus would be higher (e.g., God 1st = 10×2 = 20), you get a maximum of <strong>+14 total Open finish bonus</strong>.
+                If you finish top 3 overall, your <strong>Open finish bonus is doubled</strong> with <strong>no cap</strong>.
               </p>
             </div>
             
@@ -349,11 +386,11 @@ export default function SSLOpenPage() {
           </p>
           <p className="text-sm text-gray-700 mb-3">
             <strong>The only extra:</strong> If you finish in the top 3 on the Open leaderboard, you earn an <strong>Open finish bonus</strong> for 
-            your mode (+5/3/1 for Normal, +7/4/2 for Hard, +10/6/3 for God). This bonus is added to your season score on top of the normal 
+            your mode (+5/3/1 for Normal, +10/6/2 for Hard, +25/12/6 for God). This bonus is added to your season score on top of the normal 
             points you already earned for playing the round.
           </p>
           <p className="text-sm text-gray-700 mb-3">
-            If you successfully Double Down, your Open finish bonus is doubled (hard capped at +14 points maximum). If you fail Double Down, 
+            If you successfully Double Down, your Open finish bonus is doubled with no cap. If you fail Double Down, 
             you get 0 Open finish bonus (but still keep your normal round points).
           </p>
           <div className="flex flex-col sm:flex-row gap-2 text-sm">
