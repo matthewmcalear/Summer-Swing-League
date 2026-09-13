@@ -12,22 +12,22 @@ DPI = 160
 T = ["Normal", "Hard", "God"]
 C = ["#4C9F70", "#E09F3E", "#9B2226"]
 
-# From summary.json (mix B)
-ev = {"Normal": 0.69, "Hard": 0.64, "God": 0.42}
+# From ssl_open_summary.json (NEW PAYOUTS: Normal 5/3/1, Hard 10/6/2, God 25/12/6, no DD cap)
+ev = {"Normal": 0.6630, "Hard": 0.9212, "God": 1.1689}
 matt = {
-  "Normal": {"none": 0.726, "always": 0.686, "if_front_worse": 0.749},
-  "Hard": {"none": 0.751, "always": 0.710, "if_front_worse": 0.727},
-  "God": {"none": 0.606, "always": 0.506, "if_front_worse": 0.611},
+  "Normal": {"none": 1.0980, "always": 1.0822, "if_front_worse": 1.1814},
+  "Hard": {"none": 1.6864, "always": 1.6572, "if_front_worse": 1.7752},
+  "God": {"none": 2.3873, "always": 2.3554, "if_front_worse": 2.4720},
 }
 median = {
-  "Normal": {"p_win": 0.0874, "p_top3": 0.2494},
-  "Hard": {"p_win": 0.0509, "p_top3": 0.1705},
-  "God": {"p_win": 0.0196, "p_top3": 0.0846},
+  "Normal": {"p_win": 0.0771, "p_top3": 0.2219},
+  "Hard": {"p_win": 0.0477, "p_top3": 0.1554},
+  "God": {"p_win": 0.0243, "p_top3": 0.0909},
 }
 breakeven = {
   "Normal": {"1st": 0.5, "2nd": 0.5, "3rd": 0.5},
   "Hard": {"1st": 0.5, "2nd": 0.5, "3rd": 0.5},
-  "God": {"1st": 0.714, "2nd": 0.5, "3rd": 0.5},
+  "God": {"1st": 0.5, "2nd": 0.5, "3rd": 0.5},
 }
 fair = {
   "A": {"gini": 0.366, "top5": 0.373},
@@ -40,13 +40,14 @@ standings = [
   ("Shaun Anderson", 170.0), ("Tibi Mitran", 160.0), ("Alex Sokaris", 150.0),
   ("Doug Fauteux", 140.0), ("Nicolas Tuli", 130.0), ("Sophie Therien", 120.0),
 ]
-# Approximate tornado (one-club dominates)
+# Approximate tornado (scaled from old to new EVs - same relative sensitivity)
+# Old bases: Hard 0.64, God 0.42 → New: Hard 0.92, God 1.17
 tornado = [
-  {"param": "one_club", "tier": "God", "lo": 0.55, "base": 0.42, "hi": 0.75, "lo_val": 0.6, "hi_val": 2.0},
-  {"param": "one_club", "tier": "Hard", "lo": 0.70, "base": 0.64, "hi": 0.78, "lo_val": 0.6, "hi_val": 2.0},
-  {"param": "no_driver", "tier": "God", "lo": 0.38, "base": 0.42, "hi": 0.48, "lo_val": 0.2, "hi_val": 0.9},
-  {"param": "no_mulligan", "tier": "God", "lo": 0.39, "base": 0.42, "hi": 0.46, "lo_val": 0.2, "hi_val": 0.7},
-  {"param": "no_gimme", "tier": "Hard", "lo": 0.61, "base": 0.64, "hi": 0.67, "lo_val": 0.1, "hi_val": 0.5},
+  {"param": "one_club", "tier": "God", "lo": 1.53, "base": 1.17, "hi": 2.09, "lo_val": 0.6, "hi_val": 2.0},
+  {"param": "one_club", "tier": "Hard", "lo": 1.01, "base": 0.92, "hi": 1.12, "lo_val": 0.6, "hi_val": 2.0},
+  {"param": "no_driver", "tier": "God", "lo": 1.06, "base": 1.17, "hi": 1.34, "lo_val": 0.2, "hi_val": 0.9},
+  {"param": "no_mulligan", "tier": "God", "lo": 1.09, "base": 1.17, "hi": 1.28, "lo_val": 0.2, "hi_val": 0.7},
+  {"param": "no_gimme", "tier": "Hard", "lo": 0.88, "base": 0.92, "hi": 0.96, "lo_val": 0.1, "hi_val": 0.5},
 ]
 rng = np.random.default_rng(7)
 
@@ -54,10 +55,10 @@ rng = np.random.default_rng(7)
 fig, ax = plt.subplots(figsize=(8, 5))
 bars = ax.bar(T, [ev[t] for t in T], color=C, edgecolor="#222", width=0.65)
 for b, t in zip(bars, T):
-    ax.text(b.get_x()+b.get_width()/2, ev[t]+0.02, f"{ev[t]:.2f}", ha="center", fontweight="bold")
+    ax.text(b.get_x()+b.get_width()/2, ev[t]+0.04, f"{ev[t]:.2f}", ha="center", fontweight="bold")
 ax.set_ylabel("Expected Open season points"); ax.set_title("EV by tier (field mix B)")
-ax.set_ylim(0, 1.0); ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
-fig.text(0.5, 0.02, "N=10,000 sims · random ~50/35/15 Normal/Hard/God · no DD · curse +1.9/+4.8", ha="center", fontsize=9, color="#444")
+ax.set_ylim(0, 1.4); ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
+fig.text(0.5, 0.02, "N=10,000 · ~50/35/15 Normal/Hard/God · no DD · curse +1.9/+4.8 · NEW PAYOUTS", ha="center", fontsize=9, color="#444")
 fig.tight_layout(rect=[0, 0.06, 1, 1]); fig.savefig(OUT/"ev_by_tier.png", dpi=DPI); plt.close()
 
 # 2 matthew_ev
@@ -67,8 +68,8 @@ for k, (key, lab) in enumerate([("none","No DD"),("always","Always DD"),("if_fro
     ax.bar(x+(k-1)*width, [matt[t][key] for t in T], width, label=lab, edgecolor="#222")
 ax.set_xticks(x); ax.set_xticklabels(T); ax.set_ylabel("Expected Open season points")
 ax.set_title("Matthew McAlear — EV by tier × DD strategy"); ax.legend(frameon=False, fontsize=9)
-ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
-fig.text(0.5, 0.02, "N=10,000 · others fixed mix B · Matthew skill mean net=79.6 (n=7)", ha="center", fontsize=9, color="#444")
+ax.set_ylim(0, 3.0); ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
+fig.text(0.5, 0.02, "N=10,000 · others mix B · Matthew skill mean net=79.6 · NEW PAYOUTS", ha="center", fontsize=9, color="#444")
 fig.tight_layout(rect=[0, 0.06, 1, 1]); fig.savefig(OUT/"matthew_ev.png", dpi=DPI); plt.close()
 
 # 3 win_prob
@@ -96,7 +97,7 @@ for k, place in enumerate(["1st","2nd","3rd"]):
 ax.axhline(50, color="#1D3557", ls="--", lw=1.5, label="Model P(back<front)=50%")
 ax.set_xticks(x); ax.set_xticklabels(T); ax.set_ylabel("DD success rate needed (%)")
 ax.set_title("DD breakeven: success rate for EV(DD) ≥ EV(no DD)"); ax.legend(frameon=False, fontsize=9)
-fig.text(0.5, 0.02, "Place-conditional: need p ≥ base / min(2·base, 14). Cap binds God 1st (20→14).", ha="center", fontsize=9, color="#444")
+fig.text(0.5, 0.02, "Place-conditional: need p ≥ base / (2·base) = 0.5. NO CAP — all 50% now!", ha="center", fontsize=9, color="#444")
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
 fig.tight_layout(rect=[0, 0.06, 1, 1]); fig.savefig(OUT/"dd_breakeven.png", dpi=DPI); plt.close()
 
@@ -112,7 +113,7 @@ for patch in bp["boxes"]: patch.set_facecolor("#A8DADC")
 axes[1].tick_params(axis="x", rotation=45, labelsize=8)
 axes[1].set_ylabel("Open points / sim"); axes[1].set_title("Top-12 season: points distribution")
 fig.suptitle("Open points under mix B (fixed by rank, no DD)", fontweight="bold")
-fig.text(0.5, 0.01, "N=10,000 · payout Normal 5/3/1 · Hard 10/6/2 · God 25/12/6 · field=17", ha="center", fontsize=9, color="#444")
+fig.text(0.5, 0.01, "N=10,000 · NEW PAYOUTS Normal 5/3/1 · Hard 10/6/2 · God 25/12/6 · field=17", ha="center", fontsize=9, color="#444")
 fig.tight_layout(rect=[0, 0.05, 1, 0.95]); fig.savefig(OUT/"points_distribution.png", dpi=DPI); plt.close()
 
 # 6 fairness
@@ -137,8 +138,8 @@ for i,r in enumerate(tornado):
     ax.barh(i, r["hi"]-base, left=base, color="#E76F51", height=0.6, edgecolor="#222")
     ax.barh(i, r["lo"]-base, left=base, color="#2A9D8F", height=0.6, edgecolor="#222")
     ax.text(min(r["lo"], r["hi"])-0.02, i, f"{r['param']}→{r['tier']}\n[{r['lo_val']},{r['hi_val']}]", va="center", ha="right", fontsize=8)
-ax.axvline(0.64, color="#E09F3E", ls=":", label="Hard base EV=0.64")
-ax.axvline(0.42, color="#9B2226", ls=":", label="God base EV=0.42")
+ax.axvline(0.92, color="#E09F3E", ls=":", label="Hard base EV=0.92")
+ax.axvline(1.17, color="#9B2226", ls=":", label="God base EV=1.17")
 ax.set_yticks([]); ax.set_xlabel("Expected Open points for that tier")
 ax.set_title("Stroke-penalty tornado (Hard/God EV sensitivity)"); ax.legend(frameon=False, fontsize=8, loc="lower right")
 fig.text(0.5, 0.02, "One-at-a-time sweeps · mix B random · defaults one-club=1.2, gimme=0.3, mulligan=0.4, driver=0.5", ha="center", fontsize=9, color="#444")
@@ -178,8 +179,8 @@ ax.set_yticks(y); ax.set_yticklabels(names); ax.set_xlabel("Season score"); ax.s
 leader=vals[0]
 ax.annotate("", xy=(leader, len(names)-1), xytext=(leader+5, len(names)-1), arrowprops=dict(arrowstyle="<->", color="#4C9F70", lw=2))
 ax.text(leader+2.5, len(names)-0.55, "+5 Normal 1st", color="#4C9F70", fontsize=8, ha="center")
-ax.annotate("", xy=(leader, len(names)-1.35), xytext=(leader+10, len(names)-1.35), arrowprops=dict(arrowstyle="<->", color="#9B2226", lw=2))
-ax.text(leader+5, len(names)-1.9, "+10 God 1st", color="#9B2226", fontsize=8, ha="center")
+ax.annotate("", xy=(leader, len(names)-1.35), xytext=(leader+25, len(names)-1.35), arrowprops=dict(arrowstyle="<->", color="#9B2226", lw=2))
+ax.text(leader+12.5, len(names)-1.9, "+25 God 1st", color="#9B2226", fontsize=8, ha="center")
 for i,v in enumerate(vals[:4]): ax.text(v+1, len(names)-1-i, f"{v:.1f}", va="center", fontsize=8)
 fig.text(0.5, 0.02, f"Matthew {vals[0]:.1f} · gap to #2 ≈ {vals[0]-vals[1]:.1f}", ha="center", fontsize=9, color="#444")
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)

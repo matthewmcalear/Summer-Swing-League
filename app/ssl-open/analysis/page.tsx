@@ -14,7 +14,7 @@ export default function SSLOpenAnalysisPage() {
           Statistical Analysis
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight drop-shadow-sm mb-3">
-          📊 Is Normal a Sucker Bet?
+          📊 Should You Go God Mode?
         </h1>
         <p className="text-blue-100 text-sm">
           10,000 simulations · 17 season-active players · field mix B
@@ -40,33 +40,36 @@ export default function SSLOpenAnalysisPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="bg-green-50 rounded-lg p-3 border border-green-200">
               <div className="text-xs text-green-700 font-semibold mb-1">NORMAL</div>
-              <div className="text-2xl font-bold text-green-900">0.69</div>
+              <div className="text-2xl font-bold text-green-900">0.66</div>
               <div className="text-xs text-green-700 mt-1">Expected Open finish bonus</div>
             </div>
             <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
               <div className="text-xs text-orange-700 font-semibold mb-1">HARD</div>
-              <div className="text-2xl font-bold text-orange-900">0.64</div>
+              <div className="text-2xl font-bold text-orange-900">0.92</div>
               <div className="text-xs text-orange-700 mt-1">Expected Open finish bonus</div>
             </div>
             <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
               <div className="text-xs text-purple-700 font-semibold mb-1">GOD</div>
-              <div className="text-2xl font-bold text-purple-900">0.42</div>
+              <div className="text-2xl font-bold text-purple-900">1.17</div>
               <div className="text-xs text-purple-700 mt-1">Expected Open finish bonus</div>
             </div>
           </div>
 
           <p>
-            <strong>Normal has the best average</strong> (0.69 expected points), but only slightly ahead of Hard (0.64). 
-            God mode is <strong>negative expected value</strong> under the assumed curse penalties (+1.9/+4.8 strokes).
+            <strong>God mode has the highest expected value</strong> (1.17 points), followed by Hard (0.92), with Normal 
+            trailing at 0.66. The new generous payouts (God 25/12/6, Hard 10/6/2) more than compensate for the curse 
+            penalties (+1.9/+4.8 strokes).
           </p>
           
           <p>
-            <strong>Double Down is -EV in general.</strong> Your back-nine needs to be strictly better than the front, 
-            but P(back&lt;front) ≈ 50% for most players. The 50% baseline rate makes it marginally negative EV for most scenarios.
+            <strong>Double Down is now 50% breakeven across all tiers.</strong> With the +14 cap removed, DD simply 
+            doubles your finish bonus on success. Your back-nine needs to be better than the front, and P(back&lt;front) 
+            ≈ 50% for most players—making DD approximately break-even but high-variance.
           </p>
 
-          <p className="text-xs text-gray-600 italic">
-            Optional: Hard 1st place payout could be increased to +8 if we want to incentivize more Hard entries.
+          <p>
+            <strong>Risk-reward is clear:</strong> Normal is safe and consistent, God offers maximum upside with higher 
+            variance, and Hard sits comfortably in between.
           </p>
         </div>
       </div>
@@ -79,11 +82,11 @@ export default function SSLOpenAnalysisPage() {
         </p>
         <img
           src="/ssl-open/analysis/ev_by_tier.png"
-          alt="Bar chart showing expected Open season points by tier: Normal 0.69, Hard 0.64, God 0.44"
+          alt="Bar chart showing expected Open season points by tier: Normal 0.66, Hard 0.92, God 1.17"
           className="w-full h-auto rounded-lg"
         />
         <p className="text-xs text-gray-500 mt-2">
-          N=10,000 sims · random ~50/35/15 Normal/Hard/God each sim · no DD · curse +1.9/+4.8 strokes
+          N=10,000 · ~50/35/15 Normal/Hard/God · no DD · curse +1.9/+4.8 · NEW PAYOUTS: Normal 5/3/1, Hard 10/6/2, God 25/12/6
         </p>
       </div>
 
@@ -95,11 +98,11 @@ export default function SSLOpenAnalysisPage() {
         </p>
         <img
           src="/ssl-open/analysis/matthew_ev.png"
-          alt="Bar chart showing Matthew's expected value: highest with No DD or conditional DD strategies"
+          alt="Bar chart showing Matthew's expected value across tiers and DD strategies: God highest, conditional DD best"
           className="w-full h-auto rounded-lg"
         />
         <p className="text-xs text-gray-500 mt-2">
-          N=10,000 · others fixed mix B by standings rank · Matthew skill mean net=79.6 (n=7)
+          N=10,000 · others mix B · Matthew skill mean net=79.6 · NEW PAYOUTS (God 25/12/6, Hard 10/6/2)
         </p>
       </div>
 
@@ -111,11 +114,11 @@ export default function SSLOpenAnalysisPage() {
         </p>
         <img
           src="/ssl-open/analysis/dd_breakeven.png"
-          alt="Chart showing DD success rates needed: ~50% baseline for breakeven across modes"
+          alt="Chart showing DD success rates needed: 50% for all tiers and places (no cap)"
           className="w-full h-auto rounded-lg"
         />
         <p className="text-xs text-gray-500 mt-2">
-          Note: Chart shows old +14 cap analysis. With the cap removed, God 1st DD needs only ~50% success rate to break even, same as other positions. Front/back corr=0.4.
+          Place-conditional: need p ≥ base / (2·base) = 0.5. NO CAP — all breakeven at 50% now! Front/back corr=0.4.
         </p>
       </div>
 
@@ -127,11 +130,11 @@ export default function SSLOpenAnalysisPage() {
         </p>
         <img
           src="/ssl-open/analysis/win_prob_by_tier_choice.png"
-          alt="Bar chart: Normal gives 8.7% win / 24.9% top-3, Hard 5.1% / 17.1%, God 2.0% / 8.5%"
+          alt="Bar chart: Normal gives 7.7% win / 22.2% top-3, Hard 4.8% / 15.5%, God 2.4% / 9.1%"
           className="w-full h-auto rounded-lg"
         />
         <p className="text-xs text-gray-500 mt-2">
-          Median standings player: Sophie Therien · others on mix B · N=10,000 · no DD
+          Median player (avg skill) · others on mix B · N=10,000 · no DD
         </p>
       </div>
 
@@ -143,11 +146,11 @@ export default function SSLOpenAnalysisPage() {
         </p>
         <img
           src="/ssl-open/analysis/standings_context.png"
-          alt="Horizontal bar chart of season standings: Matthew 235.7, Thomas 230.2, Rachel 225.5"
+          alt="Horizontal bar chart of season standings with new payout arrows: +5 Normal 1st, +25 God 1st"
           className="w-full h-auto rounded-lg"
         />
         <p className="text-xs text-gray-500 mt-2">
-          From standings.json · Matthew 235.7 · Thomas 230.2 · Rachel 225.5 · Dan 223.9
+          Current standings · NEW PAYOUTS: Normal 5/3/1, Hard 10/6/2, God 25/12/6
         </p>
       </div>
 
@@ -195,7 +198,7 @@ export default function SSLOpenAnalysisPage() {
           className="w-full h-auto rounded-lg"
         />
         <p className="text-xs text-gray-500 mt-2">
-          Note: Chart shows old payouts (Hard 7/4/2, God 10/6/3). Current payouts are Hard 10/6/2, God 25/12/6. N=10,000 · field=17
+          N=10,000 · NEW PAYOUTS: Normal 5/3/1, Hard 10/6/2, God 25/12/6 · field=17
         </p>
       </div>
 
@@ -204,20 +207,24 @@ export default function SSLOpenAnalysisPage() {
         <h2 className="text-xl font-bold text-blue-900 mb-3">Key Takeaways</h2>
         <ul className="space-y-2 text-sm text-blue-800 list-disc list-inside">
           <li>
-            <strong>Normal is safe, not stupid.</strong> Highest EV for most players, best top-3 odds for median skill.
+            <strong>God mode is the EV winner.</strong> Highest expected value (1.17) despite curse penalties. The 25/12/6 
+            payouts are very generous.
           </li>
           <li>
-            <strong>Hard is close behind.</strong> Only ~8% lower EV on average, decent upside if you're confident.
+            <strong>Hard offers strong upside.</strong> 0.92 EV with more manageable curse penalties (+1.9 vs +4.8). 
+            Good middle ground.
           </li>
           <li>
-            <strong>God is for glory.</strong> Negative EV under these curse assumptions, but 3× the payout if you win.
+            <strong>Normal is the conservative play.</strong> Lowest variance and lowest EV (0.66), but best win probability 
+            for median players.
           </li>
           <li>
-            <strong>Skip Double Down.</strong> Unless you have strong evidence your back-nine is consistently better, 
-            the 50% base rate makes it marginally -EV for most scenarios.
+            <strong>Double Down is true neutral.</strong> 50% breakeven across all tiers now that the cap is gone. 
+            High-variance, zero-sum in expectation.
           </li>
           <li>
-            <strong>Field mix matters.</strong> If everyone picks Normal, winning gets harder. Strategic tier choice could help.
+            <strong>Field mix still matters.</strong> If everyone picks God, your win odds improve. Strategic tier choice 
+            remains relevant.
           </li>
         </ul>
       </div>
