@@ -209,7 +209,7 @@ export default function SSLOpenPage() {
             <div className="flex items-start gap-3 mb-3">
               <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-green-100 shrink-0">
                 <Image
-                  src="/ssl-open/normal.png"
+                  src="/ssl-open/normal.jpg"
                   alt="Normal mode"
                   fill
                   className="object-cover"
@@ -242,7 +242,7 @@ export default function SSLOpenPage() {
             <div className="flex items-start gap-3 mb-3">
               <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-orange-100 shrink-0">
                 <Image
-                  src="/ssl-open/hard.png"
+                  src="/ssl-open/hard.jpg"
                   alt="Hard mode"
                   fill
                   className="object-cover"
@@ -275,7 +275,7 @@ export default function SSLOpenPage() {
             <div className="flex items-start gap-3 mb-3">
               <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-purple-100 shrink-0">
                 <Image
-                  src="/ssl-open/god.png"
+                  src="/ssl-open/god.jpg"
                   alt="God mode"
                   fill
                   className="object-cover"
