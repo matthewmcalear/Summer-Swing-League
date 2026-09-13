@@ -1,0 +1,84 @@
+{
+  "n_sims": 10000,
+  "field_size": 17,
+  "payouts": {
+    "Normal": {
+      "1": 5,
+      "2": 3,
+      "3": 1
+    },
+    "Hard": {
+      "1": 10,
+      "2": 6,
+      "3": 2
+    },
+    "God": {
+      "1": 25,
+      "2": 12,
+      "3": 6
+    }
+  },
+  "curse_penalties": {
+    "Normal": 0.0,
+    "Hard": 1.9,
+    "God": 4.8
+  },
+  "field_mix_b": {
+    "Normal": 0.5,
+    "Hard": 0.35,
+    "God": 0.15
+  },
+  "ev_by_tier": {
+    "Normal": 0.663,
+    "Hard": 0.9212,
+    "God": 1.1689
+  },
+  "matthew_ev": {
+    "Normal": {
+      "none": 1.098,
+      "always": 1.0822,
+      "if_front_worse": 1.1814
+    },
+    "Hard": {
+      "none": 1.6864,
+      "always": 1.6572,
+      "if_front_worse": 1.7752
+    },
+    "God": {
+      "none": 2.3873,
+      "always": 2.3554,
+      "if_front_worse": 2.472
+    }
+  },
+  "median_player_probs": {
+    "Normal": {
+      "p_win": 0.0771,
+      "p_top3": 0.2219
+    },
+    "Hard": {
+      "p_win": 0.0477,
+      "p_top3": 0.1554
+    },
+    "God": {
+      "p_win": 0.0243,
+      "p_top3": 0.0909
+    }
+  },
+  "dd_breakeven": {
+    "Normal": {
+      "1": 0.5,
+      "2": 0.5,
+      "3": 0.5
+    },
+    "Hard": {
+      "1": 0.5,
+      "2": 0.5,
+      "3": 0.5
+    },
+    "God": {
+      "1": 0.5,
+      "2": 0.5,
+      "3": 0.5
+    }
+  }
+}
