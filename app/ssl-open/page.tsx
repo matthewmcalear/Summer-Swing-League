@@ -13,6 +13,8 @@ const OPEN_FIELD_PLAYERS = [
   'Tibi Mitran',
   'Shaun Anderson',
   'Spence Goodwin',
+  'Rachel Kuta',
+  'Nicholas Clarke',
 ]
 
 export default function SSLOpenPage() {
@@ -43,7 +45,7 @@ export default function SSLOpenPage() {
               Saturday, September 19, 2026
             </p>
             <p className="text-amber-100 text-base sm:text-lg drop-shadow">
-              <strong>Golf Boucherville</strong> · Tee times: 11:20 & 11:28
+              <strong>Golf Ste-Rose</strong> · Tee times: 1:00, 1:10 & 1:20
             </p>
           </div>
           <p className="text-amber-50 text-base sm:text-lg max-w-2xl leading-relaxed drop-shadow">
