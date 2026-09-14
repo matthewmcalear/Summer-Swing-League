@@ -187,6 +187,24 @@ export default function SSLOpenPage() {
               </p>
             </div>
 
+            {/* Curse fairness explanation */}
+            <div className="card bg-yellow-50 border-yellow-200">
+              <h3 className="font-bold text-base sm:text-lg text-yellow-900 mb-2">⚡ Curse Constraints (Hard & God)</h3>
+              <p className="mb-2 text-sm text-yellow-800">
+                To keep curses challenging and fair:
+              </p>
+              <ul className="list-disc list-inside space-y-1.5 text-sm text-yellow-800">
+                <li>
+                  <strong>One-club holes must not be par 3s.</strong> Using one club on a short hole is too easy. 
+                  Players declare which par 4 or par 5 hole(s) they'll use one club on at the first tee.
+                </li>
+                <li>
+                  <strong>No-driver restriction (God mode) must be a par 5.</strong> Some players don't use driver on shorter holes anyway, 
+                  so the restriction forces the challenge on the longest holes where driver matters most.
+                </li>
+              </ul>
+            </div>
+
             {/* What each tier means - intro to the cards below */}
             <div>
               <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">The Three Modes</h3>
@@ -262,7 +280,7 @@ export default function SSLOpenPage() {
               </div>
               <div className="flex flex-col">
                 <span className="font-semibold">Curse:</span>
-                <span className="text-xs mt-0.5">1 one-club hole (announced first tee)</span>
+                <span className="text-xs mt-0.5">1 one-club hole (not a par 3; announced first tee)</span>
               </div>
             </div>
           </div>
@@ -295,7 +313,7 @@ export default function SSLOpenPage() {
               </div>
               <div className="flex flex-col">
                 <span className="font-semibold">Curses:</span>
-                <span className="text-xs mt-0.5">3 one-club + no driver on 1 hole</span>
+                <span className="text-xs mt-0.5">3 one-club holes (not par 3s) + no driver on 1 par 5</span>
               </div>
             </div>
           </div>
