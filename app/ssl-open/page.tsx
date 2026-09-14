@@ -4,6 +4,17 @@ import { Calendar, MapPin, Trophy, AlertCircle } from 'lucide-react'
 
 export const metadata = { title: 'SSL Open 2026 — Summer Swing League' }
 
+const OPEN_FIELD_PLAYERS = [
+  'Matthew McAlear',
+  'Thomas McAlear',
+  'Dan McAlear',
+  'Connor Peltz',
+  'Alex Sokaris',
+  'Tibi Mitran',
+  'Shaun Anderson',
+  'Spence Goodwin',
+]
+
 export default function SSLOpenPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -69,15 +80,7 @@ export default function SSLOpenPage() {
           Confirmed players for the SSL Open 2026:
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-sm">
-          {[
-            'Matthew McAlear',
-            'Thomas McAlear',
-            'Dan McAlear',
-            'Connor Peltz',
-            'Alex Sokaris',
-            'Tibi Mitran',
-            'Shaun Anderson',
-          ].map((name) => (
+          {OPEN_FIELD_PLAYERS.map((name) => (
             <div key={name} className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-green-200">
               <span className="text-green-700">✓</span>
               <span className="font-medium text-gray-900">{name}</span>
@@ -106,15 +109,7 @@ export default function SSLOpenPage() {
               </tr>
             </thead>
             <tbody>
-              {[
-                'Matthew McAlear',
-                'Thomas McAlear',
-                'Dan McAlear',
-                'Connor Peltz',
-                'Alex Sokaris',
-                'Tibi Mitran',
-                'Shaun Anderson',
-              ].map((name, index) => (
+              {OPEN_FIELD_PLAYERS.map((name, index) => (
                 <tr key={name} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-2.5 px-2 text-gray-600 font-medium">T1</td>
                   <td className="py-2.5 px-3 font-semibold text-gray-900">{name}</td>
