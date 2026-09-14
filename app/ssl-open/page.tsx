@@ -280,7 +280,7 @@ export default function SSLOpenPage() {
               </div>
               <div className="flex flex-col">
                 <span className="font-semibold">Curse:</span>
-                <span className="text-xs mt-0.5">1 one-club hole (not a par 3; announced first tee)</span>
+                <span className="text-xs mt-0.5">1 one-club hole per nine (not par 3s; announced first tee)</span>
               </div>
             </div>
           </div>
