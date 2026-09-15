@@ -1,9 +1,11 @@
-import { randomBytes, timingSafeEqual } from 'crypto'
+import { randomBytes } from 'crypto'
+import { Prisma } from '@prisma/client'
 import { prisma } from './prisma'
 import { isAdmin } from './auth'
-import { OPEN_EVENT_ID } from './open-types'
+import { difficultyFromSlope } from './scoring'
+import { OPEN_COURSE, OPEN_DATE, OPEN_EVENT_ID, OPEN_TEE_TIMES } from './open-types'
 import type { OpenEvent, OpenSeasonMember, OpenState } from './open-types'
-import { isScoringCode } from './open-validation'
+import { distributeGroups, fieldMembers, isOpenCourse, normalizeName, parCard } from './open-seed'
 
 /** Rows exactly as Prisma returns them for the single Open event. */
 export type StoredOpenEvent = NonNullable<Awaited<ReturnType<typeof loadStoredEvent>>>
@@ -20,19 +22,8 @@ export function loadStoredEvent() {
   })
 }
 
-/** 32 random bytes as base64url → 43 characters, the shape isScoringCode() accepts. */
-export function newScoringCode(): string {
-  return randomBytes(32).toString('base64url')
-}
-
-/** Constant-time comparison of a submitted scoring code against a group's code. */
-export function scoringCodeMatches(candidate: unknown, actual: string): boolean {
-  if (!isScoringCode(candidate) || candidate.length !== actual.length) return false
-  return timingSafeEqual(Buffer.from(candidate), Buffer.from(actual))
-}
-
-/** Convert the stored event to the shape the board and projections use. Codes only leave the server for admins. */
-export function serializeEvent(event: StoredOpenEvent, includeCodes: boolean): OpenEvent {
+/** Convert the stored event to the shape the board and projections use. */
+export function serializeEvent(event: StoredOpenEvent): OpenEvent {
   return {
     id: event.id,
     courseId: event.course_id,
@@ -50,7 +41,6 @@ export function serializeEvent(event: StoredOpenEvent, includeCodes: boolean): O
       id: group.id,
       name: group.name,
       teeTime: group.tee_time,
-      ...(includeCodes ? { scoringCode: group.scoring_code } : {}),
       players: group.players.map((player) => ({
         id: player.id,
         memberId: player.member_id,
@@ -97,21 +87,105 @@ export async function loadSeasonMembers(): Promise<OpenSeasonMember[]> {
   }))
 }
 
+/** The Open venue from the course library, added from the known card if nobody has entered it yet. */
+async function ensureOpenCourse() {
+  const courses = await prisma.course.findMany({ where: { is_active: true, holes: 18 }, orderBy: { created_at: 'asc' } })
+  const candidates = courses.filter((course) => isOpenCourse(course.name))
+  const preferred = candidates.find((course) => /blanc|white/.test(normalizeName(course.tee_name))) ?? candidates[0]
+  if (preferred) {
+    const holePars = parCard(preferred.par, preferred.hole_pars)
+    if (preferred.hole_pars.length !== 18) {
+      return prisma.course.update({ where: { id: preferred.id }, data: { hole_pars: holePars } })
+    }
+    return { ...preferred, hole_pars: holePars }
+  }
+  return prisma.course.create({
+    data: {
+      name: OPEN_COURSE.name,
+      tee_name: OPEN_COURSE.teeName,
+      course_rating: OPEN_COURSE.courseRating,
+      slope_rating: OPEN_COURSE.slopeRating,
+      par: OPEN_COURSE.par,
+      holes: 18,
+      hole_pars: OPEN_COURSE.holePars,
+    },
+  })
+}
+
 /**
- * Everything the live page needs in one payload. A valid group scoring code
- * unlocks score entry for that group only; the admin cookie unlocks everything.
+ * The Open exists as soon as anyone opens the board: the announced field
+ * (every name that is a registered, active member), one group per tee time,
+ * handicaps frozen at today's values. Players fix their own group on the day.
+ * Returns a notice instead of an event when nothing sensible can be created.
  */
-export async function loadOpenState(code: string | null): Promise<OpenState> {
+export async function ensureOpenEvent(): Promise<{ event: StoredOpenEvent | null; notice: string | null }> {
+  const existing = await loadStoredEvent()
+  if (existing) return { event: existing, notice: null }
+
+  const members = fieldMembers(await prisma.member.findMany({ where: { is_active: true } }))
+  if (members.length === 0) {
+    return { event: null, notice: 'None of the announced Open field is registered as an active league member yet. Register the players, then reload.' }
+  }
+  const course = await ensureOpenCourse()
+  const groupIndexes = distributeGroups(members.length, OPEN_TEE_TIMES.length)
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.sslOpenEvent.create({
+        data: {
+          id: OPEN_EVENT_ID,
+          course_id: course.id,
+          course_name: course.name,
+          tee_name: course.tee_name,
+          play_date: new Date(`${OPEN_DATE}T00:00:00Z`),
+          course_rating: course.course_rating,
+          slope_rating: course.slope_rating,
+          course_par: course.par,
+          hole_pars: course.hole_pars,
+          difficulty: difficultyFromSlope(course.slope_rating),
+        },
+      })
+      for (let groupIndex = 0; groupIndex < OPEN_TEE_TIMES.length; groupIndex += 1) {
+        const group = await tx.sslOpenGroup.create({
+          data: {
+            event_id: OPEN_EVENT_ID,
+            name: `Group ${groupIndex + 1}`,
+            tee_time: OPEN_TEE_TIMES[groupIndex],
+            sort_order: groupIndex,
+            scoring_code: randomBytes(32).toString('base64url'),
+          },
+        })
+        const groupMembers = members.filter((_, index) => groupIndexes[index] === groupIndex)
+        if (groupMembers.length === 0) continue
+        await tx.sslOpenPlayer.createMany({
+          data: groupMembers.map((member, playerIndex) => ({
+            event_id: OPEN_EVENT_ID,
+            group_id: group.id,
+            member_id: member.id,
+            player_name: member.full_name,
+            handicap: Number(member.current_handicap),
+            sort_order: playerIndex,
+            scores: Array<number>(18).fill(0),
+          })),
+        })
+      }
+    })
+  } catch (error) {
+    // Two phones opened the board at the same moment; the other one created it.
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002')) throw error
+  }
+  return { event: await loadStoredEvent(), notice: null }
+}
+
+/** Everything the live page needs in one payload. Scoring is open to everyone; the admin cookie unlocks posting results. */
+export async function loadOpenState(): Promise<OpenState> {
   const admin = isAdmin()
-  const [stored, season] = await Promise.all([loadStoredEvent(), loadSeasonMembers()])
-  const authorizedGroup = stored && code
-    ? stored.groups.find((group) => scoringCodeMatches(code, group.scoring_code))
-    : undefined
+  const [{ event, notice }, season] = await Promise.all([ensureOpenEvent(), loadSeasonMembers()])
   return {
-    event: stored ? serializeEvent(stored, admin) : null,
+    event: event ? serializeEvent(event) : null,
     season,
     isAdmin: admin,
-    authorizedGroupId: authorizedGroup?.id ?? null,
+    notice,
     fetchedAt: new Date().toISOString(),
   }
 }

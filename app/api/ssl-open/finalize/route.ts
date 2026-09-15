@@ -26,7 +26,7 @@ export async function POST() {
 
     const now = new Date()
     // Rank exactly as the posted board will: complete cards only, no-shows out of the group count.
-    const event: OpenEvent = { ...serializeEvent(stored, false), finalizedAt: now.toISOString() }
+    const event: OpenEvent = { ...serializeEvent(stored), finalizedAt: now.toISOString() }
     const projections = projectOpen(event)
     const finished = projections.filter((projection) => projection.holesPlayed === 18)
     if (finished.length === 0) throw new OpenError('Nobody has a complete 18-hole card yet.')

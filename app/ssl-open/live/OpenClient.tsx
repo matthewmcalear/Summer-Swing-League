@@ -2,17 +2,28 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Radio, Trophy, ChevronLeft, ChevronRight, Check, Copy, Flag } from 'lucide-react'
+import { Radio, Trophy, ChevronLeft, ChevronRight, Check, Flag, UserPlus } from 'lucide-react'
 import { projectOpen, projectOpenSeason } from '@/lib/open-scoring'
 import type { OpenEvent, OpenGroup, OpenMode, OpenPlayer, OpenProjection, OpenState } from '@/lib/open-types'
 import { OPEN_BONUSES } from '@/lib/open-types'
 import { displayName } from '@/lib/nameUtils'
-import OpenSetup from './OpenSetup'
+import type { Member } from '@/types'
 
 const number = (n: number | null, digits = 1) => n == null ? '—' : n.toFixed(digits)
 const signed = (n: number) => n === 0 ? 'E' : `${n > 0 ? '+' : ''}${number(n, Number.isInteger(n) ? 0 : 1)}`
 const names = (rows: OpenProjection[]) => rows.map((p) => displayName(p.player.name)).join(', ')
-const CODE_KEY = 'ssl_open_scoring_code'
+const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1)
+/** "13:10" → "1:10" like the Open page; anything else is shown as typed. */
+const teeLabel = (time: string) => {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(time)
+  if (!match) return time
+  const hour = Number(match[1])
+  return `${hour % 12 || 12}:${match[2]}`
+}
+const groupLabel = (group: OpenGroup) => group.teeTime ? `${group.name} · ${teeLabel(group.teeTime)}` : group.name
+const ME_KEY = 'ssl_open_me'
+const readMe = () => { try { return localStorage.getItem(ME_KEY) || '' } catch { return '' } }
+const writeMe = (id: string) => { try { if (id) localStorage.setItem(ME_KEY, id); else localStorage.removeItem(ME_KEY) } catch { /* private mode */ } }
 
 async function jsonRequest(url: string, init?: RequestInit) {
   const response = await fetch(url, { ...init, cache: 'no-store' })
@@ -21,41 +32,31 @@ async function jsonRequest(url: string, init?: RequestInit) {
   return data
 }
 
-function playerRequest(player: OpenPlayer, code: string, fields: Record<string, unknown>) {
-  return jsonRequest(`/api/ssl-open/players/${player.id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ scoringCode: code, version: player.version, ...fields }),
-  })
+const json = (body: unknown, method = 'PUT'): RequestInit => ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+
+function playerRequest(player: OpenPlayer, fields: Record<string, unknown>) {
+  return jsonRequest(`/api/ssl-open/players/${player.id}`, json({ version: player.version, ...fields }))
 }
 
 export default function OpenClient({ compact = false }: { compact?: boolean }) {
   const [state, setState] = useState<OpenState | null>(null)
   const [error, setError] = useState('')
-  const [code, setCode] = useState('')
-  const [codeInput, setCodeInput] = useState('')
   const [ready, setReady] = useState(false)
   const [tab, setTab] = useState<'open' | 'season' | 'scoring'>('open')
   const [groupId, setGroupId] = useState('')
+  const [me, setMe] = useState('')
   const [adminOpen, setAdminOpen] = useState(false)
   const [password, setPassword] = useState('')
   const [adminBusy, setAdminBusy] = useState(false)
   const [adminError, setAdminError] = useState('')
   const [adminNotice, setAdminNotice] = useState('')
-  const [copied, setCopied] = useState('')
   const [now, setNow] = useState(Date.now())
   const refreshSerial = useRef(0)
 
   useEffect(() => {
     const hash = new URLSearchParams(window.location.hash.slice(1))
-    let saved = ''
-    try { saved = hash.get('code') || localStorage.getItem(CODE_KEY) || '' } catch { saved = hash.get('code') || '' }
-    setCode(saved)
-    try { if (saved) localStorage.setItem(CODE_KEY, saved) } catch { /* private mode: the code lives in memory for this visit */ }
-    if (hash.get('group')) setGroupId(hash.get('group')!)
-    if (hash.get('code') && !compact) setTab('scoring')
-    // Keep the scoring key out of copied public leaderboard links.
-    if (hash.has('code')) history.replaceState(null, '', window.location.pathname)
+    setMe(readMe())
+    if (hash.get('tab') === 'scoring' && !compact) setTab('scoring')
     setReady(true)
   }, [compact])
 
@@ -63,15 +64,14 @@ export default function OpenClient({ compact = false }: { compact?: boolean }) {
     if (!ready) return
     const serial = ++refreshSerial.current
     try {
-      const next: OpenState = await jsonRequest(`/api/ssl-open${code ? `?code=${encodeURIComponent(code)}` : ''}`)
+      const next: OpenState = await jsonRequest('/api/ssl-open')
       if (serial !== refreshSerial.current) return
       setState(next)
       setError('')
-      setGroupId((current) => current || next.authorizedGroupId || next.event?.groups[0]?.id || '')
     } catch (e) {
       if (serial === refreshSerial.current) setError((e as Error).message)
     }
-  }, [code, ready])
+  }, [ready])
 
   useEffect(() => {
     void refresh()
@@ -91,14 +91,21 @@ export default function OpenClient({ compact = false }: { compact?: boolean }) {
   const unstarted = projections.filter((p) => p.holesPlayed === 0)
   const allFinished = projections.length > 0 && finished.length === projections.length
   const podiumTies = finished.filter((p) => p.rank != null && p.rank <= 3 && p.finishBonus == null)
-  const group = event?.groups.find((g) => g.id === groupId) || event?.groups[0]
-  const canScore = !!state?.isAdmin || (!!group && state?.authorizedGroupId === group.id)
+  const myGroup = event?.groups.find((g) => g.players.some((p) => p.id === me))
+  const group = event?.groups.find((g) => g.id === groupId) || myGroup || event?.groups[0]
+  const canScore = !!event && !event.finalizedAt
   const age = state ? Math.max(0, Math.floor((now - new Date(state.fetchedAt).getTime()) / 1000)) : 0
+
+  const chooseMe = (player: OpenPlayer | null, playerGroup?: OpenGroup) => {
+    setMe(player?.id ?? '')
+    writeMe(player?.id ?? '')
+    if (playerGroup) setGroupId(playerGroup.id)
+  }
 
   async function login(e: React.FormEvent) {
     e.preventDefault(); setAdminBusy(true); setAdminError('')
     try {
-      await jsonRequest('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) })
+      await jsonRequest('/api/admin/login', json({ password }, 'POST'))
       setPassword(''); await refresh()
     } catch (e) { setAdminError((e as Error).message) }
     finally { setAdminBusy(false) }
@@ -126,23 +133,14 @@ export default function OpenClient({ compact = false }: { compact?: boolean }) {
   }
 
   async function reset() {
-    if (!confirm('Delete the Open setup, its groups, the scoring links and every live score entered so far? You can set it up again afterwards.')) return
+    if (!confirm('Delete the Open and every live score entered so far? It is recreated from the announced field and the course library the next time anyone opens the board.')) return
     setAdminBusy(true); setAdminError(''); setAdminNotice('')
     try {
       await jsonRequest('/api/ssl-open', { method: 'DELETE' })
-      setGroupId('')
+      setGroupId(''); chooseMe(null)
       await refresh()
     } catch (e) { setAdminError((e as Error).message) }
     finally { setAdminBusy(false) }
-  }
-
-  const groupLink = (g: OpenGroup) => `${location.origin}/ssl-open/live#group=${g.id}&code=${g.scoringCode}`
-
-  async function copyGroup(g: OpenGroup) {
-    try {
-      await navigator.clipboard.writeText(groupLink(g))
-      setCopied(g.id)
-    } catch { setAdminError('Could not copy the link. Select and copy it from the field below.') }
   }
 
   return <div className={`mx-auto space-y-5 ${compact ? '' : 'max-w-5xl'}`}>
@@ -152,7 +150,7 @@ export default function OpenClient({ compact = false }: { compact?: boolean }) {
         {!compact && <Link href="/ssl-open" className="text-sm text-green-200 underline underline-offset-4">Open rules</Link>}
       </div>
       <h1 className={`${compact ? 'text-2xl' : 'text-3xl sm:text-4xl'} font-bold mt-3`}>The Open, live.</h1>
-      <p className="text-sm text-green-100 mt-2">Three groups. One leaderboard. Follow the race for the Open and the SSL season.</p>
+      <p className="text-sm text-green-100 mt-2">Three groups. One leaderboard. Enter your own scores hole by hole and follow the race for the Open and the SSL season.</p>
       {leaders.length > 0 && <div className="mt-5 pt-4 border-t border-green-700">
         <p className="text-xs text-brass-200 uppercase tracking-widest font-semibold flex gap-2 items-center"><Trophy size={15} />{event?.finalizedAt ? 'Open winner' : allFinished ? 'Clubhouse leader' : 'Projected Open leader'}{leaders.length > 1 ? 's · tied' : ''}</p>
         <div className="flex flex-wrap justify-between items-end gap-3 mt-2">
@@ -170,9 +168,9 @@ export default function OpenClient({ compact = false }: { compact?: boolean }) {
     {error && state && <p className="text-sm bg-red-50 text-red-800 border border-red-200 rounded-xl p-3">Showing the last saved scores. Projections may be out of date until the connection returns.</p>}
 
     {state && !event && <div className="card space-y-3">
-      <h2 className="text-xl font-bold">Ready for the first tee</h2>
-      <p className="text-sm text-gray-600">The commissioner needs to choose the tees, confirm the hole pars and assign the three groups. Live scores will appear here as each group saves a hole.</p>
-      {compact ? <Link href="/ssl-open/live" className="btn-primary">Open live scoring</Link> : <button className="btn-primary" onClick={() => setAdminOpen(true)}>Commissioner setup</button>}
+      <h2 className="text-xl font-bold">The board is not ready yet</h2>
+      <p className="text-sm text-gray-600">{state.notice || 'The Open could not be created automatically. Reload the page, and if this keeps happening tell the commissioner.'}</p>
+      <div className="flex flex-wrap gap-3"><button className="btn-primary" onClick={() => void refresh()}>Reload</button><Link href="/register" className="btn-secondary">Register a player</Link></div>
     </div>}
 
     {event && <>
@@ -180,7 +178,7 @@ export default function OpenClient({ compact = false }: { compact?: boolean }) {
         <div className="flex gap-1 p-1 rounded-xl bg-white border border-gray-200" role="tablist" aria-label="Open views">
           {([['open', 'Open leaderboard'], ['season', 'SSL season'], ...(!compact ? [['scoring', 'Scorecards']] : [])] as [typeof tab, string][]).map(([key, label]) => <button key={key} role="tab" aria-selected={tab === key} onClick={() => setTab(key)} className={`px-3 py-2.5 rounded-lg text-xs sm:text-sm font-semibold ${tab === key ? 'bg-green-800 text-white' : 'text-gray-600'}`}>{label}</button>)}
         </div>
-        {compact && <Link href="/ssl-open/live" className="btn-primary"><Flag size={16} className="mr-2" />{event.finalizedAt ? 'Full scorecards' : 'Enter group scores'}</Link>}
+        {compact && <Link href="/ssl-open/live#tab=scoring" className="btn-primary"><Flag size={16} className="mr-2" />{event.finalizedAt ? 'Full scorecards' : 'Enter my scores'}</Link>}
       </div>
       <p className="text-xs text-gray-500">{event.courseName} · {event.teeName || 'Selected tees'} · Par {event.coursePar} · {event.difficulty} SSL course difficulty</p>
 
@@ -188,9 +186,10 @@ export default function OpenClient({ compact = false }: { compact?: boolean }) {
         <div className="grid grid-cols-3 gap-2">
           {event.groups.map((g) => {
             const played = g.players.reduce((sum, p) => sum + p.scores.filter((s) => s > 0).length, 0)
+            const slots = Math.max(1, g.players.length * 18)
             return <button key={g.id} className="bg-white rounded-xl border border-gray-200 p-3 text-left" onClick={() => { setGroupId(g.id); if (!compact) setTab('scoring') }}>
-              <p className="font-bold text-sm text-gray-900">{g.name}</p><p className="text-[11px] text-gray-500 mt-0.5">{g.teeTime} · {g.players.length} players</p>
-              <div className="h-1 bg-green-100 rounded mt-3"><div className="h-1 bg-green-600 rounded" style={{ width: `${played / (g.players.length * 18) * 100}%` }} /></div>
+              <p className="font-bold text-sm text-gray-900">{g.name}</p><p className="text-[11px] text-gray-500 mt-0.5">{teeLabel(g.teeTime)} · {g.players.length} player{g.players.length === 1 ? '' : 's'}</p>
+              <div className="h-1 bg-green-100 rounded mt-3"><div className="h-1 bg-green-600 rounded" style={{ width: `${played / slots * 100}%` }} /></div>
               <p className="text-[10px] text-gray-500 mt-1">{played}/{g.players.length * 18} scores in</p>
             </button>
           })}
@@ -224,25 +223,19 @@ export default function OpenClient({ compact = false }: { compact?: boolean }) {
       </div>}
 
       {tab === 'scoring' && group && <section className="space-y-4">
-        <div className="flex flex-wrap gap-2">{event.groups.map((g) => <button key={g.id} onClick={() => setGroupId(g.id)} className={g.id === group.id ? 'btn-primary' : 'btn-secondary'}>{g.name} · {g.teeTime}</button>)}</div>
-        {!canScore && !event.finalizedAt && <form className="card space-y-3" onSubmit={(e) => { e.preventDefault(); const next = codeInput.trim(); try { localStorage.setItem(CODE_KEY, next) } catch { /* private mode */ } setCode(next) }}>
-          <h2 className="text-lg font-bold">Score for your group</h2><p className="text-sm text-gray-600">Use your group’s private scoring link from the commissioner, or enter its scoring code. Everyone can view the leaderboard.</p>
-          <label className="block text-sm font-medium">Group scoring code<input className="form-input" value={codeInput} onChange={(e) => setCodeInput(e.target.value)} autoComplete="off" required /></label>
-          <button className="btn-primary">Unlock scoring</button>
-          {code && !state?.authorizedGroupId && <p className="text-sm text-red-700">That code does not match a group. Check your scoring link.</p>}
-          {state?.authorizedGroupId && state.authorizedGroupId !== group.id && <button type="button" className="btn-secondary ml-2" onClick={() => setGroupId(state.authorizedGroupId!)}>Go to your group</button>}
-        </form>}
-        <GroupScorecard key={group.id} event={event} group={group} canScore={canScore && !event.finalizedAt} code={code} refresh={refresh} />
+        <WhoIsScoring event={event} me={me} onChoose={chooseMe} onJoined={(next) => { setState(next); setError('') }} onMove={refresh} canScore={canScore} />
+        <div className="flex flex-wrap gap-2">{event.groups.map((g) => <button key={g.id} onClick={() => setGroupId(g.id)} className={g.id === group.id ? 'btn-primary' : 'btn-secondary'}>{groupLabel(g)}</button>)}</div>
+        <GroupScorecard key={group.id} event={event} group={group} me={me} canScore={canScore} refresh={refresh} />
       </section>}
 
       <details className="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-600">
         <summary className="font-semibold text-gray-800 cursor-pointer">How the live projections work</summary>
         <div className="mt-3 space-y-2 leading-relaxed">
-          <p>Projected gross = course par + (strokes over par so far × 18 ÷ holes played). Projected net subtracts the player’s locked event handicap. It’s a pace estimate, not a win probability; a single early hole can move it a lot.</p>
+          <p>Projected gross = course par + (strokes over par so far × 18 ÷ holes played). Projected net subtracts the player’s handicap, frozen when the board was created. It’s a pace estimate, not a win probability; a single early hole can move it a lot.</p>
           <p>Normal pays +5/+3/+1, Hard +10/+6/+2, God +25/+12/+6 for first/second/third overall. These add directly to the SSL season score. Mode does not change the course difficulty multiplier or the Open’s net ranking.</p>
           <p>Double Down compares back-nine net against front-nine net using half the handicap for each. A strictly lower back nine doubles the finish bonus; a tie or worse pays zero. Once back-nine scoring starts, its own pace estimates that nine. Until then we show the possible bonus range.</p>
           <p>Tied places share a rank. The published rules do not specify a prize tiebreak, so an affected bonus stays a range until the commissioner resolves the tie. Season projections use the range’s lower value and hold the current season handicap constant.</p>
-          <p>SSL round points include only the other league players in your own group. Scores already posted from this event are counted once. Final results require all 18 holes and commissioner posting.</p>
+          <p>SSL round points include only the other league players in your own group, so make sure you are listed in the group you actually play with. Final results require all 18 holes and commissioner posting.</p>
         </div>
       </details>
     </>}
@@ -250,19 +243,18 @@ export default function OpenClient({ compact = false }: { compact?: boolean }) {
     {!compact && <section className="pt-3 border-t border-gray-200 space-y-4">
       <button className="text-sm text-gray-500 underline min-h-10" onClick={() => setAdminOpen(!adminOpen)}>{adminOpen ? 'Hide commissioner controls' : 'Commissioner controls'}</button>
       {adminOpen && !state?.isAdmin && <form className="card max-w-sm space-y-3" onSubmit={login}><label className="block text-sm font-medium">Admin password<input type="password" required autoComplete="current-password" className="form-input" value={password} onChange={(e) => setPassword(e.target.value)} /></label><button className="btn-primary" disabled={adminBusy}>Sign in</button></form>}
-      {adminOpen && state?.isAdmin && !event && <OpenSetup onCreated={() => { setAdminNotice(''); void refresh() }} />}
       {adminOpen && state?.isAdmin && event && <div className="card space-y-4">
-        <h2 className="text-xl font-bold">Group scoring links</h2><p className="text-sm text-gray-600">Send each link to that group’s scorer. The link lets them enter scores for every player in their group.</p>
-        {event.groups.map((g) => <div key={g.id} className="space-y-1"><button className="btn-secondary" onClick={() => void copyGroup(g)}>{copied === g.id ? <Check size={15} className="mr-2" /> : <Copy size={15} className="mr-2" />}{copied === g.id ? 'Copied' : `Copy ${g.name} link`}</button><input aria-label={`${g.name} scoring link`} readOnly className="form-input text-xs" value={typeof window === 'undefined' ? '' : groupLink(g)} onFocus={(e) => e.target.select()} /></div>)}
-        <div className="border-t border-gray-100 pt-4 space-y-2">
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold">Post results</h2>
           <button className="btn-primary" disabled={finished.length === 0 || !!event.finalizedAt || adminBusy} onClick={() => void finalize()}>{event.finalizedAt ? 'Results posted to SSL' : adminBusy ? 'Working…' : 'Post final results to SSL'}</button>
           <p className="text-xs text-gray-500">{event.finalizedAt ? `Posted ${new Date(event.finalizedAt).toLocaleString()}.` : `${finished.length} of ${projections.length} players have finished 18 holes. Posts each complete card as an SSL round plus the earned Open bonuses, once, then locks scoring.${podiumTies.length ? ` Podium tie: ${names(podiumTies)} — decide the tiebreak and award that bonus under Admin › Season bonuses.` : ''}`}</p>
         </div>
         {!event.finalizedAt && <div className="border-t border-gray-100 pt-4 space-y-2">
-          <button className="btn-secondary" disabled={adminBusy} onClick={() => void reset()}>Reset Open setup</button>
-          <p className="text-xs text-gray-500">Wrong course, pars or groups? Reset deletes the setup, the scoring links and every live score, so do it before play starts.</p>
+          <button className="btn-secondary" disabled={adminBusy} onClick={() => void reset()}>Reset the Open</button>
+          <p className="text-xs text-gray-500">Deletes the board and every live score. The next visit rebuilds it from the announced field and the course library entry for {event.courseName} (edit that entry in Admin first if the tees or pars are wrong).</p>
         </div>}
       </div>}
+      {adminOpen && state?.isAdmin && !event && <p className="text-sm text-gray-600">Nothing to manage until the board exists. {state?.notice}</p>}
       {adminNotice && <p role="status" className="text-sm text-green-800 bg-green-50 border border-green-200 rounded-xl p-3">{adminNotice}</p>}
       {adminError && <p role="alert" className="text-sm text-red-700">{adminError}</p>}
     </section>}
@@ -279,16 +271,101 @@ function bonusNote(p: OpenProjection) {
   return ({ off: p.holesPlayed === 18 ? 'Finish bonus' : 'Projected bonus', pending: 'DD pending', 'projected-win': 'DD on track', 'projected-loss': 'DD off track', won: 'DD won', lost: 'DD lost' })[p.doubleDownStatus]
 }
 
+/** Pick yourself from the field (remembered on this phone), switch groups, or join if you are not listed. */
+function WhoIsScoring({ event, me, canScore, onChoose, onJoined, onMove }: {
+  event: OpenEvent; me: string; canScore: boolean
+  onChoose: (player: OpenPlayer | null, group?: OpenGroup) => void
+  onJoined: (state: OpenState) => void
+  onMove: () => Promise<void>
+}) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const myGroup = event.groups.find((g) => g.players.some((p) => p.id === me))
+  const myself = myGroup?.players.find((p) => p.id === me)
+
+  async function move(target: OpenGroup) {
+    if (!myself || !myGroup || target.id === myGroup.id) return
+    if (!confirm(`Move ${displayName(myself.name)} to ${groupLabel(target)}? SSL group points count the players you actually play with.`)) return
+    setBusy(true); setError('')
+    try { await playerRequest(myself, { groupId: target.id }); onChoose(myself, target) }
+    catch (e) { setError((e as Error).message) }
+    finally { await onMove(); setBusy(false) }
+  }
+
+  return <div className="card space-y-4">
+    <div>
+      <h2 className="text-lg font-bold">Who’s scoring?</h2>
+      <p className="text-sm text-gray-600">Tap your name. Anyone can enter scores for their group, so one phone per group works too.</p>
+    </div>
+    <div className="space-y-3">
+      {event.groups.map((g) => <div key={g.id} className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold text-gray-500 w-full sm:w-auto sm:min-w-28">{groupLabel(g)}</span>
+        {g.players.length === 0 && <span className="text-xs text-gray-400">Nobody yet</span>}
+        {g.players.map((p) => <button key={p.id} type="button" onClick={() => onChoose(p.id === me ? null : p, p.id === me ? undefined : g)} aria-pressed={p.id === me} className={`min-h-10 px-3 rounded-full border text-sm font-semibold ${p.id === me ? 'bg-green-800 text-white border-green-800' : 'bg-white text-gray-800 border-gray-200'}`}>{displayName(p.name)}</button>)}
+      </div>)}
+    </div>
+    {myself && myGroup && <div className="flex flex-wrap items-center gap-2 text-sm rounded-xl bg-green-50 border border-green-200 p-3">
+      <span>You’re <strong>{displayName(myself.name)}</strong> in <strong>{groupLabel(myGroup)}</strong>.</span>
+      {canScore && <label className="text-xs font-medium text-gray-600 flex items-center gap-2">Wrong group?<select className="form-input !py-1.5 !w-auto" value={myGroup.id} disabled={busy} onChange={(e) => { const target = event.groups.find((g) => g.id === e.target.value); if (target) void move(target) }}>{event.groups.map((g) => <option key={g.id} value={g.id}>{groupLabel(g)}</option>)}</select></label>}
+    </div>}
+    {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
+    {canScore && <JoinOpen event={event} onJoined={onJoined} />}
+  </div>
+}
+
+function JoinOpen({ event, onJoined }: { event: OpenEvent; onJoined: (state: OpenState) => void }) {
+  const [open, setOpen] = useState(false)
+  const [members, setMembers] = useState<Member[] | null>(null)
+  const [memberId, setMemberId] = useState('')
+  const [groupId, setGroupId] = useState(event.groups[0]?.id ?? '')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const inField = new Set(event.groups.flatMap((g) => g.players.map((p) => p.memberId)))
+
+  useEffect(() => {
+    if (!open || members) return
+    fetch('/api/members', { cache: 'no-store' }).then((r) => r.json())
+      .then((data) => setMembers(Array.isArray(data) ? (data as Member[]).filter((m) => m.is_active) : []))
+      .catch(() => setError('Could not load the member list. Please try again.'))
+  }, [open, members])
+
+  async function join(e: React.FormEvent) {
+    e.preventDefault(); setBusy(true); setError('')
+    try {
+      const next: OpenState = await jsonRequest('/api/ssl-open/players', json({ memberId, groupId }, 'POST'))
+      onJoined(next); setOpen(false); setMemberId('')
+    } catch (e) { setError((e as Error).message) }
+    finally { setBusy(false) }
+  }
+
+  const available = (members ?? []).filter((m) => !inField.has(m.id))
+  return <div className="border-t border-gray-100 pt-3">
+    {!open ? <button type="button" className="text-sm text-green-800 font-semibold underline underline-offset-2 min-h-10 flex items-center gap-1" onClick={() => setOpen(true)}><UserPlus size={15} />Not in the list? Join the Open</button>
+      : <form className="flex flex-wrap items-end gap-2" onSubmit={join}>
+        <label className="text-xs font-medium text-gray-600">Player<select required className="form-input" value={memberId} disabled={busy || !members} onChange={(e) => setMemberId(e.target.value)}>
+          <option value="">{members ? (available.length ? 'Choose your name' : 'Everyone is already in') : 'Loading…'}</option>
+          {available.map((m) => <option key={m.id} value={m.id}>{displayName(m.full_name)} · HC {m.current_handicap}</option>)}
+        </select></label>
+        <label className="text-xs font-medium text-gray-600">Group<select className="form-input" value={groupId} disabled={busy} onChange={(e) => setGroupId(e.target.value)}>{event.groups.map((g) => <option key={g.id} value={g.id}>{groupLabel(g)}</option>)}</select></label>
+        <button className="btn-primary" disabled={busy || !memberId}>{busy ? 'Joining…' : 'Join'}</button>
+        <button type="button" className="btn-secondary" disabled={busy} onClick={() => { setOpen(false); setError('') }}>Cancel</button>
+        <p className="w-full text-xs text-gray-500">Not a member yet? <Link className="underline" href="/register">Register</Link> first, then join here.</p>
+        {error && <p role="alert" className="w-full text-sm text-red-700">{error}</p>}
+      </form>}
+  </div>
+}
+
 const validStrokes = (draft: string) => draft === '' || (/^\d{1,2}$/.test(draft) && Number(draft) >= 1 && Number(draft) <= 20)
 
 /**
- * One hole at a time for the whole group. Every player's strokes for the hole
- * are typed first, then saved together with one tap; each player's card still
- * saves on its own request so a conflict on one phone never blocks the others.
+ * One hole at a time for the whole group. Fill in whoever you are scoring for,
+ * then save once; each player's card still saves on its own request so a
+ * conflict on one phone never blocks the others.
  */
-function GroupScorecard({ event, group, canScore, code, refresh }: { event: OpenEvent; group: OpenGroup; canScore: boolean; code: string; refresh: () => Promise<void> }) {
+function GroupScorecard({ event, group, me, canScore, refresh }: { event: OpenEvent; group: OpenGroup; me: string; canScore: boolean; refresh: () => Promise<void> }) {
   const [hole, setHole] = useState(() => {
-    const next = event.holePars.findIndex((_, i) => group.players.some((p) => !p.scores[i]))
+    const mine = group.players.find((p) => p.id === me)
+    const next = event.holePars.findIndex((_, i) => mine ? !mine.scores[i] : group.players.some((p) => !p.scores[i]))
     return next < 0 ? 18 : next + 1
   })
   const [drafts, setDrafts] = useState<Record<string, string>>({})
@@ -312,22 +389,22 @@ function GroupScorecard({ event, group, canScore, code, refresh }: { event: Open
     setDrafts({}); setErrors({}); setSaved({}); setHole(next)
   }
 
+  const without = (map: Record<string, string>, id: string) => Object.fromEntries(Object.entries(map).filter(([key]) => key !== id))
   const edit = (player: OpenPlayer, value: string) => {
     setDrafts((old) => ({ ...old, [player.id]: value }))
-    setErrors((old) => { const { [player.id]: _, ...rest } = old; return rest })
-    setSaved((old) => { const { [player.id]: _, ...rest } = old; return rest })
+    setErrors((old) => without(old, player.id))
+    setSaved((old) => { const next = { ...old }; delete next[player.id]; return next })
   }
-
   const discard = (player: OpenPlayer) => {
-    setDrafts((old) => { const { [player.id]: _, ...rest } = old; return rest })
-    setErrors((old) => { const { [player.id]: _, ...rest } = old; return rest })
+    setDrafts((old) => without(old, player.id))
+    setErrors((old) => without(old, player.id))
   }
 
   // Mode and Double Down are single declarations, saved the moment they are made.
   async function declare(player: OpenPlayer, fields: Record<string, unknown>) {
     setBusy(true)
-    setErrors((old) => { const { [player.id]: _, ...rest } = old; return rest })
-    try { await playerRequest(player, code, fields) }
+    setErrors((old) => without(old, player.id))
+    try { await playerRequest(player, fields) }
     catch (e) { setErrors((old) => ({ ...old, [player.id]: (e as Error).message })) }
     finally { await refresh(); setBusy(false) }
   }
@@ -345,7 +422,7 @@ function GroupScorecard({ event, group, canScore, code, refresh }: { event: Open
     for (const player of dirty) {
       const draft = drafts[player.id]
       try {
-        await playerRequest(player, code, { hole, strokes: draft === '' ? null : Number(draft) })
+        await playerRequest(player, { hole, strokes: draft === '' ? null : Number(draft) })
         done[player.id] = true
       } catch (e) { failures[player.id] = (e as Error).message }
     }
@@ -357,30 +434,32 @@ function GroupScorecard({ event, group, canScore, code, refresh }: { event: Open
     if (advance && Object.keys(failures).length === 0 && hole < 18) { setSaved({}); setHole(hole + 1) }
   }
 
+  const ordered = [...group.players].sort((a, b) => Number(b.id === me) - Number(a.id === me))
+
   return <div className="space-y-4">
     <form className="card space-y-5" onSubmit={(e) => { e.preventDefault(); void saveHole(true) }}>
-      <div className="flex items-center justify-between gap-3"><button type="button" aria-label="Previous hole" className="btn-secondary px-3" disabled={hole === 1} onClick={() => goTo(hole - 1)}><ChevronLeft size={20} /></button><div className="text-center"><p className="text-xs text-gray-500">{group.name} · {hole <= 9 ? 'Front nine' : 'Back nine'}</p><h2 className="text-2xl font-bold">Hole {hole} <span className="text-base font-normal text-gray-500">/ Par {par}</span></h2></div><button type="button" aria-label="Next hole" className="btn-secondary px-3" disabled={hole === 18} onClick={() => goTo(hole + 1)}><ChevronRight size={20} /></button></div>
-      <div className="grid grid-cols-9 gap-1">{event.holePars.map((_, i) => <button type="button" key={i} onClick={() => goTo(i + 1)} className={`min-h-10 text-sm font-semibold rounded-lg border ${hole === i + 1 ? 'bg-green-800 text-white border-green-800' : group.players.every((p) => p.scores[i] > 0) ? 'bg-green-50 text-green-800 border-green-200' : 'bg-white border-gray-200 text-gray-500'}`} aria-label={`Hole ${i + 1}`} aria-pressed={hole === i + 1}>{i + 1}</button>)}</div>
-      {!canScore && <p className="text-xs text-gray-500">{event.finalizedAt ? 'Final scorecards · scoring is closed.' : 'Viewing saved scores. Unlock your group to enter scores.'}</p>}
-      {group.players.map((player) => <PlayerHole key={player.id} player={player} hole={hole} par={par} canScore={canScore} busy={busy} draft={drafts[player.id]} error={errors[player.id]} saved={!!saved[player.id]} onEdit={(value) => edit(player, value)} onDiscard={() => discard(player)} onDeclare={(fields) => void declare(player, fields)} />)}
-      {canScore && <div className="space-y-2 pt-1">
+      <div className="flex items-center justify-between gap-3"><button type="button" aria-label="Previous hole" className="btn-secondary px-3" disabled={hole === 1} onClick={() => goTo(hole - 1)}><ChevronLeft size={20} /></button><div className="text-center"><p className="text-xs text-gray-500">{groupLabel(group)} · {hole <= 9 ? 'Front nine' : 'Back nine'}</p><h2 className="text-2xl font-bold">Hole {hole} <span className="text-base font-normal text-gray-500">/ Par {par}</span></h2></div><button type="button" aria-label="Next hole" className="btn-secondary px-3" disabled={hole === 18} onClick={() => goTo(hole + 1)}><ChevronRight size={20} /></button></div>
+      <div className="grid grid-cols-9 gap-1">{event.holePars.map((_, i) => <button type="button" key={i} onClick={() => goTo(i + 1)} className={`min-h-10 text-sm font-semibold rounded-lg border ${hole === i + 1 ? 'bg-green-800 text-white border-green-800' : group.players.length > 0 && group.players.every((p) => p.scores[i] > 0) ? 'bg-green-50 text-green-800 border-green-200' : 'bg-white border-gray-200 text-gray-500'}`} aria-label={`Hole ${i + 1}`} aria-pressed={hole === i + 1}>{i + 1}</button>)}</div>
+      {!canScore && <p className="text-xs text-gray-500">Final scorecards · scoring is closed.</p>}
+      {group.players.length === 0 && <p className="text-sm text-gray-500">Nobody is in this group yet. Pick your name above and use “Wrong group?” to move here.</p>}
+      {ordered.map((player) => <PlayerHole key={player.id} player={player} hole={hole} par={par} isMe={player.id === me} canScore={canScore} busy={busy} draft={drafts[player.id]} error={errors[player.id]} saved={!!saved[player.id]} onEdit={(value) => edit(player, value)} onDiscard={() => discard(player)} onDeclare={(fields) => void declare(player, fields)} />)}
+      {canScore && group.players.length > 0 && <div className="space-y-2 pt-1">
         <div className="flex flex-wrap gap-2">
           <button type="submit" className="btn-primary min-h-12 flex-1" disabled={busy}>{busy ? 'Saving…' : hole === 18 ? (hasDirty ? 'Save hole 18' : 'Hole 18 saved') : hasDirty ? `Save hole ${hole} & next` : 'Next hole'}</button>
           {hasDirty && hole < 18 && <button type="button" className="btn-secondary min-h-12" disabled={busy} onClick={() => void saveHole(false)}>Save, stay here</button>}
         </div>
-        <p className="text-xs text-gray-500">Enter each player’s gross strokes for hole {hole}, including penalties, then save. A checkmark confirms the server has the score. Blank holes stay unplayed.</p>
+        <p className="text-xs text-gray-500">Enter gross strokes for hole {hole}, including penalties, then save. A checkmark confirms the server has the score. Blank holes stay unplayed.</p>
       </div>}
     </form>
-    <div className="card p-0 overflow-x-auto"><table className="table-base w-full whitespace-nowrap"><caption className="text-left text-sm font-bold px-4 py-3">{group.name} · full scorecards</caption><thead><tr><th>Player</th>{event.holePars.map((_, i) => <th key={i}>{i + 1}</th>)}<th>Total</th></tr></thead><tbody><tr><td>Par</td>{event.holePars.map((p, i) => <td key={i}>{p}</td>)}<td>{event.coursePar}</td></tr>{group.players.map((p) => <tr key={p.id}><td className="font-semibold">{displayName(p.name)}</td>{p.scores.map((s, i) => <td key={i}>{s || '—'}</td>)}<td className="font-bold">{p.scores.reduce((a, b) => a + b, 0) || '—'}</td></tr>)}</tbody></table></div>
+    <div className="card p-0 overflow-x-auto"><table className="table-base w-full whitespace-nowrap"><caption className="text-left text-sm font-bold px-4 py-3">{groupLabel(group)} · full scorecards</caption><thead><tr><th>Player</th>{event.holePars.map((_, i) => <th key={i}>{i + 1}</th>)}<th>Total</th></tr></thead><tbody><tr><td>Par</td>{event.holePars.map((p, i) => <td key={i}>{p}</td>)}<td>{event.coursePar}</td></tr>{group.players.map((p) => <tr key={p.id}><td className="font-semibold">{displayName(p.name)}</td>{p.scores.map((s, i) => <td key={i}>{s || '—'}</td>)}<td className="font-bold">{p.scores.reduce((a, b) => a + b, 0) || '—'}</td></tr>)}</tbody></table></div>
   </div>
 }
 
-function PlayerHole({ player, hole, par, canScore, busy, draft, error, saved, onEdit, onDiscard, onDeclare }: {
-  player: OpenPlayer; hole: number; par: number; canScore: boolean; busy: boolean
+function PlayerHole({ player, hole, par, isMe, canScore, busy, draft, error, saved, onEdit, onDiscard, onDeclare }: {
+  player: OpenPlayer; hole: number; par: number; isMe: boolean; canScore: boolean; busy: boolean
   draft: string | undefined; error: string | undefined; saved: boolean
   onEdit: (value: string) => void; onDiscard: () => void; onDeclare: (fields: Record<string, unknown>) => void
 }) {
-  const [mode, setMode] = useState<OpenMode>(player.mode || 'normal')
   const frontDone = player.scores.slice(0, 9).every((s) => s > 0)
   const backStarted = player.scores.slice(9).some((s) => s > 0)
   const hasScores = player.scores.some((s) => s > 0)
@@ -388,9 +467,12 @@ function PlayerHole({ player, hole, par, canScore, busy, draft, error, saved, on
   const dirty = draft !== undefined && draft !== String(player.scores[hole - 1] || '')
   const strokes = value === '' ? null : Number(value)
 
-  return <div className="border-t border-gray-100 pt-4 space-y-3">
-    <div className="flex justify-between items-start gap-3"><div><h3 className="font-bold text-lg">{displayName(player.name)}</h3><p className="text-xs text-gray-500">HC {number(player.handicap)} · <span className="capitalize">{player.mode || 'Declare mode before scoring'}</span>{player.doubleDown && ' · Double Down'}</p></div><p className="text-lg font-bold tabular-nums">{hasScores ? player.scores.reduce((a, b) => a + b, 0) : '—'}<span className="block text-[10px] text-gray-500 font-normal">gross so far</span></p></div>
-    {canScore && !hasScores && <div className="flex flex-wrap items-end gap-2"><label className="text-xs font-medium text-gray-600">First-tee mode<select className="form-input" value={mode} onChange={(e) => setMode(e.target.value as OpenMode)} disabled={busy}>{Object.entries(OPEN_BONUSES).map(([m, bonuses]) => <option key={m} value={m}>{m[0].toUpperCase() + m.slice(1)} · +{bonuses.join('/+')}</option>)}</select></label><button type="button" className="btn-secondary" disabled={busy || player.mode === mode} onClick={() => onDeclare({ mode })}>{player.mode ? 'Update mode' : 'Declare mode'}</button><p className="text-xs text-gray-500 w-full">Say it to your group. Your mode locks when your first score is saved.</p></div>}
+  return <div className={`border-t border-gray-100 pt-4 space-y-3 ${isMe ? '-mx-3 px-3 rounded-xl bg-green-50/60' : ''}`}>
+    <div className="flex justify-between items-start gap-3"><div><h3 className="font-bold text-lg">{displayName(player.name)}{isMe && <span className="ml-2 text-[10px] uppercase tracking-widest text-green-800 font-bold">you</span>}</h3><p className="text-xs text-gray-500">HC {number(player.handicap)} · {player.mode ? `${capitalize(player.mode)} mode` : 'Mode not declared'}{player.doubleDown && ' · Double Down'}</p></div><p className="text-lg font-bold tabular-nums">{hasScores ? player.scores.reduce((a, b) => a + b, 0) : '—'}<span className="block text-[10px] text-gray-500 font-normal">gross so far</span></p></div>
+    {canScore && !hasScores && <div className="space-y-2">
+      <p className="text-xs font-medium text-gray-600">{player.mode ? 'First-tee mode (locks with the first saved score)' : 'Declare a mode on the first tee to start scoring'}</p>
+      <div className="grid grid-cols-3 gap-2">{(Object.entries(OPEN_BONUSES) as [OpenMode, number[]][]).map(([mode, bonuses]) => <button key={mode} type="button" disabled={busy} aria-pressed={player.mode === mode} onClick={() => { if (player.mode !== mode) onDeclare({ mode }) }} className={`min-h-12 rounded-xl border text-sm font-semibold ${player.mode === mode ? 'bg-green-800 text-white border-green-800' : 'bg-white border-gray-200 text-gray-800'}`}>{capitalize(mode)}<span className={`block text-[10px] font-normal ${player.mode === mode ? 'text-green-100' : 'text-gray-500'}`}>+{bonuses.join('/+')}</span></button>)}</div>
+    </div>}
     {canScore && frontDone && !backStarted && <div className="rounded-xl bg-green-50 border border-green-200 p-3 text-sm space-y-2"><p className="font-semibold">At the turn: Double Down?</p><p className="text-xs text-gray-600">Say it to your group before playing hole 10. Beat your front-nine net to double your finish bonus; tie or worse means zero.</p><button type="button" disabled={busy} onClick={() => { if (confirm(player.doubleDown ? 'Withdraw Double Down before starting the back nine?' : 'Declare Double Down to your group now?')) onDeclare({ doubleDown: !player.doubleDown }) }} className="btn-secondary">{player.doubleDown ? 'Double Down declared · undo' : 'Declare Double Down'}</button></div>}
     {canScore ? <div className="flex items-end gap-3">
       <label className="block text-xs font-medium text-gray-600 flex-1">Hole {hole} strokes<input type="number" inputMode="numeric" min={1} max={20} step={1} aria-label={`${displayName(player.name)} hole ${hole} strokes`} className="form-input !text-xl !py-3 tabular-nums" placeholder={player.mode ? String(par) : 'Declare mode first'} disabled={busy || !player.mode} value={value} onChange={(e) => onEdit(e.target.value)} /></label>
