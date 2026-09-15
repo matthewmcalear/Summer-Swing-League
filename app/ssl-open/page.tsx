@@ -1,21 +1,10 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import OpenClient from './live/OpenClient'
+import { OPEN_FIELD_PLAYERS } from '@/lib/open-types'
 import { Calendar, MapPin, Trophy, AlertCircle } from 'lucide-react'
 
 export const metadata = { title: 'SSL Open 2026 — Summer Swing League' }
-
-const OPEN_FIELD_PLAYERS = [
-  'Matthew McAlear',
-  'Thomas McAlear',
-  'Dan McAlear',
-  'Connor Peltz',
-  'Alex Sokaris',
-  'Tibi Mitran',
-  'Shaun Anderson',
-  'Spence Goodwin',
-  'Rachel Kuta',
-  'Nicholas Clarke',
-]
 
 export default function SSLOpenPage() {
   return (
@@ -91,43 +80,7 @@ export default function SSLOpenPage() {
         </div>
       </div>
 
-      {/* ── Results — Preliminary Leaderboard ── */}
-      <div className="card">
-        <h2 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-          <Trophy size={20} strokeWidth={2} className="text-green-700" aria-hidden="true" />
-          Results
-        </h2>
-        <p className="text-xs text-gray-500 mb-4 italic">Preliminary — starting scores before the event</p>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b-2 border-gray-200">
-                <th className="text-left py-2 px-2 font-bold text-gray-700">Rank</th>
-                <th className="text-left py-2 px-3 font-bold text-gray-700">Player</th>
-                <th className="text-center py-2 px-2 font-bold text-gray-700">Mode</th>
-                <th className="text-center py-2 px-2 font-bold text-gray-700">Net Score</th>
-                <th className="text-center py-2 px-2 font-bold text-gray-700">Open Bonus</th>
-              </tr>
-            </thead>
-            <tbody>
-              {OPEN_FIELD_PLAYERS.map((name, index) => (
-                <tr key={name} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-2.5 px-2 text-gray-600 font-medium">T1</td>
-                  <td className="py-2.5 px-3 font-semibold text-gray-900">{name}</td>
-                  <td className="py-2.5 px-2 text-center text-gray-400">—</td>
-                  <td className="py-2.5 px-2 text-center font-bold text-gray-900 tabular-nums">0</td>
-                  <td className="py-2.5 px-2 text-center text-gray-400">—</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        
-        <p className="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-100">
-          Final results will be posted after September 19, 2026
-        </p>
-      </div>
+      <OpenClient compact />
 
       {/* ── RULES SECTION ── */}
       <div className="space-y-6 pt-4">

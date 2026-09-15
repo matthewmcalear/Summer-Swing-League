@@ -229,3 +229,65 @@ model LiveHoleScore {
   @@unique([live_round_id, hole])
   @@map("live_hole_scores")
 }
+
+// SSL Open: snapshot the field/course so live scoring stays stable during play.
+model SslOpenEvent {
+  id            String    @id
+  course_id     String    @db.Uuid
+  course_name   String
+  tee_name      String
+  play_date     DateTime  @db.Date
+  course_rating Float
+  slope_rating  Int
+  course_par    Int
+  hole_pars     Int[]
+  difficulty    String
+  finalized_at  DateTime?
+  updated_at    DateTime  @default(now()) @updatedAt
+
+  groups SslOpenGroup[]
+  players SslOpenPlayer[]
+
+  @@map("ssl_open_events")
+}
+
+model SslOpenGroup {
+  id           String @id @default(uuid()) @db.Uuid
+  event_id     String
+  name         String
+  tee_time     String
+  sort_order   Int
+  scoring_code String @unique
+
+  event   SslOpenEvent    @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  players SslOpenPlayer[]
+
+  @@unique([event_id, sort_order])
+  @@map("ssl_open_groups")
+}
+
+model SslOpenPlayer {
+  id              String    @id @default(uuid()) @db.Uuid
+  event_id        String
+  group_id        String    @db.Uuid
+  member_id       String    @db.Uuid
+  player_name     String
+  handicap        Float
+  sort_order      Int
+  mode            String?
+  double_down     Boolean   @default(false)
+  scores          Int[]
+  version         Int       @default(0)
+  // Keep these locks even when a previously entered hole is cleared.
+  started_at      DateTime?
+  back_started_at DateTime?
+  score_id        String?   @unique @db.Uuid
+  bonus_id        String?   @unique @db.Uuid
+
+  event SslOpenEvent @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  group SslOpenGroup @relation(fields: [group_id], references: [id], onDelete: Cascade)
+
+  @@unique([event_id, member_id])
+  @@unique([group_id, sort_order])
+  @@map("ssl_open_players")
+}
