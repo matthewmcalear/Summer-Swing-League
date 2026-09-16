@@ -10,6 +10,7 @@
   const names = {Kings:'Alex Mashaal',Hawks:'Adam Ciampini',Devils:'Emile Murciano',Yeti:'Steve McAlear',Lightning:'Philippe Martin',Coyotes:'Keane Kelly-Menard'};
   const teamName = team => team;
   const byId = new Map(PLAYERS.map(p => [p.id,p]));
+  const projections = typeof PROJECTIONS !== 'undefined' ? PROJECTIONS : null;
   const owner = id => E.TEAMS.find(t => E.CAPTAIN_IDS[t] === id);
   const playerName = p => {
     if (!p) return 'Unknown player';
@@ -145,7 +146,20 @@
       const disabled = team === 'New' || !!previewState || drafted;
       return `<div class="captain-row"><span>${esc(names[team])}${drafted?'<span class="tag">drafted</span>':''}</span><input type="number" min="1" max="${cfg.rounds}" value="${cfg.captainRounds[team]}" data-captain-round="${team}" aria-label="${esc(names[team])} self-pick round" ${disabled?'disabled':''}><label><input type="checkbox" data-captain-confirm="${team}" ${cfg.confirmedCaptainRounds[team]?'checked':''} ${disabled?'disabled':''}>${team==='New'?'Required':'Agreed'}</label></div>`;
     }).join('');
+    const projectionsHtml = projections ? (() => {
+      const teams = cfg.order.filter(t => projections[t] && t !== 'Yeti');
+      const rows = teams.map(team => {
+        const rounds = Object.entries(projections[team]).sort(([a],[b]) => Number(a) - Number(b));
+        const picks = rounds.map(([r, id]) => {
+          const p = byId.get(id);
+          return `R${r}: ${p ? esc(playerName(p)) : esc(id)}`;
+        }).join(' · ');
+        return `<div class="projection-row"><strong>${esc(teamName(team))}</strong> <span class="muted">${picks}</span></div>`;
+      }).join('');
+      return `<div class="projections-panel"><h3>Locked opponent queues (Sept 16)</h3><p>Matthew's projections from the Google Sheet. Non-Yeti mocks/sims prefer these when legal. Yeti recommendations stay free (only Steven's R3 self-pick is locked).</p>${rows}</div>`;
+    })() : '';
     $('setup-content').innerHTML = `<div class="setup-grid"><div><h2>First-round order</h2><p>${locked?'Order is locked once a pick is recorded. Undo all picks or start a new draft to change it.':'Provisional order. Use the arrows to match the draft-night draw.'} The order reverses each round.</p><div class="order-list">${order}</div><p>Team names are last year’s working labels; the sixth team is shown under Keane.</p></div><div><h2>Captain self-pick rounds</h2><p>Keane must pick himself in round 1. The other rounds below are planning defaults from last year; edit after negotiation and mark Agreed to enforce them.</p>${captains}</div></div>
+      ${projectionsHtml}
       <div class="setup-bottom"><label>Planning length <input id="rounds" type="number" min="1" max="30" value="${cfg.rounds}" ${locked?'disabled':''}> rounds</label><label><input id="use-history" type="checkbox" ${cfg.useHistory?'checked':''} ${previewState?'disabled':''}> Use last year’s draft as a demand estimate</label><button id="import" class="quiet" ${previewState?'disabled':''}>Restore backup</button><button id="reset" class="quiet" ${previewState?'disabled':''}>New draft</button></div>
       <div class="season-details"><p><strong>${PLAYERS.length} listed players: ${ROSTER_INFO.skaters} skaters and ${ROSTER_INFO.goalies} goalies.</strong> ${esc(ROSTER_INFO.goalieNote)} Listed goalies are included in previews.</p><p>${cfg.rounds} rounds gives ${cfg.rounds*6} draft slots. The 14-round default comes from last year; confirm this year’s roster size. Each team is limited to one goalie.</p><p>Showcase Monday Sept 14, 8:50–10:00 p.m. · Draft Thursday Sept 17 · Opener Tuesday Sept 22. <a href="https://forms.gle/GQEHyuuj8kP381jA7" target="_blank" rel="noopener noreferrer">Showcase attendance form</a></p><p>Games: Tuesdays 9:00 &amp; 10:20 p.m., Wednesdays 10:20 p.m., Thursdays 9:00 &amp; 10:20 p.m. Check each week’s rink and schedule.</p><p>Roster: Updated - Senior Draft List.xlsx. Historical draft: last year’s image. <a href="https://docs.google.com/spreadsheets/d/1X3MX4sJTHIX64vdTTWaY1Utka0ul7n_jSA-f8CnIowI/edit?gid=732400518" target="_blank" rel="noopener noreferrer">League data sheet</a></p></div>`;
   }
@@ -254,7 +268,7 @@
   }
   function render() {
     const s = current();
-    const rec = E.recommend(s,PLAYERS);
+    const rec = E.recommend(s,PLAYERS,projections);
     const outlook = E.targetOutlook(s,PLAYERS);
     $('notice').hidden = !recoveryMessage;
     $('notice').className = 'notice';
@@ -310,7 +324,7 @@
     if (button.id==='mock') {
       busy=true; $('mock').textContent='Building preview…';
       setTimeout(()=> {
-        try { previewState=E.runMock(liveState,PLAYERS); view='teams'; }
+        try { previewState=E.runMock(liveState,PLAYERS,projections); view='teams'; }
         catch(error) { toast(error.message); }
         finally { busy=false; $('mock').textContent='Preview full draft'; render(); window.scrollTo({top:0,behavior:'smooth'}); }
       },25);
@@ -319,7 +333,7 @@
       const n=Math.max(1,Math.min(200,parseInt($('sim-count').value,10)||25)); $('sim-count').value=n;
       busy=true; $('run-sims').textContent='Simulating…'; $('run-sims').disabled=true;
       setTimeout(()=> {
-        try { simulations=E.simulate(liveState,PLAYERS,n); }
+        try { simulations=E.simulate(liveState,PLAYERS,projections,n); }
         catch(error) { toast(error.message); }
         finally { busy=false; $('run-sims').textContent='Run simulations'; render(); }
       },25);
@@ -336,9 +350,9 @@
     if (input.id==='rounds') updateConfig({rounds:Number(input.value)});
     if (input.id==='use-history') updateConfig({useHistory:input.checked});
     if (input.id==='prioritize-targets') updateConfig({prioritizeTargets:input.checked});
-    if (input.id==='sort' || input.id==='filter') renderBoard(current(),E.recommend(current(),PLAYERS));
+    if (input.id==='sort' || input.id==='filter') renderBoard(current(),E.recommend(current(),PLAYERS,projections));
   });
-  $('search').addEventListener('input',()=>renderBoard(current(),E.recommend(current(),PLAYERS)));
+  $('search').addEventListener('input',()=>renderBoard(current(),E.recommend(current(),PLAYERS,projections)));
   $('import-file').addEventListener('change',async event => {
     const file=event.target.files[0]; if (!file) return;
     try {
