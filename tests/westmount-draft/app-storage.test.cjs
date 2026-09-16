@@ -14,12 +14,19 @@ const LEGACY_KEYS = ['wsl-draft-v18', 'wsl-draft-v17', 'wsl-draft-v16'];
 // This is the shape persisted by the deployed v18 page and its v17/v16
 // predecessors: history is an ID array, with ownership in a separate map.
 function legacyDraft(ids) {
-  let state = E.createState();
-  for (const id of ids) state = E.pickPlayer(state, PLAYERS, id);
+  // Legacy drafts used the old order with old team names
+  const oldOrder = ['Devils', 'Kings', 'Flyers', 'Yeti', 'Hawks', 'New'];
+  const taken = {};
+  for (let i = 0; i < ids.length; i++) {
+    const round = Math.floor(i / 6);
+    const slot = i % 6;
+    const team = oldOrder[round % 2 ? 5 - slot : slot];
+    taken[ids[i]] = team;
+  }
   return {
-    order: [...state.config.order], slot: state.config.order.indexOf('Yeti') + 1,
+    order: oldOrder, slot: oldOrder.indexOf('Yeti') + 1,
     pick: ids.length,
-    taken: Object.fromEntries(state.history.map(entry => [entry.id, entry.team])),
+    taken,
     history: [...ids], view: 'board', usePolitics: false, useIntel: true,
     orderExpanded: false,
   };
@@ -76,7 +83,8 @@ for (const key of LEGACY_KEYS) {
     const app = boot({ [key]: raw });
     const restored = app.state();
     assert.deepEqual(restored.history, [{ id: 'Smith, Michael', team: 'Devils', pick: 1 }]);
-    assert.deepEqual(restored.config.order, legacy.order);
+    // Team names are migrated: Flyers → Lightning, New → Coyotes
+    assert.deepEqual(restored.config.order, ['Devils', 'Kings', 'Lightning', 'Yeti', 'Hawks', 'Coyotes']);
     assert.match(app.element('notice').innerHTML, /previous draft was restored/);
     assert.equal(app.recovery(), raw);
     assert.deepEqual(app.writes, [], 'loading and downloading do not rewrite stored drafts');

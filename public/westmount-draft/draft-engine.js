@@ -14,17 +14,17 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
-  const TEAMS = Object.freeze(['Kings', 'Hawks', 'Devils', 'Yeti', 'Flyers', 'New']);
+  const TEAMS = Object.freeze(['Kings', 'Hawks', 'Devils', 'Yeti', 'Lightning', 'Coyotes']);
   const CAPTAIN_IDS = Object.freeze({
     Yeti: 'McAlear, Steven', Devils: 'Murciano, Emile', Kings: 'Mashaal, Alexander',
-    Flyers: 'Martin, Philippe', Hawks: 'Ciampini, Adam', New: 'Kelly-Menard, Keane',
+    Lightning: 'Martin, Philippe', Hawks: 'Ciampini, Adam', Coyotes: 'Kelly-Menard, Keane',
   });
   const DEFAULT_TARGETS = Object.freeze([
     'Ong Tone, Christopher', 'Toledano, David', 'McAlear, Peter',
     'McAlear, Thomas', 'McAlear, Matthew', 'McAlear, Daniel',
   ]);
   const OWNERS = new Map(Object.entries(CAPTAIN_IDS).map(([team, id]) => [id, team]));
-  const DEFAULT_ORDER = ['Devils', 'Kings', 'Flyers', 'Yeti', 'Hawks', 'New'];
+  const DEFAULT_ORDER = ['Hawks', 'Kings', 'Coyotes', 'Devils', 'Yeti', 'Lightning'];
   const models = new WeakMap();
   const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
   const isNumber = value => typeof value === 'number' && Number.isFinite(value);
@@ -37,8 +37,8 @@
       version: 2,
       config: {
         order: DEFAULT_ORDER.slice(), rounds: 14,
-        captainRounds: { Yeti: 2, Kings: 3, Hawks: 9, Devils: 11, Flyers: 10, New: 1 },
-        confirmedCaptainRounds: { Yeti: false, Kings: false, Hawks: false, Devils: false, Flyers: false, New: true },
+        captainRounds: { Yeti: 2, Kings: 3, Hawks: 9, Devils: 11, Lightning: 10, Coyotes: 1 },
+        confirmedCaptainRounds: { Yeti: false, Kings: false, Hawks: false, Devils: false, Lightning: false, Coyotes: true },
         targets: DEFAULT_TARGETS.slice(), prioritizeTargets: true, useHistory: true,
       },
       history: [],
@@ -91,8 +91,8 @@
     let pool = available(state, players).filter(p => (!OWNERS.has(p.id) || OWNERS.get(p.id) === team) && (!isGoalie(p) || !hasG));
     const captain = pool.find(p => p.id === CAPTAIN_IDS[team]);
     const round = roundOf(state.history.length);
-    const planned = team === 'New' ? 1 : state.config.captainRounds[team];
-    const confirmed = team === 'New' || state.config.confirmedCaptainRounds[team];
+    const planned = team === 'Coyotes' ? 1 : state.config.captainRounds[team];
+    const confirmed = team === 'Coyotes' || state.config.confirmedCaptainRounds[team];
     if (captain && confirmed) {
       if (round >= planned) return [captain];
       pool = pool.filter(p => p !== captain);
@@ -415,7 +415,7 @@
     if (!Array.isArray(c.order) || c.order.length !== TEAMS.length || new Set(c.order).size !== TEAMS.length || c.order.some(t => !TEAMS.includes(t))) throw new Error('Draft order must contain each of the six teams once.');
     if (!Number.isInteger(c.rounds) || c.rounds < 1 || c.rounds > 30) throw new Error('Roster rounds must be an integer from 1 to 30.');
     if (!c.captainRounds || !c.confirmedCaptainRounds || TEAMS.some(t => !Number.isInteger(c.captainRounds[t]) || c.captainRounds[t] < 1 || c.captainRounds[t] > 30 || typeof c.confirmedCaptainRounds[t] !== 'boolean')) throw new Error('Every captain needs a valid planned round and confirmation setting.');
-    if (c.captainRounds.New !== 1 || c.confirmedCaptainRounds.New !== true) throw new Error('Keane must draft himself in confirmed round one.');
+    if (c.captainRounds.Coyotes !== 1 || c.confirmedCaptainRounds.Coyotes !== true) throw new Error('Keane must draft himself in confirmed round one.');
     if (TEAMS.some(t => c.confirmedCaptainRounds[t] && c.captainRounds[t] > c.rounds)) throw new Error('A confirmed captain round cannot exceed the roster size.');
     if (typeof c.prioritizeTargets !== 'boolean' || typeof c.useHistory !== 'boolean' || !Array.isArray(c.targets) || c.targets.some(id => typeof id !== 'string') || new Set(c.targets).size !== c.targets.length) throw new Error('Invalid draft strategy settings.');
     if (c.targets.some(id => !model(players).byId.has(id) || OWNERS.has(id))) throw new Error('Targets must be registered players who are not captains.');
