@@ -1896,6 +1896,49 @@ const ROSTER_INFO = {
   "goalieNote": "Workbook lists six goalies; the admin email reports two vacancies. Confirm attendance. Josh Pinto is waiting for info."
 };
 
+// Locked projections from Matthew's Google Sheet (Sept 16, 2026).
+// Snake draft order: Hawks, Kings, Coyotes, Devils, Yeti, Lightning.
+// These are opponent queues used for non-Yeti mock simulations when available.
+// Yeti recommendations remain free to choose (only Steven's R3 self-pick is locked).
+const PROJECTIONS = Object.freeze({
+  Hawks: Object.freeze({
+    1: "Angelini, Christopher",
+    4: "Delisle, Vincent",
+    5: "Fox, Lucas",
+    6: "Avraam, Sean",
+    8: "Angelini, Michael",
+    9: "Ciampini, Adam",
+    11: "MORGANTI, MARCO",
+    13: "Descotes, William"
+  }),
+  Kings: Object.freeze({
+    1: "Smith, Michael",
+    2: "Cottingham, David",
+    3: "Mashaal, Alexander",
+    4: "Uhthoff, Nicholas",
+    10: "Sawa, Jacob",
+    12: "Papich, Nikola"
+  }),
+  Coyotes: Object.freeze({
+    1: "Kelly-Menard, Keane",
+    7: "Neeposh-Iserhoff, Shawn Trevor",
+    9: "Hodge-Masnaghetti",
+    12: "Schmidt, Simon",
+    13: "Harnad, Benjamin",
+    14: "Stenason, David I."
+  }),
+  Devils: Object.freeze({
+    11: "Murciano, Emile"
+  }),
+  Yeti: Object.freeze({
+    3: "McAlear, Steven",
+    5: "McAlear, Peter"
+  }),
+  Lightning: Object.freeze({
+    10: "Martin, Philippe"
+  })
+});
+
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { PLAYERS, ROSTER_INFO };
+  module.exports = { PLAYERS, ROSTER_INFO, PROJECTIONS };
 }

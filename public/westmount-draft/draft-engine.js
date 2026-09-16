@@ -37,8 +37,8 @@
       version: 2,
       config: {
         order: DEFAULT_ORDER.slice(), rounds: 14,
-        captainRounds: { Yeti: 2, Kings: 3, Hawks: 9, Devils: 11, Lightning: 10, Coyotes: 1 },
-        confirmedCaptainRounds: { Yeti: false, Kings: false, Hawks: false, Devils: false, Lightning: false, Coyotes: true },
+        captainRounds: { Yeti: 3, Kings: 3, Hawks: 9, Devils: 11, Lightning: 10, Coyotes: 1 },
+        confirmedCaptainRounds: { Yeti: true, Kings: true, Hawks: true, Devils: true, Lightning: true, Coyotes: true },
         targets: DEFAULT_TARGETS.slice(), prioritizeTargets: true, useHistory: true,
       },
       history: [],
@@ -311,19 +311,31 @@
     }
     return value;
   }
-  function recommend(state, players) {
+  function projectedPlayer(state, players, team, projections) {
+    if (!projections || team === 'Yeti' || !projections[team]) return null;
+    const round = roundOf(state.history.length);
+    const playerId = projections[team][round];
+    if (!playerId) return null;
+    const player = model(players).byId.get(playerId);
+    const pool = modelCandidates(state, players, team);
+    return player && pool.some(p => p.id === playerId) ? player : null;
+  }
+  function recommend(state, players, projections) {
     if (isComplete(state, players)) return null;
     const team = currentTeam(state), pool = modelCandidates(state, players, team);
     if (!pool.length) return null;
     const captain = plannedCaptain(state, players, team);
+    const projected = projectedPlayer(state, players, team, projections);
     const outlook = team === 'Yeti' && state.config.prioritizeTargets ? targetOutlook(state, players) : null;
     const ranked = pool.slice().sort((a, b) => utility(b, state, players, team, outlook) - utility(a, state, players, team, outlook) || a.id.localeCompare(b.id));
-    const player = captain || ranked[0], forced = !!captain || pool.length === 1;
+    const player = captain || projected || ranked[0], forced = !!captain || pool.length === 1;
     const later = nextPickIndex(team, state.history.length, state.config.order);
     const next = later < state.config.rounds * TEAMS.length ? later : null;
     let reason;
     if (captain) {
       reason = `${shortName(player)} drafts himself in ${state.config.confirmedCaptainRounds[team] ? 'confirmed' : 'planned'} round ${state.config.captainRounds[team]}; this uses a pick.`;
+    } else if (projected) {
+      reason = `Locked projection from captain's queue (Matthew's sheet, Sept 16). Captain and goalie rules still apply.`;
     } else if (pool.length === 1) reason = 'This is the only legal choice under the captain and goalie roster rules.';
     else if (outlook && state.config.targets.includes(player.id)) {
       const estimate = outlook.find(t => t.id === player.id);
@@ -355,10 +367,10 @@
     if (eligible(state, players).length) throw new Error('A turn can only be passed when no legal players remain.');
     return append(state, null);
   }
-  function runMock(state, players) {
+  function runMock(state, players, projections) {
     let result = clone(state);
     while (!isComplete(result, players)) {
-      const rec = recommend(result, players);
+      const rec = recommend(result, players, projections);
       result = rec ? pickPlayer(result, players, rec.player.id) : skipTurn(result, players);
     }
     return result;
@@ -367,14 +379,15 @@
     let a = seed >>> 0;
     return () => { a += 0x6D2B79F5; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   }
-  function runSimulation(state, players, seed = 1) {
+  function runSimulation(state, players, projections, seed = 1) {
     let result = clone(state);
     const random = rng(seed);
     while (!isComplete(result, players)) {
       const team = currentTeam(result), pool = modelCandidates(result, players, team);
       if (!pool.length) { result = skipTurn(result, players); continue; }
       const captain = plannedCaptain(result, players, team);
-      let player = captain;
+      const projected = projectedPlayer(result, players, team, projections);
+      let player = captain || projected;
       if (!player) {
         const outlook = team === 'Yeti' && result.config.prioritizeTargets ? targetOutlook(result, players) : null;
         let best = -Infinity;
@@ -391,12 +404,12 @@
     }
     return result;
   }
-  function simulate(state, players, n = 25) {
+  function simulate(state, players, projections, n = 25) {
     const runs = clamp(Number.isFinite(Number(n)) ? Math.round(Number(n)) : 25, 1, 200);
     const teamStats = Object.fromEntries(TEAMS.map(team => [team, { team, avgScore: 0, firstShare: 0 }]));
     const targets = state.config.targets.filter(id => model(players).byId.has(id)).map(id => ({ id, yetiShare: 0, avgPick: null, picked: 0, pickSum: 0 }));
     for (let i = 0; i < runs; i++) {
-      const result = runSimulation(state, players, 104729 * (i + 1) + state.history.length);
+      const result = runSimulation(state, players, projections, 104729 * (i + 1) + state.history.length);
       const values = TEAMS.map(team => ({ team, value: roster(result, players, team).reduce((sum, p) => sum + score(p, players), 0) }));
       const top = Math.max(...values.map(t => t.value)), winners = values.filter(t => Math.abs(t.value - top) < 1e-9);
       for (const t of values) teamStats[t.team].avgScore += t.value / runs;
