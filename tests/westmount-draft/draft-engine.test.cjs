@@ -6,14 +6,14 @@ const E = require('../../public/westmount-draft/draft-engine.js');
 const { PLAYERS } = require('../../public/westmount-draft/data.js');
 
 const clone = value => JSON.parse(JSON.stringify(value));
-const ORDER = ['Devils', 'Kings', 'Flyers', 'Yeti', 'Hawks', 'New'];
+const ORDER = ['Hawks', 'Kings', 'Coyotes', 'Devils', 'Yeti', 'Lightning'];
 const CAPTAIN_IDS = {
   Yeti: 'McAlear, Steven',
   Devils: 'Murciano, Emile',
   Kings: 'Mashaal, Alexander',
-  Flyers: 'Martin, Philippe',
+  Lightning: 'Martin, Philippe',
   Hawks: 'Ciampini, Adam',
-  New: 'Kelly-Menard, Keane',
+  Coyotes: 'Kelly-Menard, Keane',
 };
 
 function fixtures({ skaters = 90, goalies = 8 } = {}) {
@@ -74,12 +74,12 @@ test('snake order and strict next turn are correct for every team in every slot'
 });
 
 test('snake endpoints receive consecutive picks on each reversal', () => {
-  assert.equal(E.teamAtPick(5, ORDER), 'New');
-  assert.equal(E.teamAtPick(6, ORDER), 'New');
-  assert.equal(E.nextPickIndex('New', 5, ORDER), 6);
-  assert.equal(E.teamAtPick(11, ORDER), 'Devils');
-  assert.equal(E.teamAtPick(12, ORDER), 'Devils');
-  assert.equal(E.nextPickIndex('Devils', 11, ORDER), 12);
+  assert.equal(E.teamAtPick(5, ORDER), 'Lightning');
+  assert.equal(E.teamAtPick(6, ORDER), 'Lightning');
+  assert.equal(E.nextPickIndex('Lightning', 5, ORDER), 6);
+  assert.equal(E.teamAtPick(11, ORDER), 'Hawks');
+  assert.equal(E.teamAtPick(12, ORDER), 'Hawks');
+  assert.equal(E.nextPickIndex('Hawks', 11, ORDER), 12);
 });
 
 test('unknown skater and goalie statistics still produce finite scores', () => {
@@ -149,18 +149,18 @@ test('captains are reserved for their own teams with all preference options off'
 test('Keane must draft himself in round one from every possible snake slot', () => {
   const players = fixtures();
   for (let slot = 0; slot < 6; slot++) {
-    const order = ORDER.filter(team => team !== 'New');
-    order.splice(slot, 0, 'New');
+    const order = ORDER.filter(team => team !== 'Coyotes');
+    order.splice(slot, 0, 'Coyotes');
     const state = advance(stateWith({ order, prioritizeTargets: false, useHistory: false }), players, slot);
-    assert.equal(E.currentTeam(state), 'New');
-    assert.deepEqual(E.eligible(state, players).map(player => player.id), [CAPTAIN_IDS.New]);
+    assert.equal(E.currentTeam(state), 'Coyotes');
+    assert.deepEqual(E.eligible(state, players).map(player => player.id), [CAPTAIN_IDS.Coyotes]);
     const suggestion = E.recommend(state, players);
-    assert.equal(suggestion.player.id, CAPTAIN_IDS.New);
+    assert.equal(suggestion.player.id, CAPTAIN_IDS.Coyotes);
     assert.equal(suggestion.forced, true);
     assert.throws(() => E.pickPlayer(state, players, 'Skater 001'));
     assert.throws(() => E.skipTurn(state, players));
-    const next = E.pickPlayer(state, players, CAPTAIN_IDS.New);
-    assert.equal(next.history[slot].id, CAPTAIN_IDS.New);
+    const next = E.pickPlayer(state, players, CAPTAIN_IDS.Coyotes);
+    assert.equal(next.history[slot].id, CAPTAIN_IDS.Coyotes);
   }
 });
 
@@ -169,29 +169,29 @@ test('confirmed captain round means that team’s round, not an overall pick num
   let state = stateWith();
   state.config.captainRounds.Hawks = 9;
   state.config.confirmedCaptainRounds.Hawks = true;
-  // Hawks is fifth in the order: R9 is overall pick 53, not overall pick 9.
-  state = advance(state, players, 4, [CAPTAIN_IDS.Hawks]);
+  // Hawks is first in the order: R9 is overall pick 49, not overall pick 9.
+  state = advance(state, players, 0, [CAPTAIN_IDS.Hawks]);
   assert.throws(() => E.pickPlayer(state, players, CAPTAIN_IDS.Hawks));
-  state = advance(state, players, 52, [CAPTAIN_IDS.Hawks]);
+  state = advance(state, players, 48, [CAPTAIN_IDS.Hawks]);
   assert.equal(E.currentTeam(state), 'Hawks');
   assert.equal(E.roundOf(state.history.length), 9);
   assert.equal(E.recommend(state, players).player.id, CAPTAIN_IDS.Hawks);
   assert.deepEqual(E.eligible(state, players).map(player => player.id), [CAPTAIN_IDS.Hawks]);
   assert.throws(() => E.pickPlayer(state, players, E.available(state, players)
     .find(player => !Object.values(CAPTAIN_IDS).includes(player.id)).id));
-  assert.equal(E.pickPlayer(state, players, CAPTAIN_IDS.Hawks).history[52].id, CAPTAIN_IDS.Hawks);
+  assert.equal(E.pickPlayer(state, players, CAPTAIN_IDS.Hawks).history[48].id, CAPTAIN_IDS.Hawks);
 });
 
 test('unconfirmed historical captain rounds remain a plan that live picks can defer', () => {
   const players = fixtures();
-  const state = advance(stateWith(), players, 8, [CAPTAIN_IDS.Yeti]);
+  const state = advance(stateWith(), players, 7, [CAPTAIN_IDS.Yeti]);
   assert.equal(E.currentTeam(state), 'Yeti');
   assert.equal(E.roundOf(state.history.length), 2);
   assert.equal(E.recommend(state, players).player.id, CAPTAIN_IDS.Yeti);
   const other = E.eligible(state, players).find(player => !Object.values(CAPTAIN_IDS).includes(player.id));
   assert.ok(other);
   const next = E.pickPlayer(state, players, other.id);
-  assert.equal(next.history[8].id, other.id);
+  assert.equal(next.history[7].id, other.id);
   assert.deepEqual(E.validateState(next, players), next);
 });
 
@@ -202,7 +202,7 @@ test('manual picks reject nonexistent players, duplicates and a second goalie', 
   state = E.pickPlayer(state, players, 'Goalie 0');
   assert.throws(() => E.pickPlayer(state, players, 'Goalie 0'));
   state = advance(state, players, 11);
-  assert.equal(E.currentTeam(state), 'Devils');
+  assert.equal(E.currentTeam(state), 'Hawks');
   const unusedGoalie = E.available(state, players).find(player => player.role === 'goalie');
   assert.ok(unusedGoalie);
   const before = clone(state);
@@ -277,7 +277,7 @@ test('missing goalies do not create placeholders or block each team from draftin
 test('manual deferral still reserves enough roster slots for the captain and goalie', () => {
   const players = fixtures();
   const state = stateWith({ rounds: 2 });
-  for (const team of E.TEAMS) state.config.captainRounds[team] = team === 'New' ? 1 : 2;
+  for (const team of E.TEAMS) state.config.captainRounds[team] = team === 'Coyotes' ? 1 : 2;
   const completed = advance(state, players, 12, Object.values(CAPTAIN_IDS));
   assertLegalCompletedDraft(completed, players);
   for (const team of E.TEAMS) {
@@ -294,7 +294,7 @@ test('real registered pool completes with only real players and no goalie duplic
 });
 
 test('survival is 100% when Steven has consecutive open turns', () => {
-  const order = ['New', 'Devils', 'Kings', 'Flyers', 'Hawks', 'Yeti'];
+  const order = ['Coyotes', 'Devils', 'Kings', 'Lightning', 'Hawks', 'Yeti'];
   const state = stateWith({ order });
   state.config.captainRounds.Yeti = 5;
   const current = advance(state, PLAYERS, 5, state.config.targets);
@@ -308,7 +308,7 @@ test('survival is 100% when Steven has consecutive open turns', () => {
 });
 
 test('target survival skips Steven’s pending self-pick before his next open turn', () => {
-  const order = ['New', 'Devils', 'Kings', 'Flyers', 'Hawks', 'Yeti'];
+  const order = ['Coyotes', 'Devils', 'Kings', 'Lightning', 'Hawks', 'Yeti'];
   for (const confirmed of [false, true]) {
     const state = stateWith({ order });
     state.config.captainRounds.Yeti = 2;
@@ -324,7 +324,7 @@ test('target survival skips Steven’s pending self-pick before his next open tu
 });
 
 test('drafted captain no longer consumes a future planned self-pick in target outlook', () => {
-  const order = ['New', 'Devils', 'Kings', 'Flyers', 'Hawks', 'Yeti'];
+  const order = ['Coyotes', 'Devils', 'Kings', 'Lightning', 'Hawks', 'Yeti'];
   const initial = stateWith({ order });
   initial.config.captainRounds.Yeti = 2;
   const current = advance(initial, PLAYERS, 5, initial.config.targets);
@@ -357,8 +357,8 @@ test('saved state validation rejects corrupt orders, IDs, team ownership and pic
     state => { state.history = {}; },
     state => { state.config.rounds = -1; },
     state => { state.config.rounds = 3.5; },
-    state => { state.config.captainRounds.New = 2; },
-    state => { state.config.confirmedCaptainRounds.New = false; },
+    state => { state.config.captainRounds.Coyotes = 2; },
+    state => { state.config.confirmedCaptainRounds.Coyotes = false; },
   ];
   for (const corrupt of corruptions) {
     const state = clone(legal);
@@ -409,7 +409,7 @@ test('final mandatory goalie turn is available to a goalie target but not a skat
   // Avoid every goalie and reunion target while recording 12 complete rounds
   // plus the first three turns of R13. Steven already drafted himself in R1.
   const avoid = [...E.DEFAULT_TARGETS, ...players.filter(player => player.role === 'goalie').map(player => player.id)];
-  const current = advance(initial, players, 75, avoid);
+  const current = advance(initial, players, 76, avoid);
   assert.equal(E.currentTeam(current), 'Yeti');
   assert.equal(E.roster(current, players, 'Yeti').some(player => player.role === 'goalie'), false);
   assert.ok(E.roster(current, players, 'Yeti').some(player => player.id === CAPTAIN_IDS.Yeti));
@@ -418,19 +418,19 @@ test('final mandatory goalie turn is available to a goalie target but not a skat
   const goalie = outlook.find(target => target.id === 'Goalie 7');
   assert.equal(skater.nextPick, null, 'Steven’s final slot must be used on a goalie');
   assert.equal(skater.survival, null);
-  assert.equal(goalie.nextPick, 81, 'a goalie can still be taken on Steven’s final turn');
+  assert.equal(goalie.nextPick, 80, 'a goalie can still be taken on Steven’s final turn');
   assert.ok(goalie.survival >= 0 && goalie.survival <= 1);
 
   const goalieNow = E.pickPlayer(current, players, 'Goalie 0');
   const afterGoalie = E.targetOutlook(goalieNow, players).find(target => target.id === 'Ong Tone, Christopher');
-  assert.equal(afterGoalie.nextPick, 81, 'taking a goalie now makes the final slot available to a skater');
+  assert.equal(afterGoalie.nextPick, 80, 'taking a goalie now makes the final slot available to a skater');
   assert.ok(afterGoalie.survival >= 0 && afterGoalie.survival <= 1);
 });
 
 test('goalie targets have no future legal pick once Steven already has a goalie', () => {
   const players = fixtures();
   const initial = stateWith({ targets: ['Goalie 7', 'Ong Tone, Christopher'] });
-  const current = advance(initial, players, 3, initial.config.targets);
+  const current = advance(initial, players, 4, initial.config.targets);
   assert.equal(E.currentTeam(current), 'Yeti');
   const drafted = E.pickPlayer(current, players, 'Goalie 0');
   const outlook = E.targetOutlook(drafted, players);
@@ -445,9 +445,9 @@ test('a deferred captain consumes the final turn even when the unconfirmed plan 
   const players = fixtures();
   const initial = stateWith({ targets: ['Ong Tone, Christopher'] });
   initial.config.captainRounds.Yeti = 30;
-  let state = advance(initial, players, 3, initial.config.targets);
+  let state = advance(initial, players, 4, initial.config.targets);
   state = E.pickPlayer(state, players, 'Goalie 0');
-  state = advance(state, players, 75, [...E.DEFAULT_TARGETS, CAPTAIN_IDS.Yeti]);
+  state = advance(state, players, 76, [...E.DEFAULT_TARGETS, CAPTAIN_IDS.Yeti]);
   assert.equal(E.currentTeam(state), 'Yeti');
   assert.equal(E.roster(state, players, 'Yeti').some(player => player.id === CAPTAIN_IDS.Yeti), false);
   const target = E.targetOutlook(state, players).find(row => row.id === 'Ong Tone, Christopher');
@@ -461,7 +461,7 @@ test('pending captain and goalie occupy both final turns regardless of which is 
   initial.config.captainRounds.Yeti = 14;
   const avoid = [...E.DEFAULT_TARGETS, CAPTAIN_IDS.Yeti,
     ...players.filter(player => player.role === 'goalie').map(player => player.id)];
-  const current = advance(initial, players, 75, avoid);
+  const current = advance(initial, players, 76, avoid);
   assert.ok(E.eligible(current, players).every(player => player.id === CAPTAIN_IDS.Yeti || player.role === 'goalie'));
   for (const state of [current, E.pickPlayer(current, players, CAPTAIN_IDS.Yeti),
     E.pickPlayer(current, players, 'Goalie 0')]) {
@@ -476,12 +476,12 @@ test('opponents forced to take goalies cannot reduce a skater’s survival befor
   const initial = stateWith({ targets: ['Ong Tone, Christopher'] });
   const avoid = [...E.DEFAULT_TARGETS,
     ...players.filter(player => player.role === 'goalie').map(player => player.id)];
-  let state = advance(initial, players, 75, avoid);
+  let state = advance(initial, players, 76, avoid);
   state = E.pickPlayer(state, players, 'Goalie 0');
   state = advance(state, players, 78, avoid);
-  assert.equal(E.currentTeam(state), 'New');
+  assert.equal(E.currentTeam(state), 'Lightning');
   assert.ok(E.eligible(state, players).every(player => player.role === 'goalie'));
   const target = E.targetOutlook(state, players).find(row => row.id === 'Ong Tone, Christopher');
-  assert.equal(target.nextPick, 81);
+  assert.equal(target.nextPick, 80);
   assert.equal(target.survival, 1, 'both intervening teams must fill their goalie slots');
 });

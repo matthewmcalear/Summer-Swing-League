@@ -7,8 +7,8 @@
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const clone = value => JSON.parse(JSON.stringify(value));
-  const names = {Kings:'Alex Mashaal',Hawks:'Adam Ciampini',Devils:'Emile Murciano',Yeti:'Steve McAlear',Flyers:'Philippe Martin',New:'Keane Kelly-Menard'};
-  const teamName = team => team === 'New' ? 'Keane’s team' : team;
+  const names = {Kings:'Alex Mashaal',Hawks:'Adam Ciampini',Devils:'Emile Murciano',Yeti:'Steve McAlear',Lightning:'Philippe Martin',Coyotes:'Keane Kelly-Menard'};
+  const teamName = team => team;
   const byId = new Map(PLAYERS.map(p => [p.id,p]));
   const owner = id => E.TEAMS.find(t => E.CAPTAIN_IDS[t] === id);
   const playerName = p => {
@@ -17,6 +17,41 @@
     return first ? `${first} ${last}` : last;
   };
   const targetName = p => ({'Ong Tone, Christopher':'Chris OT','Toledano, David':'David Toledano','McAlear, Thomas':'Tom McAlear','McAlear, Matthew':'Matt McAlear','McAlear, Daniel':'Dan McAlear'}[p.id] || playerName(p));
+  
+  // Migrate old team names from localStorage backups (New → Coyotes, Flyers → Lightning)
+  function migrateTeamNames(state) {
+    const teamMap = { New: 'Coyotes', Flyers: 'Lightning' };
+    let migrated = false;
+    
+    if (state.config && state.config.order) {
+      state.config.order = state.config.order.map(team => {
+        if (teamMap[team]) { migrated = true; return teamMap[team]; }
+        return team;
+      });
+    }
+    
+    if (state.config && state.config.captainRounds) {
+      for (const [oldTeam, newTeam] of Object.entries(teamMap)) {
+        if (oldTeam in state.config.captainRounds) {
+          state.config.captainRounds[newTeam] = state.config.captainRounds[oldTeam];
+          delete state.config.captainRounds[oldTeam];
+          migrated = true;
+        }
+      }
+    }
+    
+    if (state.config && state.config.confirmedCaptainRounds) {
+      for (const [oldTeam, newTeam] of Object.entries(teamMap)) {
+        if (oldTeam in state.config.confirmedCaptainRounds) {
+          state.config.confirmedCaptainRounds[newTeam] = state.config.confirmedCaptainRounds[oldTeam];
+          delete state.config.confirmedCaptainRounds[oldTeam];
+          migrated = true;
+        }
+      }
+    }
+    
+    return migrated;
+  }
   const position = p => p.role === 'goalie' ? 'G' : p.pos || '?';
   const hasStats = p => p.role === 'goalie' ? p.gaa != null && p.gp > 0 : p.gp > 0 || p.y5gp > 0;
   const pct = x => `${Math.round(Math.max(0,Math.min(1,x))*100)}%`;
@@ -37,7 +72,14 @@
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) {
-        try { liveState = E.validateState(JSON.parse(raw),PLAYERS); }
+        try {
+          const parsed = JSON.parse(raw);
+          const wasMigrated = migrateTeamNames(parsed);
+          liveState = E.validateState(parsed,PLAYERS);
+          if (wasMigrated) {
+            recoveryMessage = 'Team names updated: New → Coyotes, Flyers → Lightning. Your draft history has been preserved.';
+          }
+        }
         catch (error) {
           recoveryRaw = raw;
           savePaused = true;
@@ -55,9 +97,10 @@
             const old = JSON.parse(oldRaw);
             const migrated = E.createState();
             migrated.config.order = old.order || migrated.config.order;
+            migrateTeamNames(migrated);
             migrated.history = (old.history || []).map((id,i) => ({id,team:old.taken[id],pick:i+1}));
             liveState = E.validateState(migrated,PLAYERS);
-            recoveryMessage = 'Your previous draft was restored under the new rules. The original backup is still stored.';
+            recoveryMessage = 'Your previous draft was restored with updated team names (New → Coyotes, Flyers → Lightning). The original backup is still stored.';
           } catch (_) {
             recoveryMessage = 'The older saved draft does not match the captain rules. It remains stored and can be downloaded. This board starts a new draft.';
           }
@@ -301,9 +344,13 @@
     try {
       if (file.size > 2*1024*1024) throw new Error('This file is too large for a draft backup.');
       const payload=JSON.parse(await file.text());
-      const restored=E.validateState(payload.state || payload,PLAYERS);
+      const state = payload.state || payload;
+      const wasMigrated = migrateTeamNames(state);
+      const restored=E.validateState(state,PLAYERS);
       if (liveState.history.length && !confirm('Replace the current draft with this backup?')) return;
-      savePaused=false; recoveryMessage=''; changeState(restored,'Draft restored.');
+      savePaused=false;
+      recoveryMessage = wasMigrated ? 'Draft restored with updated team names (New → Coyotes, Flyers → Lightning).' : '';
+      changeState(restored, wasMigrated ? 'Draft restored with updated team names.' : 'Draft restored.');
     } catch(error) { toast(`Could not restore: ${error.message}`); }
     finally { event.target.value=''; }
   });
