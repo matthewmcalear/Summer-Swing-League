@@ -37,7 +37,7 @@
       version: 2,
       config: {
         order: DEFAULT_ORDER.slice(), rounds: 14,
-        captainRounds: { Yeti: 3, Kings: 3, Hawks: 9, Devils: 11, Lightning: 10, Coyotes: 1 },
+        captainRounds: { Yeti: 2, Kings: 3, Hawks: 9, Devils: 11, Lightning: 10, Coyotes: 1 },
         confirmedCaptainRounds: { Yeti: true, Kings: true, Hawks: true, Devils: true, Lightning: true, Coyotes: true },
         targets: DEFAULT_TARGETS.slice(), prioritizeTargets: true, useHistory: true,
       },
@@ -48,7 +48,13 @@
   function teamAtPick(index, order = DEFAULT_ORDER) {
     if (!Number.isInteger(index) || index < 0) return null;
     const round = Math.floor(index / TEAMS.length), slot = index % TEAMS.length;
-    return order[round % 2 ? TEAMS.length - 1 - slot : slot];
+    let team = order[round % 2 ? TEAMS.length - 1 - slot : slot];
+    // Yeti↔Kings swap for rounds 1–4 only (indices 0–23)
+    if (index < 24) {
+      if (team === 'Yeti') team = 'Kings';
+      else if (team === 'Kings') team = 'Yeti';
+    }
+    return team;
   }
   function roundOf(index) { return Math.floor(index / TEAMS.length) + 1; }
   // Accept the documented team-first form and index-first form used by callers.
@@ -312,7 +318,7 @@
     return value;
   }
   function projectedPlayer(state, players, team, projections) {
-    if (!projections || team === 'Yeti' || !projections[team]) return null;
+    if (!projections || !projections[team]) return null;
     const round = roundOf(state.history.length);
     const playerId = projections[team][round];
     if (!playerId) return null;

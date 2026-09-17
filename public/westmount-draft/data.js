@@ -1719,6 +1719,24 @@ const PLAYERS = [
     "sourcePosition": "Defense"
   },
   {
+    "id": "Semanyk, Owen",
+    "name": "Semanyk, Owen",
+    "age": null,
+    "role": "skater",
+    "returning": false,
+    "pos": "F",
+    "gp": 0,
+    "g": 0,
+    "a": 0,
+    "pts": 0,
+    "ppg": 0,
+    "pim": 0,
+    "lyTeam": "",
+    "sourceRow": 78,
+    "sourcePosition": "Forward",
+    "notes": "Senior A summer standout; added Sept 17"
+  },
+  {
     "id": "Gironne, Michel",
     "name": "Gironne, Michel",
     "age": 49,
@@ -1890,17 +1908,16 @@ const PLAYERS = [
 const ROSTER_INFO = {
   "source": "Updated - Senior Draft List.xlsx",
   "sheet": "Senior Draft List",
-  "skaters": 76,
+  "skaters": 77,
   "goalies": 6,
   "season": "2026–2027",
   "goalieNote": "Workbook lists six goalies; the admin email reports two vacancies. Confirm attendance. Josh Pinto is waiting for info."
 };
 
-// Locked projections from Matthew's Google Sheet (Sept 16, 2026).
+// Locked projections from Matthew's Google Sheet (Sept 16–17, 2026).
 // Snake draft order: Lightning, Kings, Coyotes, Devils, Yeti, Hawks.
-// Sept 17 update: Lightning and Hawks swapped positions.
+// Sept 17 update: Yeti↔Kings swap picks in rounds 1–4 only.
 // These are opponent queues used for non-Yeti mock simulations when available.
-// Yeti recommendations remain free to choose (only Steven's R3 self-pick is locked).
 const PROJECTIONS = Object.freeze({
   Hawks: Object.freeze({
     1: "Angelini, Christopher",
@@ -1913,10 +1930,8 @@ const PROJECTIONS = Object.freeze({
     13: "Descotes, William"
   }),
   Kings: Object.freeze({
-    1: "Smith, Michael",
     2: "Cottingham, David",
     3: "Mashaal, Alexander",
-    4: "Uhthoff, Nicholas",
     10: "Sawa, Jacob",
     12: "Papich, Nikola"
   }),
@@ -1932,10 +1947,13 @@ const PROJECTIONS = Object.freeze({
     11: "Murciano, Emile"
   }),
   Yeti: Object.freeze({
-    3: "McAlear, Steven",
+    1: "Semanyk, Owen",
+    2: "McAlear, Steven",
+    3: "Martin, Euan",
     5: "McAlear, Peter"
   }),
   Lightning: Object.freeze({
+    1: "Larose, Michael",
     10: "Martin, Philippe"
   })
 });

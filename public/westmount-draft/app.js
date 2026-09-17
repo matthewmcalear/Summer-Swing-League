@@ -71,6 +71,20 @@
     
     return false;
   }
+  // Migrate captain rounds for Sept 17 updates
+  function migrateCaptainRounds(state) {
+    // Only migrate if no picks have been made yet
+    if (state.history && state.history.length > 0) return false;
+    if (!state.config || !state.config.captainRounds) return false;
+    
+    // Migrate Yeti captain round from 3 to 2
+    if (state.config.captainRounds.Yeti === 3) {
+      state.config.captainRounds.Yeti = 2;
+      return true;
+    }
+    
+    return false;
+  }
   const position = p => p.role === 'goalie' ? 'G' : p.pos || '?';
   const hasStats = p => p.role === 'goalie' ? p.gaa != null && p.gp > 0 : p.gp > 0 || p.y5gp > 0;
   const pct = x => `${Math.round(Math.max(0,Math.min(1,x))*100)}%`;
@@ -95,11 +109,14 @@
           const parsed = JSON.parse(raw);
           const teamsMigrated = migrateTeamNames(parsed);
           const orderMigrated = migrateDraftOrder(parsed);
+          const captainMigrated = migrateCaptainRounds(parsed);
           liveState = E.validateState(parsed,PLAYERS);
           if (teamsMigrated) {
             recoveryMessage = 'Team names updated: New → Coyotes, Flyers → Lightning. Your draft history has been preserved.';
           } else if (orderMigrated) {
             recoveryMessage = 'Draft order updated: Lightning and Hawks swapped positions for Sept 17 draft.';
+          } else if (captainMigrated) {
+            recoveryMessage = 'Yeti captain round updated from R3 to R2. Yeti↔Kings swap picks in rounds 1–4.';
           }
         }
         catch (error) {
@@ -121,9 +138,10 @@
             migrated.config.order = old.order || migrated.config.order;
             migrateTeamNames(migrated);
             migrateDraftOrder(migrated);
+            migrateCaptainRounds(migrated);
             migrated.history = (old.history || []).map((id,i) => ({id,team:old.taken[id],pick:i+1}));
             liveState = E.validateState(migrated,PLAYERS);
-            recoveryMessage = 'Your previous draft was restored with updated team names and order (Lightning ↔ Hawks). The original backup is still stored.';
+            recoveryMessage = 'Your previous draft was restored with updated team names, order (Lightning ↔ Hawks), and Yeti captain round. The original backup is still stored.';
           } catch (_) {
             recoveryMessage = 'The older saved draft does not match the captain rules. It remains stored and can be downloaded. This board starts a new draft.';
           }
@@ -169,7 +187,7 @@
       return `<div class="captain-row"><span>${esc(names[team])}${drafted?'<span class="tag">drafted</span>':''}</span><input type="number" min="1" max="${cfg.rounds}" value="${cfg.captainRounds[team]}" data-captain-round="${team}" aria-label="${esc(names[team])} self-pick round" ${disabled?'disabled':''}><label><input type="checkbox" data-captain-confirm="${team}" ${cfg.confirmedCaptainRounds[team]?'checked':''} ${disabled?'disabled':''}>${team==='New'?'Required':'Agreed'}</label></div>`;
     }).join('');
     const projectionsHtml = projections ? (() => {
-      const teams = cfg.order.filter(t => projections[t] && t !== 'Yeti');
+      const teams = cfg.order.filter(t => projections[t]);
       const rows = teams.map(team => {
         const rounds = Object.entries(projections[team]).sort(([a],[b]) => Number(a) - Number(b));
         const picks = rounds.map(([r, id]) => {
@@ -178,7 +196,7 @@
         }).join(' · ');
         return `<div class="projection-row"><strong>${esc(teamName(team))}</strong> <span class="muted">${picks}</span></div>`;
       }).join('');
-      return `<div class="projections-panel"><h3>Locked opponent queues (Sept 16)</h3><p>Matthew's projections from the Google Sheet. Non-Yeti mocks/sims prefer these when legal. Yeti recommendations stay free (only Steven's R3 self-pick is locked).</p>${rows}</div>`;
+      return `<div class="projections-panel"><h3>Draft projections (Sept 17)</h3><p>Matthew's updated projections. <strong>Yeti↔Kings swap picks in rounds 1–4 only</strong> (round 5+ uses original order). Mocks and sims follow these projections when legal; captain and goalie rules still apply.</p>${rows}</div>`;
     })() : '';
     $('setup-content').innerHTML = `<div class="setup-grid"><div><h2>First-round order</h2><p>${locked?'Order is locked once a pick is recorded. Undo all picks or start a new draft to change it.':'Provisional order. Use the arrows to match the draft-night draw.'} The order reverses each round.</p><div class="order-list">${order}</div><p>Team names are last year’s working labels; the sixth team is shown under Keane.</p></div><div><h2>Captain self-pick rounds</h2><p>Keane must pick himself in round 1. The other rounds below are planning defaults from last year; edit after negotiation and mark Agreed to enforce them.</p>${captains}</div></div>
       ${projectionsHtml}
@@ -383,10 +401,15 @@
       const state = payload.state || payload;
       const teamsMigrated = migrateTeamNames(state);
       const orderMigrated = migrateDraftOrder(state);
+      const captainMigrated = migrateCaptainRounds(state);
       const restored=E.validateState(state,PLAYERS);
       if (liveState.history.length && !confirm('Replace the current draft with this backup?')) return;
       savePaused=false;
-      const migrationMsg = teamsMigrated ? 'team names and order' : orderMigrated ? 'draft order (Lightning ↔ Hawks)' : '';
+      const migrations = [];
+      if (teamsMigrated) migrations.push('team names');
+      if (orderMigrated) migrations.push('draft order (Lightning ↔ Hawks)');
+      if (captainMigrated) migrations.push('Yeti captain round (R3→R2, Yeti↔Kings R1–4 swap)');
+      const migrationMsg = migrations.length ? migrations.join(', ') : '';
       recoveryMessage = migrationMsg ? `Draft restored with updated ${migrationMsg}.` : '';
       changeState(restored, migrationMsg ? `Draft restored with updated ${migrationMsg}.` : 'Draft restored.');
     } catch(error) { toast(`Could not restore: ${error.message}`); }
