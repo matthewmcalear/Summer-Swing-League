@@ -911,12 +911,17 @@ const PLAYERS = [
     "role": "skater",
     "returning": true,
     "pos": "F",
-    "gp": 0,
-    "g": 0,
-    "a": 0,
-    "pts": 0,
-    "ppg": 0,
-    "pim": 0,
+    "gp": 25,
+    "g": 11,
+    "a": 13,
+    "pts": 24,
+    "ppg": 0.96,
+    "pim": 4,
+    "y5gp": 93,
+    "y5g": 38,
+    "y5a": 62,
+    "y5pts": 100,
+    "y5ppg": 1.08,
     "lyTeam": "Yeti",
     "lyRound": 4,
     "lyDraftTeam": "Yeti",
@@ -1224,7 +1229,9 @@ const PLAYERS = [
     "lyRound": 4,
     "lyDraftTeam": "Flyers",
     "sourceRow": 55,
-    "sourcePosition": "Defence"
+    "sourcePosition": "Defence",
+    "notes": "Draft-night scouting grade: Round 2–4",
+    "scoutingScore": 63
   },
   {
     "id": "Romary, Thomas",
@@ -1946,8 +1953,9 @@ const PROJECTIONS = Object.freeze({
     1: "Semanyk, Owen",
     2: "McAlear, Steven",
     3: "Martin, Euan",
-    4: "Clarke, Noah",
-    5: "McAlear, Peter"
+    4: "Clarke, Noah / Pinchuk, Brandon",
+    5: "McAlear, Peter",
+    note: "R4 open window after self+goalie: Clarke and Pinchuk both R2–4 grade"
   }),
   Lightning: Object.freeze({
     1: "Larose, Michael",
