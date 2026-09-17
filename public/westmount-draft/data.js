@@ -252,7 +252,8 @@ const PLAYERS = [
     "lyPick": 20,
     "lyDraftTeam": "Kings",
     "sourceRow": 12,
-    "sourcePosition": "center"
+    "sourcePosition": "center",
+    "notes": "Draft-night scouting grade: Round 4"
   },
   {
     "id": "Cohen, Samuel",
@@ -1945,6 +1946,7 @@ const PROJECTIONS = Object.freeze({
     1: "Semanyk, Owen",
     2: "McAlear, Steven",
     3: "Martin, Euan",
+    4: "Clarke, Noah",
     5: "McAlear, Peter"
   }),
   Lightning: Object.freeze({
