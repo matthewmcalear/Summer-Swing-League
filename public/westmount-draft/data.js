@@ -1961,9 +1961,9 @@ const PROJECTIONS = Object.freeze({
     1: "Semanyk, Owen",
     2: "McAlear, Steven",
     3: "Martin, Euan",
-    4: "Clarke, Noah / Pinchuk, Brandon",
+    4: "Clarke, Noah",
     5: "McAlear, Peter",
-    note: "R4 open window after self+goalie: Clarke and Pinchuk both R2–4 grade"
+    note: "R4 open window after self+goalie: Clarke (R4) and Pinchuk (R2–4) both targets"
   }),
   Lightning: Object.freeze({
     1: "Larose, Michael",
