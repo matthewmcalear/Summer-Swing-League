@@ -1725,16 +1725,11 @@ const PLAYERS = [
     "role": "skater",
     "returning": false,
     "pos": "F",
-    "gp": 0,
-    "g": 0,
-    "a": 0,
-    "pts": 0,
-    "ppg": 0,
-    "pim": 0,
     "lyTeam": "",
     "sourceRow": 78,
     "sourcePosition": "Forward",
-    "notes": "Senior A summer standout; added Sept 17"
+    "notes": "Senior A summer standout; scouting grade Round 1 (#2 overall behind Larose); added Sept 17",
+    "scoutingScore": 72
   },
   {
     "id": "Gironne, Michel",
