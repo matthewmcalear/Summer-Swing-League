@@ -24,7 +24,7 @@
     'McAlear, Thomas', 'McAlear, Matthew', 'McAlear, Daniel',
   ]);
   const OWNERS = new Map(Object.entries(CAPTAIN_IDS).map(([team, id]) => [id, team]));
-  const DEFAULT_ORDER = ['Hawks', 'Kings', 'Coyotes', 'Devils', 'Yeti', 'Lightning'];
+  const DEFAULT_ORDER = ['Lightning', 'Kings', 'Coyotes', 'Devils', 'Yeti', 'Hawks'];
   const models = new WeakMap();
   const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
   const isNumber = value => typeof value === 'number' && Number.isFinite(value);

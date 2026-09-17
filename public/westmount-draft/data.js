@@ -1897,7 +1897,8 @@ const ROSTER_INFO = {
 };
 
 // Locked projections from Matthew's Google Sheet (Sept 16, 2026).
-// Snake draft order: Hawks, Kings, Coyotes, Devils, Yeti, Lightning.
+// Snake draft order: Lightning, Kings, Coyotes, Devils, Yeti, Hawks.
+// Sept 17 update: Lightning and Hawks swapped positions.
 // These are opponent queues used for non-Yeti mock simulations when available.
 // Yeti recommendations remain free to choose (only Steven's R3 self-pick is locked).
 const PROJECTIONS = Object.freeze({

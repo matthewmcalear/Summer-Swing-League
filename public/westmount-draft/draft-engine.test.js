@@ -70,11 +70,15 @@ console.log('\nTest 5: Recommendation with projections');
 const rec = E.recommend(state, PLAYERS, PROJECTIONS);
 assert(rec !== null, 'Recommendation generated');
 assert(rec.player !== null, 'Recommended player exists');
-assertEquals(rec.player.id, 'Angelini, Christopher', 'First pick follows Hawks projection');
+assertEquals(E.currentTeam(state), 'Lightning', 'Lightning picks first (new order)');
+// Lightning has no R1 projection, so model recommends
 
-// Test 6: Verify mock draft uses projections
+// Test 6: Verify mock draft uses projections (new order: Lightning, Kings, Coyotes...)
 console.log('\nTest 6: Mock draft with projections');
 let mockState = E.createState();
+// Lightning R1: no projection (model decides)
+// Kings R1: Michael Smith (projection)
+// Coyotes R1: Keane Kelly-Menard (captain projection)
 for (let i = 0; i < 5; i++) {
   const team = E.currentTeam(mockState);
   const round = E.roundOf(mockState.history.length);
