@@ -280,7 +280,8 @@
       const stats = p.role==='goalie' ? (p.gaa!=null?`${Number(p.gaa).toFixed(2)} GAA`:'—') : p.gp>0?`${p.pts} pts / ${p.gp} GP`:'—';
       return `<tr class="${pick?'drafted':suggested?'suggested':''}"><td><button class="star ${targets.has(p.id)?'active':''}" data-target="${esc(p.id)}" aria-label="${targets.has(p.id)?'Remove':'Add'} ${esc(playerName(p))} ${targets.has(p.id)?'from':'to'} Steve’s targets" aria-pressed="${targets.has(p.id)}" ${canStar?'':'disabled'}>${targets.has(p.id)?'★':'☆'}</button></td><td class="player"><strong>${esc(playerName(p))}</strong>${captain?'<span class="tag">captain</span>':''}${suggested?'<span class="tag">suggested</span>':''}${unknown?'<span class="tag pending">no stats</span>':''}${p.pendingInfo?'<span class="tag pending">info pending</span>':''}<span class="player-meta">${esc(info)}</span></td><td>${esc(position(p))}</td><td class="numeric" title="${esc(p.historyNote || 'One historical five-team draft')}">${p.lyRound?`R${p.lyRound}`:'—'}${p.historyNote?'*':''}</td><td class="numeric optional-col">${values.get(p.id).toFixed(1)}${unknown?'*':''}</td><td class="optional-col">${stats}</td><td>${action}</td></tr>`;
     }).join('');
-    $('board').innerHTML = rows.length?`<table><thead><tr><th aria-label="Target"></th><th>Player</th><th>Pos</th><th>Last draft</th><th class="optional-col" title="Uncalibrated model value, not predicted season points">Value</th><th class="optional-col">Last-year stats</th><th>Selection</th></tr></thead><tbody>${body}</tbody></table>`:'<div class="empty-table">No players match this search.</div>';
+    const sortIndicator = (col) => sort===col ? ' ▼' : '';
+    $('board').innerHTML = rows.length?`<table><thead><tr><th aria-label="Target"></th><th class="sortable" data-sort="name">Player${sortIndicator('name')}</th><th>Pos</th><th class="sortable" data-sort="history">Last draft${sortIndicator('history')}</th><th class="optional-col sortable" data-sort="value" title="Uncalibrated model value, not predicted season points">Value${sortIndicator('value')}</th><th class="optional-col sortable" data-sort="points">Last-year stats${sortIndicator('points')}</th><th>Selection</th></tr></thead><tbody>${body}</tbody></table>`:'<div class="empty-table">No players match this search.</div>';
   }
   function renderTeams(s) {
     const done = E.isComplete(s,PLAYERS);
@@ -336,6 +337,12 @@
     catch(error) { toast(error.message); }
   }
   document.addEventListener('click',event => {
+    const sortHeader = event.target.closest('th.sortable');
+    if (sortHeader && sortHeader.dataset.sort) {
+      $('sort').value = sortHeader.dataset.sort;
+      render();
+      return;
+    }
     const button = event.target.closest('button');
     if (!button || button.disabled || busy) return;
     if (button.dataset.view) { view=button.dataset.view; render(); return; }
