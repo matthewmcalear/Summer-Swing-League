@@ -74,7 +74,8 @@ const owenSemanyk = PLAYERS.find(p => p.id === 'Semanyk, Owen');
 assert(owenSemanyk !== undefined, 'Owen Semanyk exists in PLAYERS');
 assert(owenSemanyk.role === 'skater', 'Owen Semanyk is a skater');
 assert(owenSemanyk.returning === false, 'Owen Semanyk is a new player');
-assert(owenSemanyk.notes === 'Senior A summer standout; added Sept 17', 'Owen Semanyk has correct note');
+assert(owenSemanyk.scoutingScore === 72, 'Owen Semanyk has scoutingScore of 72');
+assert(owenSemanyk.notes.includes('Senior A summer standout'), 'Owen Semanyk has Senior A note');
 
 // Test 6: Yeti↔Kings pick swap for rounds 1-4
 console.log('\nTest 6: Yeti↔Kings pick swap (rounds 1-4 only)');
