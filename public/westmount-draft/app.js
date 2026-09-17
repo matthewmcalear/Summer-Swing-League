@@ -2,8 +2,8 @@
 (() => {
   'use strict';
   const E = DraftEngine;
-  const KEY = 'wsl-draft-2026-v2';
-  const OLD_KEYS = ['wsl-draft-v18','wsl-draft-v17','wsl-draft-v16'];
+  const KEY = 'wsl-draft-2026-v3';
+  const OLD_KEYS = ['wsl-draft-2026-v2','wsl-draft-v18','wsl-draft-v17','wsl-draft-v16'];
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const clone = value => JSON.parse(JSON.stringify(value));
