@@ -53,6 +53,24 @@
     
     return migrated;
   }
+  // Migrate draft order for Sept 17 swap: Lightning and Hawks switched positions
+  function migrateDraftOrder(state) {
+    // Only migrate if no picks have been made yet
+    if (state.history && state.history.length > 0) return false;
+    if (!state.config || !state.config.order) return false;
+    
+    const order = state.config.order;
+    const oldOrder = ['Hawks', 'Kings', 'Coyotes', 'Devils', 'Yeti', 'Lightning'];
+    const newOrder = ['Lightning', 'Kings', 'Coyotes', 'Devils', 'Yeti', 'Hawks'];
+    
+    // Check if current order matches old order
+    if (JSON.stringify(order) === JSON.stringify(oldOrder)) {
+      state.config.order = newOrder.slice();
+      return true;
+    }
+    
+    return false;
+  }
   const position = p => p.role === 'goalie' ? 'G' : p.pos || '?';
   const hasStats = p => p.role === 'goalie' ? p.gaa != null && p.gp > 0 : p.gp > 0 || p.y5gp > 0;
   const pct = x => `${Math.round(Math.max(0,Math.min(1,x))*100)}%`;
@@ -75,10 +93,13 @@
       if (raw) {
         try {
           const parsed = JSON.parse(raw);
-          const wasMigrated = migrateTeamNames(parsed);
+          const teamsMigrated = migrateTeamNames(parsed);
+          const orderMigrated = migrateDraftOrder(parsed);
           liveState = E.validateState(parsed,PLAYERS);
-          if (wasMigrated) {
+          if (teamsMigrated) {
             recoveryMessage = 'Team names updated: New → Coyotes, Flyers → Lightning. Your draft history has been preserved.';
+          } else if (orderMigrated) {
+            recoveryMessage = 'Draft order updated: Lightning and Hawks swapped positions for Sept 17 draft.';
           }
         }
         catch (error) {
@@ -99,9 +120,10 @@
             const migrated = E.createState();
             migrated.config.order = old.order || migrated.config.order;
             migrateTeamNames(migrated);
+            migrateDraftOrder(migrated);
             migrated.history = (old.history || []).map((id,i) => ({id,team:old.taken[id],pick:i+1}));
             liveState = E.validateState(migrated,PLAYERS);
-            recoveryMessage = 'Your previous draft was restored with updated team names (New → Coyotes, Flyers → Lightning). The original backup is still stored.';
+            recoveryMessage = 'Your previous draft was restored with updated team names and order (Lightning ↔ Hawks). The original backup is still stored.';
           } catch (_) {
             recoveryMessage = 'The older saved draft does not match the captain rules. It remains stored and can be downloaded. This board starts a new draft.';
           }
@@ -359,12 +381,14 @@
       if (file.size > 2*1024*1024) throw new Error('This file is too large for a draft backup.');
       const payload=JSON.parse(await file.text());
       const state = payload.state || payload;
-      const wasMigrated = migrateTeamNames(state);
+      const teamsMigrated = migrateTeamNames(state);
+      const orderMigrated = migrateDraftOrder(state);
       const restored=E.validateState(state,PLAYERS);
       if (liveState.history.length && !confirm('Replace the current draft with this backup?')) return;
       savePaused=false;
-      recoveryMessage = wasMigrated ? 'Draft restored with updated team names (New → Coyotes, Flyers → Lightning).' : '';
-      changeState(restored, wasMigrated ? 'Draft restored with updated team names.' : 'Draft restored.');
+      const migrationMsg = teamsMigrated ? 'team names and order' : orderMigrated ? 'draft order (Lightning ↔ Hawks)' : '';
+      recoveryMessage = migrationMsg ? `Draft restored with updated ${migrationMsg}.` : '';
+      changeState(restored, migrationMsg ? `Draft restored with updated ${migrationMsg}.` : 'Draft restored.');
     } catch(error) { toast(`Could not restore: ${error.message}`); }
     finally { event.target.value=''; }
   });
