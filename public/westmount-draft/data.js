@@ -1705,7 +1705,9 @@ const PLAYERS = [
     "y5ppg": 0.47,
     "lyTeam": "Coyotes",
     "sourceRow": 76,
-    "sourcePosition": "D"
+    "sourcePosition": "D",
+    "notes": "Draft-night scouting grade: Round 4–5 (very good defender)",
+    "scoutingScore": 57
   },
   {
     "id": "Young, Cooper",
