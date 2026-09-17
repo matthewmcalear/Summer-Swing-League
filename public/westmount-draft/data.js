@@ -1945,7 +1945,9 @@ const PROJECTIONS = Object.freeze({
     1: "Semanyk, Owen",
     2: "McAlear, Steven",
     3: "Martin, Euan",
-    5: "McAlear, Peter"
+    4: "Clarke, Noah",
+    5: "McAlear, Peter",
+    note: "Pinchuk, Brandon also drafted R2–4 but not in projection lookups"
   }),
   Lightning: Object.freeze({
     1: "Larose, Michael",
