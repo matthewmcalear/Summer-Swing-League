@@ -1232,7 +1232,7 @@ const PLAYERS = [
     "sourceRow": 55,
     "sourcePosition": "Defence",
     "notes": "Draft-night scouting grade: Round 2–4",
-    "scoutingScore": 63
+    "scoutingScore": 24
   },
   {
     "id": "Romary, Thomas",
@@ -1707,7 +1707,7 @@ const PLAYERS = [
     "sourceRow": 76,
     "sourcePosition": "D",
     "notes": "Draft-night scouting grade: Round 4–5 (very good defender)",
-    "scoutingScore": 57
+    "scoutingScore": 13
   },
   {
     "id": "Young, Cooper",
