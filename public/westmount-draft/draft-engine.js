@@ -156,8 +156,7 @@
     // Showcase edits may supply a value on this same score scale.
     if (isNumber(p.scoutingScore)) return p.scoutingScore;
     if (p.playedD && observed != null) rate *= 1.15;
-    const attendance = isNumber(p.gp) && p.gp > 0 ? 0.75 + 0.25 * Math.min(1, p.gp / 32) : 0.9;
-    return 12 + (rate - m.prior[slot]) * 28 * attendance;
+    return 12 + (rate - m.prior[slot]) * 28;
   }
   function score(player, players) {
     const m = model(players);
