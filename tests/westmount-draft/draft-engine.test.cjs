@@ -196,7 +196,9 @@ test('confirmed captain round means that team’s round, not an overall pick num
 
 test('unconfirmed historical captain rounds remain a plan that live picks can defer', () => {
   const players = fixtures();
-  const state = advance(stateWith(), players, 7, [CAPTAIN_IDS.Yeti]);
+  const initial = stateWith();
+  initial.config.confirmedCaptainRounds.Yeti = false;
+  const state = advance(initial, players, 7, [CAPTAIN_IDS.Yeti]);
   assert.equal(E.currentTeam(state), 'Yeti');
   assert.equal(E.roundOf(state.history.length), 2);
   assert.equal(E.recommend(state, players).player.id, CAPTAIN_IDS.Yeti);
@@ -339,6 +341,7 @@ test('drafted captain no longer consumes a future planned self-pick in target ou
   const order = ['Coyotes', 'Devils', 'Kings', 'Lightning', 'Hawks', 'Yeti'];
   const initial = stateWith({ order });
   initial.config.captainRounds.Yeti = 2;
+  initial.config.confirmedCaptainRounds.Yeti = false;
   const current = advance(initial, PLAYERS, 5, initial.config.targets);
   const drafted = E.pickPlayer(current, PLAYERS, CAPTAIN_IDS.Yeti);
   assert.equal(E.nextUsablePickIndex(drafted, PLAYERS, 'Yeti', 5), 6);
@@ -471,6 +474,7 @@ test('pending captain and goalie occupy both final turns regardless of which is 
   const players = fixtures();
   const initial = stateWith({ targets: ['Ong Tone, Christopher'] });
   initial.config.captainRounds.Yeti = 14;
+  initial.config.confirmedCaptainRounds.Yeti = false;
   const avoid = [...E.DEFAULT_TARGETS, CAPTAIN_IDS.Yeti,
     ...players.filter(player => player.role === 'goalie').map(player => player.id)];
   const current = advance(initial, players, 76, avoid);
