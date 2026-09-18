@@ -49,8 +49,9 @@
     if (!Number.isInteger(index) || index < 0) return null;
     const round = Math.floor(index / TEAMS.length), slot = index % TEAMS.length;
     let team = order[round % 2 ? TEAMS.length - 1 - slot : slot];
-    // Yeti↔Kings swap for rounds 1–4 only (indices 0–23)
-    if (index < 24) {
+    // Yeti↔Kings swap for rounds 1–4 only (indices 0–23) in the 2026-27 order
+    const is2026Order = JSON.stringify(order) === JSON.stringify(DEFAULT_ORDER);
+    if (is2026Order && index < 24) {
       if (team === 'Yeti') team = 'Kings';
       else if (team === 'Kings') team = 'Yeti';
     }

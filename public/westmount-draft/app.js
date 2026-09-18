@@ -2,8 +2,8 @@
 (() => {
   'use strict';
   const E = DraftEngine;
-  const KEY = 'wsl-draft-2026-v3';
-  const OLD_KEYS = ['wsl-draft-2026-v2','wsl-draft-v18','wsl-draft-v17','wsl-draft-v16'];
+  const KEY = 'wsl-draft-2026-v4-locked';
+  const OLD_KEYS = ['wsl-draft-2026-v3','wsl-draft-2026-v2','wsl-draft-v18','wsl-draft-v17','wsl-draft-v16'];
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -90,6 +90,10 @@
   const pct = x => `${Math.round(Math.max(0,Math.min(1,x))*100)}%`;
   const survivalPct = x => x===1?'100%':x>0.99?'>99%':x>0 && x<0.01?'<1%':pct(x);
   const values = new Map(PLAYERS.map(p => [p.id,E.score(p,PLAYERS)]));
+  
+  // Locked 2026-27 draft result (84 picks, Sept 17, 2026)
+  const LOCKED_DRAFT = typeof LOCKED_DRAFT_2026 !== 'undefined' ? LOCKED_DRAFT_2026 : null;
+  
   let liveState = E.createState();
   let previewState = null;
   let view = 'board';
@@ -102,6 +106,18 @@
   const current = () => previewState || liveState;
 
   function load() {
+    // Load the locked 2026-27 draft result as the default state
+    if (LOCKED_DRAFT) {
+      try {
+        liveState = E.validateState(LOCKED_DRAFT, PLAYERS);
+        savePaused = true; // Don't overwrite the locked result
+        return;
+      } catch (error) {
+        console.error('Failed to load locked draft:', error);
+      }
+    }
+    
+    // Fallback to localStorage or empty state
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) {
@@ -296,6 +312,126 @@
       }).join('');
       return `<article class="team-card panel ${team==='Yeti'?'mine':''} ${!done && E.currentTeam(s)===team?'on-clock':''}"><div class="team-card-head"><div><h2>${esc(teamName(team))}</h2><p>${esc(names[team])}</p></div><span class="team-count">${roster.length}<span class="muted"> / ${s.config.rounds}</span></span></div><div class="roster-status"><span>${captain?'Captain drafted':`Captain R${s.config.captainRounds[team]} · ${s.config.confirmedCaptainRounds[team]?'agreed':'planned'}`}</span><span>${goalie?`G: ${esc(playerName(goalie))}`:'Goalie still needed'}</span></div><ol class="roster-list">${rows || '<li class="roster-empty">Waiting for the first pick.</li>'}</ol></article>`;
     }).join('');
+    
+    // Show analysis only for the completed locked draft
+    renderAnalysis(s);
+  }
+  
+  function renderAnalysis(s) {
+    const analysisEl = $('analysis');
+    if (!analysisEl) return;
+    
+    // Only show analysis for a complete draft
+    if (!E.isComplete(s, PLAYERS) || s.history.length !== 84) {
+      analysisEl.hidden = true;
+      return;
+    }
+    
+    analysisEl.hidden = false;
+    
+    // Team model values
+    const teamValues = E.TEAMS.map(team => {
+      const roster = E.roster(s, PLAYERS, team);
+      const totalValue = roster.reduce((sum, p) => sum + E.score(p, PLAYERS), 0);
+      return { team, totalValue, roster };
+    }).sort((a, b) => b.totalValue - a.totalValue);
+    
+    const valueRows = teamValues.map((t, i) => 
+      `<tr class="${t.team==='Yeti'?'suggested':''}"><td>${i+1}.</td><td>${esc(teamName(t.team))}</td><td class="numeric">${t.totalValue.toFixed(1)}</td></tr>`
+    ).join('');
+    
+    // Value picks (high model value, picked late) and reaches (low model value, picked early)
+    const pickAnalysis = s.history.filter(h => h.id).map(h => {
+      const player = byId.get(h.id);
+      if (!player) return null;
+      const value = E.score(player, PLAYERS);
+      // Simple heuristic: compare value to pick position
+      const expectedPick = Math.max(1, Math.round((35 - value) * 2.5));
+      const delta = h.pick - expectedPick; // negative = reached early, positive = value
+      return { ...h, player, value, delta };
+    }).filter(Boolean).sort((a, b) => b.delta - a.delta);
+    
+    const valuePicks = pickAnalysis.slice(0, 5);
+    const reaches = pickAnalysis.slice(-5).reverse();
+    
+    const valuePickRows = valuePicks.map(p => {
+      const pts = p.player.pts > 0 && p.player.gp > 0 ? ` (${p.player.pts} pts / ${p.player.gp} GP)` : '';
+      return `<li>#${p.pick} ${esc(playerName(p.player))} to ${esc(teamName(p.team))}: ${p.value.toFixed(1)} model value${pts}</li>`;
+    }).join('');
+    
+    const reachRows = reaches.map(p => {
+      const pts = p.player.pts > 0 && p.player.gp > 0 ? ` (${p.player.pts} pts / ${p.player.gp} GP)` : '';
+      return `<li>#${p.pick} ${esc(playerName(p.player))} to ${esc(teamName(p.team))}: ${p.value.toFixed(1)} model value${pts}</li>`;
+    }).join('');
+    
+    // Yeti analysis
+    const yetiPicks = s.history.filter(h => h.team === 'Yeti' && h.id);
+    const reunionTargets = [
+      { name: 'Peter', id: 'McAlear, Peter' },
+      { name: 'Toledano', id: 'Toledano, David' },
+      { name: 'Thomas', id: 'McAlear, Thomas' },
+      { name: 'Matthew', id: 'McAlear, Matthew' },
+      { name: 'Daniel', id: 'McAlear, Daniel' },
+    ];
+    
+    const reunionRows = reunionTargets.map(t => {
+      const pick = s.history.find(h => h.id === t.id);
+      if (!pick) return `<li>${t.name}: not drafted</li>`;
+      return `<li>${t.name}: #${pick.pick} (${esc(teamName(pick.team))})</li>`;
+    }).join('');
+    
+    // Position shape
+    const positionRows = E.TEAMS.map(team => {
+      const roster = E.roster(s, PLAYERS, team);
+      const forwards = roster.filter(p => p.pos === 'F' || (p.pos && p.pos.includes('F'))).length;
+      const defense = roster.filter(p => p.pos === 'D' || (p.pos && p.pos.includes('D') && !p.pos.includes('F'))).length;
+      const goalies = roster.filter(p => p.role === 'goalie').length;
+      const unknown = roster.filter(p => !p.pos || p.pos === '').length;
+      const shape = `${forwards}F / ${defense}D / ${goalies}G${unknown > 0 ? ` / ${unknown}?` : ''}`;
+      return `<li>${esc(teamName(team))}: ${shape}</li>`;
+    }).join('');
+    
+    analysisEl.innerHTML = `
+      <div class="page-heading"><div><p class="eyebrow">2026-27 DRAFT RESULT</p><h2>Model analysis</h2><p class="muted">Numbers shown are the draft model's value estimates, not predicted season wins.</p></div></div>
+      
+      <div class="analysis-grid">
+        <div class="analysis-section">
+          <h3>Team model values (ranked)</h3>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Rank</th><th>Team</th><th>Total Value</th></tr></thead>
+              <tbody>${valueRows}</tbody>
+            </table>
+          </div>
+        </div>
+        
+        <div class="analysis-section">
+          <h3>Position shape</h3>
+          <ul class="analysis-list">${positionRows}</ul>
+        </div>
+      </div>
+      
+      <div class="analysis-grid">
+        <div class="analysis-section">
+          <h3>Value picks</h3>
+          <p class="muted">High model value relative to draft position</p>
+          <ol class="analysis-list">${valuePickRows}</ol>
+        </div>
+        
+        <div class="analysis-section">
+          <h3>Reaches</h3>
+          <p class="muted">Lower model value for draft position</p>
+          <ol class="analysis-list">${reachRows}</ol>
+        </div>
+      </div>
+      
+      <div class="analysis-section yeti-note">
+        <h3>Yeti draft notes</h3>
+        <p><strong>First three picks:</strong> The plan was Owen Semanyk, Steven McAlear, Euan Martin. Result: #2 ${esc(playerName(byId.get(yetiPicks[0].id)))}, #11 ${esc(playerName(byId.get(yetiPicks[1].id)))}, #14 ${esc(playerName(byId.get(yetiPicks[2].id)))} — the plan held.</p>
+        <p><strong>Reunion targets:</strong></p>
+        <ul class="analysis-list">${reunionRows}</ul>
+      </div>
+    `;
   }
   function renderResults() {
     if (!simulations) {

@@ -8,8 +8,8 @@ const vm = require('node:vm');
 const E = require('../../public/westmount-draft/draft-engine.js');
 const { PLAYERS, ROSTER_INFO } = require('../../public/westmount-draft/data.js');
 const source = fs.readFileSync(path.join(__dirname, '../../public/westmount-draft/app.js'), 'utf8');
-const CURRENT_KEY = 'wsl-draft-2026-v2';
-const LEGACY_KEYS = ['wsl-draft-v18', 'wsl-draft-v17', 'wsl-draft-v16'];
+const CURRENT_KEY = 'wsl-draft-2026-v4-locked';
+const LEGACY_KEYS = ['wsl-draft-2026-v3', 'wsl-draft-2026-v2', 'wsl-draft-v18', 'wsl-draft-v17', 'wsl-draft-v16'];
 
 // This is the shape persisted by the deployed v18 page and its v17/v16
 // predecessors: history is an ID array, with ownership in a separate map.
@@ -49,6 +49,7 @@ function boot(initialStorage) {
   };
   const context = {
     DraftEngine: E, PLAYERS, ROSTER_INFO,
+    LOCKED_DRAFT_2026: undefined, // Tests don't use the locked draft
     document: {
       getElementById: element,
       querySelectorAll: () => [],
@@ -107,7 +108,7 @@ test('prefers v18 over v17 and v16 when all legacy versions exist', () => {
   };
   const app = boot(values);
   assert.equal(app.state().history[0].id, 'Ong Tone, Christopher');
-  assert.deepEqual(app.reads, [CURRENT_KEY, 'wsl-draft-v18']);
+  assert.deepEqual(app.reads, [CURRENT_KEY, 'wsl-draft-2026-v3', 'wsl-draft-2026-v2', 'wsl-draft-v18']);
   for (const [key, value] of Object.entries(values)) assert.equal(app.storage.get(key), value);
 });
 
@@ -117,7 +118,7 @@ test('prefers v17 over v16 when v18 is absent', () => {
     'wsl-draft-v16': JSON.stringify(legacyDraft(['Clarke, Lucas'])),
   });
   assert.equal(app.state().history[0].id, 'Smith, Michael');
-  assert.deepEqual(app.reads, [CURRENT_KEY, 'wsl-draft-v18', 'wsl-draft-v17']);
+  assert.deepEqual(app.reads, [CURRENT_KEY, 'wsl-draft-2026-v3', 'wsl-draft-2026-v2', 'wsl-draft-v18', 'wsl-draft-v17']);
 });
 
 test('the current saved draft takes precedence over every legacy key', () => {
@@ -142,7 +143,7 @@ test('an incompatible newest legacy draft remains downloadable without silently 
     assert.deepEqual(app.state().history, []);
     assert.match(app.element('notice').innerHTML, /older saved draft does not match/);
     assert.equal(app.recovery(), raw);
-    assert.deepEqual(app.reads, [CURRENT_KEY, 'wsl-draft-v18']);
+    assert.deepEqual(app.reads, [CURRENT_KEY, 'wsl-draft-2026-v3', 'wsl-draft-2026-v2', 'wsl-draft-v18']);
     assert.equal(app.storage.get('wsl-draft-v18'), raw);
     assert.equal(app.storage.get('wsl-draft-v17'), olderRaw);
     assert.deepEqual(app.writes, []);
