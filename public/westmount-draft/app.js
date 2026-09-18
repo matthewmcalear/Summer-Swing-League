@@ -329,31 +329,68 @@
     
     analysisEl.hidden = false;
     
-    // Team model values
-    const teamValues = E.TEAMS.map(team => {
-      const roster = E.roster(s, PLAYERS, team);
-      const totalValue = roster.reduce((sum, p) => sum + E.score(p, PLAYERS), 0);
-      return { team, totalValue, roster };
-    }).sort((a, b) => b.totalValue - a.totalValue);
-    
-    const valueRows = teamValues.map((t, i) => 
-      `<tr class="${t.team==='Yeti'?'suggested':''}"><td>${i+1}.</td><td>${esc(teamName(t.team))}</td><td class="numeric">${t.totalValue.toFixed(1)}</td></tr>`
-    ).join('');
-    
     // Helper to check if player has real stats
     const hasStats = p => p.role === 'goalie' ? (p.gaa != null && p.gaa > 0) : (p.gp > 0);
     
-    // Value picks: players with stats, taken in second half (picks 43-84), highest model value
-    const secondHalfPicks = s.history.filter(h => h.id && h.pick >= 43).map(h => {
+    // Team model values and returning production
+    const teamData = E.TEAMS.map(team => {
+      const roster = E.roster(s, PLAYERS, team);
+      const totalValue = roster.reduce((sum, p) => sum + E.score(p, PLAYERS), 0);
+      
+      // Returning skater production (gp > 0 only, goalies excluded)
+      const returningSkaters = roster.filter(p => p.role !== 'goalie' && p.gp > 0);
+      const returningPts = returningSkaters.reduce((sum, p) => sum + (p.pts || 0), 0);
+      const returningGP = returningSkaters.reduce((sum, p) => sum + (p.gp || 0), 0);
+      const returningPPG = returningGP > 0 ? returningPts / returningGP : 0;
+      
+      // Top 3 returning skaters by last-year points
+      const top3 = roster.filter(p => p.role !== 'goalie' && p.gp > 0)
+        .sort((a, b) => (b.pts || 0) - (a.pts || 0))
+        .slice(0, 3);
+      
+      return { team, totalValue, roster, returningPts, returningGP, returningPPG, top3 };
+    }).sort((a, b) => b.totalValue - a.totalValue);
+    
+    const valueRows = teamData.map((t, i) => 
+      `<tr class="${t.team==='Yeti'?'suggested':''}"><td>${i+1}.</td><td>${esc(teamName(t.team))}</td><td class="numeric">${t.totalValue.toFixed(1)}</td><td class="numeric">${t.returningPts} / ${t.returningGP}</td><td class="numeric">${t.returningPPG.toFixed(2)}</td></tr>`
+    ).join('');
+    
+    // Note about Yeti's model value including Owen's scouting score
+    const yetiData = teamData.find(t => t.team === 'Yeti');
+    const owenPlayer = byId.get('Semanyk, Owen');
+    const owenNote = owenPlayer && owenPlayer.scoutingScore ? ` Yeti's ${yetiData.totalValue.toFixed(1)} includes Owen Semanyk's scouting override of ${owenPlayer.scoutingScore}.` : '';
+    
+    // Returning production table
+    const productionRows = [...teamData].sort((a, b) => b.returningPts - a.returningPts).map(t => 
+      `<tr class="${t.team==='Yeti'?'suggested':''}"><td>${esc(teamName(t.team))}</td><td class="numeric">${t.returningPts}</td><td class="numeric">${t.returningGP}</td><td class="numeric">${t.returningPPG.toFixed(2)}</td></tr>`
+    ).join('');
+    
+    // All goalies, ordered by GAA
+    const allGoalies = s.history.map(h => byId.get(h.id)).filter(p => p && p.role === 'goalie');
+    const goaliesWithGAA = allGoalies.filter(p => p.gaa != null && p.gaa > 0).sort((a, b) => a.gaa - b.gaa);
+    const goaliesWithoutGAA = allGoalies.filter(p => !p.gaa || p.gaa === 0);
+    const goalieRows = [
+      ...goaliesWithGAA.map(p => {
+        const pick = s.history.find(h => h.id === p.id);
+        return `<li>${esc(playerName(p))} (${esc(teamName(pick.team))}): ${Number(p.gaa).toFixed(2)} GAA</li>`;
+      }),
+      ...goaliesWithoutGAA.map(p => {
+        const pick = s.history.find(h => h.id === p.id);
+        return `<li>${esc(playerName(p))} (${esc(teamName(pick.team))}): no numbers</li>`;
+      })
+    ].join('');
+    
+    // Value picks: skaters with gp > 0, pick >= 43, highest model value
+    const secondHalfSkaters = s.history.filter(h => h.id && h.pick >= 43).map(h => {
       const player = byId.get(h.id);
-      if (!player || !hasStats(player)) return null;
+      if (!player || player.role === 'goalie' || !player.gp || player.gp === 0) return null;
       const value = E.score(player, PLAYERS);
       return { ...h, player, value };
     }).filter(Boolean).sort((a, b) => b.value - a.value);
     
-    const valuePicks = secondHalfPicks.slice(0, 5);
+    const valuePicks = secondHalfSkaters.slice(0, 6);
     
-    // Reaches: first 4 rounds (picks 1-24), lowest model values, excluding captains
+    // Reaches: picks 1-24, lowest model values, excluding captains
     const captainIds = new Set(Object.values(E.CAPTAIN_IDS));
     const firstFourRounds = s.history.filter(h => h.id && h.pick <= 24).map(h => {
       const player = byId.get(h.id);
@@ -364,24 +401,54 @@
     
     const reaches = firstFourRounds.slice(0, 5);
     
-    // Count no-stat players
-    const noStatCount = s.history.filter(h => {
-      const player = byId.get(h.id);
-      return player && !hasStats(player);
-    }).length;
-    
-    const valuePickRows = valuePicks.map(p => {
-      const pts = p.player.role === 'goalie' ? `${Number(p.player.gaa).toFixed(2)} GAA` : `${p.player.pts} pts / ${p.player.gp} GP`;
-      return `<li>#${p.pick} ${esc(playerName(p.player))} to ${esc(teamName(p.team))}: ${p.value.toFixed(1)} model value (${pts})</li>`;
-    }).join('');
+    const valuePickRows = valuePicks.map(p => 
+      `<li>#${p.pick} ${esc(playerName(p.player))} to ${esc(teamName(p.team))}: ${p.value.toFixed(1)} model value (${p.player.pts} pts / ${p.player.gp} GP)</li>`
+    ).join('');
     
     const reachRows = reaches.map(p => {
       const pts = p.player.role === 'goalie' ? `${Number(p.player.gaa).toFixed(2)} GAA` : `${p.player.pts} pts / ${p.player.gp} GP`;
       return `<li>#${p.pick} ${esc(playerName(p.player))} to ${esc(teamName(p.team))}: ${p.value.toFixed(1)} model value (${pts})</li>`;
     }).join('');
     
-    // Yeti analysis
+    // Yeti-specific analysis
     const yetiPicks = s.history.filter(h => h.team === 'Yeti' && h.id);
+    const yetiRoster = E.roster(s, PLAYERS, 'Yeti');
+    
+    // Fourth pick analysis
+    const fourthPick = yetiPicks[3];
+    const fourthPlayer = byId.get(fourthPick.id);
+    const fourthStats = fourthPlayer.gp > 0 ? `${fourthPlayer.pts} pts / ${fourthPlayer.gp} GP` : 'no stat line';
+    
+    // Find defenders still available at that pick
+    const beforeFourth = s.history.slice(0, fourthPick.pick - 1).map(h => h.id);
+    const defendersAvailable = PLAYERS.filter(p => 
+      !beforeFourth.includes(p.id) && 
+      (p.pos === 'D' || (p.pos && p.pos.includes('D'))) &&
+      p.gp > 0
+    ).sort((a, b) => E.score(b, PLAYERS) - E.score(a, PLAYERS)).slice(0, 3);
+    
+    const defendersNote = defendersAvailable.length > 0 
+      ? `Available defenders: ${defendersAvailable.map(p => `${playerName(p)} (${p.pts} pts / ${p.gp} GP)`).join(', ')}.`
+      : 'No defenders with stat lines remained.';
+    
+    // Stephane Cohen pick analysis  
+    const cohenPick = yetiPicks.find(p => byId.get(p.id).name === 'Cohen, Stephane');
+    const cohenPlayer = byId.get(cohenPick.id);
+    
+    // Find skaters still available at Cohen's pick
+    const beforeCohen = s.history.slice(0, cohenPick.pick - 1).map(h => h.id);
+    const skatersAvailable = PLAYERS.filter(p => 
+      !beforeCohen.includes(p.id) && 
+      p.role !== 'goalie' &&
+      p.gp > 0
+    ).sort((a, b) => E.score(b, PLAYERS) - E.score(a, PLAYERS)).slice(0, 5);
+    
+    const schmidtAvailable = skatersAvailable.find(p => p.name === 'Schmidt, Simon');
+    const skatersNote = skatersAvailable.length > 0 
+      ? `Available skaters: ${skatersAvailable.slice(0, 4).map(p => `${playerName(p)} (${p.pts} pts / ${p.gp} GP)`).join(', ')}${schmidtAvailable ? ', including Schmidt' : ''}.`
+      : '';
+    
+    // Reunion targets
     const reunionTargets = [
       { name: 'Peter', id: 'McAlear, Peter' },
       { name: 'Toledano', id: 'Toledano, David' },
@@ -393,60 +460,64 @@
     const reunionRows = reunionTargets.map(t => {
       const pick = s.history.find(h => h.id === t.id);
       if (!pick) return `<li>${t.name}: not drafted</li>`;
-      return `<li>${t.name}: #${pick.pick} (${esc(teamName(pick.team))})</li>`;
+      return `<li>${t.name}: #${pick.pick}</li>`;
     }).join('');
     
-    // Position shape
-    const positionRows = E.TEAMS.map(team => {
-      const roster = E.roster(s, PLAYERS, team);
-      const forwards = roster.filter(p => p.pos === 'F' || (p.pos && p.pos.includes('F'))).length;
-      const defense = roster.filter(p => p.pos === 'D' || (p.pos && p.pos.includes('D') && !p.pos.includes('F'))).length;
-      const goalies = roster.filter(p => p.role === 'goalie').length;
-      const unknown = roster.filter(p => !p.pos || p.pos === '').length;
-      const shape = `${forwards}F / ${defense}D / ${goalies}G${unknown > 0 ? ` / ${unknown}?` : ''}`;
-      return `<li>${esc(teamName(team))}: ${shape}</li>`;
+    // Top 3 returning skaters per team
+    const top3Sections = teamData.map(t => {
+      if (t.top3.length === 0) return `<div class="team-top3"><strong>${esc(teamName(t.team))}:</strong> No returning skaters with stat lines</div>`;
+      const players = t.top3.map(p => `${playerName(p)} (${p.pts} pts / ${p.gp} GP)`).join(', ');
+      return `<div class="team-top3"><strong>${esc(teamName(t.team))}:</strong> ${players}</div>`;
     }).join('');
     
     analysisEl.innerHTML = `
-      <div class="page-heading"><div><p class="eyebrow">2026-27 DRAFT RESULT</p><h2>Model analysis</h2><p class="muted">Numbers shown are the draft model's value estimates, not predicted season wins.</p></div></div>
+      <div class="page-heading"><div><p class="eyebrow">2026-27 DRAFT RESULT</p><h2>Draft review</h2><p class="muted">Model values are the draft model's estimates, not predicted season wins.${owenNote}</p></div></div>
       
       <div class="analysis-grid">
         <div class="analysis-section">
           <h3>Team model values (ranked)</h3>
           <div class="table-scroll">
             <table>
-              <thead><tr><th>Rank</th><th>Team</th><th>Total Value</th></tr></thead>
+              <thead><tr><th>Rank</th><th>Team</th><th>Model Value</th><th>Returning Pts/GP</th><th>PPG</th></tr></thead>
               <tbody>${valueRows}</tbody>
             </table>
           </div>
+          <p class="muted" style="margin-top: 8px;">Returning production counts skaters with gp > 0 only. Players without stat lines contribute 0.</p>
         </div>
         
         <div class="analysis-section">
-          <h3>Position shape</h3>
-          <ul class="analysis-list">${positionRows}</ul>
+          <h3>Goalies</h3>
+          <ol class="analysis-list">${goalieRows}</ol>
         </div>
       </div>
       
       <div class="analysis-grid">
         <div class="analysis-section">
           <h3>Value picks</h3>
-          <p class="muted">Players with stats taken in second half (picks 43–84), highest model value</p>
+          <p class="muted">Skaters with gp > 0 taken at pick 43+, highest model value</p>
           <ol class="analysis-list">${valuePickRows}</ol>
         </div>
         
         <div class="analysis-section">
           <h3>Reaches</h3>
-          <p class="muted">First four rounds (picks 1–24), lowest model values, excluding captains</p>
+          <p class="muted">Picks 1–24, lowest model values, captains excluded</p>
           <ol class="analysis-list">${reachRows}</ol>
         </div>
       </div>
-      ${noStatCount > 0 ? `<p class="muted" style="margin-top: 12px;">${noStatCount} players without statistics are not included in value or reach analysis.</p>` : ''}
+      <p class="muted" style="margin-top: 12px;">A blank stat line is not a steal and is not counted in either list.</p>
       
       <div class="analysis-section yeti-note">
         <h3>Yeti draft notes</h3>
         <p><strong>First three picks:</strong> The plan was Owen Semanyk, Steven McAlear, Euan Martin. Result: #2 ${esc(playerName(byId.get(yetiPicks[0].id)))}, #11 ${esc(playerName(byId.get(yetiPicks[1].id)))}, #14 ${esc(playerName(byId.get(yetiPicks[2].id)))} — the plan held.</p>
+        <p><strong>Fourth pick:</strong> #${fourthPick.pick} ${esc(playerName(fourthPlayer))} (${fourthStats}). ${defendersNote}</p>
+        <p><strong>Pick 53:</strong> ${esc(playerName(cohenPlayer))} (${cohenPlayer.pts} pts / ${cohenPlayer.gp} GP). ${skatersNote}</p>
         <p><strong>Reunion targets:</strong></p>
         <ul class="analysis-list">${reunionRows}</ul>
+      </div>
+      
+      <div class="analysis-section">
+        <h3>Top 3 returning skaters per team</h3>
+        <div class="top3-grid">${top3Sections}</div>
       </div>
     `;
   }
