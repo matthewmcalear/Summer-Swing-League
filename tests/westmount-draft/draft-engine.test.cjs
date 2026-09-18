@@ -44,8 +44,20 @@ function fixtures({ skaters = 90, goalies = 8 } = {}) {
 // Construct expected order without using any engine helpers. This detects the
 // end-of-round double turns that are easy to lose in next-pick calculations.
 function expectedSnake(order, rounds = 14) {
-  return Array.from({ length: rounds }, (_, round) =>
+  const snake = Array.from({ length: rounds }, (_, round) =>
     round % 2 === 0 ? [...order] : [...order].reverse()).flat();
+  
+  // Apply Yeti↔Kings swap for rounds 1–4 only (indices 0–23) in the 2026-27 order
+  const DEFAULT_ORDER = ['Lightning', 'Kings', 'Coyotes', 'Devils', 'Yeti', 'Hawks'];
+  const is2026Order = JSON.stringify(order) === JSON.stringify(DEFAULT_ORDER);
+  if (is2026Order) {
+    for (let i = 0; i < Math.min(24, snake.length); i++) {
+      if (snake[i] === 'Yeti') snake[i] = 'Kings';
+      else if (snake[i] === 'Kings') snake[i] = 'Yeti';
+    }
+  }
+  
+  return snake;
 }
 
 test('six teams and all six registered captains match the supplied season', () => {
