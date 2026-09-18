@@ -340,28 +340,44 @@
       `<tr class="${t.team==='Yeti'?'suggested':''}"><td>${i+1}.</td><td>${esc(teamName(t.team))}</td><td class="numeric">${t.totalValue.toFixed(1)}</td></tr>`
     ).join('');
     
-    // Value picks (high model value, picked late) and reaches (low model value, picked early)
-    const pickAnalysis = s.history.filter(h => h.id).map(h => {
-      const player = byId.get(h.id);
-      if (!player) return null;
-      const value = E.score(player, PLAYERS);
-      // Simple heuristic: compare value to pick position
-      const expectedPick = Math.max(1, Math.round((35 - value) * 2.5));
-      const delta = h.pick - expectedPick; // negative = reached early, positive = value
-      return { ...h, player, value, delta };
-    }).filter(Boolean).sort((a, b) => b.delta - a.delta);
+    // Helper to check if player has real stats
+    const hasStats = p => p.role === 'goalie' ? (p.gaa != null && p.gaa > 0) : (p.gp > 0);
     
-    const valuePicks = pickAnalysis.slice(0, 5);
-    const reaches = pickAnalysis.slice(-5).reverse();
+    // Value picks: players with stats, taken in second half (picks 43-84), highest model value
+    const secondHalfPicks = s.history.filter(h => h.id && h.pick >= 43).map(h => {
+      const player = byId.get(h.id);
+      if (!player || !hasStats(player)) return null;
+      const value = E.score(player, PLAYERS);
+      return { ...h, player, value };
+    }).filter(Boolean).sort((a, b) => b.value - a.value);
+    
+    const valuePicks = secondHalfPicks.slice(0, 5);
+    
+    // Reaches: first 4 rounds (picks 1-24), lowest model values, excluding captains
+    const captainIds = new Set(Object.values(E.CAPTAIN_IDS));
+    const firstFourRounds = s.history.filter(h => h.id && h.pick <= 24).map(h => {
+      const player = byId.get(h.id);
+      if (!player || !hasStats(player) || captainIds.has(h.id)) return null;
+      const value = E.score(player, PLAYERS);
+      return { ...h, player, value };
+    }).filter(Boolean).sort((a, b) => a.value - b.value);
+    
+    const reaches = firstFourRounds.slice(0, 5);
+    
+    // Count no-stat players
+    const noStatCount = s.history.filter(h => {
+      const player = byId.get(h.id);
+      return player && !hasStats(player);
+    }).length;
     
     const valuePickRows = valuePicks.map(p => {
-      const pts = p.player.pts > 0 && p.player.gp > 0 ? ` (${p.player.pts} pts / ${p.player.gp} GP)` : '';
-      return `<li>#${p.pick} ${esc(playerName(p.player))} to ${esc(teamName(p.team))}: ${p.value.toFixed(1)} model value${pts}</li>`;
+      const pts = p.player.role === 'goalie' ? `${Number(p.player.gaa).toFixed(2)} GAA` : `${p.player.pts} pts / ${p.player.gp} GP`;
+      return `<li>#${p.pick} ${esc(playerName(p.player))} to ${esc(teamName(p.team))}: ${p.value.toFixed(1)} model value (${pts})</li>`;
     }).join('');
     
     const reachRows = reaches.map(p => {
-      const pts = p.player.pts > 0 && p.player.gp > 0 ? ` (${p.player.pts} pts / ${p.player.gp} GP)` : '';
-      return `<li>#${p.pick} ${esc(playerName(p.player))} to ${esc(teamName(p.team))}: ${p.value.toFixed(1)} model value${pts}</li>`;
+      const pts = p.player.role === 'goalie' ? `${Number(p.player.gaa).toFixed(2)} GAA` : `${p.player.pts} pts / ${p.player.gp} GP`;
+      return `<li>#${p.pick} ${esc(playerName(p.player))} to ${esc(teamName(p.team))}: ${p.value.toFixed(1)} model value (${pts})</li>`;
     }).join('');
     
     // Yeti analysis
@@ -414,16 +430,17 @@
       <div class="analysis-grid">
         <div class="analysis-section">
           <h3>Value picks</h3>
-          <p class="muted">High model value relative to draft position</p>
+          <p class="muted">Players with stats taken in second half (picks 43–84), highest model value</p>
           <ol class="analysis-list">${valuePickRows}</ol>
         </div>
         
         <div class="analysis-section">
           <h3>Reaches</h3>
-          <p class="muted">Lower model value for draft position</p>
+          <p class="muted">First four rounds (picks 1–24), lowest model values, excluding captains</p>
           <ol class="analysis-list">${reachRows}</ol>
         </div>
       </div>
+      ${noStatCount > 0 ? `<p class="muted" style="margin-top: 12px;">${noStatCount} players without statistics are not included in value or reach analysis.</p>` : ''}
       
       <div class="analysis-section yeti-note">
         <h3>Yeti draft notes</h3>
