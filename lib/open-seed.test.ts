@@ -11,7 +11,7 @@ describe('fieldMembers', () => {
   })
 
   it('matches names regardless of accents, case and spacing, and skips unregistered names', () => {
-    expect(fieldMembers([member('  Tibi   MITRAN ')], ['Tibi Mitran', 'Nobody Here']).length).toBe(1)
+    expect(fieldMembers([member('  Griffin   MASON ')], ['Griffin Mason', 'Nobody Here']).length).toBe(1)
     expect(normalizeName('Thérien')).toBe('therien')
     expect(fieldMembers([], OPEN_FIELD_PLAYERS)).toEqual([])
   })

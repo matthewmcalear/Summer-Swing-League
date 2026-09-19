@@ -1,6 +1,6 @@
 export const OPEN_EVENT_ID = 'ssl-open-2026'
 export const OPEN_DATE = '2026-09-19'
-export const OPEN_FIELD_PLAYERS = ['Matthew McAlear', 'Thomas McAlear', 'Dan McAlear', 'Connor Peltz', 'Alex Sokaris', 'Tibi Mitran', 'Shaun Anderson', 'Spence Goodwin', 'Rachel Kuta', 'Nicholas Clarke', 'Griffin Mason']
+export const OPEN_FIELD_PLAYERS = ['Matthew McAlear', 'Thomas McAlear', 'Dan McAlear', 'Connor Peltz', 'Alex Sokaris', 'Shaun Anderson', 'Spence Goodwin', 'Rachel Kuta', 'Nicholas Clarke', 'Griffin Mason']
 /** Tee times from the Open page, 24-hour clock; one group per tee time. */
 export const OPEN_TEE_TIMES = ['13:00', '13:10', '13:20']
 /**
