@@ -1,4 +1,4 @@
-import { OPEN_COURSE, OPEN_FIELD_PLAYERS } from './open-types'
+import { OPEN_COURSE, OPEN_FIELD_PLAYERS, OPEN_GROUP_SIZES } from './open-types'
 
 const TOTAL_HOLES = 18
 
@@ -16,10 +16,14 @@ export function fieldMembers<T extends { full_name: string }>(members: T[], fiel
 }
 
 /**
- * Group index for each of `count` players across `groups` groups, filled in
- * order and front-loaded (10 players → 4/3/3). Players can move afterwards.
+ * Group index for each of `count` players across `groups` groups. When OPEN_GROUP_SIZES
+ * is defined and matches the player count, uses those exact sizes in order; otherwise
+ * distributes evenly and front-loads (10 players, 3 groups → 4/3/3). Players can move afterwards.
  */
 export function distributeGroups(count: number, groups: number): number[] {
+  if (OPEN_GROUP_SIZES.length === groups && OPEN_GROUP_SIZES.reduce((a, b) => a + b, 0) === count) {
+    return OPEN_GROUP_SIZES.flatMap((size, group) => Array<number>(size).fill(group))
+  }
   const sizes = Array.from({ length: groups }, (_, index) => Math.floor(count / groups) + (index < count % groups ? 1 : 0))
   return sizes.flatMap((size, group) => Array<number>(size).fill(group))
 }

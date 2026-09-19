@@ -1,8 +1,10 @@
 export const OPEN_EVENT_ID = 'ssl-open-2026'
 export const OPEN_DATE = '2026-09-19'
-export const OPEN_FIELD_PLAYERS = ['Matthew McAlear', 'Thomas McAlear', 'Dan McAlear', 'Connor Peltz', 'Alex Sokaris', 'Shaun Anderson', 'Spence Goodwin', 'Rachel Kuta', 'Nicholas Clarke', 'Griffin Mason']
+export const OPEN_FIELD_PLAYERS = ['Matthew McAlear', 'Dan McAlear', 'Nicholas Clarke', 'Spence Goodwin', 'Thomas McAlear', 'Rachel Kuta', 'Griffin Mason', 'Alex Sokaris', 'Shaun Anderson', 'Connor Peltz']
 /** Tee times from the Open page, 24-hour clock; one group per tee time. */
 export const OPEN_TEE_TIMES = ['13:00', '13:10', '13:20']
+/** Group sizes for the field distribution (must sum to OPEN_FIELD_PLAYERS.length). */
+export const OPEN_GROUP_SIZES = [4, 3, 3]
 /**
  * Golf Ste-Rose (Laval), Blue tees, from the BlueGolf scorecard: 5842 yards,
  * rating 68.6, slope 127, par 70. Seeds the course library if nobody has
