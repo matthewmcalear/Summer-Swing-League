@@ -37,7 +37,7 @@ fair = {
 standings = [
   ("Matthew McAlear", 235.7), ("Thomas McAlear", 230.2), ("Rachel Kuta", 225.5),
   ("Dan McAlear", 223.9), ("Mike McAlear", 198.0), ("Connor Peltz", 185.0),
-  ("Shaun Anderson", 170.0), ("Tibi Mitran", 160.0), ("Alex Sokaris", 150.0),
+  ("Shaun Anderson", 170.0), ("Alex Sokaris", 150.0),
   ("Doug Fauteux", 140.0), ("Nicolas Tuli", 130.0), ("Sophie Therien", 120.0),
 ]
 # Approximate tornado (scaled from old to new EVs - same relative sensitivity)
@@ -152,6 +152,7 @@ standings = [
   ("Dan McAlear", 223.88), ("Mike McAlear", 210.0), ("Connor Peltz", 200.0),
   ("Shaun Anderson", 190.0), ("Alex Sokaris", 180.0), ("Doug Fauteux", 170.0),
   ("Nicolas Tuli", 160.0), ("Sophie Therien", 150.0), ("Spence Goodwin", 140.0),
+  ("Griffin Mason", 130.0),
 ]
 # Try load real standings from repo if present
 import json
