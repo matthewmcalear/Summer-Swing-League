@@ -4,7 +4,7 @@ import OpenClient from './live/OpenClient'
 import { OPEN_FIELD_PLAYERS } from '@/lib/open-types'
 import { Calendar, MapPin, Trophy, AlertCircle } from 'lucide-react'
 
-export const metadata = { title: 'SSL Open 2026 — Summer Swing League' }
+export const metadata = { title: 'SSL Open 2026 Results — Summer Swing League' }
 
 export default function SSLOpenPage() {
   return (
@@ -19,27 +19,27 @@ export default function SSLOpenPage() {
           style={{ objectFit: 'cover', objectPosition: 'center' }}
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-900/85 via-yellow-900/75 to-amber-800/80" />
+        <div className="absolute inset-0 bg-gradient-to-br from-green-900/85 via-green-800/75 to-emerald-800/80" />
         
         <div className="relative z-10 px-6 sm:px-8 py-8 sm:py-12 text-white">
-          <div className="mb-3 flex items-center gap-2 text-amber-200 text-xs font-bold uppercase tracking-widest">
-            <Calendar size={14} strokeWidth={2} aria-hidden="true" />
-            Annual Event
+          <div className="mb-3 flex items-center gap-2 text-green-200 text-xs font-bold uppercase tracking-widest">
+            <Trophy size={14} strokeWidth={2} aria-hidden="true" />
+            Event Complete
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight drop-shadow-lg mb-4">
-            ⛳ SSL Open 2026
+            ⛳ SSL Open 2026 Results
           </h1>
           <div className="space-y-2 mb-5">
-            <p className="text-amber-50 text-xl sm:text-2xl font-bold drop-shadow-md">
-              Saturday, September 19, 2026
+            <p className="text-green-50 text-xl sm:text-2xl font-bold drop-shadow-md">
+              🏆 Connor Peltz — Champion
             </p>
-            <p className="text-amber-100 text-base sm:text-lg drop-shadow">
-              <strong>Golf Ste-Rose</strong> · Tee times: 1:00, 1:10 & 1:20
+            <p className="text-green-100 text-base sm:text-lg drop-shadow">
+              Saturday, September 19, 2026 · <strong>Golf Ste-Rose</strong>
             </p>
           </div>
-          <p className="text-amber-50 text-base sm:text-lg max-w-2xl leading-relaxed drop-shadow">
-            One-day league Open with net scoring. Everyone competes on a single leaderboard. 
-            Pick your difficulty on the first tee and earn season bonuses.
+          <p className="text-green-50 text-base sm:text-lg max-w-2xl leading-relaxed drop-shadow">
+            Final results from the one-day league Open with net scoring. Everyone competed on a single leaderboard
+            with their chosen difficulty mode.
           </p>
         </div>
       </div>
@@ -47,28 +47,28 @@ export default function SSLOpenPage() {
       {/* ── Quick Facts Strip ── */}
       <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-100 text-green-900 text-xs font-bold border border-green-200">
-          <Calendar size={13} strokeWidth={2} aria-hidden="true" />
-          Sept 19, 2026
+          <Trophy size={13} strokeWidth={2} aria-hidden="true" />
+          Event Complete
         </span>
         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-100 text-blue-900 text-xs font-bold border border-blue-200">
           Net scoring
         </span>
         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-100 text-purple-900 text-xs font-bold border border-purple-200">
-          One board
+          10 players
         </span>
         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-100 text-orange-900 text-xs font-bold border border-orange-200">
-          Declare tier first tee
+          Golf Ste-Rose
         </span>
       </div>
 
-      {/* ── Who's In ── */}
+      {/* ── Who Played ── */}
       <div className="card bg-green-50 border-green-200">
         <h2 className="text-xl font-bold text-green-900 mb-3 flex items-center gap-2">
           <Trophy size={20} strokeWidth={2} className="text-green-700" aria-hidden="true" />
-          Who's In
+          The Field
         </h2>
         <p className="text-sm text-green-800 mb-3">
-          Confirmed players for the SSL Open 2026:
+          Players who competed in the SSL Open 2026:
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-sm">
           {OPEN_FIELD_PLAYERS.map((name) => (
@@ -87,7 +87,7 @@ export default function SSLOpenPage() {
           Tee Groups
         </h2>
         <p className="text-sm text-blue-800 mb-4">
-          Official tee sheet for Saturday, September 19, 2026:
+          Official tee sheet from Saturday, September 19, 2026:
         </p>
         <div className="space-y-3">
           <div className="bg-white rounded-lg border border-blue-200 p-4">
@@ -125,18 +125,40 @@ export default function SSLOpenPage() {
 
       <OpenClient compact />
 
+      {/* ── FINAL RESULTS ── */}
+      <div className="card bg-gradient-to-br from-green-600 to-emerald-600 text-white border-2 border-green-700">
+        <div className="flex items-center gap-3 mb-4">
+          <Trophy size={28} strokeWidth={2.5} className="text-green-100" aria-hidden="true" />
+          <h2 className="text-2xl font-bold">Final Results & Live Leaderboard</h2>
+        </div>
+        <p className="text-green-50 text-base mb-4 leading-relaxed">
+          View the complete leaderboard with hole-by-hole scoring, final standings, and season impact. 
+          All Open rounds and results are preserved in the live scoring system.
+        </p>
+        <Link
+          href="/ssl-open/live"
+          className="inline-flex items-center gap-2 px-5 py-3 bg-white text-green-900 rounded-xl font-bold hover:bg-green-50 transition-all shadow-lg"
+        >
+          <Trophy size={18} strokeWidth={2} aria-hidden="true" />
+          View Full Leaderboard & Scorecards
+        </Link>
+      </div>
+
       {/* ── RULES SECTION ── */}
       <div className="space-y-6 pt-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">How It Works</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Event Rules & Format</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            How the SSL Open 2026 worked — preserved for historical reference and future events.
+          </p>
           <div className="text-gray-700 space-y-4 leading-relaxed text-sm sm:text-base">
             
             {/* Season scoring first */}
             <div>
-              <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">This Counts for Your SSL Season Score</h3>
+              <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2">Counted for SSL Season Score</h3>
               <p className="mb-2">
-                The SSL Open is a <strong>regular league round</strong> on Saturday, September 19, 2026. 
-                Your round counts toward your <strong>Summer Swing League season score</strong> under the same scoring rules 
+                The SSL Open was a <strong>regular league round</strong> on Saturday, September 19, 2026. 
+                Each player's round counted toward their <strong>Summer Swing League season score</strong> under the same scoring rules 
                 as any other league event (top-5 rounds, participation points, etc.).
               </p>
               <p>
@@ -387,22 +409,22 @@ export default function SSLOpenPage() {
 
         {/* ── Season Points ── */}
         <div className="card bg-green-50 border-green-200">
-          <h3 className="text-lg font-bold text-green-900 mb-3">How This Affects Your Season Score</h3>
+          <h3 className="text-lg font-bold text-green-900 mb-3">Season Score Impact</h3>
           <p className="text-sm text-gray-700 mb-3">
-            <strong>Your Open round counts toward your SSL season score exactly like any other league round.</strong> Normal SSL 
-            scoring rules apply (top-5 rounds, participation points, etc.). See the{' '}
+            <strong>Each Open round counted toward SSL season scores exactly like any other league round.</strong> Normal SSL 
+            scoring rules applied (top-5 rounds, participation points, etc.). See the{' '}
             <Link href="/rules" className="text-green-700 hover:text-green-900 font-semibold hover:underline">
               full SSL rules
             </Link>.
           </p>
           <p className="text-sm text-gray-700 mb-3">
-            <strong>The only extra:</strong> If you finish in the top 3 on the Open leaderboard, you earn an <strong>Open finish bonus</strong> for 
-            your mode (+5/3/1 for Normal, +10/6/2 for Hard, +25/12/6 for God). This bonus is added to your season score on top of the normal 
-            points you already earned for playing the round.
+            <strong>Open finish bonuses:</strong> Top 3 finishers earned an <strong>Open finish bonus</strong> based on 
+            their mode (+5/3/1 for Normal, +10/6/2 for Hard, +25/12/6 for God), added to their season score on top of the normal 
+            points earned for playing the round.
           </p>
           <p className="text-sm text-gray-700 mb-3">
-            If you successfully Double Down, your Open finish bonus is doubled with no cap. If you fail Double Down, 
-            you get 0 Open finish bonus (but still keep your normal round points).
+            Successful Double Down declarations doubled the finish bonus with no cap. Failed Double Down 
+            attempts earned 0 Open finish bonus (but kept normal round points).
           </p>
           <div className="flex flex-col sm:flex-row gap-2 text-sm">
             <Link 

@@ -22,22 +22,22 @@ export default async function Home() {
   return (
     <div className="space-y-8">
 
-      {/* ── SSL OPEN PROMO — Top priority visibility ── */}
+      {/* ── SSL OPEN CHAMPION — Top priority visibility ── */}
       <Link 
         href="/ssl-open"
-        className="block rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-gray-900 px-6 py-5 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all border-2 border-amber-500"
+        className="block rounded-2xl bg-gradient-to-r from-green-600 via-green-500 to-emerald-600 text-white px-6 py-5 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all border-2 border-green-700"
       >
         <div className="flex items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <CalendarDays size={18} strokeWidth={2.5} aria-hidden="true" className="text-amber-900" />
-              <span className="text-amber-900 text-xs font-black uppercase tracking-widest">Upcoming Event</span>
+              <Trophy size={18} strokeWidth={2.5} aria-hidden="true" className="text-green-100" />
+              <span className="text-green-100 text-xs font-black uppercase tracking-widest">SSL Open Champion</span>
             </div>
-            <h3 className="text-2xl sm:text-3xl font-extrabold leading-tight mb-1.5">⛳ SSL Open 2026</h3>
-            <p className="text-gray-900 text-base sm:text-lg font-bold mb-1">Saturday, September 19, 2026</p>
-            <p className="text-amber-900 text-sm font-semibold">Golf Ste-Rose · 1:00, 1:10 & 1:20 · Tap for Details & Results</p>
+            <h3 className="text-2xl sm:text-3xl font-extrabold leading-tight mb-1.5">🏆 Connor Peltz Wins the Open</h3>
+            <p className="text-white text-base sm:text-lg font-bold mb-1">SSL Open 2026 · September 19, 2026</p>
+            <p className="text-green-100 text-sm font-semibold">Golf Ste-Rose · View Full Results & Leaderboard</p>
           </div>
-          <Trophy size={48} strokeWidth={2} className="text-amber-700/50 shrink-0 hidden sm:block" aria-hidden="true" />
+          <Trophy size={48} strokeWidth={2} className="text-green-200/40 shrink-0 hidden sm:block" aria-hidden="true" />
         </div>
       </Link>
 
@@ -136,17 +136,17 @@ export default async function Home() {
       {/* ── LIVE SEASON SIGNAL ── */}
       <SeasonStats standings={standings} />
 
-      {/* ── SSL OPEN ANNOUNCEMENT ── */}
+      {/* ── SSL OPEN RESULTS ── */}
       <Link
         href="/ssl-open"
-        className="block card bg-yellow-50 border-2 border-yellow-400 hover:bg-yellow-100 transition-colors"
+        className="block card bg-green-50 border-2 border-green-400 hover:bg-green-100 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <div className="text-3xl">⛳</div>
+          <div className="text-3xl">🏆</div>
           <div>
-            <h3 className="font-bold text-yellow-900 text-lg mb-1">SSL Open — September 19</h3>
-            <p className="text-sm text-yellow-800">
-              Rules posted — pick Normal, Hard, or God.
+            <h3 className="font-bold text-green-900 text-lg mb-1">SSL Open 2026 Results</h3>
+            <p className="text-sm text-green-800">
+              Connor Peltz champion · Full leaderboard and stats available
             </p>
           </div>
         </div>

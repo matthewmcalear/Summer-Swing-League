@@ -132,13 +132,24 @@ function eventMatchesFieldDefinition(event: StoredOpenEvent, expectedMembers: { 
 }
 
 /**
+ * Check if the event has any scores entered (any player has at least one hole scored).
+ */
+function eventHasScores(event: StoredOpenEvent): boolean {
+  return event.groups.some((group) =>
+    group.players.some((player) =>
+      player.scores.some((score) => score > 0)
+    )
+  )
+}
+
+/**
  * The Open exists as soon as anyone opens the board: the announced field
  * (every name that is a registered, active member), one group per tee time,
  * handicaps frozen at today's values. Players fix their own group on the day.
  * Returns a notice instead of an event when nothing sensible can be created.
  * 
  * Automatically reseeds if the stored event does not match OPEN_FIELD_PLAYERS
- * (unless results are finalized). Version-gated by OPEN_FIELD_VERSION.
+ * (unless results are finalized or scores have been entered). Version-gated by OPEN_FIELD_VERSION.
  */
 export async function ensureOpenEvent(): Promise<{ event: StoredOpenEvent | null; notice: string | null }> {
   const existing = await loadStoredEvent()
@@ -147,8 +158,15 @@ export async function ensureOpenEvent(): Promise<{ event: StoredOpenEvent | null
     const members = fieldMembers(await prisma.member.findMany({ where: { is_active: true } }))
     
     if (!eventMatchesFieldDefinition(existing, members)) {
+      // Don't reseed if the event is finalized
       if (existing.finalized_at) {
         console.warn(`[Open reseed] Event finalized; cannot auto-reseed to match field version ${OPEN_FIELD_VERSION}`)
+        return { event: existing, notice: null }
+      }
+      
+      // Don't reseed if the event has scores entered (preserve historical data)
+      if (eventHasScores(existing)) {
+        console.warn(`[Open reseed] Event has scores entered; preserving historical data despite field mismatch (version ${OPEN_FIELD_VERSION})`)
         return { event: existing, notice: null }
       }
       
