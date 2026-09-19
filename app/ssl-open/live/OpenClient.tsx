@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Radio, Trophy, ChevronLeft, ChevronRight, Check, Flag, UserPlus } from 'lucide-react'
+import { Trophy, ChevronLeft, ChevronRight, Check, Flag, UserPlus } from 'lucide-react'
 import { projectOpen, projectOpenSeason } from '@/lib/open-scoring'
 import type { OpenEvent, OpenGroup, OpenMode, OpenPlayer, OpenProjection, OpenState } from '@/lib/open-types'
 import { OPEN_BONUSES } from '@/lib/open-types'
@@ -146,11 +146,11 @@ export default function OpenClient({ compact = false }: { compact?: boolean }) {
   return <div className={`mx-auto space-y-5 ${compact ? '' : 'max-w-5xl'}`}>
     <section className="rounded-2xl bg-green-900 text-white p-5 sm:p-7 overflow-hidden">
       <div className="flex flex-wrap justify-between items-center gap-3">
-        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-green-200"><Radio size={15} /> September 19 · {event?.courseName || 'Golf Ste-Rose'}</p>
-        {!compact && <Link href="/ssl-open" className="text-sm text-green-200 underline underline-offset-4">Open rules</Link>}
+        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-green-200"><Trophy size={15} /> September 19, 2026 · {event?.courseName || 'Golf Ste-Rose'}</p>
+        {!compact && <Link href="/ssl-open" className="text-sm text-green-200 underline underline-offset-4">Event overview</Link>}
       </div>
-      <h1 className={`${compact ? 'text-2xl' : 'text-3xl sm:text-4xl'} font-bold mt-3`}>The Open, live.</h1>
-      <p className="text-sm text-green-100 mt-2">Three groups. One leaderboard. Enter your own scores hole by hole and follow the race for the Open and the SSL season.</p>
+      <h1 className={`${compact ? 'text-2xl' : 'text-3xl sm:text-4xl'} font-bold mt-3`}>{event?.finalizedAt ? 'SSL Open 2026 — Final Results' : 'SSL Open 2026 — Results'}</h1>
+      <p className="text-sm text-green-100 mt-2">Three groups. One leaderboard. {event?.finalizedAt ? 'Final results and complete scorecards.' : 'View complete scores and standings from the Open.'}</p>
       {leaders.length > 0 && <div className="mt-5 pt-4 border-t border-green-700">
         <p className="text-xs text-brass-200 uppercase tracking-widest font-semibold flex gap-2 items-center"><Trophy size={15} />{event?.finalizedAt ? 'Open winner' : allFinished ? 'Clubhouse leader' : 'Projected Open leader'}{leaders.length > 1 ? 's · tied' : ''}</p>
         <div className="flex flex-wrap justify-between items-end gap-3 mt-2">
