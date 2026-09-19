@@ -80,6 +80,84 @@ export default function SSLOpenPage() {
         </div>
       </div>
 
+      {/* ── Tee Groups ── */}
+      <div className="card bg-blue-50 border-blue-200">
+        <h2 className="text-xl font-bold text-blue-900 mb-3 flex items-center gap-2">
+          <Calendar size={20} strokeWidth={2} className="text-blue-700" aria-hidden="true" />
+          Tee Groups
+        </h2>
+        <p className="text-sm text-blue-800 mb-4">
+          Confirmed groupings and tee times for today:
+        </p>
+        
+        <div className="space-y-4">
+          {/* 1:00 Group */}
+          <div className="bg-white rounded-lg p-4 border border-blue-200">
+            <div className="font-bold text-blue-900 mb-2 text-lg">1:00 PM</div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-blue-700">⛳</span>
+                <span className="font-medium text-gray-900">Matt</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-blue-700">⛳</span>
+                <span className="font-medium text-gray-900">Dan</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-blue-700">⛳</span>
+                <span className="font-medium text-gray-900">Nick</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-blue-700">⛳</span>
+                <span className="font-medium text-gray-900">Spence</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 1:10 Group */}
+          <div className="bg-white rounded-lg p-4 border border-blue-200">
+            <div className="font-bold text-blue-900 mb-2 text-lg">1:10 PM</div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-blue-700">⛳</span>
+                <span className="font-medium text-gray-900">Tom</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-blue-700">⛳</span>
+                <span className="font-medium text-gray-900">Rachel</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-blue-700">⛳</span>
+                <span className="font-medium text-gray-900">Griffin</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-blue-700">⛳</span>
+                <span className="font-medium text-gray-900">Griffin&apos;s girlfriend</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 1:20 Group */}
+          <div className="bg-white rounded-lg p-4 border border-blue-200">
+            <div className="font-bold text-blue-900 mb-2 text-lg">1:20 PM</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-blue-700">⛳</span>
+                <span className="font-medium text-gray-900">Alex</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-blue-700">⛳</span>
+                <span className="font-medium text-gray-900">Shaun</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-blue-700">⛳</span>
+                <span className="font-medium text-gray-900">Connor</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <OpenClient compact />
 
       {/* ── RULES SECTION ── */}
