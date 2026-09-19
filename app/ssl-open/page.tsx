@@ -87,75 +87,40 @@ export default function SSLOpenPage() {
           Tee Groups
         </h2>
         <p className="text-sm text-blue-800 mb-4">
-          Confirmed groupings and tee times for today:
+          Official tee sheet for Saturday, September 19, 2026:
         </p>
-        
-        <div className="space-y-4">
-          {/* 1:00 Group */}
-          <div className="bg-white rounded-lg p-4 border border-blue-200">
-            <div className="font-bold text-blue-900 mb-2 text-lg">1:00 PM</div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-blue-700">⛳</span>
-                <span className="font-medium text-gray-900">Matt</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-blue-700">⛳</span>
-                <span className="font-medium text-gray-900">Dan</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-blue-700">⛳</span>
-                <span className="font-medium text-gray-900">Nick</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-blue-700">⛳</span>
-                <span className="font-medium text-gray-900">Spence</span>
-              </div>
+        <div className="space-y-3">
+          <div className="bg-white rounded-lg border border-blue-200 p-4">
+            <div className="font-bold text-blue-900 mb-2">1:00 PM — Group 1</div>
+            <div className="text-sm text-gray-700 space-y-1">
+              <div>Matthew McAlear</div>
+              <div>Dan McAlear</div>
+              <div>Nicholas Clarke</div>
+              <div>Spence Goodwin</div>
             </div>
           </div>
-
-          {/* 1:10 Group */}
-          <div className="bg-white rounded-lg p-4 border border-blue-200">
-            <div className="font-bold text-blue-900 mb-2 text-lg">1:10 PM</div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-blue-700">⛳</span>
-                <span className="font-medium text-gray-900">Tom</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-blue-700">⛳</span>
-                <span className="font-medium text-gray-900">Rachel</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-blue-700">⛳</span>
-                <span className="font-medium text-gray-900">Griffin</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-blue-700">⛳</span>
-                <span className="font-medium text-gray-900">Griffin&apos;s girlfriend</span>
-              </div>
+          <div className="bg-white rounded-lg border border-blue-200 p-4">
+            <div className="font-bold text-blue-900 mb-2">1:10 PM — Group 2</div>
+            <div className="text-sm text-gray-700 space-y-1">
+              <div>Thomas McAlear</div>
+              <div>Rachel Kuta</div>
+              <div>Griffin Mason</div>
+              <div className="text-gray-500 italic">Griffin's girlfriend (guest)</div>
             </div>
           </div>
-
-          {/* 1:20 Group */}
-          <div className="bg-white rounded-lg p-4 border border-blue-200">
-            <div className="font-bold text-blue-900 mb-2 text-lg">1:20 PM</div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-blue-700">⛳</span>
-                <span className="font-medium text-gray-900">Alex</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-blue-700">⛳</span>
-                <span className="font-medium text-gray-900">Shaun</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-blue-700">⛳</span>
-                <span className="font-medium text-gray-900">Connor</span>
-              </div>
+          <div className="bg-white rounded-lg border border-blue-200 p-4">
+            <div className="font-bold text-blue-900 mb-2">1:20 PM — Group 3</div>
+            <div className="text-sm text-gray-700 space-y-1">
+              <div>Alex Sokaris</div>
+              <div>Shaun Anderson</div>
+              <div>Connor Peltz</div>
             </div>
           </div>
         </div>
+        <p className="text-xs text-gray-600 mt-3 italic">
+          Note: Griffin's girlfriend is playing as a guest. Live scoring tracks league members only, 
+          so her scores won't appear on the leaderboard, but she's part of the group on the day.
+        </p>
       </div>
 
       <OpenClient compact />

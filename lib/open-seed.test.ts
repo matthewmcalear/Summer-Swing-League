@@ -18,10 +18,14 @@ describe('fieldMembers', () => {
 })
 
 describe('distributeGroups', () => {
-  it('splits ten players 4/3/3 and fills earlier groups first', () => {
+  it('splits ten players 4/3/3 using OPEN_GROUP_SIZES when defined', () => {
     expect(distributeGroups(10, 3)).toEqual([0, 0, 0, 0, 1, 1, 1, 2, 2, 2])
+  })
+
+  it('distributes evenly when count does not match OPEN_GROUP_SIZES', () => {
     expect(distributeGroups(2, 3)).toEqual([0, 1])
     expect(distributeGroups(0, 3)).toEqual([])
+    expect(distributeGroups(11, 3)).toEqual([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2])
   })
 })
 
