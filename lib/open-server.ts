@@ -127,11 +127,8 @@ function eventMatchesFieldDefinition(event: StoredOpenEvent, expectedMembers: { 
   const storedMemberIds = new Set(storedPlayers.map((p) => p.member_id))
   
   if (storedMemberIds.size !== expectedMemberIds.size) return false
-  for (const id of storedMemberIds) {
-    if (!expectedMemberIds.has(id)) return false
-  }
   
-  return true
+  return storedPlayers.every((p) => expectedMemberIds.has(p.member_id))
 }
 
 /**
