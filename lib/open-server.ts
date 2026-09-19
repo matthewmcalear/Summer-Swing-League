@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from './prisma'
 import { isAdmin } from './auth'
 import { difficultyFromSlope } from './scoring'
-import { OPEN_COURSE, OPEN_DATE, OPEN_EVENT_ID, OPEN_TEE_TIMES } from './open-types'
+import { OPEN_COURSE, OPEN_DATE, OPEN_EVENT_ID, OPEN_FIELD_VERSION, OPEN_TEE_TIMES } from './open-types'
 import type { OpenEvent, OpenSeasonMember, OpenState } from './open-types'
 import { distributeGroups, fieldMembers, isOpenCourse, normalizeName, parCard } from './open-seed'
 
@@ -113,14 +113,61 @@ async function ensureOpenCourse() {
 }
 
 /**
+ * Check if the stored event matches the current field definition.
+ * Returns true if the player set and group assignments match OPEN_FIELD_PLAYERS exactly.
+ */
+function eventMatchesFieldDefinition(event: StoredOpenEvent, expectedMembers: { id: string; full_name: string }[]): boolean {
+  const storedPlayers = event.groups
+    .flatMap((g) => g.players)
+    .sort((a, b) => a.sort_order - b.sort_order)
+  
+  if (storedPlayers.length !== expectedMembers.length) return false
+  
+  const expectedMemberIds = new Set(expectedMembers.map((m) => m.id))
+  const storedMemberIds = new Set(storedPlayers.map((p) => p.member_id))
+  
+  if (storedMemberIds.size !== expectedMemberIds.size) return false
+  for (const id of storedMemberIds) {
+    if (!expectedMemberIds.has(id)) return false
+  }
+  
+  return true
+}
+
+/**
  * The Open exists as soon as anyone opens the board: the announced field
  * (every name that is a registered, active member), one group per tee time,
  * handicaps frozen at today's values. Players fix their own group on the day.
  * Returns a notice instead of an event when nothing sensible can be created.
+ * 
+ * Automatically reseeds if the stored event does not match OPEN_FIELD_PLAYERS
+ * (unless results are finalized). Version-gated by OPEN_FIELD_VERSION.
  */
 export async function ensureOpenEvent(): Promise<{ event: StoredOpenEvent | null; notice: string | null }> {
   const existing = await loadStoredEvent()
-  if (existing) return { event: existing, notice: null }
+  
+  if (existing) {
+    const members = fieldMembers(await prisma.member.findMany({ where: { is_active: true } }))
+    
+    if (!eventMatchesFieldDefinition(existing, members)) {
+      if (existing.finalized_at) {
+        console.warn(`[Open reseed] Event finalized; cannot auto-reseed to match field version ${OPEN_FIELD_VERSION}`)
+        return { event: existing, notice: null }
+      }
+      
+      console.log(`[Open reseed] Stored event does not match field definition (version ${OPEN_FIELD_VERSION}). Auto-reseeding...`)
+      
+      try {
+        await prisma.sslOpenEvent.delete({ where: { id: OPEN_EVENT_ID } })
+        console.log('[Open reseed] Old event deleted; will recreate with correct field')
+      } catch (error) {
+        console.error('[Open reseed] Failed to delete old event:', error)
+        return { event: existing, notice: null }
+      }
+    } else {
+      return { event: existing, notice: null }
+    }
+  }
 
   const members = fieldMembers(await prisma.member.findMany({ where: { is_active: true } }))
   if (members.length === 0) {
