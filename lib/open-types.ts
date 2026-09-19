@@ -1,5 +1,7 @@
 export const OPEN_EVENT_ID = 'ssl-open-2026'
 export const OPEN_DATE = '2026-09-19'
+/** Version key for automatic reseed when field definition changes. */
+export const OPEN_FIELD_VERSION = '2026-09-19-tee-v2'
 export const OPEN_FIELD_PLAYERS = ['Matthew McAlear', 'Dan McAlear', 'Nicholas Clarke', 'Spence Goodwin', 'Thomas McAlear', 'Rachel Kuta', 'Griffin Mason', 'Alex Sokaris', 'Shaun Anderson', 'Connor Peltz']
 /** Tee times from the Open page, 24-hour clock; one group per tee time. */
 export const OPEN_TEE_TIMES = ['13:00', '13:10', '13:20']
