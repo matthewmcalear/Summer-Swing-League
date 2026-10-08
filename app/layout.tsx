@@ -3,6 +3,7 @@ import { Inter, Fraunces } from 'next/font/google'
 import './globals.css'
 import NavBar from '@/components/NavBar'
 import BottomNav from '@/components/BottomNav'
+import FeedbackHost from '@/components/Feedback'
 
 export const dynamic = 'force-dynamic'
 
@@ -70,6 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
         <BottomNav />
+        <FeedbackHost />
         <footer className="border-t border-green-800 bg-green-900 mt-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">

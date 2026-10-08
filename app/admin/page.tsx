@@ -10,6 +10,7 @@ import CourseLibraryTab from './CourseLibraryTab'
 import BonusesTab from './BonusesTab'
 import EmailTab from './EmailTab'
 import BdayTab from './BdayTab'
+import { confirmDialog } from '@/components/Feedback'
 
 export default function AdminPage() {
   const [authed, setAuthed]   = useState(false)
@@ -76,7 +77,7 @@ export default function AdminPage() {
   }
 
   const deleteMember = async (id: string) => {
-    if (!confirm('Delete this member? This cannot be undone.')) return
+    if (!(await confirmDialog('This cannot be undone.', { title: 'Delete member?', danger: true }))) return
     await fetch(`/api/members/${id}`, { method: 'DELETE' })
     setMembers(prev => prev.filter(m => m.id !== id))
   }
@@ -94,7 +95,7 @@ export default function AdminPage() {
   }
 
   const deleteScore = async (id: string) => {
-    if (!confirm('Delete this score?')) return
+    if (!(await confirmDialog('Standings and handicaps will be recalculated.', { title: 'Delete score?', danger: true }))) return
     await fetch(`/api/scores/${id}`, { method: 'DELETE' })
     setScores(prev => prev.filter(s => s.id !== id))
     // Refresh members so handicap changes from the delete are reflected

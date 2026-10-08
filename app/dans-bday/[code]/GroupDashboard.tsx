@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
+import { toast } from '@/components/Feedback'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -308,7 +309,7 @@ function TeamCard({
     setBusy(true)
     try {
       const res = await fetch('/api/bday/mulligan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senderTeamId: team.id, targetTeamId: targetId, hole: currentHole }) })
-      if (!res.ok) { const d = await res.json(); alert(d.error || 'Error') }
+      if (!res.ok) { const d = await res.json(); toast(d.error || 'Something went wrong', 'error') }
       else onAction()
     } finally { setBusy(false); setFiring(false) }
   }

@@ -8,6 +8,7 @@ import type { OpenEvent, OpenGroup, OpenMode, OpenPlayer, OpenProjection, OpenSt
 import { OPEN_BONUSES } from '@/lib/open-types'
 import { displayName } from '@/lib/nameUtils'
 import type { Member } from '@/types'
+import { confirmDialog } from '@/components/Feedback'
 
 const number = (n: number | null, digits = 1) => n == null ? '—' : n.toFixed(digits)
 const signed = (n: number) => n === 0 ? 'E' : `${n > 0 ? '+' : ''}${number(n, Number.isInteger(n) ? 0 : 1)}`
@@ -118,7 +119,7 @@ export default function OpenClient({ compact = false }: { compact?: boolean }) {
       incomplete.length ? `Skipped (no complete 18-hole card, so no round or bonus is posted): ${names(incomplete)}.` : '',
       podiumTies.length ? `Podium tie: ${names(podiumTies)}. Their bonus is not posted automatically — decide the tiebreak, then add it under Admin › Season bonuses.` : '',
     ].filter(Boolean)
-    if (!confirm(lines.join('\n\n'))) return
+    if (!(await confirmDialog(lines.join('\n\n'), { title: 'Finalize the Open?', confirmLabel: 'Post results' }))) return
     setAdminBusy(true); setAdminError(''); setAdminNotice('')
     try {
       const result = await jsonRequest('/api/ssl-open/finalize', { method: 'POST' })
@@ -133,7 +134,7 @@ export default function OpenClient({ compact = false }: { compact?: boolean }) {
   }
 
   async function reset() {
-    if (!confirm('Delete the Open and every live score entered so far? It is recreated from the announced field and the course library the next time anyone opens the board.')) return
+    if (!(await confirmDialog('Every live score entered so far is deleted. The Open is recreated from the announced field and the course library the next time anyone opens the board.', { title: 'Reset the Open?', danger: true, confirmLabel: 'Reset' }))) return
     setAdminBusy(true); setAdminError(''); setAdminNotice('')
     try {
       await jsonRequest('/api/ssl-open', { method: 'DELETE' })
@@ -285,7 +286,7 @@ function WhoIsScoring({ event, me, canScore, onChoose, onJoined, onMove }: {
 
   async function move(target: OpenGroup) {
     if (!myself || !myGroup || target.id === myGroup.id) return
-    if (!confirm(`Move ${displayName(myself.name)} to ${groupLabel(target)}? SSL group points count the players you actually play with.`)) return
+    if (!(await confirmDialog('SSL group points count the players you actually play with.', { title: `Move ${displayName(myself.name)} to ${groupLabel(target)}?`, confirmLabel: 'Move' }))) return
     setBusy(true); setError('')
     try { await playerRequest(myself, { groupId: target.id }); onChoose(myself, target) }
     catch (e) { setError((e as Error).message) }
@@ -384,8 +385,8 @@ function GroupScorecard({ event, group, me, canScore, refresh }: { event: OpenEv
     return () => window.removeEventListener('beforeunload', warn)
   }, [hasDirty])
 
-  const goTo = (next: number) => {
-    if (hasDirty && !confirm('Leave this hole without saving your changes?')) return
+  const goTo = async (next: number) => {
+    if (hasDirty && !(await confirmDialog('Your unsaved scores on this hole will be lost.', { title: 'Leave without saving?', confirmLabel: 'Leave' }))) return
     setDrafts({}); setErrors({}); setSaved({}); setHole(next)
   }
 
@@ -473,7 +474,7 @@ function PlayerHole({ player, hole, par, isMe, canScore, busy, draft, error, sav
       <p className="text-xs font-medium text-gray-600">{player.mode ? 'First-tee mode (locks with the first saved score)' : 'Declare a mode on the first tee to start scoring'}</p>
       <div className="grid grid-cols-3 gap-2">{(Object.entries(OPEN_BONUSES) as [OpenMode, number[]][]).map(([mode, bonuses]) => <button key={mode} type="button" disabled={busy} aria-pressed={player.mode === mode} onClick={() => { if (player.mode !== mode) onDeclare({ mode }) }} className={`min-h-12 rounded-xl border text-sm font-semibold ${player.mode === mode ? 'bg-green-800 text-white border-green-800' : 'bg-white border-gray-200 text-gray-800'}`}>{capitalize(mode)}<span className={`block text-[10px] font-normal ${player.mode === mode ? 'text-green-100' : 'text-gray-500'}`}>+{bonuses.join('/+')}</span></button>)}</div>
     </div>}
-    {canScore && frontDone && !backStarted && <div className="rounded-xl bg-green-50 border border-green-200 p-3 text-sm space-y-2"><p className="font-semibold">At the turn: Double Down?</p><p className="text-xs text-gray-600">Say it to your group before playing hole 10. Beat your front-nine net to double your finish bonus; tie or worse means zero.</p><button type="button" disabled={busy} onClick={() => { if (confirm(player.doubleDown ? 'Withdraw Double Down before starting the back nine?' : 'Declare Double Down to your group now?')) onDeclare({ doubleDown: !player.doubleDown }) }} className="btn-secondary">{player.doubleDown ? 'Double Down declared · undo' : 'Declare Double Down'}</button></div>}
+    {canScore && frontDone && !backStarted && <div className="rounded-xl bg-green-50 border border-green-200 p-3 text-sm space-y-2"><p className="font-semibold">At the turn: Double Down?</p><p className="text-xs text-gray-600">Say it to your group before playing hole 10. Beat your front-nine net to double your finish bonus; tie or worse means zero.</p><button type="button" disabled={busy} onClick={async () => { if (await confirmDialog(player.doubleDown ? 'You can withdraw until you start the back nine.' : 'Beat your front-nine net to double your finish bonus; tie or worse means zero.', { title: player.doubleDown ? 'Withdraw Double Down?' : 'Declare Double Down?', confirmLabel: player.doubleDown ? 'Withdraw' : 'Declare' })) onDeclare({ doubleDown: !player.doubleDown }) }} className="btn-secondary">{player.doubleDown ? 'Double Down declared · undo' : 'Declare Double Down'}</button></div>}
     {canScore ? <div className="flex items-end gap-3">
       <label className="block text-xs font-medium text-gray-600 flex-1">Hole {hole} strokes<input type="number" inputMode="numeric" min={1} max={20} step={1} aria-label={`${displayName(player.name)} hole ${hole} strokes`} className="form-input !text-xl !py-3 tabular-nums" placeholder={player.mode ? String(par) : 'Declare mode first'} disabled={busy || !player.mode} value={value} onChange={(e) => onEdit(e.target.value)} /></label>
       <p className="text-sm text-gray-500 min-w-16 pb-3 tabular-nums" aria-live="polite">{strokes == null ? '' : strokes === par ? 'Par' : signed(strokes - par)}</p>

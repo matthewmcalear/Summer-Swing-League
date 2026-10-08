@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import type { Member } from '@/types'
+import { confirmDialog } from '@/components/Feedback'
 
 interface BonusRecord {
   id: string
@@ -47,7 +48,7 @@ export default function BonusesTab({ members }: { members: Member[] }) {
   }
 
   const remove = async (id: string, name: string, pts: number) => {
-    if (!confirm(`Remove ${pts > 0 ? '+' : ''}${pts} pts from ${name}?`)) return
+    if (!(await confirmDialog(`Remove ${pts > 0 ? '+' : ''}${pts} pts from ${name}?`, { title: 'Remove bonus?', danger: true, confirmLabel: 'Remove' }))) return
     await fetch('/api/admin/season-bonuses', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },

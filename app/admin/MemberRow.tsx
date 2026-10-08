@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { Member } from '@/types'
+import { confirmDialog } from '@/components/Feedback'
 
 // ── Inline edit row for a member ──────────────────────────────────────────────
 export default function MemberRow({ member, suggestion, onSave, onDelete }: {
@@ -15,7 +16,7 @@ export default function MemberRow({ member, suggestion, onSave, onDelete }: {
 
   const applySuggestion = async () => {
     if (!suggestion) return
-    if (!confirm(`Set ${member.full_name}'s handicap to the WHS estimate of ${suggestion.index.toFixed(1)}? This affects league points.`)) return
+    if (!(await confirmDialog(`Set ${member.full_name}'s handicap to the WHS estimate of ${suggestion.index.toFixed(1)}? This affects league points.`, { title: 'Apply handicap?', confirmLabel: 'Apply' }))) return
     setApplying(true)
     await onSave(member.id, { current_handicap: suggestion.index })
     setApplying(false)

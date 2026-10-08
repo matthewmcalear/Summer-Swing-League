@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { confirmDialog } from '@/components/Feedback'
 
 interface BdayHoleScore { hole: number; strokes: number }
 interface BdayMulliganRx { id: string; sender_name: string; hole: number | null; fired_at: string }
@@ -48,7 +49,7 @@ export default function BdayTab() {
   useEffect(() => { loadData() }, [])
 
   const reset = async () => {
-    if (!confirm('Reset ALL birthday event data? This clears every score, beer, hot dog, mulligan, chat message, and GPS location. Groups and team names are kept. This cannot be undone.')) return
+    if (!(await confirmDialog('This clears every score, beer, hot dog, mulligan, chat message, and GPS location. Groups and team names are kept. This cannot be undone.', { title: 'Reset birthday event data?', danger: true, confirmLabel: 'Reset' }))) return
     setBusy(true)
     setDone(false)
     try {
@@ -59,19 +60,19 @@ export default function BdayTab() {
   }
 
   const deleteMulligan = async (id: string) => {
-    if (!confirm('Delete this mulligan?')) return
+    if (!(await confirmDialog('This mulligan will be removed.', { title: 'Delete mulligan?', danger: true }))) return
     await fetch('/api/bday/mulligan', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mulliganId: id }) })
     await loadData()
   }
 
   const deleteActivity = async (id: string) => {
-    if (!confirm('Delete this entry?')) return
+    if (!(await confirmDialog('This entry will be removed.', { title: 'Delete entry?', danger: true }))) return
     await fetch('/api/bday/activity', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ activityId: id }) })
     await loadData()
   }
 
   const clearScore = async (teamId: string, hole: number) => {
-    if (!confirm(`Clear score for hole ${hole}?`)) return
+    if (!(await confirmDialog(`The score for hole ${hole} will be cleared.`, { title: 'Clear score?', danger: true, confirmLabel: 'Clear' }))) return
     await fetch('/api/bday/score', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teamId, hole }) })
     await loadData()
   }

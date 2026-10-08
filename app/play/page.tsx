@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Member } from '@/types'
 import { displayName } from '@/lib/nameUtils'
+import { confirmDialog } from '@/components/Feedback'
 
 type LibraryCourse = {
   id: string; name: string; tee_name: string
@@ -189,7 +190,7 @@ export default function PlayLive() {
   }
 
   const abandon = async () => {
-    if (!round || !confirm('Discard this in-progress round? Nothing will be saved.')) return
+    if (!round || !(await confirmDialog('Nothing will be saved.', { title: 'Discard this round?', danger: true, confirmLabel: 'Discard' }))) return
     await fetch(`/api/live/${round.id}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
+import { confirmDialog, toast } from '@/components/Feedback'
 
 interface TeamState  { id: string; name: string; group_id: string; holes_played: number }
 interface GroupState { id: string; name: string; code: string; teams: TeamState[] }
@@ -39,7 +40,7 @@ export default function BdayAdminPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
-      if (!res.ok) { const d = await res.json(); alert(d.error || 'Error'); return false }
+      if (!res.ok) { const d = await res.json(); toast(d.error || 'Something went wrong', 'error'); return false }
       return true
     } finally { setBusy(false) }
   }
@@ -63,7 +64,7 @@ export default function BdayAdminPage() {
   }
 
   const deleteTeam = async (team: TeamState) => {
-    if (!confirm(`Delete "${team.name}"? This removes ALL their scores, beers, and hot dogs.`)) return
+    if (!(await confirmDialog(`This removes ALL their scores, beers, and hot dogs.`, { title: `Delete "${team.name}"?`, danger: true }))) return
     if (await api('DELETE', { teamId: team.id })) fetchState()
   }
 
@@ -228,12 +229,12 @@ export default function BdayAdminPage() {
         <button
           disabled={busy}
           onClick={async () => {
-            if (!confirm('Reset ALL event data? This clears every score, beer, hot dog, mulligan, and GPS location. Groups and team names are kept. This cannot be undone.')) return
+            if (!(await confirmDialog('This clears every score, beer, hot dog, mulligan, and GPS location. Groups and team names are kept. This cannot be undone.', { title: 'Reset all event data?', danger: true, confirmLabel: 'Reset' }))) return
             setBusy(true)
             try {
               await fetch('/api/bday/reset', { method: 'DELETE' })
               await fetchState()
-              alert('✓ All event data cleared. Ready for the real day!')
+              toast('All event data cleared. Ready for the real day!', 'success')
             } finally { setBusy(false) }
           }}
           className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-50"

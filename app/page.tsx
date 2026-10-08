@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Sprout, CalendarDays, Trophy, Medal, Award, ListChecks } from 'lucide-react'
+import { Sprout, CalendarDays, Trophy, Medal, Award, ListChecks, ArrowRight } from 'lucide-react'
 import SeasonStats from '@/components/SeasonStats'
 import StandingsChart from '@/components/StandingsChart'
 import { getStandings } from '@/lib/standings'
+import { displayName } from '@/lib/nameUtils'
+import { SEASON_END, daysUntil } from '@/lib/scoring'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,26 +20,36 @@ const HOW_IT_WORKS: [string, string][] = [
 
 export default async function Home() {
   const standings = await getStandings()
+  const daysLeft = daysUntil(SEASON_END)
+  const live = daysLeft >= 0
+  const ranked = standings.filter((p) => p.totalRounds > 0)
+  const [leader, chaser] = ranked
+  const lead = leader && chaser ? leader.seasonScore - chaser.seasonScore : 0
 
   return (
     <div className="space-y-8">
 
-      {/* ── SSL OPEN CHAMPION — Top priority visibility ── */}
-      <Link 
-        href="/ssl-open"
-        className="block rounded-2xl bg-gradient-to-r from-green-600 via-green-500 to-emerald-600 text-white px-6 py-5 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all border-2 border-green-700"
+      {/* ── SEASON STATUS — finale countdown, then the recap ── */}
+      <Link
+        href={live ? '/standings' : '/season'}
+        className="group block rounded-2xl prize-champion text-white px-5 sm:px-6 py-4 shadow-lg hover:shadow-xl transition-shadow"
       >
         <div className="flex items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <Trophy size={18} strokeWidth={2.5} aria-hidden="true" className="text-green-100" />
-              <span className="text-green-100 text-xs font-black uppercase tracking-widest">SSL Open Champion</span>
-            </div>
-            <h3 className="text-2xl sm:text-3xl font-extrabold leading-tight mb-1.5">🏆 Connor Peltz Wins the Open</h3>
-            <p className="text-white text-base sm:text-lg font-bold mb-1">SSL Open 2026 · September 19, 2026</p>
-            <p className="text-green-100 text-sm font-semibold">Golf Ste-Rose · View Full Results & Leaderboard</p>
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-white/80">
+              {live ? (daysLeft === 0 ? 'Last day of the season' : `Final ${daysLeft} day${daysLeft === 1 ? '' : 's'}`) : 'Season 2 is in the books'}
+            </p>
+            <p className="font-display text-xl sm:text-2xl font-bold leading-tight mt-0.5">
+              {leader
+                ? live
+                  ? <>{displayName(leader.name)} leads by {lead.toFixed(1)}{chaser && <> over {displayName(chaser.name)}</>}</>
+                  : <>{displayName(leader.name)} is your 2026 champion</>
+                : 'The season is underway'}
+            </p>
           </div>
-          <Trophy size={48} strokeWidth={2} className="text-green-200/40 shrink-0 hidden sm:block" aria-hidden="true" />
+          <span className="shrink-0 inline-flex items-center gap-1 text-sm font-bold bg-white/20 rounded-full px-3 py-1.5 group-hover:bg-white/30 transition-colors">
+            {live ? 'Standings' : 'Season recap'} <ArrowRight size={15} aria-hidden="true" />
+          </span>
         </div>
       </Link>
 
@@ -74,20 +86,20 @@ export default async function Home() {
             </p>
           </div>
 
-          {/* One primary action for a new visitor; standings for everyone else. */}
+          {/* Season-aware actions: post a round while it's live, the recap once it's done. */}
           <div className="space-y-3 w-full lg:w-64 shrink-0">
             <Link
-              href="/register"
+              href={live ? '/submit-score' : '/season'}
               className="block text-center px-5 py-3.5 bg-white text-green-900 rounded-xl font-bold hover:bg-green-50 transition-all shadow-lg hover:shadow-xl"
             >
-              Join the league
+              {live ? 'Submit a score' : 'Season recap'}
             </Link>
             <Link
               href="/standings"
               className="block text-center px-5 py-3.5 rounded-xl font-bold text-sm transition-all shadow border border-white/25 hover:border-white/60"
               style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(8px)' }}
             >
-              See the standings
+              {live ? 'See the standings' : 'Final standings'}
             </Link>
           </div>
         </div>
@@ -136,20 +148,21 @@ export default async function Home() {
       {/* ── LIVE SEASON SIGNAL ── */}
       <SeasonStats standings={standings} />
 
-      {/* ── SSL OPEN RESULTS ── */}
+      {/* ── SSL OPEN 2026 — champion, links to the archived results ── */}
       <Link
         href="/ssl-open"
-        className="block card bg-green-50 border-2 border-green-400 hover:bg-green-100 transition-colors"
+        className="group card p-4 sm:p-5 flex items-center gap-4 hover:shadow-lg transition-shadow"
       >
-        <div className="flex items-center gap-3">
-          <div className="text-3xl">🏆</div>
-          <div>
-            <h3 className="font-bold text-green-900 text-lg mb-1">SSL Open 2026 Results</h3>
-            <p className="text-sm text-green-800">
-              Connor Peltz champion · Full leaderboard and stats available
-            </p>
-          </div>
+        <span className="flex items-center justify-center w-11 h-11 rounded-full bg-brass-50 border border-brass-200 text-brass-600 shrink-0">
+          <Trophy size={20} strokeWidth={2} aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-brass-600">SSL Open 2026 · Sep 19 · Golf Ste-Rose</p>
+          <p className="font-display text-lg font-bold text-gray-900 leading-tight">Connor Peltz won the Open</p>
         </div>
+        <span className="hidden sm:inline-flex items-center gap-1 text-sm font-semibold text-green-700 shrink-0">
+          Results <ArrowRight size={15} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5" />
+        </span>
       </Link>
 
       {/* ── HOW IT WORKS ── */}

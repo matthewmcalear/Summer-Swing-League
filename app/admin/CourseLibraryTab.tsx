@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { confirmDialog } from '@/components/Feedback'
 
 export type Course = {
   id: string
@@ -55,7 +56,7 @@ export default function CourseLibraryTab() {
   }
 
   const remove = async (id: string) => {
-    if (!confirm('Delete this course from the library? Past scores keep their stored rating/slope.')) return
+    if (!(await confirmDialog('Past scores keep their stored rating/slope.', { title: 'Delete course?', danger: true }))) return
     await fetch(`/api/courses/${id}`, { method: 'DELETE' })
     setCourses((prev) => prev.filter((c) => c.id !== id))
   }

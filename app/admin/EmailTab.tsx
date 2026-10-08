@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { Member } from '@/types'
+import { confirmDialog } from '@/components/Feedback'
 
 export default function EmailTab({ members }: { members: Member[] }) {
   const active = members.filter((m) => m.is_active)
@@ -13,7 +14,7 @@ export default function EmailTab({ members }: { members: Member[] }) {
   const [result, setResult]     = useState<{ ok: boolean; msg: string } | null>(null)
 
   const sendDigest = async () => {
-    if (!confirm(`Email the current standings to all ${active.length} active members?`)) return
+    if (!(await confirmDialog(`Email the current standings to all ${active.length} active members?`, { title: 'Send digest?', confirmLabel: 'Send' }))) return
     setSendingDigest(true)
     setResult(null)
     try {

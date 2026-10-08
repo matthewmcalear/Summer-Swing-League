@@ -59,4 +59,16 @@ export interface StandingEntry {
   topScores: number[]
   seasonBonusPoints: number
   seasonBonuses: SeasonBonus[]
+  lastPlayed?: string | null
+  /** 1-based; tied players share a rank. */
+  rank?: number
+  /** Places gained (+) or lost (−) over the last 7 days; null if new/unranked then. */
+  movement?: number | null
+  gapToLeader?: number
+  gapToNext?: number | null
+  nextName?: string | null
+  /** Points one more round must earn to pass the player directly above; null if out of reach. */
+  pointsToPass?: number | null
+  /** True when pointsToPass beats the best round anyone has posted this season. */
+  toPassAboveBest?: boolean
 }

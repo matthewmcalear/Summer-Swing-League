@@ -46,7 +46,7 @@ export default function StandingsChart({ standings }: StandingsChartProps) {
                       : 'bg-gray-50 text-gray-500 border border-gray-100'
                   }`}
                 >
-                  {i + 1}
+                  {p.rank ?? i + 1}
                 </span>
               </td>
               <td className="py-2.5 font-semibold text-gray-800 truncate">{p.name}</td>

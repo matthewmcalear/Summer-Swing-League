@@ -15,9 +15,10 @@ export function prefersReducedMotion(): boolean {
 
 /**
  * Format a number for display in the count-up animation.
- * Integers are shown without decimals, floats with one decimal place.
+ * Integers are shown without decimals, floats with one decimal place;
+ * thousands are grouped (9612 → "9,612"). Fixed locale so server and client agree.
  */
 export function formatCountUp(value: number): string {
   const decimals = Number.isInteger(value) ? 0 : 1
-  return value.toFixed(decimals)
+  return value.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
 }

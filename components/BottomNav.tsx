@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import {
   Home, Trophy, Flag, ClipboardList, Radio, BarChart3, Users,
-  LocateFixed, Backpack, BookOpen, Info, Cake, Menu, X,
+  LocateFixed, Backpack, BookOpen, Info, Cake, Menu, X, Sparkles,
   type LucideIcon,
 } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
@@ -34,6 +34,7 @@ const MORE_GROUPS: { title: string; links: NavLink[] }[] = [
     { href: '/about',       label: 'About',       icon: Info },
   ] },
   { title: 'Events', links: [
+    { href: '/season', label: 'Season Recap', icon: Sparkles },
     { href: '/ssl-open', label: 'SSL Open', icon: Trophy },
     { href: '/dans-bday', label: "Dan's Bday", icon: Cake },
   ] },

@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   Trophy, ClipboardList, Flag, Users, BookOpen,
   Wrench, LocateFixed, Radio, BarChart3, Backpack, Info,
-  CalendarDays, Cake, ChevronDown, type LucideIcon,
+  CalendarDays, Cake, ChevronDown, Sparkles, type LucideIcon,
 } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 import Logo from './Logo'
@@ -33,7 +33,8 @@ const TOOLS: NavItem[] = [
 
 // League events — newest first. Mirror any change in BottomNav's More sheet.
 const EVENTS: NavItem[] = [
-  { href: '/ssl-open', label: 'SSL Open', icon: Trophy, sub: 'Sept 19 · Upcoming' },
+  { href: '/season',   label: 'Season Recap', icon: Sparkles, sub: 'Awards & wrap-ups' },
+  { href: '/ssl-open', label: 'SSL Open', icon: Trophy, sub: 'Sept 19 · Results' },
   { href: '/dans-bday', label: "Dan's Bday", icon: Cake, sub: 'Jul 3 · Results' },
 ]
 
