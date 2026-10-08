@@ -18,7 +18,7 @@ const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slic
 // Each player is linked to the rows created for them, so re-running after a
 // failure continues where it stopped instead of posting anything twice.
 export async function POST() {
-  if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const stored = await loadStoredEvent()
     if (!stored) throw new OpenError('The Open has not been set up yet.', 404)

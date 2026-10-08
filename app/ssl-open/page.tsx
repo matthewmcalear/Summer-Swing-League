@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import OpenClient from './live/OpenClient'
 import { OPEN_FIELD_PLAYERS } from '@/lib/open-types'
-import { Calendar, MapPin, Trophy, AlertCircle } from 'lucide-react'
+import { Calendar, Trophy, AlertCircle } from 'lucide-react'
 
 export const metadata = { title: 'SSL Open 2026 Results — Summer Swing League' }
 

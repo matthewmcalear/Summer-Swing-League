@@ -7,10 +7,11 @@ export const dynamic = 'force-dynamic'
 // Called after a live round is submitted via the score form. Persists the
 // round's per-hole pars back to its course (so they prefill next time), then
 // removes the now-consumed live round.
-export async function POST(_: Request, { params }: { params: { id: string } }) {
+export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   try {
     const round = await prisma.liveRound.findUnique({
-      where:   { id: params.id },
+      where:   { id },
       include: { hole_scores: { orderBy: { hole: 'asc' } } },
     })
     if (!round) return NextResponse.json({ success: true }) // already gone — nothing to do

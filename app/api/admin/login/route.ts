@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid password' }, { status: 401 })
   }
 
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   // Store a derived session token, never the password itself
   cookieStore.set('ssl_admin', token, {
     httpOnly: true,
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   cookieStore.delete('ssl_admin')
   return NextResponse.json({ success: true })
 }

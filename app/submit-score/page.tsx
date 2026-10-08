@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { localToday, formatCalendarDate } from '@/lib/dates'
 import { useRouter } from 'next/navigation'
 import { calculatePoints, difficultyFromSlope } from '@/lib/scoring'
 import { displayName } from '@/lib/nameUtils'
@@ -49,9 +50,13 @@ export default function SubmitScore() {
     handicap_used:    '',
     course_name:      '',
     course_difficulty: 'average',
-    play_date:        new Date().toISOString().split('T')[0],
+    play_date:        '', // set on mount from the player's local clock (server renders in UTC)
     notes:            '',
   })
+
+  useEffect(() => {
+    setForm((f) => (f.play_date ? f : { ...f, play_date: localToday() }))
+  }, [])
 
   useEffect(() => {
     fetch('/api/members')
@@ -229,7 +234,7 @@ export default function SubmitScore() {
               <h2 className="text-lg font-bold text-amber-900 mb-3">⚠️ Possible duplicate round</h2>
               <p className="text-sm text-amber-800 mb-3">
                 You already submitted a round on{' '}
-                <strong>{new Date(duplicateWarning.existing.play_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</strong>{' '}
+                <strong>{formatCalendarDate(duplicateWarning.existing.play_date, { month: 'short', day: 'numeric' })}</strong>{' '}
                 at <strong>{duplicateWarning.existing.course_name}</strong> with a gross score of{' '}
                 <strong>{duplicateWarning.existing.gross_score}</strong>{' '}
                 ({duplicateWarning.existing.total_points.toFixed(1)} pts).
@@ -271,7 +276,7 @@ export default function SubmitScore() {
                 <div><strong>Player:</strong> {selectedMember ? displayName(selectedMember.full_name) : ''}</div>
                 <div><strong>Score:</strong> {form.gross_score} ({form.holes} holes)</div>
                 <div><strong>Course:</strong> {form.course_name}</div>
-                <div><strong>Date:</strong> {new Date(form.play_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                <div><strong>Date:</strong> {formatCalendarDate(form.play_date, { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                 {previewPoints !== null && (
                   <div><strong>Est. points:</strong> {previewPoints.toFixed(1)}</div>
                 )}

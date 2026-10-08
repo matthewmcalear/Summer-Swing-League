@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { confirmDialog } from '@/components/Feedback'
 
@@ -85,8 +86,8 @@ export default function BdayTab() {
         <p className="font-semibold text-gray-800">🎂 Dan's Birthday Tournament</p>
         <p className="text-sm text-gray-500">Manage teams, view the live leaderboard, or open a group dashboard.</p>
         <div className="flex gap-3 flex-wrap pt-1">
-          <a href="/dans-bday" className="btn-secondary text-sm">🏆 Leaderboard</a>
-          <a href="/dans-bday/admin" className="btn-secondary text-sm">⚙️ Manage Teams</a>
+          <Link href="/dans-bday" className="btn-secondary text-sm">🏆 Leaderboard</Link>
+          <Link href="/dans-bday/admin" className="btn-secondary text-sm">⚙️ Manage Teams</Link>
           <button onClick={loadData} className="btn-secondary text-sm">↻ Refresh</button>
         </div>
       </div>

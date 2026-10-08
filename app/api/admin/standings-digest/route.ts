@@ -10,7 +10,7 @@ const medalFor = (i: number) => (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ?
 
 /** Compose the current standings as a plain-text digest and email it to all active members. */
 export async function POST() {
-  if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const [standings, members] = await Promise.all([

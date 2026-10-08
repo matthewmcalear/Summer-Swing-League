@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { localToday } from '@/lib/dates'
 import { useRouter } from 'next/navigation'
 import type { Member } from '@/types'
 import { displayName } from '@/lib/nameUtils'
@@ -40,7 +41,7 @@ export default function PlayLive() {
   const [memberId, setMemberId] = useState('')
   const [courseId, setCourseId] = useState('')
   const [holes, setHoles]       = useState(18)
-  const [playDate, setPlayDate] = useState(new Date().toISOString().split('T')[0])
+  const [playDate, setPlayDate] = useState('') // set on mount from the local clock (server renders in UTC)
   const [groupIds, setGroupIds] = useState<string[]>([])
   const [starting, setStarting] = useState(false)
 
@@ -51,6 +52,23 @@ export default function PlayLive() {
   const [parsMap, setParsMap]       = useState<Record<number, number>>({})
   const [currentHole, setCurrentHole] = useState(1)
   const [scorecardOpen, setScorecardOpen] = useState(false)
+
+
+  const enterRound = (rd: LiveRound) => {
+    setRound(rd)
+    const s: Record<number, number> = {}, p: Record<number, number> = {}, pa: Record<number, number> = {}
+    rd.hole_scores.forEach((h) => {
+      s[h.hole] = h.strokes
+      if (h.putts != null) p[h.hole] = h.putts
+      pa[h.hole] = h.par
+    })
+    setStrokesMap(s); setPuttsMap(p); setParsMap(pa)
+    setCurrentHole(Math.min(Math.max(rd.current_hole, 1), rd.holes))
+    if (typeof window !== 'undefined') localStorage.setItem(LS_KEY, rd.id)
+    setView('playing')
+  }
+
+  useEffect(() => { setPlayDate((d) => d || localToday()) }, [])
 
   useEffect(() => {
     Promise.all([
@@ -71,20 +89,6 @@ export default function PlayLive() {
       } else setView('setup')
     })
   }, [])
-
-  const enterRound = (rd: LiveRound) => {
-    setRound(rd)
-    const s: Record<number, number> = {}, p: Record<number, number> = {}, pa: Record<number, number> = {}
-    rd.hole_scores.forEach((h) => {
-      s[h.hole] = h.strokes
-      if (h.putts != null) p[h.hole] = h.putts
-      pa[h.hole] = h.par
-    })
-    setStrokesMap(s); setPuttsMap(p); setParsMap(pa)
-    setCurrentHole(Math.min(Math.max(rd.current_hole, 1), rd.holes))
-    if (typeof window !== 'undefined') localStorage.setItem(LS_KEY, rd.id)
-    setView('playing')
-  }
 
   // Resume a player's in-progress round (cross-device) when picked at setup.
   useEffect(() => {

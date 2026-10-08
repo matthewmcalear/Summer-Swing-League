@@ -1,11 +1,8 @@
 import { prisma } from '@/lib/prisma'
-import dynamic from 'next/dynamic'
+import MyBagClient from './MyBagLoader'
 
 // Render at request time so new members appear without a redeploy
-// (can't use `export const dynamic` — the name is taken by the import above)
 export const revalidate = 0
-
-const MyBagClient = dynamic(() => import('./MyBagClient'), { ssr: false })
 
 export default async function MyBagPage() {
   const members = await prisma.member.findMany({

@@ -4,7 +4,8 @@ import { prisma } from '@/lib/prisma'
 export const dynamic = 'force-dynamic'
 
 // PUT /api/live/[id]/hole  → save strokes for one hole (and advance current_hole)
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   try {
     const body = await request.json()
     const { hole, strokes, putts, par, current_hole } = body
@@ -29,20 +30,20 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 
     await prisma.liveHoleScore.upsert({
-      where:  { live_round_id_hole: { live_round_id: params.id, hole: holeNum } },
+      where:  { live_round_id_hole: { live_round_id: id, hole: holeNum } },
       update: { strokes: strokesNum, putts: puttsNum, par: parNum },
-      create: { live_round_id: params.id, hole: holeNum, strokes: strokesNum, putts: puttsNum, par: parNum },
+      create: { live_round_id: id, hole: holeNum, strokes: strokesNum, putts: puttsNum, par: parNum },
     })
 
     if (current_hole !== undefined) {
       await prisma.liveRound.update({
-        where: { id: params.id },
+        where: { id },
         data:  { current_hole: Number(current_hole) },
       })
     }
 
     const round = await prisma.liveRound.findUnique({
-      where:   { id: params.id },
+      where:   { id },
       include: { hole_scores: { orderBy: { hole: 'asc' } } },
     })
 

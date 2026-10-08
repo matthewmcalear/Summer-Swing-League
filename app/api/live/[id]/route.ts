@@ -4,10 +4,11 @@ import { prisma } from '@/lib/prisma'
 export const dynamic = 'force-dynamic'
 
 // GET /api/live/[id] → a round with its hole scores
-export async function GET(_: Request, { params }: { params: { id: string } }) {
+export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   try {
     const round = await prisma.liveRound.findUnique({
-      where:   { id: params.id },
+      where:   { id },
       include: { hole_scores: { orderBy: { hole: 'asc' } } },
     })
     if (!round) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -19,9 +20,10 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
 }
 
 // DELETE /api/live/[id] → abandon an in-progress round (cascades hole scores)
-export async function DELETE(_: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   try {
-    await prisma.liveRound.delete({ where: { id: params.id } })
+    await prisma.liveRound.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (e) {
     console.error(e)

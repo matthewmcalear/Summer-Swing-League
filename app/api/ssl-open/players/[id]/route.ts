@@ -9,13 +9,14 @@ const NO_STORE = { 'Cache-Control': 'no-store' }
 // PUT /api/ssl-open/players/[id] → save one hole, declare a mode, call Double Down, or move
 // to another group. Open to everyone in the field, like the rest of the site. Optimistic
 // versioning stops two phones editing the same card from overwriting each other.
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   try {
-    if (!isUuid(params.id)) throw new OpenError('Player not found.', 404)
+    if (!isUuid(id)) throw new OpenError('Player not found.', 404)
     const update = parseOpenUpdate(await request.json().catch(() => null))
 
     const player = await prisma.sslOpenPlayer.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { event: { select: { finalized_at: true } } },
     })
     if (!player) throw new OpenError('Player not found.', 404)

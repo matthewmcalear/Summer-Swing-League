@@ -30,7 +30,6 @@ export default function BdayAdminPage() {
 
   useEffect(() => { fetchState() }, [fetchState])
 
-  const allTeams = groups.flatMap((g) => g.teams)
 
   const api = async (method: string, body: object) => {
     setBusy(true)

@@ -10,7 +10,7 @@ import { easeOutCubic, prefersReducedMotion, formatCountUp } from '@/lib/countup
 export default function CountUp({ value, duration = 700 }: { value: number; duration?: number }) {
   const [display, setDisplay] = useState(value)
   const [prevValue, setPrevValue] = useState(value)
-  const raf = useRef<number>()
+  const raf = useRef<number | undefined>(undefined)
   const isMounted = useRef(false)
 
   useEffect(() => {

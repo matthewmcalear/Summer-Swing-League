@@ -51,7 +51,7 @@ export default function OpenClient({ compact = false }: { compact?: boolean }) {
   const [adminBusy, setAdminBusy] = useState(false)
   const [adminError, setAdminError] = useState('')
   const [adminNotice, setAdminNotice] = useState('')
-  const [now, setNow] = useState(Date.now())
+  const [now, setNow] = useState(() => Date.now())
   const refreshSerial = useRef(0)
 
   useEffect(() => {

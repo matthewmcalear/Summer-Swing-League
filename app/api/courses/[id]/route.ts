@@ -4,8 +4,9 @@ import { isAdmin } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const body = await request.json()
     const updates: Record<string, unknown> = {}
@@ -40,7 +41,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       updates.holes = v
     }
 
-    const course = await prisma.course.update({ where: { id: params.id }, data: updates })
+    const course = await prisma.course.update({ where: { id }, data: updates })
     return NextResponse.json(course)
   } catch (e: any) {
     if (e?.code === 'P2002') {
@@ -51,10 +52,11 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(_: Request, { params }: { params: { id: string } }) {
-  if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
-    await prisma.course.delete({ where: { id: params.id } })
+    await prisma.course.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (e) {
     console.error(e)

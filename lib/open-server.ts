@@ -241,7 +241,7 @@ export async function ensureOpenEvent(): Promise<{ event: StoredOpenEvent | null
 
 /** Everything the live page needs in one payload. Scoring is open to everyone; the admin cookie unlocks posting results. */
 export async function loadOpenState(): Promise<OpenState> {
-  const admin = isAdmin()
+  const admin = await isAdmin()
   const [{ event, notice }, season] = await Promise.all([ensureOpenEvent(), loadSeasonMembers()])
   return {
     event: event ? serializeEvent(event) : null,

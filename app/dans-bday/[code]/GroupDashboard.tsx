@@ -31,7 +31,6 @@ interface AllGroupState { groups: GroupState[]; messages: ChatMessage[] }
 // ── Course par ─────────────────────────────────────────────────────────────────
 // Carling Lake Golf Club — White tees (73.3 / 104%)
 const HOLE_PARS = [4, 4, 4, 4, 5, 3, 4, 4, 4, 4, 4, 4, 4, 3, 5, 4, 3, 5]
-const TOTAL_PAR = HOLE_PARS.reduce((s, p) => s + p, 0) // 72
 
 function playedPar(holeScores: HoleScore[]): number {
   return holeScores.reduce((s, h) => s + (HOLE_PARS[h.hole - 1] ?? 4), 0)

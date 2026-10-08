@@ -9,7 +9,7 @@ function toTitleCase(str: string): string {
 }
 
 export async function GET() {
-  if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const scores = await prisma.score.findMany({ select: { course_name: true } })
     const counts: Record<string, number> = {}
@@ -25,7 +25,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const { old_name, new_name } = await request.json()
     if (!old_name || !new_name) {

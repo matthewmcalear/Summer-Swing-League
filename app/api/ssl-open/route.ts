@@ -21,7 +21,7 @@ export async function GET() {
 // DELETE /api/ssl-open → commissioner wipes the event (and any live scores) before results are
 // posted. The next visit recreates it from the announced field and the current course library entry.
 export async function DELETE() {
-  if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const event = await prisma.sslOpenEvent.findUnique({ where: { id: OPEN_EVENT_ID }, select: { finalized_at: true } })
     if (!event) return NextResponse.json({ success: true })

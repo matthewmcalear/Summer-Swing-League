@@ -1,19 +1,8 @@
-import dynamic from 'next/dynamic'
 import { prisma } from '@/lib/prisma'
+import RangeFinderClient from './RangeFinderLoader'
 
 // Render at request time so new members appear without a redeploy
-// (can't use `export const dynamic` — the name is taken by the import above)
 export const revalidate = 0
-
-const RangeFinderClient = dynamic(() => import('./RangeFinderClient'), {
-  ssr: false,
-  loading: () => (
-    <div className="card text-center py-20">
-      <div className="w-8 h-8 border-2 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-      <p className="text-sm text-gray-500">Loading map…</p>
-    </div>
-  ),
-})
 
 export default async function RangeFinderPage() {
   const members = await prisma.member.findMany({

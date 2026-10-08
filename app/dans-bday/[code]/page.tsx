@@ -1,11 +1,13 @@
 import GroupDashboard from './GroupDashboard'
 
-interface Props { params: { code: string } }
+interface Props { params: Promise<{ code: string }> }
 
-export function generateMetadata({ params }: Props) {
-  return { title: `${params.code.toUpperCase()} — Dan's Birthday Tournament` }
+export async function generateMetadata({ params }: Props) {
+  const { code } = await params
+  return { title: `${code.toUpperCase()} — Dan's Birthday Tournament` }
 }
 
-export default function GroupPage({ params }: Props) {
-  return <GroupDashboard groupCode={params.code} />
+export default async function GroupPage({ params }: Props) {
+  const { code } = await params
+  return <GroupDashboard groupCode={code} />
 }

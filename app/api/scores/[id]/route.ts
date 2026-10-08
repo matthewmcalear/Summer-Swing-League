@@ -3,12 +3,13 @@ import { prisma } from '@/lib/prisma'
 import { isAdmin } from '@/lib/auth'
 import { calculatePoints } from '@/lib/scoring'
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const body = await request.json()
-    const existing = await prisma.score.findUnique({ where: { id: params.id } })
+    const existing = await prisma.score.findUnique({ where: { id } })
     if (!existing) return NextResponse.json({ error: 'Score not found' }, { status: 404 })
 
     const holes             = Number(body.holes             ?? existing.holes)             as 9 | 18
@@ -34,7 +35,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     })
 
     const updated = await prisma.score.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         holes,
         gross_score,
@@ -60,19 +61,20 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(_: Request, { params }: { params: { id: string } }) {
-  if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const existing = await prisma.score.findUnique({ where: { id: params.id } })
+    const existing = await prisma.score.findUnique({ where: { id } })
     if (!existing) return NextResponse.json({ error: 'Score not found' }, { status: 404 })
 
-    await prisma.score.delete({ where: { id: params.id } })
+    await prisma.score.delete({ where: { id } })
 
     // After deletion, re-sync the member's handicap fields from remaining history
     if (existing.member_id) {
       const remaining = await prisma.handicapHistory.findMany({
-        where: { member_id: existing.member_id, score_id: { not: params.id } },
+        where: { member_id: existing.member_id, score_id: { not: id } },
         orderBy: { recorded_at: 'asc' },
       })
 

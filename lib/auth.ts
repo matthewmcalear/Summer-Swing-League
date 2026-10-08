@@ -12,7 +12,7 @@ export function adminSessionToken(): string | null {
   return createHmac('sha256', pw).update('ssl-admin-session-v1').digest('hex')
 }
 
-export function isAdmin(): boolean {
+export async function isAdmin(): Promise<boolean> {
   const token = adminSessionToken()
-  return token != null && cookies().get('ssl_admin')?.value === token
+  return token != null && (await cookies()).get('ssl_admin')?.value === token
 }

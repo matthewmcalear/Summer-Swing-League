@@ -64,7 +64,9 @@ export async function recordRound(input: RecordRoundInput): Promise<RecordRoundR
       where: {
         member_id,
         play_date: new Date(play_date + 'T12:00:00'),
-        course_name,
+        // Rounds are stored title-cased (see create below) — compare the same way,
+        // case-insensitively so legacy rows stored with other casing still match.
+        course_name: { equals: toTitleCase(course_name), mode: 'insensitive' },
       },
       select: {
         id: true,

@@ -53,7 +53,7 @@ function parseCourse(body: any): { error?: string; data?: any } {
 }
 
 export async function POST(request: Request) {
-  if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const { error, data } = parseCourse(await request.json())
     if (error) return NextResponse.json({ error }, { status: 400 })

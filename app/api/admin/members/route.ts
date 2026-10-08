@@ -5,7 +5,7 @@ import { isAdmin } from '@/lib/auth'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  if (!isAdmin()) {
+  if (!(await isAdmin())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   try {

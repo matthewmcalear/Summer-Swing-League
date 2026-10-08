@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { isAdmin } from '@/lib/auth'
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const body = await request.json()
@@ -13,7 +14,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     if (body.current_handicap   !== undefined) updates.current_handicap   = Number(body.current_handicap)
     if (body.starting_handicap  !== undefined) updates.starting_handicap  = body.starting_handicap === null ? null : Number(body.starting_handicap)
 
-    const member = await prisma.member.update({ where: { id: params.id }, data: updates })
+    const member = await prisma.member.update({ where: { id }, data: updates })
     return NextResponse.json(member)
   } catch (e) {
     console.error(e)
@@ -21,11 +22,12 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(_: Request, { params }: { params: { id: string } }) {
-  if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    await prisma.member.delete({ where: { id: params.id } })
+    await prisma.member.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (e) {
     console.error(e)

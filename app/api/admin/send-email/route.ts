@@ -6,7 +6,7 @@ import nodemailer from 'nodemailer'
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: Request) {
-  if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { subject, body, member_ids } = await request.json()
   if (!subject || !body || !member_ids?.length) {

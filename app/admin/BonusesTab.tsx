@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { Member } from '@/types'
 import { confirmDialog } from '@/components/Feedback'
+import { localToday } from '@/lib/dates'
 
 interface BonusRecord {
   id: string
@@ -17,7 +18,7 @@ export default function BonusesTab({ members }: { members: Member[] }) {
   const active = members.filter((m) => m.is_active)
   const [bonuses, setBonuses]     = useState<BonusRecord[]>([])
   const [loading, setLoading]     = useState(true)
-  const [form, setForm]           = useState({ member_id: '', points: '', reason: '', awarded_date: new Date().toISOString().slice(0, 10) })
+  const [form, setForm]           = useState({ member_id: '', points: '', reason: '', awarded_date: localToday() })
   const [saving, setSaving]       = useState(false)
   const [error, setError]         = useState('')
 
@@ -38,7 +39,7 @@ export default function BonusesTab({ members }: { members: Member[] }) {
       body: JSON.stringify({ ...form, points: Number(form.points) }),
     })
     if (res.ok) {
-      setForm({ member_id: '', points: '', reason: '', awarded_date: new Date().toISOString().slice(0, 10) })
+      setForm({ member_id: '', points: '', reason: '', awarded_date: localToday() })
       await fetchBonuses()
     } else {
       const d = await res.json()
