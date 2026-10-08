@@ -4,11 +4,9 @@ import AnalyticsClient, { type Analytics } from './AnalyticsClient'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AnalyticsPage({
-  searchParams,
-}: {
-  searchParams: Record<string, string>
-}) {
+export default async function AnalyticsPage({ searchParams }: PageProps<'/analytics'>) {
+  // Next 16: searchParams is a Promise (sync access was removed).
+  const { tab, id } = await searchParams
   const [members, scores, allClubs] = await Promise.all([
     prisma.member.findMany({ where: { is_active: true }, orderBy: { full_name: 'asc' } }),
     prisma.score.findMany({ orderBy: { play_date: 'asc' } }),
@@ -129,5 +127,11 @@ export default async function AnalyticsPage({
     bags,
   }
 
-  return <AnalyticsClient data={data} initialTab={searchParams.tab} initialPlayerId={searchParams.id} />
+  return (
+    <AnalyticsClient
+      data={data}
+      initialTab={typeof tab === 'string' ? tab : undefined}
+      initialPlayerId={typeof id === 'string' ? id : undefined}
+    />
+  )
 }
