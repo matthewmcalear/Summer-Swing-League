@@ -1,9 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, connection } from 'next/server'
 import { getStandings } from '@/lib/standings'
 
-export const dynamic = 'force-dynamic'
-
 export async function GET() {
+  await connection() // request-time only: never prerendered at build
   try {
     const standings = await getStandings()
     return NextResponse.json(standings, { headers: { 'Cache-Control': 'no-store' } })

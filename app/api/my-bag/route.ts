@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, connection } from 'next/server'
 import { prisma } from '@/lib/prisma'
-
-export const dynamic = 'force-dynamic'
+import { invalidateLeague } from '@/lib/cache'
 
 export async function GET(request: Request) {
+  await connection() // request-time only: never prerendered at build
   const { searchParams } = new URL(request.url)
   const memberId = searchParams.get('memberId')
   if (!memberId) return NextResponse.json([])
@@ -31,6 +31,7 @@ export async function POST(request: Request) {
       update: { yards: Number(yards) },
       create: { member_id, club_name: club_name.trim(), yards: Number(yards) },
     })
+    invalidateLeague()
     return NextResponse.json(club)
   } catch (e) {
     console.error(e)

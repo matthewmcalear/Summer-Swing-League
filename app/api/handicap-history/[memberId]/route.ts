@@ -1,9 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, connection } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export const dynamic = 'force-dynamic'
-
 export async function GET(_: Request, { params }: { params: Promise<{ memberId: string }> }) {
+  await connection() // request-time only: never prerendered at build
   const { memberId } = await params
   try {
     const history = await prisma.handicapHistory.findMany({

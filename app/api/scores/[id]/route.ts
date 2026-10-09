@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { isAdmin } from '@/lib/auth'
 import { calculatePoints } from '@/lib/scoring'
+import { invalidateLeague } from '@/lib/cache'
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -54,6 +55,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       },
     })
 
+    invalidateLeague()
     return NextResponse.json(updated)
   } catch (e) {
     console.error(e)
@@ -94,6 +96,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
       }
     }
 
+    invalidateLeague()
     return NextResponse.json({ success: true })
   } catch (e) {
     console.error(e)

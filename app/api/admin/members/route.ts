@@ -1,10 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, connection } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { isAdmin } from '@/lib/auth'
 
-export const dynamic = 'force-dynamic'
-
 export async function GET() {
+  await connection() // request-time only: never prerendered at build
   if (!(await isAdmin())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

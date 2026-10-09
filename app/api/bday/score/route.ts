@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export const dynamic = 'force-dynamic'
-
 export async function POST(request: Request) {
   const { teamId, hole, strokes } = await request.json()
   if (!teamId || !hole || strokes == null) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })

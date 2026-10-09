@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, connection } from 'next/server'
 import { prisma } from '@/lib/prisma'
-
-export const dynamic = 'force-dynamic'
+import { invalidateLeague } from '@/lib/cache'
 
 export async function GET() {
+  await connection() // request-time only: never prerendered at build
   try {
     const members = await prisma.member.findMany({
       orderBy: { full_name: 'asc' },
@@ -49,6 +49,7 @@ export async function POST(request: Request) {
       data: { member_id: member.id, handicap, score_id: null },
     })
 
+    invalidateLeague()
     return NextResponse.json(member, { status: 201 })
   } catch (e: any) {
     if (e?.code === 'P2002') {

@@ -5,8 +5,6 @@ import NavBar from '@/components/NavBar'
 import BottomNav from '@/components/BottomNav'
 import FeedbackHost from '@/components/Feedback'
 
-export const dynamic = 'force-dynamic'
-
 const inter = Inter({ subsets: ['latin'] })
 
 // Display face for headings — warm, characterful, a little wonky.

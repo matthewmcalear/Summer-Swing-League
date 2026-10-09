@@ -1,10 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, connection } from 'next/server'
 import { prisma } from '@/lib/prisma'
-
-export const dynamic = 'force-dynamic'
 
 // GET /api/live/[id] → a round with its hole scores
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+  await connection() // request-time only: never prerendered at build
   const { id } = await params
   try {
     const round = await prisma.liveRound.findUnique({

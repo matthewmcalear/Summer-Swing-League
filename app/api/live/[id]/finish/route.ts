@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { recordRound } from '@/lib/recordRound'
-
-export const dynamic = 'force-dynamic'
+import { invalidateLeague } from '@/lib/cache'
 
 // POST /api/live/[id]/finish → total the holes, create the Score, close the round
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -47,6 +46,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       data:  { completed_at: new Date(), score_id: result.score.id },
     })
 
+    invalidateLeague()
     return NextResponse.json({ success: true, score: result.score, gross }, { status: 201 })
   } catch (e) {
     console.error(e)

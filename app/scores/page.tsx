@@ -1,10 +1,30 @@
 import { prisma } from '@/lib/prisma'
 import ScoresClient from './ScoresClient'
 import type { Score, SeasonBonus } from '@/types'
+import { leagueCache } from '@/lib/cache'
+import { Suspense } from 'react'
+import { connection } from 'next/server'
+import PageSkeleton from '@/components/PageSkeleton'
 
-export const dynamic = 'force-dynamic'
+export default function Page() {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <Live />
+    </Suspense>
+  )
+}
 
-export default async function ScoresPage() {
+// Rendered per request — never baked into build-time HTML, which Heroku restores on
+// every dyno restart — from an in-memory cache that any league write expires.
+async function Live() {
+  await connection()
+  return <ScoresPage />
+}
+
+async function ScoresPage() {
+  'use cache'
+  leagueCache() // refreshed on any league write + hourly
+
   const [rawScores, rawBonuses] = await Promise.all([
     prisma.score.findMany({ orderBy: [{ play_date: 'desc' }, { created_at: 'desc' }] }),
     prisma.seasonBonus.findMany({

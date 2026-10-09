@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export const dynamic = 'force-dynamic'
-
 export async function DELETE(request: Request) {
   const { mulliganId } = await request.json()
   if (!mulliganId) return NextResponse.json({ error: 'Missing mulliganId' }, { status: 400 })

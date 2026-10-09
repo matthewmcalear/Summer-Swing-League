@@ -1,9 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, connection } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export const dynamic = 'force-dynamic'
-
 export async function GET() {
+  await connection() // request-time only: never prerendered at build
   const bonuses = await prisma.seasonBonus.findMany({
     include: { member: { select: { full_name: true } } },
     orderBy: { awarded_date: 'desc' },

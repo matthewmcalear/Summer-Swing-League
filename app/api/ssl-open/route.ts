@@ -1,15 +1,14 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, connection } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { isAdmin } from '@/lib/auth'
 import { OPEN_EVENT_ID } from '@/lib/open-types'
 import { OpenError } from '@/lib/open-validation'
 import { loadOpenState } from '@/lib/open-server'
 
-export const dynamic = 'force-dynamic'
-
 // GET /api/ssl-open → the Open board: event (created automatically from the announced
 // field and the course library on first load), season inputs, and whether the viewer is admin.
 export async function GET() {
+  await connection() // request-time only: never prerendered at build
   try {
     return NextResponse.json(await loadOpenState(), { headers: { 'Cache-Control': 'no-store' } })
   } catch (e) {

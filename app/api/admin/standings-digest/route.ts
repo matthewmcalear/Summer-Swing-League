@@ -4,8 +4,6 @@ import { isAdmin } from '@/lib/auth'
 import { getStandings, participationMultiplier } from '@/lib/standings'
 import nodemailer from 'nodemailer'
 
-export const dynamic = 'force-dynamic'
-
 const medalFor = (i: number) => (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`)
 
 /** Compose the current standings as a plain-text digest and email it to all active members. */

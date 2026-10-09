@@ -1,19 +1,24 @@
+import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
 import { computeSeasonScore } from '@/lib/scoring'
+import { leagueCache } from '@/lib/cache'
 import AnalyticsClient, { type Analytics } from './AnalyticsClient'
 
-export const dynamic = 'force-dynamic'
+// The page shell is static; the tab/player in the URL is per-request, so that part
+// streams in behind a skeleton while the (cached) analytics data is reused.
+export default function AnalyticsPage({ searchParams }: PageProps<'/analytics'>) {
+  return (
+    <Suspense fallback={<AnalyticsSkeleton />}>
+      <AnalyticsView searchParams={searchParams} />
+    </Suspense>
+  )
+}
 
-export default async function AnalyticsPage({ searchParams }: PageProps<'/analytics'>) {
-  // Next 16: searchParams is a Promise (sync access was removed).
-  const { tab, id } = await searchParams
-  const [members, scores, allClubs] = await Promise.all([
-    prisma.member.findMany({ where: { is_active: true }, orderBy: { full_name: 'asc' } }),
-    prisma.score.findMany({ orderBy: { play_date: 'asc' } }),
-    prisma.clubYardage.findMany({ orderBy: { yards: 'desc' } }),
-  ])
+async function AnalyticsView({ searchParams }: Pick<PageProps<'/analytics'>, 'searchParams'>) {
+  const { tab, id } = await searchParams // request-time; keeps the DB out of the build
+  const data = await getAnalyticsData()
 
-  if (scores.length === 0) {
+  if (!data) {
     return (
       <div className="card text-center py-20 text-gray-500">
         <div className="text-5xl mb-3">📊</div>
@@ -21,6 +26,40 @@ export default async function AnalyticsPage({ searchParams }: PageProps<'/analyt
       </div>
     )
   }
+
+  return (
+    <AnalyticsClient
+      data={data}
+      initialTab={typeof tab === 'string' ? tab : undefined}
+      initialPlayerId={typeof id === 'string' ? id : undefined}
+    />
+  )
+}
+
+function AnalyticsSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse" aria-busy="true" aria-label="Loading analytics">
+      <div className="h-9 w-48 rounded-lg bg-gray-200" />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {[0, 1, 2, 3].map((i) => <div key={i} className="card h-24" />)}
+      </div>
+      <div className="card h-80" />
+    </div>
+  )
+}
+
+/** Everything the analytics tabs need — cached, refreshed on any league write + hourly. */
+async function getAnalyticsData(): Promise<Analytics | null> {
+  'use cache'
+  leagueCache()
+
+  const [members, scores, allClubs] = await Promise.all([
+    prisma.member.findMany({ where: { is_active: true }, orderBy: { full_name: 'asc' } }),
+    prisma.score.findMany({ orderBy: { play_date: 'asc' } }),
+    prisma.clubYardage.findMany({ orderBy: { yards: 'desc' } }),
+  ])
+
+  if (scores.length === 0) return null
 
   const playerTimelines = members.map((m) => {
     const playerScores = scores
@@ -127,11 +166,5 @@ export default async function AnalyticsPage({ searchParams }: PageProps<'/analyt
     bags,
   }
 
-  return (
-    <AnalyticsClient
-      data={data}
-      initialTab={typeof tab === 'string' ? tab : undefined}
-      initialPlayerId={typeof id === 'string' ? id : undefined}
-    />
-  )
+  return data
 }

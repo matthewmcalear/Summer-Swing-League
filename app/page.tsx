@@ -6,8 +6,10 @@ import StandingsChart from '@/components/StandingsChart'
 import { getStandings } from '@/lib/standings'
 import { displayName } from '@/lib/nameUtils'
 import { SEASON_END, daysUntil } from '@/lib/scoring'
-
-export const dynamic = 'force-dynamic'
+import { leagueCache } from '@/lib/cache'
+import { Suspense } from 'react'
+import { connection } from 'next/server'
+import PageSkeleton from '@/components/PageSkeleton'
 
 const HOW_IT_WORKS: [string, string][] = [
   ['Register', 'Join the league for free. No signup fees.'],
@@ -18,7 +20,25 @@ const HOW_IT_WORKS: [string, string][] = [
   ['Win cash', 'The top three players split $475 after October 10.'],
 ]
 
-export default async function Home() {
+export default function Page() {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <Live />
+    </Suspense>
+  )
+}
+
+// Rendered per request — never baked into build-time HTML, which Heroku restores on
+// every dyno restart — from an in-memory cache that any league write expires.
+async function Live() {
+  await connection()
+  return <Home />
+}
+
+async function Home() {
+  'use cache'
+  leagueCache() // refreshed on any league write + hourly
+
   const standings = await getStandings()
   const daysLeft = daysUntil(SEASON_END)
   const live = daysLeft >= 0

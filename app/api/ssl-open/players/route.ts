@@ -5,8 +5,6 @@ import { OPEN_EVENT_ID } from '@/lib/open-types'
 import { OpenError, parseOpenJoin } from '@/lib/open-validation'
 import { loadOpenState } from '@/lib/open-server'
 
-export const dynamic = 'force-dynamic'
-
 // POST /api/ssl-open/players → an active league member who is not in the announced field
 // joins the Open in a group of their choice. Handicap is frozen at today's value, as for everyone else.
 export async function POST(request: Request) {

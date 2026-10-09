@@ -1,10 +1,29 @@
 import { prisma } from '@/lib/prisma'
 import MyBagClient from './MyBagLoader'
+import { leagueCache } from '@/lib/cache'
+import { Suspense } from 'react'
+import { connection } from 'next/server'
+import PageSkeleton from '@/components/PageSkeleton'
 
-// Render at request time so new members appear without a redeploy
-export const revalidate = 0
+export default function Page() {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <Live />
+    </Suspense>
+  )
+}
 
-export default async function MyBagPage() {
+// Rendered per request — never baked into build-time HTML, which Heroku restores on
+// every dyno restart — from an in-memory cache that any league write expires.
+async function Live() {
+  await connection()
+  return <MyBagPage />
+}
+
+async function MyBagPage() {
+  'use cache'
+  leagueCache() // refreshed on any league write + hourly
+
   const members = await prisma.member.findMany({
     where:   { is_active: true },
     select:  { id: true, full_name: true },

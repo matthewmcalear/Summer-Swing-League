@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export const dynamic = 'force-dynamic'
-
 // PATCH /api/bday/team — update team name and/or group
 export async function PATCH(request: Request) {
   const { teamId, name, groupId, player1, player2 } = await request.json()

@@ -51,7 +51,7 @@ export default function OpenClient({ compact = false }: { compact?: boolean }) {
   const [adminBusy, setAdminBusy] = useState(false)
   const [adminError, setAdminError] = useState('')
   const [adminNotice, setAdminNotice] = useState('')
-  const [now, setNow] = useState(() => Date.now())
+  const [now, setNow] = useState(0) // read from the clock after mount (prerender has no clock)
   const refreshSerial = useRef(0)
 
   useEffect(() => {
@@ -76,6 +76,7 @@ export default function OpenClient({ compact = false }: { compact?: boolean }) {
 
   useEffect(() => {
     void refresh()
+    setNow(Date.now())
     const timer = setInterval(() => { setNow(Date.now()); if (!document.hidden) void refresh() }, 10_000)
     const wake = () => { if (!document.hidden) void refresh() }
     window.addEventListener('online', wake)

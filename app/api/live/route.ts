@@ -1,10 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, connection } from 'next/server'
 import { prisma } from '@/lib/prisma'
-
-export const dynamic = 'force-dynamic'
 
 // GET /api/live?member_id=...  → that member's in-progress round (or null)
 export async function GET(request: Request) {
+  await connection() // request-time only: never prerendered at build
   try {
     const memberId = new URL(request.url).searchParams.get('member_id')
     // Guard against malformed ids — member_id is a UUID column, so a bad value

@@ -1,7 +1,5 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, connection } from 'next/server'
 import { prisma } from '@/lib/prisma'
-
-export const dynamic = 'force-dynamic'
 
 const STANDARD_CLUBS = [
   'Driver', '3-Wood', '5-Wood', '3-Hybrid', '4-Hybrid',
@@ -10,6 +8,7 @@ const STANDARD_CLUBS = [
 ]
 
 export async function GET() {
+  await connection() // request-time only: never prerendered at build
   try {
     const rows = await prisma.clubYardage.findMany({
       select:   { club_name: true },

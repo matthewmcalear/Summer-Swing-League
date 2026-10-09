@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, connection } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { recordRound } from '@/lib/recordRound'
-
-export const dynamic = 'force-dynamic'
+import { invalidateLeague } from '@/lib/cache'
 
 export async function GET() {
+  await connection() // request-time only: never prerendered at build
   try {
     const scores = await prisma.score.findMany({
       orderBy: [{ play_date: 'desc' }, { created_at: 'desc' }],
@@ -30,6 +30,7 @@ export async function POST(request: Request) {
     if ('possibleDuplicate' in result) {
       return NextResponse.json(result, { status: 409 })
     }
+    invalidateLeague()
     return NextResponse.json({ success: true, score: result.score }, { status: 201 })
   } catch (e) {
     console.error(e)

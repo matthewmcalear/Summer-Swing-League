@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export const dynamic = 'force-dynamic'
-
 // DELETE — wipe all event data (scores, beers, hotdogs, mulligans, locations)
 // Keeps groups and teams intact so you can use it to reset before the real day.
 export async function DELETE() {

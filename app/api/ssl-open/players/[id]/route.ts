@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { OpenError, applyOpenUpdate, isUuid, parseOpenUpdate } from '@/lib/open-validation'
 
-export const dynamic = 'force-dynamic'
-
 const NO_STORE = { 'Cache-Control': 'no-store' }
 
 // PUT /api/ssl-open/players/[id] → save one hole, declare a mode, call Double Down, or move

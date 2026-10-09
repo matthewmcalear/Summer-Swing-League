@@ -1,10 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, connection } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { computeSeasonScore } from '@/lib/scoring'
 
-export const dynamic = 'force-dynamic'
-
 export async function GET() {
+  await connection() // request-time only: never prerendered at build
   try {
     const [members, scores] = await Promise.all([
       prisma.member.findMany({ where: { is_active: true }, orderBy: { full_name: 'asc' } }),

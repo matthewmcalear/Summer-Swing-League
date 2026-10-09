@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, connection } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { isAdmin } from '@/lib/auth'
-
-export const dynamic = 'force-dynamic'
+import { invalidateLeague } from '@/lib/cache'
 
 export async function GET() {
+  await connection() // request-time only: never prerendered at build
   if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const bonuses = await prisma.seasonBonus.findMany({
     include: { member: { select: { full_name: true } } },
@@ -35,6 +35,7 @@ export async function POST(request: Request) {
     },
     include: { member: { select: { full_name: true } } },
   })
+  invalidateLeague()
   return NextResponse.json({
     id:           bonus.id,
     member_id:    bonus.member_id,
@@ -50,5 +51,6 @@ export async function DELETE(request: Request) {
   const { id } = await request.json()
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
   await prisma.seasonBonus.delete({ where: { id } })
+  invalidateLeague()
   return NextResponse.json({ deleted: true })
 }

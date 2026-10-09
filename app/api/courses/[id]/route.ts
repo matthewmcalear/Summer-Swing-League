@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { isAdmin } from '@/lib/auth'
-
-export const dynamic = 'force-dynamic'
+import { invalidateLeague } from '@/lib/cache'
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -42,6 +41,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     const course = await prisma.course.update({ where: { id }, data: updates })
+    invalidateLeague()
     return NextResponse.json(course)
   } catch (e: any) {
     if (e?.code === 'P2002') {
@@ -57,6 +57,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     await prisma.course.delete({ where: { id } })
+    invalidateLeague()
     return NextResponse.json({ success: true })
   } catch (e) {
     console.error(e)

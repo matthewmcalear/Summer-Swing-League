@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { isAdmin } from '@/lib/auth'
+import { invalidateLeague } from '@/lib/cache'
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -15,6 +16,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (body.starting_handicap  !== undefined) updates.starting_handicap  = body.starting_handicap === null ? null : Number(body.starting_handicap)
 
     const member = await prisma.member.update({ where: { id }, data: updates })
+    invalidateLeague()
     return NextResponse.json(member)
   } catch (e) {
     console.error(e)
@@ -28,6 +30,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
 
   try {
     await prisma.member.delete({ where: { id } })
+    invalidateLeague()
     return NextResponse.json({ success: true })
   } catch (e) {
     console.error(e)

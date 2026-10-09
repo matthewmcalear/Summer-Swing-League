@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export const dynamic = 'force-dynamic'
-
 export async function POST(request: Request) {
   const { groupCode, lat, lon } = await request.json()
   if (!groupCode || lat == null || lon == null) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })

@@ -1,14 +1,14 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, connection } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { isAdmin } from '@/lib/auth'
-
-export const dynamic = 'force-dynamic'
+import { invalidateLeague } from '@/lib/cache'
 
 function toTitleCase(str: string): string {
   return str.trim().split(/\s+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
 }
 
 export async function GET() {
+  await connection() // request-time only: never prerendered at build
   if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const scores = await prisma.score.findMany({ select: { course_name: true } })
@@ -36,6 +36,7 @@ export async function PATCH(request: Request) {
       where: { course_name: old_name },
       data:  { course_name: normalized },
     })
+    invalidateLeague()
     return NextResponse.json({ updated: result.count, new_name: normalized })
   } catch (e) {
     console.error(e)

@@ -7,8 +7,7 @@ import { OPEN_EVENT_ID } from '@/lib/open-types'
 import type { OpenEvent } from '@/lib/open-types'
 import { OpenError } from '@/lib/open-validation'
 import { loadStoredEvent, serializeEvent } from '@/lib/open-server'
-
-export const dynamic = 'force-dynamic'
+import { invalidateLeague } from '@/lib/cache'
 
 const ordinal = (rank: number) => `${rank}${['th', 'st', 'nd', 'rd'][rank % 100 > 10 && rank % 100 < 14 ? 0 : rank % 10] ?? 'th'}`
 const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1)
@@ -78,6 +77,7 @@ export async function POST() {
     }
 
     await prisma.sslOpenEvent.update({ where: { id: OPEN_EVENT_ID }, data: { finalized_at: now } })
+    invalidateLeague()
     return NextResponse.json(
       { success: true, posted: finished.length, skipped, pendingTies },
       { headers: { 'Cache-Control': 'no-store' } },

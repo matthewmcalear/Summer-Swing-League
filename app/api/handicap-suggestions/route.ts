@@ -1,9 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, connection } from 'next/server'
 import { getHandicapSuggestions } from '@/lib/handicapSuggestions'
 
-export const dynamic = 'force-dynamic'
-
 export async function GET() {
+  await connection() // request-time only: never prerendered at build
   try {
     const suggestions = await getHandicapSuggestions()
     return NextResponse.json(suggestions)

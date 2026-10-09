@@ -1,12 +1,12 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, connection } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { isAdmin } from '@/lib/auth'
-
-export const dynamic = 'force-dynamic'
+import { invalidateLeague } from '@/lib/cache'
 
 // List the course library. Falls back to distinct names from past scores so the
 // submit form still has suggestions even before any courses are configured.
 export async function GET() {
+  await connection() // request-time only: never prerendered at build
   try {
     const courses = await prisma.course.findMany({
       where: { is_active: true },
@@ -59,6 +59,7 @@ export async function POST(request: Request) {
     if (error) return NextResponse.json({ error }, { status: 400 })
 
     const course = await prisma.course.create({ data })
+    invalidateLeague()
     return NextResponse.json(course, { status: 201 })
   } catch (e: any) {
     if (e?.code === 'P2002') {

@@ -1,9 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, connection } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export const dynamic = 'force-dynamic'
-
 export async function GET() {
+  await connection() // request-time only: never prerendered at build
   const groups = await prisma.bdayGroup.findMany({
     orderBy: { name: 'asc' },
     include: {

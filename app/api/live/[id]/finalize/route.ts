@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-
-export const dynamic = 'force-dynamic'
+import { invalidateLeague } from '@/lib/cache'
 
 // POST /api/live/[id]/finalize
 // Called after a live round is submitted via the score form. Persists the
@@ -27,6 +26,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     }
 
     await prisma.liveRound.delete({ where: { id: round.id } })
+    invalidateLeague()
     return NextResponse.json({ success: true })
   } catch (e) {
     console.error(e)

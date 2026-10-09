@@ -4,8 +4,10 @@ import { getStandings, participationMultiplier } from '@/lib/standings'
 import { displayName, displayHandicap } from '@/lib/nameUtils'
 import { SEASON_END, daysUntil } from '@/lib/scoring'
 import type { StandingEntry } from '@/types'
-
-export const dynamic = 'force-dynamic'
+import { leagueCache } from '@/lib/cache'
+import { Suspense } from 'react'
+import { connection } from 'next/server'
+import PageSkeleton from '@/components/PageSkeleton'
 
 const fmt = (n: number) => n.toFixed(1)
 const shortDate = (iso: string) =>
@@ -165,7 +167,25 @@ function Row({ p, live }: { p: StandingEntry; live: boolean }) {
   )
 }
 
-export default async function Standings() {
+export default function Page() {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <Live />
+    </Suspense>
+  )
+}
+
+// Rendered per request — never baked into build-time HTML, which Heroku restores on
+// every dyno restart — from an in-memory cache that any league write expires.
+async function Live() {
+  await connection()
+  return <Standings />
+}
+
+async function Standings() {
+  'use cache'
+  leagueCache() // refreshed on any league write + hourly
+
   const standings = await getStandings()
   const daysLeft = daysUntil(SEASON_END)
   const live = daysLeft >= 0

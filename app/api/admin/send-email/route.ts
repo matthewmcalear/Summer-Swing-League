@@ -3,8 +3,6 @@ import { prisma } from '@/lib/prisma'
 import { isAdmin } from '@/lib/auth'
 import nodemailer from 'nodemailer'
 
-export const dynamic = 'force-dynamic'
-
 export async function POST(request: Request) {
   if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

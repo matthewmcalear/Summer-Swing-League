@@ -10,8 +10,10 @@ import { buildSeasonRecap, shortDate } from '@/lib/seasonRecap'
 import { displayName } from '@/lib/nameUtils'
 import { SEASON_END, daysUntil } from '@/lib/scoring'
 import CountUp from '@/components/CountUp'
-
-export const dynamic = 'force-dynamic'
+import { leagueCache } from '@/lib/cache'
+import { Suspense } from 'react'
+import { connection } from 'next/server'
+import PageSkeleton from '@/components/PageSkeleton'
 
 export const metadata: Metadata = {
   title: 'Season 2 Recap · Summer Swing League 2026',
@@ -28,7 +30,25 @@ const PRIZES = [
 ]
 
 
-export default async function SeasonRecapPage() {
+export default function Page() {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <Live />
+    </Suspense>
+  )
+}
+
+// Rendered per request — never baked into build-time HTML, which Heroku restores on
+// every dyno restart — from an in-memory cache that any league write expires.
+async function Live() {
+  await connection()
+  return <SeasonRecapPage />
+}
+
+async function SeasonRecapPage() {
+  'use cache'
+  leagueCache() // refreshed on any league write + hourly
+
   const [standings, scores] = await Promise.all([
     getStandings(),
     prisma.score.findMany({

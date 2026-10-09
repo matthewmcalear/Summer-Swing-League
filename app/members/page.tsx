@@ -2,10 +2,30 @@ import { prisma } from '@/lib/prisma'
 import MembersClient from './MembersClient'
 import { getHandicapSuggestions } from '@/lib/handicapSuggestions'
 import type { Member } from '@/types'
+import { leagueCache } from '@/lib/cache'
+import { Suspense } from 'react'
+import { connection } from 'next/server'
+import PageSkeleton from '@/components/PageSkeleton'
 
-export const dynamic = 'force-dynamic'
+export default function Page() {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <Live />
+    </Suspense>
+  )
+}
 
-export default async function MembersPage() {
+// Rendered per request — never baked into build-time HTML, which Heroku restores on
+// every dyno restart — from an in-memory cache that any league write expires.
+async function Live() {
+  await connection()
+  return <MembersPage />
+}
+
+async function MembersPage() {
+  'use cache'
+  leagueCache() // refreshed on any league write + hourly
+
   const [rows, suggestions, scores] = await Promise.all([
     prisma.member.findMany({
       where:   { is_active: true },
