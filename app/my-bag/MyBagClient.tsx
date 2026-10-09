@@ -99,7 +99,7 @@ export default function MyBagClient({ members }: { members: Member[] }) {
               {/* Club name */}
               {!useCustom ? (
                 <select
-                  className="w-full h-12 px-4 text-base rounded-lg border border-gray-300 bg-white shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full h-12 px-4 text-base rounded-lg border border-gray-300 bg-surface shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
                   value={selectedClub}
                   onChange={(e) => {
                     if (e.target.value === '__custom__') { setUseCustom(true); setSelectedClub('') }
@@ -113,7 +113,7 @@ export default function MyBagClient({ members }: { members: Member[] }) {
               ) : (
                 <div className="flex gap-2 items-center">
                   <input
-                    className="flex-1 h-12 px-4 text-base rounded-lg border border-gray-300 bg-white shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="flex-1 h-12 px-4 text-base rounded-lg border border-gray-300 bg-surface shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
                     placeholder="Club name (e.g. 60° Wedge)"
                     value={customName}
                     onChange={(e) => setCustomName(e.target.value)}
@@ -128,7 +128,7 @@ export default function MyBagClient({ members }: { members: Member[] }) {
               {/* Yards */}
               <input
                 type="number"
-                className="w-full h-12 px-4 text-base rounded-lg border border-gray-300 bg-white shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full h-12 px-4 text-base rounded-lg border border-gray-300 bg-surface shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
                 placeholder="Yards"
                 min={1}
                 max={400}

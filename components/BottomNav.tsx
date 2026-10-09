@@ -71,7 +71,7 @@ export default function BottomNav() {
           moreOpen ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
-        <div className="bg-white dark-sheet rounded-t-3xl shadow-2xl border-t border-gray-100 px-4 pt-3 pb-24">
+        <div className="bg-surface dark-sheet rounded-t-3xl shadow-2xl border-t border-gray-100 px-4 pt-3 pb-24">
           <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-gray-300" />
           {MORE_GROUPS.map(({ title, links }) => (
             <div key={title} className="mb-3">

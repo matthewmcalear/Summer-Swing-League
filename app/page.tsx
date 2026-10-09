@@ -110,7 +110,7 @@ async function Home() {
           <div className="space-y-3 w-full lg:w-64 shrink-0">
             <Link
               href={live ? '/submit-score' : '/season'}
-              className="block text-center px-5 py-3.5 bg-white text-green-900 rounded-xl font-bold hover:bg-green-50 transition-all shadow-lg hover:shadow-xl"
+              className="block text-center px-5 py-3.5 keep-colors bg-white text-green-900 rounded-xl font-bold hover:bg-green-50 transition-all shadow-lg hover:shadow-xl"
             >
               {live ? 'Submit a score' : 'Season recap'}
             </Link>

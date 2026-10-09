@@ -358,7 +358,7 @@ export default function SubmitScore() {
                 className={`flex-1 flex items-center justify-center py-2.5 rounded-lg border cursor-pointer text-sm font-medium transition-colors ${
                   form.holes === h
                     ? 'bg-green-700 text-white border-green-700'
-                    : 'bg-white text-gray-700 border-gray-300 hover:border-green-500'
+                    : 'bg-surface text-gray-700 border-gray-300 hover:border-green-500'
                 }`}
               >
                 <input
@@ -488,7 +488,7 @@ export default function SubmitScore() {
                 className={`flex-1 flex flex-col items-center py-2.5 px-1 rounded-lg border cursor-pointer text-xs font-medium transition-colors text-center ${
                   form.course_difficulty === value
                     ? 'bg-green-700 text-white border-green-700'
-                    : 'bg-white text-gray-700 border-gray-300 hover:border-green-500'
+                    : 'bg-surface text-gray-700 border-gray-300 hover:border-green-500'
                 }`}
               >
                 <input
@@ -535,7 +535,7 @@ export default function SubmitScore() {
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition-colors ${
                       checked
                         ? 'bg-green-50 border-green-500 text-green-800'
-                        : 'bg-white border-gray-200 text-gray-700 hover:border-green-400'
+                        : 'bg-surface border-gray-200 text-gray-700 hover:border-green-400'
                     }`}
                   >
                     <input

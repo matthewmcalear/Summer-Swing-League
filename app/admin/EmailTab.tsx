@@ -95,7 +95,7 @@ export default function EmailTab({ members }: { members: Member[] }) {
             const on = selected.includes(m.id)
             return (
               <label key={m.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition-colors ${
-                on ? 'bg-green-50 border-green-500 text-green-800' : 'bg-white border-gray-200 text-gray-600 hover:border-green-400'
+                on ? 'bg-green-50 border-green-500 text-green-800' : 'bg-surface border-gray-200 text-gray-600 hover:border-green-400'
               }`}>
                 <input type="checkbox" checked={on} onChange={() => toggle(m.id)} className="accent-green-600" />
                 <span className="truncate">{m.full_name}</span>

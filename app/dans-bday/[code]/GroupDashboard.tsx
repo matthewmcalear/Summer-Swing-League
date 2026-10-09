@@ -68,7 +68,7 @@ function ScoreSheet({ hole, current, onSave, onClear, onClose }: {
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40" onClick={onClose}>
       <div
-        className="w-full max-w-sm bg-white rounded-t-2xl p-5 space-y-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))]"
+        className="w-full max-w-sm bg-surface rounded-t-2xl p-5 space-y-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -201,7 +201,7 @@ function MulliganModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4">
+      <div className="bg-surface rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4">
         <div className="text-center">
           <div className="text-4xl mb-1">💀</div>
           <h3 className="text-lg font-extrabold text-gray-900">Fire a Reverse Mulligan</h3>
@@ -326,7 +326,7 @@ function TeamCard({
         />
       )}
 
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-surface rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-green-700 to-green-600 px-4 py-3 flex items-center justify-between">
           {editName ? (
@@ -495,7 +495,7 @@ function ChatPanel({ messages, senderName }: { messages: ChatMessage[]; senderNa
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div className="bg-surface rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3">
         <h2 className="text-white font-bold text-sm">💬 Trash Talk</h2>
         <p className="text-blue-200 text-[11px]">Chatting as {senderName}</p>
@@ -510,7 +510,7 @@ function ChatPanel({ messages, senderName }: { messages: ChatMessage[]; senderNa
               <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
                 m.sender_name === senderName
                   ? 'bg-blue-600 text-white rounded-br-sm'
-                  : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm shadow-sm'
+                  : 'bg-surface border border-gray-200 text-gray-800 rounded-bl-sm shadow-sm'
               }`}>
                 {m.text}
               </div>
@@ -724,7 +724,7 @@ export default function GroupDashboard({ groupCode }: { groupCode: string }) {
             className="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold rounded-lg px-2 py-1 border border-white/30 outline-none cursor-pointer"
           >
             {state.groups.map((g) => (
-              <option key={g.code} value={g.code} className="text-gray-900 bg-white">
+              <option key={g.code} value={g.code} className="text-gray-900 bg-surface">
                 {g.name}
               </option>
             ))}
@@ -733,7 +733,7 @@ export default function GroupDashboard({ groupCode }: { groupCode: string }) {
       </div>
 
       {/* Current hole selector */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-3 flex items-center gap-3">
+      <div className="bg-surface rounded-2xl border border-gray-200 shadow-sm px-4 py-3 flex items-center gap-3">
         <span className="text-sm font-semibold text-gray-600 shrink-0">Current hole:</span>
         <div className="flex gap-1 flex-wrap flex-1">
           {Array.from({ length: 18 }, (_, i) => i + 1).map((h) => (
@@ -766,7 +766,7 @@ export default function GroupDashboard({ groupCode }: { groupCode: string }) {
       ))}
 
       {/* Auto-location */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-3">
+      <div className="bg-surface rounded-2xl border border-gray-200 shadow-sm px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex-1">
             <p className="text-sm font-semibold text-gray-700">

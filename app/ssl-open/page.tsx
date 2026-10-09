@@ -72,7 +72,7 @@ export default function SSLOpenPage() {
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-sm">
           {OPEN_FIELD_PLAYERS.map((name) => (
-            <div key={name} className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-green-200">
+            <div key={name} className="flex items-center gap-2 px-3 py-2 bg-surface rounded-lg border border-green-200">
               <span className="text-green-700">✓</span>
               <span className="font-medium text-gray-900">{name}</span>
             </div>
@@ -90,7 +90,7 @@ export default function SSLOpenPage() {
           Official tee sheet from Saturday, September 19, 2026:
         </p>
         <div className="space-y-3">
-          <div className="bg-white rounded-lg border border-blue-200 p-4">
+          <div className="bg-surface rounded-lg border border-blue-200 p-4">
             <div className="font-bold text-blue-900 mb-2">1:00 PM — Group 1</div>
             <div className="text-sm text-gray-700 space-y-1">
               <div>Matthew McAlear</div>
@@ -99,7 +99,7 @@ export default function SSLOpenPage() {
               <div>Spence Goodwin</div>
             </div>
           </div>
-          <div className="bg-white rounded-lg border border-blue-200 p-4">
+          <div className="bg-surface rounded-lg border border-blue-200 p-4">
             <div className="font-bold text-blue-900 mb-2">1:10 PM — Group 2</div>
             <div className="text-sm text-gray-700 space-y-1">
               <div>Thomas McAlear</div>
@@ -108,7 +108,7 @@ export default function SSLOpenPage() {
               <div className="text-gray-500 italic">Griffin's girlfriend (guest)</div>
             </div>
           </div>
-          <div className="bg-white rounded-lg border border-blue-200 p-4">
+          <div className="bg-surface rounded-lg border border-blue-200 p-4">
             <div className="font-bold text-blue-900 mb-2">1:20 PM — Group 3</div>
             <div className="text-sm text-gray-700 space-y-1">
               <div>Alex Sokaris</div>
@@ -137,7 +137,7 @@ export default function SSLOpenPage() {
         </p>
         <Link
           href="/ssl-open/live"
-          className="inline-flex items-center gap-2 px-5 py-3 bg-white text-green-900 rounded-xl font-bold hover:bg-green-50 transition-all shadow-lg"
+          className="inline-flex items-center gap-2 px-5 py-3 keep-colors bg-white text-green-900 rounded-xl font-bold hover:bg-green-50 transition-all shadow-lg"
         >
           <Trophy size={18} strokeWidth={2} aria-hidden="true" />
           View Full Leaderboard & Scorecards
@@ -353,7 +353,7 @@ export default function SSLOpenPage() {
               This is a gamble on your back 9 performance:
             </p>
             
-            <div className="bg-white rounded-lg p-3 border border-red-300">
+            <div className="bg-surface rounded-lg p-3 border border-red-300">
               <div className="font-bold text-red-900 mb-2">✅ If you succeed:</div>
               <p className="text-sm mb-1">
                 Your <strong>net back 9</strong> must be <strong>strictly better</strong> (lower score) than your <strong>net front 9</strong>.
@@ -363,7 +363,7 @@ export default function SSLOpenPage() {
               </p>
             </div>
             
-            <div className="bg-white rounded-lg p-3 border border-red-300">
+            <div className="bg-surface rounded-lg p-3 border border-red-300">
               <div className="font-bold text-red-900 mb-2">❌ If you fail:</div>
               <p className="text-sm mb-1">
                 Your net back 9 is <strong>worse or tied</strong> with your net front 9.

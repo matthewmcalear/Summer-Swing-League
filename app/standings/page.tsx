@@ -51,7 +51,7 @@ function Podium({ top, final }: { top: StandingEntry[]; final: boolean }) {
             className={`group relative flex flex-col items-center text-center rounded-2xl border px-2 sm:px-4 transition-transform hover:-translate-y-0.5 ${
               first
                 ? 'prize-champion text-white border-brass-600 shadow-lg py-6 sm:py-8'
-                : 'bg-white border-brass-200 shadow-sm py-4 sm:py-6'
+                : 'bg-surface border-brass-200 shadow-sm py-4 sm:py-6'
             }`}
           >
             <Icon size={first ? 28 : 22} strokeWidth={2} aria-hidden="true" className={first ? 'text-white' : 'text-brass-600'} />

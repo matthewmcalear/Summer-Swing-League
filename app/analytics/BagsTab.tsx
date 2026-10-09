@@ -147,7 +147,7 @@ export default function BagsTab({ data }: { data: Analytics }) {
             <tbody className="divide-y divide-gray-50">
               {allClubs.map(({ name, avg, max }) => (
                 <tr key={name} className="hover:bg-gray-50">
-                  <td className="px-4 py-2.5 font-medium text-gray-800 sticky left-0 bg-white whitespace-nowrap">{name}</td>
+                  <td className="px-4 py-2.5 font-medium text-gray-800 sticky left-0 bg-surface whitespace-nowrap">{name}</td>
                   {bags.map((b) => {
                     const club = b.clubs.find((c) => c.club_name === name)
                     const isMax = club && club.yards === max && allClubs.find(c => c.name === name)!.count > 1

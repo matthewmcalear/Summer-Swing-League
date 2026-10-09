@@ -78,7 +78,7 @@ export default function FeedbackHost() {
         ref={dialog}
         onCancel={(e) => { e.preventDefault(); settle(false) }}
         onClick={(e) => { if (e.target === dialog.current) settle(false) }}
-        className="m-auto w-[min(28rem,calc(100vw-2rem))] rounded-2xl p-0 shadow-2xl bg-white text-gray-900 backdrop:bg-black/40 backdrop:backdrop-blur-sm open:animate-[page-enter_0.15s_ease-out]"
+        className="m-auto w-[min(28rem,calc(100vw-2rem))] rounded-2xl p-0 shadow-2xl bg-surface text-gray-900 backdrop:bg-black/40 backdrop:backdrop-blur-sm open:animate-[page-enter_0.15s_ease-out]"
       >
         {current && (
           <form method="dialog" className="p-5 sm:p-6" onSubmit={(e) => { e.preventDefault(); settle(true) }}>
@@ -121,7 +121,7 @@ export default function FeedbackHost() {
             <div
               key={t.id}
               role={t.kind === 'error' ? 'alert' : 'status'}
-              className="pointer-events-auto w-full flex items-start gap-2.5 rounded-xl bg-white border border-gray-200 shadow-xl px-4 py-3 text-sm text-gray-800 animate-[page-enter_0.2s_ease-out]"
+              className="pointer-events-auto w-full flex items-start gap-2.5 rounded-xl bg-surface border border-gray-200 shadow-xl px-4 py-3 text-sm text-gray-800 animate-[page-enter_0.2s_ease-out]"
             >
               <Icon size={18} className={`${cls} shrink-0 mt-px`} aria-hidden="true" />
               <span className="flex-1">{t.message}</span>

@@ -71,14 +71,14 @@ function cellClass(strokes: number, par: number): string {
   if (d === 0) return 'bg-green-100 text-green-800 font-bold'       // par
   if (d === 1) return 'text-gray-600'                               // bogey
   if (d === 2) return 'bg-gray-100 text-gray-500'                   // double
-  return 'bg-gray-800 text-white font-bold'                         // yikes
+  return 'bg-night text-white font-bold'                         // yikes
 }
 
 // ── Small building blocks ──────────────────────────────────────────────────────
 
 function AwardCard({ icon, title, winner, detail }: { icon: string; title: string; winner: string; detail: string }) {
   return (
-    <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-4">
+    <div className="rounded-2xl bg-surface border border-gray-100 shadow-sm p-4">
       <div className="flex items-center gap-2 mb-1.5">
         <span className="text-2xl">{icon}</span>
         <p className="text-xs font-bold uppercase tracking-wide text-gray-400">{title}</p>
@@ -214,7 +214,7 @@ export default function EventRecap() {
             <div
               key={t.id}
               className={`flex items-center gap-3 px-3 py-3 rounded-xl border ${
-                i === 0 ? 'bg-yellow-50 border-yellow-200' : 'bg-white border-gray-100'
+                i === 0 ? 'bg-yellow-50 border-yellow-200' : 'bg-surface border-gray-100'
               }`}
             >
               <span className="w-7 shrink-0 text-center font-bold text-sm">
@@ -304,14 +304,14 @@ export default function EventRecap() {
             <table className="text-xs tabular-nums border-collapse min-w-full">
               <thead>
                 <tr>
-                  <th className="sticky left-0 bg-white text-left pr-2 py-1.5 font-bold text-gray-500">Hole</th>
+                  <th className="sticky left-0 bg-surface text-left pr-2 py-1.5 font-bold text-gray-500">Hole</th>
                   {HOLE_PARS.map((_, i) => (
                     <th key={i} className="px-1.5 py-1.5 font-bold text-gray-500 text-center">{i + 1}</th>
                   ))}
                   <th className="px-2 py-1.5 font-bold text-gray-700 text-center">Gross</th>
                 </tr>
                 <tr className="border-b border-gray-200">
-                  <th className="sticky left-0 bg-white text-left pr-2 py-1 font-semibold text-gray-400">Par</th>
+                  <th className="sticky left-0 bg-surface text-left pr-2 py-1 font-semibold text-gray-400">Par</th>
                   {HOLE_PARS.map((p, i) => (
                     <th key={i} className="px-1.5 py-1 font-semibold text-gray-400 text-center">{p}</th>
                   ))}
@@ -321,7 +321,7 @@ export default function EventRecap() {
               <tbody>
                 {ranked.map((t) => (
                   <tr key={t.id} className="border-b border-gray-50">
-                    <td className="sticky left-0 bg-white pr-2 py-1.5 font-bold text-gray-800 whitespace-nowrap">{t.name}</td>
+                    <td className="sticky left-0 bg-surface pr-2 py-1.5 font-bold text-gray-800 whitespace-nowrap">{t.name}</td>
                     {HOLE_PARS.map((par, i) => {
                       const s = t.strokesByHole[i + 1]
                       return (
@@ -338,7 +338,7 @@ export default function EventRecap() {
             <p className="text-[11px] text-gray-400 mt-3">
               <span className="inline-block w-3 h-3 rounded bg-red-100 border border-red-200 align-middle mr-1" /> Birdie ·{' '}
               <span className="inline-block w-3 h-3 rounded bg-green-100 border border-green-200 align-middle mr-1" /> Par ·{' '}
-              <span className="inline-block w-3 h-3 rounded bg-gray-800 align-middle mr-1" /> Triple+
+              <span className="inline-block w-3 h-3 rounded bg-night align-middle mr-1" /> Triple+
             </p>
           </div>
         )}

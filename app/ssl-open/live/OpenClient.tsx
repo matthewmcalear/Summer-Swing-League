@@ -177,7 +177,7 @@ export default function OpenClient({ compact = false }: { compact?: boolean }) {
 
     {event && <>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-1 p-1 rounded-xl bg-white border border-gray-200" role="tablist" aria-label="Open views">
+        <div className="flex gap-1 p-1 rounded-xl bg-surface border border-gray-200" role="tablist" aria-label="Open views">
           {([['open', 'Open leaderboard'], ['season', 'SSL season'], ...(!compact ? [['scoring', 'Scorecards']] : [])] as [typeof tab, string][]).map(([key, label]) => <button key={key} role="tab" aria-selected={tab === key} onClick={() => setTab(key)} className={`px-3 py-2.5 rounded-lg text-xs sm:text-sm font-semibold ${tab === key ? 'bg-green-800 text-white' : 'text-gray-600'}`}>{label}</button>)}
         </div>
         {compact && <Link href="/ssl-open/live#tab=scoring" className="btn-primary"><Flag size={16} className="mr-2" />{event.finalizedAt ? 'Full scorecards' : 'Enter my scores'}</Link>}
@@ -189,7 +189,7 @@ export default function OpenClient({ compact = false }: { compact?: boolean }) {
           {event.groups.map((g) => {
             const played = g.players.reduce((sum, p) => sum + p.scores.filter((s) => s > 0).length, 0)
             const slots = Math.max(1, g.players.length * 18)
-            return <button key={g.id} className="bg-white rounded-xl border border-gray-200 p-3 text-left" onClick={() => { setGroupId(g.id); if (!compact) setTab('scoring') }}>
+            return <button key={g.id} className="bg-surface rounded-xl border border-gray-200 p-3 text-left" onClick={() => { setGroupId(g.id); if (!compact) setTab('scoring') }}>
               <p className="font-bold text-sm text-gray-900">{g.name}</p><p className="text-[11px] text-gray-500 mt-0.5">{teeLabel(g.teeTime)} · {g.players.length} player{g.players.length === 1 ? '' : 's'}</p>
               <div className="h-1 bg-green-100 rounded mt-3"><div className="h-1 bg-green-600 rounded" style={{ width: `${played / slots * 100}%` }} /></div>
               <p className="text-[10px] text-gray-500 mt-1">{played}/{g.players.length * 18} scores in</p>
@@ -230,7 +230,7 @@ export default function OpenClient({ compact = false }: { compact?: boolean }) {
         <GroupScorecard key={group.id} event={event} group={group} me={me} canScore={canScore} refresh={refresh} />
       </section>}
 
-      <details className="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-600">
+      <details className="rounded-xl border border-gray-200 bg-surface p-4 text-sm text-gray-600">
         <summary className="font-semibold text-gray-800 cursor-pointer">How the live projections work</summary>
         <div className="mt-3 space-y-2 leading-relaxed">
           <p>Projected gross = course par + (strokes over par so far × 18 ÷ holes played). Projected net subtracts the player’s handicap, frozen when the board was created. It’s a pace estimate, not a win probability; a single early hole can move it a lot.</p>
@@ -303,7 +303,7 @@ function WhoIsScoring({ event, me, canScore, onChoose, onJoined, onMove }: {
       {event.groups.map((g) => <div key={g.id} className="flex flex-wrap items-center gap-2">
         <span className="text-xs font-semibold text-gray-500 w-full sm:w-auto sm:min-w-28">{groupLabel(g)}</span>
         {g.players.length === 0 && <span className="text-xs text-gray-400">Nobody yet</span>}
-        {g.players.map((p) => <button key={p.id} type="button" onClick={() => onChoose(p.id === me ? null : p, p.id === me ? undefined : g)} aria-pressed={p.id === me} className={`min-h-10 px-3 rounded-full border text-sm font-semibold ${p.id === me ? 'bg-green-800 text-white border-green-800' : 'bg-white text-gray-800 border-gray-200'}`}>{displayName(p.name)}</button>)}
+        {g.players.map((p) => <button key={p.id} type="button" onClick={() => onChoose(p.id === me ? null : p, p.id === me ? undefined : g)} aria-pressed={p.id === me} className={`min-h-10 px-3 rounded-full border text-sm font-semibold ${p.id === me ? 'bg-green-800 text-white border-green-800' : 'bg-surface text-gray-800 border-gray-200'}`}>{displayName(p.name)}</button>)}
       </div>)}
     </div>
     {myself && myGroup && <div className="flex flex-wrap items-center gap-2 text-sm rounded-xl bg-green-50 border border-green-200 p-3">
@@ -441,7 +441,7 @@ function GroupScorecard({ event, group, me, canScore, refresh }: { event: OpenEv
   return <div className="space-y-4">
     <form className="card space-y-5" onSubmit={(e) => { e.preventDefault(); void saveHole(true) }}>
       <div className="flex items-center justify-between gap-3"><button type="button" aria-label="Previous hole" className="btn-secondary px-3" disabled={hole === 1} onClick={() => goTo(hole - 1)}><ChevronLeft size={20} /></button><div className="text-center"><p className="text-xs text-gray-500">{groupLabel(group)} · {hole <= 9 ? 'Front nine' : 'Back nine'}</p><h2 className="text-2xl font-bold">Hole {hole} <span className="text-base font-normal text-gray-500">/ Par {par}</span></h2></div><button type="button" aria-label="Next hole" className="btn-secondary px-3" disabled={hole === 18} onClick={() => goTo(hole + 1)}><ChevronRight size={20} /></button></div>
-      <div className="grid grid-cols-9 gap-1">{event.holePars.map((_, i) => <button type="button" key={i} onClick={() => goTo(i + 1)} className={`min-h-10 text-sm font-semibold rounded-lg border ${hole === i + 1 ? 'bg-green-800 text-white border-green-800' : group.players.length > 0 && group.players.every((p) => p.scores[i] > 0) ? 'bg-green-50 text-green-800 border-green-200' : 'bg-white border-gray-200 text-gray-500'}`} aria-label={`Hole ${i + 1}`} aria-pressed={hole === i + 1}>{i + 1}</button>)}</div>
+      <div className="grid grid-cols-9 gap-1">{event.holePars.map((_, i) => <button type="button" key={i} onClick={() => goTo(i + 1)} className={`min-h-10 text-sm font-semibold rounded-lg border ${hole === i + 1 ? 'bg-green-800 text-white border-green-800' : group.players.length > 0 && group.players.every((p) => p.scores[i] > 0) ? 'bg-green-50 text-green-800 border-green-200' : 'bg-surface border-gray-200 text-gray-500'}`} aria-label={`Hole ${i + 1}`} aria-pressed={hole === i + 1}>{i + 1}</button>)}</div>
       {!canScore && <p className="text-xs text-gray-500">Final scorecards · scoring is closed.</p>}
       {group.players.length === 0 && <p className="text-sm text-gray-500">Nobody is in this group yet. Pick your name above and use “Wrong group?” to move here.</p>}
       {ordered.map((player) => <PlayerHole key={player.id} player={player} hole={hole} par={par} isMe={player.id === me} canScore={canScore} busy={busy} draft={drafts[player.id]} error={errors[player.id]} saved={!!saved[player.id]} onEdit={(value) => edit(player, value)} onDiscard={() => discard(player)} onDeclare={(fields) => void declare(player, fields)} />)}
@@ -473,7 +473,7 @@ function PlayerHole({ player, hole, par, isMe, canScore, busy, draft, error, sav
     <div className="flex justify-between items-start gap-3"><div><h3 className="font-bold text-lg">{displayName(player.name)}{isMe && <span className="ml-2 text-[10px] uppercase tracking-widest text-green-800 font-bold">you</span>}</h3><p className="text-xs text-gray-500">HC {number(player.handicap)} · {player.mode ? `${capitalize(player.mode)} mode` : 'Mode not declared'}{player.doubleDown && ' · Double Down'}</p></div><p className="text-lg font-bold tabular-nums">{hasScores ? player.scores.reduce((a, b) => a + b, 0) : '—'}<span className="block text-[10px] text-gray-500 font-normal">gross so far</span></p></div>
     {canScore && !hasScores && <div className="space-y-2">
       <p className="text-xs font-medium text-gray-600">{player.mode ? 'First-tee mode (locks with the first saved score)' : 'Declare a mode on the first tee to start scoring'}</p>
-      <div className="grid grid-cols-3 gap-2">{(Object.entries(OPEN_BONUSES) as [OpenMode, number[]][]).map(([mode, bonuses]) => <button key={mode} type="button" disabled={busy} aria-pressed={player.mode === mode} onClick={() => { if (player.mode !== mode) onDeclare({ mode }) }} className={`min-h-12 rounded-xl border text-sm font-semibold ${player.mode === mode ? 'bg-green-800 text-white border-green-800' : 'bg-white border-gray-200 text-gray-800'}`}>{capitalize(mode)}<span className={`block text-[10px] font-normal ${player.mode === mode ? 'text-green-100' : 'text-gray-500'}`}>+{bonuses.join('/+')}</span></button>)}</div>
+      <div className="grid grid-cols-3 gap-2">{(Object.entries(OPEN_BONUSES) as [OpenMode, number[]][]).map(([mode, bonuses]) => <button key={mode} type="button" disabled={busy} aria-pressed={player.mode === mode} onClick={() => { if (player.mode !== mode) onDeclare({ mode }) }} className={`min-h-12 rounded-xl border text-sm font-semibold ${player.mode === mode ? 'bg-green-800 text-white border-green-800' : 'bg-surface border-gray-200 text-gray-800'}`}>{capitalize(mode)}<span className={`block text-[10px] font-normal ${player.mode === mode ? 'text-green-100' : 'text-gray-500'}`}>+{bonuses.join('/+')}</span></button>)}</div>
     </div>}
     {canScore && frontDone && !backStarted && <div className="rounded-xl bg-green-50 border border-green-200 p-3 text-sm space-y-2"><p className="font-semibold">At the turn: Double Down?</p><p className="text-xs text-gray-600">Say it to your group before playing hole 10. Beat your front-nine net to double your finish bonus; tie or worse means zero.</p><button type="button" disabled={busy} onClick={async () => { if (await confirmDialog(player.doubleDown ? 'You can withdraw until you start the back nine.' : 'Beat your front-nine net to double your finish bonus; tie or worse means zero.', { title: player.doubleDown ? 'Withdraw Double Down?' : 'Declare Double Down?', confirmLabel: player.doubleDown ? 'Withdraw' : 'Declare' })) onDeclare({ doubleDown: !player.doubleDown }) }} className="btn-secondary">{player.doubleDown ? 'Double Down declared · undo' : 'Declare Double Down'}</button></div>}
     {canScore ? <div className="flex items-end gap-3">

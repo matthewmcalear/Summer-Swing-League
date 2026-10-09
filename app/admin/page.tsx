@@ -156,7 +156,7 @@ export default function AdminPage() {
         ] as const).map(({ key, label }) => (
           <button key={key} onClick={() => setTab(key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              tab === key ? 'bg-green-700 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              tab === key ? 'bg-green-700 text-white' : 'bg-surface text-gray-700 border border-gray-300 hover:bg-gray-50'
             }`}>
             {label}
           </button>

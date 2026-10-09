@@ -238,7 +238,7 @@ export default function PlayLive() {
             <div className="flex gap-3">
               {[9, 18].map((h) => (
                 <button type="button" key={h} onClick={() => setHoles(h)}
-                  className={`flex-1 py-2.5 rounded-lg border text-sm font-medium transition-colors ${holes === h ? 'bg-green-700 text-white border-green-700' : 'bg-white text-gray-700 border-gray-300'}`}>{h} holes</button>
+                  className={`flex-1 py-2.5 rounded-lg border text-sm font-medium transition-colors ${holes === h ? 'bg-green-700 text-white border-green-700' : 'bg-surface text-gray-700 border-gray-300'}`}>{h} holes</button>
               ))}
             </div>
           </div>
@@ -253,7 +253,7 @@ export default function PlayLive() {
                 {availableGroup.map((m) => {
                   const on = groupIds.includes(m.id)
                   return (
-                    <label key={m.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm cursor-pointer ${on ? 'bg-green-50 border-green-500 text-green-800' : 'bg-white border-gray-200 text-gray-700'}`}>
+                    <label key={m.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm cursor-pointer ${on ? 'bg-green-50 border-green-500 text-green-800' : 'bg-surface border-gray-200 text-gray-700'}`}>
                       <input type="checkbox" checked={on} onChange={() => toggleGroup(m.id)} className="accent-green-600" />{displayName(m.full_name)}
                     </label>
                   )
@@ -359,7 +359,7 @@ export default function PlayLive() {
           <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
             {Array.from({ length: round?.holes ?? 0 }, (_, i) => i + 1).map((h) => (
               <button key={h} onClick={() => goTo(h)}
-                className={`shrink-0 w-9 rounded-lg border py-1 text-center ${h === currentHole ? 'border-green-600 bg-green-50' : 'border-gray-200 bg-white'}`}>
+                className={`shrink-0 w-9 rounded-lg border py-1 text-center ${h === currentHole ? 'border-green-600 bg-green-50' : 'border-gray-200 bg-surface'}`}>
                 <div className="text-[10px] text-gray-400 leading-none">{h}</div>
                 <div className={`text-sm leading-tight ${diffColor(holeDiff(h))}`}>{strokesMap[h] ?? '–'}</div>
               </button>

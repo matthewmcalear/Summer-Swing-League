@@ -366,7 +366,7 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
 
       {/* ── Player selector ───────────────────────────────────────────────── */}
       {members.length > 0 && (
-        <div className="flex items-center gap-3 bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-2.5">
+        <div className="flex items-center gap-3 bg-surface rounded-2xl border border-gray-200 shadow-sm px-4 py-2.5">
           <span className="text-sm font-semibold text-gray-600 shrink-0">👤 Player</span>
           <select
             value={memberId}
@@ -505,7 +505,7 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
           <button
             onClick={recenter}
             title="Re-center on my position"
-            className="bg-white/95 backdrop-blur rounded-xl shadow-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-white border border-gray-200 transition-colors flex items-center gap-1.5"
+            className="bg-white/95 backdrop-blur rounded-xl shadow-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-surface border border-gray-200 transition-colors flex items-center gap-1.5"
           >
             📍 <span className="hidden sm:inline">Center</span>
           </button>
@@ -514,7 +514,7 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
           <button
             onClick={() => rotateDelta(-15)}
             title="Rotate left 15°"
-            className="bg-white/95 backdrop-blur rounded-xl shadow-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-white border border-gray-200 transition-colors"
+            className="bg-white/95 backdrop-blur rounded-xl shadow-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-surface border border-gray-200 transition-colors"
           >
             ↺
           </button>
@@ -525,7 +525,7 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
             title={isNorth ? 'North up' : `Bearing ${Math.round(bearing)}° — tap to reset`}
             className={`bg-white/95 backdrop-blur rounded-xl shadow-lg px-2.5 py-2 text-sm font-semibold border transition-colors flex items-center gap-1 ${
               isNorth
-                ? 'text-gray-500 border-gray-200 hover:bg-white'
+                ? 'text-gray-500 border-gray-200 hover:bg-surface'
                 : 'text-amber-700 border-amber-300 bg-amber-50/95 hover:bg-amber-100/95'
             }`}
           >
@@ -539,7 +539,7 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
           <button
             onClick={() => rotateDelta(15)}
             title="Rotate right 15°"
-            className="bg-white/95 backdrop-blur rounded-xl shadow-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-white border border-gray-200 transition-colors"
+            className="bg-white/95 backdrop-blur rounded-xl shadow-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-surface border border-gray-200 transition-colors"
           >
             ↻
           </button>
@@ -550,7 +550,7 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
           <button
             onClick={toggleFullscreen}
             title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-            className="bg-white/95 backdrop-blur rounded-xl shadow-lg px-2.5 py-2 text-gray-700 hover:bg-white border border-gray-200 transition-colors"
+            className="bg-white/95 backdrop-blur rounded-xl shadow-lg px-2.5 py-2 text-gray-700 hover:bg-surface border border-gray-200 transition-colors"
           >
             {isFullscreen ? (
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
@@ -639,7 +639,7 @@ export default function RangeFinderClient({ members = [] }: { members?: Member[]
 
       {/* ── Dispersion control bar ────────────────────────────────────────── */}
       {yards !== null && (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-2.5 space-y-2">
+        <div className="bg-surface rounded-2xl border border-gray-200 shadow-sm px-4 py-2.5 space-y-2">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowDispersion((d) => !d)}

@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@import "./dark-palette.css";
+
+/* `dark:` utilities follow the class set on <html> (auto/light/dark, see layout.tsx). */
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   /* ── The ball ─────────────────────────────────────────────────────────────
@@ -39,6 +43,11 @@
   --color-sand-100: #f5f1e8;
   --color-sand-200: #ece5d6;
   --color-ink:      #1c1a17;
+
+  /* Semantic surface for cards, sheets, inputs and menus — flips in dark mode. */
+  --color-surface: #ffffff;
+  /* Near-black that stays dark in both themes (gray-* flips; this doesn't). */
+  --color-night: oklch(27.8% 0.033 256.848);
 
   --font-sans: 'Inter', system-ui, sans-serif;
   /* --font-display is injected by next/font (Fraunces) on <body>; see layout.tsx. */
@@ -88,12 +97,12 @@ h1, h2, h3 {
 .form-input {
   @apply mt-1 block w-full rounded-lg border-gray-300 shadow-sm
          focus:border-green-500 focus:ring-2 focus:ring-green-500 text-sm
-         px-3 py-2 border bg-white;
+         px-3 py-2 border bg-surface;
 }
 
 /* ── Cards ── */
 .card {
-  @apply bg-white rounded-2xl shadow-md border border-gray-100 p-6;
+  @apply bg-surface rounded-2xl shadow-md border border-gray-100 p-6;
   transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.15s ease;
 }
 
@@ -106,7 +115,7 @@ h1, h2, h3 {
 }
 
 .card-hover {
-  @apply bg-white rounded-2xl shadow-md border border-gray-100 p-6 hover:shadow-lg;
+  @apply bg-surface rounded-2xl shadow-md border border-gray-100 p-6 hover:shadow-lg;
   transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.15s ease;
 }
 
@@ -121,7 +130,7 @@ h1, h2, h3 {
 
 .btn-secondary {
   @apply inline-flex items-center justify-center px-5 py-2.5 rounded-xl
-         bg-white text-green-700 font-semibold text-sm border border-green-700
+         bg-surface text-green-700 font-semibold text-sm border border-green-700
          hover:bg-green-50 active:bg-green-100
          transition-all shadow-sm
          disabled:opacity-50;
@@ -250,98 +259,65 @@ h1, h2, h3 {
   z-index: 10;
 }
 
-/* ── Dark mode (follows system setting) ─────────────────────────────────────────
-   Strategy: override the most common light utility classes rather than flipping
-   color tokens — keeps text-white, brand greens, and buttons intact. */
-/* ── Dark mode — controlled by the `dark` class on <html>.
-   Set pre-paint by the inline script in layout.tsx (auto/light/dark, localStorage). ── */
-  html.dark body {
-    background-color: #14120d;
-    background-image:
-      radial-gradient(circle at 1px 1px, rgba(74,222,128,0.05) 1px, transparent 0);
-    color: #ece7dc;
-  }
+/* ── Dark mode ─────────────────────────────────────────────────────────────────
+   The `dark` class on <html> is set pre-paint by layout.tsx (auto/light/dark).
+   Neutrals are semantic: every gray-* utility and `bg-surface` read CSS variables
+   that flip here, so text, fills, borders, dividers, hovers and placeholders all
+   follow the theme without per-class overrides. Colored tints and text get
+   role-based rules in dark-palette.css (generated). Wrap anything that must keep
+   its light-theme colors — e.g. a white button on a photo — in `.keep-colors`. */
+.dark {
+  color-scheme: dark;
+  --color-surface:  #201c15;
+  --color-gray-50:  #191710;
+  --color-gray-100: #29231a;
+  --color-gray-200: #37301f;
+  --color-gray-300: #4f4636;
+  --color-gray-400: #857d6f;
+  --color-gray-500: #9c9484;
+  --color-gray-600: #b0a898;
+  --color-gray-700: #cfc7b7;
+  --color-gray-800: #e7e1d5;
+  --color-gray-900: #f4efe6;
+  --color-gray-950: #faf7f1;
+}
 
+.dark .keep-colors {
+  color-scheme: light;
+  --color-surface:  #ffffff;
+  --color-gray-50:  oklch(98.5% 0.002 247.839);
+  --color-gray-100: oklch(96.7% 0.003 264.542);
+  --color-gray-200: oklch(92.8% 0.006 264.531);
+  --color-gray-300: oklch(87.2% 0.01 258.338);
+  --color-gray-400: oklch(70.7% 0.022 261.325);
+  --color-gray-500: oklch(55.1% 0.027 264.364);
+  --color-gray-600: oklch(44.6% 0.03 256.802);
+  --color-gray-700: oklch(37.3% 0.034 259.733);
+  --color-gray-800: oklch(27.8% 0.033 256.848);
+  --color-gray-900: oklch(21% 0.034 264.665);
+  --color-gray-950: oklch(13% 0.028 261.692);
+}
 
-  /* Surfaces */
-  html.dark .card, html.dark .card-hover, html.dark .bg-white { background-color: #201c15; }
-  html.dark .card, html.dark .card-hover { border-color: #2c2619; }
-  html.dark .dark-sheet { background-color: #201c15; border-color: #2c2619; }
-  html.dark .dark-tabbar { background-color: rgba(20, 18, 13, 0.92); border-color: #2c2619; }
+.dark body {
+  background-color: #14120d;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(74,222,128,0.05) 1px, transparent 0);
+  color: #ece7dc;
+}
 
+/* Component classes built with @apply don't carry utility class names, so the
+   generated palette rules can't reach them — give them their dark roles here. */
+.dark .btn-secondary { color: var(--color-green-400); border-color: var(--color-green-600); }
+.dark .btn-secondary:hover { background-color: color-mix(in oklab, var(--color-green-500) 14%, transparent); }
+.dark .btn-danger { color: var(--color-flag-400); background: color-mix(in oklab, var(--color-flag-500) 14%, transparent); }
+.dark .btn-danger:hover { background: color-mix(in oklab, var(--color-flag-500) 22%, transparent); }
+.dark .step-num { background-color: color-mix(in oklab, var(--color-green-500) 18%, transparent); color: var(--color-green-300); }
+.dark .table-base thead, .dark .table-sticky thead { background-color: var(--color-gray-50); color: var(--color-green-400); }
+.dark .table-base tbody tr:hover { background-color: color-mix(in oklab, var(--color-green-500) 7%, transparent); }
+.dark .dark-sheet { background-color: var(--color-surface); border-color: var(--color-gray-100); }
+.dark .dark-tabbar { background-color: rgba(20, 18, 13, 0.92); border-color: var(--color-gray-100); }
 
-  /* Light tinted backgrounds → dark equivalents */
-  html.dark .bg-gray-50 { background-color: #191710; }
-  html.dark .bg-gray-100 { background-color: #241f16; }
-  html.dark .bg-green-50 { background-color: rgba(34, 197, 94, 0.10); }
-  html.dark .bg-brass-50 { background-color: rgba(184, 134, 47, 0.16); }
-  html.dark .bg-green-100 { background-color: rgba(34, 197, 94, 0.18); }
-  html.dark .bg-yellow-50 { background-color: rgba(250, 204, 21, 0.08); }
-  html.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.08); }
-  html.dark .bg-orange-50 { background-color: rgba(249, 115, 22, 0.08); }
-  html.dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.10); }
-  html.dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.10); }
-  html.dark .bg-sky-50 { background-color: rgba(14, 165, 233, 0.10); }
-  html.dark .hover\:bg-gray-50:hover { background-color: #211d15; }
-  html.dark .hover\:bg-green-50:hover { background-color: rgba(34, 197, 94, 0.12); }
-  html.dark .hover\:bg-red-50:hover { background-color: rgba(239, 68, 68, 0.14); }
-  html.dark .hover\:bg-gray-100:hover { background-color: #2a2418; }
-  html.dark .table-base tbody tr:hover { background-color: rgba(34, 197, 94, 0.07); }
-
-
-  /* Text */
-  html.dark .text-gray-900 { color: #f4efe6; }
-  html.dark .text-gray-800 { color: #e7e1d5; }
-  html.dark .text-gray-700 { color: #cfc7b7; }
-  html.dark .text-gray-600 { color: #a39b8b; }
-  html.dark .text-gray-500 { color: #948c7d; }
-  html.dark .text-gray-300 { color: #574f42; }
-  html.dark .text-green-800 { color: #6ee7a0; }
-  html.dark .text-green-700 { color: #4ade80; }
-  html.dark .text-amber-600, html.dark .text-amber-700 { color: #fbbf24; }
-  /* Brass reads dark on white; on dark surfaces lift it to the light ring tone. */
-  html.dark .text-brass-700, html.dark .text-brass-600, html.dark .text-brass-500 { color: #d8b45a; }
-  html.dark .text-blue-600, html.dark .text-blue-700 { color: #60a5fa; }
-  html.dark .text-red-600, html.dark .text-red-700 { color: #f87171; }
-  html.dark .text-sky-800, html.dark .text-sky-900 { color: #7dd3fc; }
-
-
-  /* Borders & dividers */
-  html.dark .border-gray-100 { border-color: #2c2619; }
-  html.dark .border-gray-200 { border-color: #37301f; }
-  html.dark .border-gray-300 { border-color: #453d29; }
-  html.dark .border-green-200 { border-color: rgba(34, 197, 94, 0.25); }
-  html.dark .border-yellow-200 { border-color: rgba(250, 204, 21, 0.25); }
-  html.dark .border-amber-200 { border-color: rgba(245, 158, 11, 0.25); }
-  html.dark .border-red-200 { border-color: rgba(239, 68, 68, 0.3); }
-  html.dark .border-blue-200 { border-color: rgba(59, 130, 246, 0.3); }
-  html.dark .border-sky-200 { border-color: rgba(14, 165, 233, 0.3); }
-  html.dark .divide-gray-50 > * + *, html.dark .divide-gray-100 > * + * { border-color: #2c2619; }
-
-
-  /* Forms */
-  html.dark .form-input {
-    background-color: #1b1810;
-    border-color: #453d29;
-    color: #ece7dc;
-  }
-  html.dark .form-input::placeholder { color: #6b6355; }
-
-
-  /* Buttons that are white in light mode */
-  html.dark .btn-secondary { background-color: #201c15; }
-  html.dark .btn-secondary:hover { background-color: rgba(34, 197, 94, 0.12); }
-
-
-  /* Tables */
-  html.dark .table-base thead, html.dark .table-sticky thead { background-color: #191710; }
-
-
-  /* Prize cards */
-  html.dark .prize-gold { background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.05)); }
-  html.dark .prize-silver { background: linear-gradient(135deg, #1e293b, #16202f); }
-  html.dark .prize-bronze { background: linear-gradient(135deg, rgba(205,127,50,0.12), rgba(205,127,50,0.05)); }
-
-
-  /* Skeletons */
-  html.dark .bg-gray-200 { background-color: #2a2418; }
+/* Prize cards */
+.dark .prize-gold   { background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.05)); }
+.dark .prize-silver { background: linear-gradient(135deg, #1e293b, #16202f); }
+.dark .prize-bronze { background: linear-gradient(135deg, rgba(205,127,50,0.12), rgba(205,127,50,0.05)); }

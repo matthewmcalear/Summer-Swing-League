@@ -115,7 +115,7 @@ export default function Rules() {
               in your starting handicap. For every stroke your handicap drops from that starting point,
               you earn <strong>+3 bonus points</strong> added directly to your season score.
             </p>
-            <div className="bg-white rounded-lg p-3 font-mono text-xs">
+            <div className="bg-surface rounded-lg p-3 font-mono text-xs">
               <div>Improvement = Starting Handicap − Current Handicap</div>
               <div>Bonus = Improvement × 3 pts &nbsp;(minimum 0)</div>
             </div>
@@ -138,7 +138,7 @@ export default function Rules() {
               awarded bonuses are listed on the <strong>Standings</strong> and <strong>Scores</strong> pages
               with the player's name, point value, and reason — fully transparent to everyone in the league.
             </p>
-            <div className="bg-white rounded-lg p-3 font-mono text-xs mb-3">
+            <div className="bg-surface rounded-lg p-3 font-mono text-xs mb-3">
               <div>Season Score = (Top 5 × Multiplier) + Improvement Bonus + Event Bonuses</div>
             </div>
             <div className="bg-amber-100 rounded-lg p-3 text-xs text-amber-800">

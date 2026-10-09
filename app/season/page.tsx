@@ -105,7 +105,7 @@ async function SeasonRecapPage() {
             {podium.map((p, i) => {
               const { Icon, label, prize } = PRIZES[i]
               return (
-                <div key={p.id} className={`rounded-2xl border p-5 flex items-center gap-4 ${i === 0 ? 'prize-champion text-white border-brass-600 shadow-lg' : 'bg-white border-brass-200 shadow-sm'}`}>
+                <div key={p.id} className={`rounded-2xl border p-5 flex items-center gap-4 ${i === 0 ? 'prize-champion text-white border-brass-600 shadow-lg' : 'bg-surface border-brass-200 shadow-sm'}`}>
                   <span className={`flex items-center justify-center w-12 h-12 rounded-full shrink-0 ${i === 0 ? 'bg-white/20' : 'bg-brass-50'}`}>
                     <Icon size={24} className={i === 0 ? 'text-white' : 'text-brass-600'} aria-hidden="true" />
                   </span>

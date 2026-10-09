@@ -84,7 +84,7 @@ function NavDropdown({
         <ChevronDown size={14} strokeWidth={2.5} aria-hidden="true" className={`transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div role="menu" className="absolute right-0 top-full mt-2 w-60 rounded-xl bg-white shadow-xl border border-gray-100 overflow-hidden py-1">
+        <div role="menu" className="absolute right-0 top-full mt-2 w-60 rounded-xl bg-surface shadow-xl border border-gray-100 overflow-hidden py-1">
           {items.map(({ href, icon: Icon, label, sub }) => (
             <Link
               key={href}

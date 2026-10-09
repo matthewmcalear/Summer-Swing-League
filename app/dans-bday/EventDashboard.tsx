@@ -79,7 +79,7 @@ function rankAll(groups: GroupState[]) {
 function ScoreRow({ team, rank, groupCode }: { team: TeamState; rank: number; groupCode: string }) {
   const medals = ['🥇', '🥈', '🥉']
   return (
-    <div className={`flex items-center gap-2 px-3 py-3 rounded-xl ${rank === 1 ? 'bg-yellow-50 border border-yellow-200' : 'bg-white border border-gray-100'}`}>
+    <div className={`flex items-center gap-2 px-3 py-3 rounded-xl ${rank === 1 ? 'bg-yellow-50 border border-yellow-200' : 'bg-surface border border-gray-100'}`}>
       {/* Rank */}
       <span className="w-6 shrink-0 text-center font-bold text-gray-500 text-sm">
         {rank <= 3 ? medals[rank - 1] : rank}
@@ -142,7 +142,7 @@ function FinalScorecard({ groups, ranked }: { groups: GroupState[]; ranked: Team
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm overflow-y-auto p-4">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden my-4">
+          <div className="w-full max-w-lg bg-surface rounded-2xl shadow-2xl overflow-hidden my-4">
             {/* Header */}
             <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-4 text-white">
               <div className="flex items-center justify-between">

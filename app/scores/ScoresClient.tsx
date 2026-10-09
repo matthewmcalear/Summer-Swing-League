@@ -120,7 +120,7 @@ function ScoreCard({ s, compact }: { s: Score; compact: boolean }) {
                 { label: 'Holes',       value: `${s.holes} holes` },
                 { label: 'Difficulty',  value: `${DIFF_LABEL[s.course_difficulty]} ×${s.difficulty_multiplier.toFixed(2)}` },
               ].map(({ label, value }) => (
-                <div key={label} className="bg-white rounded-lg p-3 border border-gray-100 text-center">
+                <div key={label} className="bg-surface rounded-lg p-3 border border-gray-100 text-center">
                   <div className="text-xs text-gray-500 mb-0.5">{label}</div>
                   <div className="font-bold text-gray-800">{value}</div>
                 </div>
@@ -129,7 +129,7 @@ function ScoreCard({ s, compact }: { s: Score; compact: boolean }) {
 
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Scoring Breakdown</p>
-              <div className="bg-white rounded-lg border border-gray-100 divide-y divide-gray-50 text-sm">
+              <div className="bg-surface rounded-lg border border-gray-100 divide-y divide-gray-50 text-sm">
                 <div className="flex justify-between px-4 py-2">
                   <span className="text-gray-600">Base points</span>
                   <span className="font-medium text-gray-800">{base.toFixed(2)}</span>
@@ -335,12 +335,12 @@ export default function ScoresClient({ scores, bonuses }: Props) {
           placeholder="Search player, course, notes…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full h-12 px-4 text-base rounded-lg border border-gray-300 bg-white shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full h-12 px-4 text-base rounded-lg border border-gray-300 bg-surface shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
         />
         <select
           value={playerFilter}
           onChange={(e) => setPlayerFilter(e.target.value)}
-          className="w-full h-12 px-4 text-base rounded-lg border border-gray-300 bg-white shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full h-12 px-4 text-base rounded-lg border border-gray-300 bg-surface shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
         >
           <option value="all">All Players</option>
           {players.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -348,7 +348,7 @@ export default function ScoresClient({ scores, bonuses }: Props) {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as 'date' | 'points' | 'player')}
-          className="w-full h-12 px-4 text-base rounded-lg border border-gray-300 bg-white shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full h-12 px-4 text-base rounded-lg border border-gray-300 bg-surface shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
         >
           <option value="date">Sort: Newest First</option>
           <option value="points">Sort: Most Points</option>
