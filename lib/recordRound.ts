@@ -1,5 +1,5 @@
 import { prisma } from './prisma'
-import { calculatePoints, validateRound, difficultyFromSlope } from './scoring'
+import { calculatePoints, validateRound, difficultyFromSlope, SEASON_FINAL } from './scoring'
 import { scoreDifferential } from './handicap'
 
 function toTitleCase(str: string): string {
@@ -37,6 +37,11 @@ export async function recordRound(input: RecordRoundInput): Promise<RecordRoundR
     course_id = null, group_member_ids = [], notes = null, additional_points = 0,
     confirm_duplicate = false,
   } = input
+
+  // Prizes are paid and standings are final — no new rounds until next season opens.
+  if (SEASON_FINAL) {
+    return { error: 'The 2026 season is closed — final standings are locked.', status: 403 }
+  }
 
   if (!member_id || !input.holes || !input.gross_score || !course_name || !play_date) {
     return { error: 'Missing required fields', status: 400 }

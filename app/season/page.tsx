@@ -8,7 +8,7 @@ import { prisma } from '@/lib/prisma'
 import { getStandings } from '@/lib/standings'
 import { buildSeasonRecap, shortDate } from '@/lib/seasonRecap'
 import { displayName } from '@/lib/nameUtils'
-import { SEASON_END, daysUntil } from '@/lib/scoring'
+import { SEASON_END, SEASON_FINAL, daysUntil } from '@/lib/scoring'
 import CountUp from '@/components/CountUp'
 import { leagueCache } from '@/lib/cache'
 import { Suspense } from 'react'
@@ -63,7 +63,7 @@ async function SeasonRecapPage() {
     scores.map((s) => ({ ...s, total_points: Number(s.total_points ?? 0), play_date: s.play_date.toISOString().slice(0, 10) })),
     standings.map((p) => ({ id: p.id, name: displayName(p.name), handicapImprovement: p.handicapImprovement })),
   )
-  const final = daysUntil(SEASON_END) < 0
+  const final = daysUntil(SEASON_END) < 0 || SEASON_FINAL
   const podium = standings.filter((p) => p.totalRounds > 0).slice(0, 3)
   const rankOf = new Map(standings.map((p) => [p.id, p.rank]))
 
@@ -78,7 +78,7 @@ async function SeasonRecapPage() {
           </h1>
           <p className="mt-3 text-green-100 text-lg max-w-xl">
             {final
-              ? 'Every round, every stroke, every questionable drop — here’s how the summer played out.'
+              ? `Every round, every stroke, every questionable drop — here’s how the summer played out.${SEASON_FINAL ? ' Prizes are paid. See you in 2027.' : ''}`
               : `The recap fills in live until the season closes on Oct 10. ${daysUntil(SEASON_END)} days to change the story.`}
           </p>
         </div>
@@ -110,7 +110,7 @@ async function SeasonRecapPage() {
                     <Icon size={24} className={i === 0 ? 'text-white' : 'text-brass-600'} aria-hidden="true" />
                   </span>
                   <div className="min-w-0">
-                    <p className={`text-[11px] font-bold uppercase tracking-widest ${i === 0 ? 'text-white/80' : 'text-brass-600'}`}>{label} · ${prize}</p>
+                    <p className={`text-[11px] font-bold uppercase tracking-widest ${i === 0 ? 'text-white/80' : 'text-brass-600'}`}>{label} · ${prize}{SEASON_FINAL ? ' · paid' : ''}</p>
                     <p className={`font-display text-xl font-bold truncate ${i === 0 ? 'text-white' : 'text-gray-900'}`}>{displayName(p.name)}</p>
                     <p className={`text-sm tabular-nums ${i === 0 ? 'text-white/85' : 'text-gray-500'}`}>{p.seasonScore.toFixed(1)} pts · {p.totalRounds} rounds</p>
                   </div>

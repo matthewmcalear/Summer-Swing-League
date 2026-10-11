@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { ArrowUp, ArrowDown, ChevronDown, Trophy, Medal, Award, Sparkles, Target, type LucideIcon } from 'lucide-react'
 import { getStandings, participationMultiplier } from '@/lib/standings'
 import { displayName, displayHandicap } from '@/lib/nameUtils'
-import { SEASON_END, daysUntil } from '@/lib/scoring'
+import { SEASON_END, SEASON_FINAL, daysUntil } from '@/lib/scoring'
 import type { StandingEntry } from '@/types'
 import { leagueCache } from '@/lib/cache'
 import { Suspense } from 'react'
@@ -65,7 +65,7 @@ function Podium({ top, final }: { top: StandingEntry[]; final: boolean }) {
               {fmt(p.seasonScore)}
             </span>
             <span className={`mt-1 text-[11px] font-medium ${first ? 'text-white/85' : 'text-gray-500'}`}>
-              {final ? `$${prize}` : i === 0 ? 'Leader' : `−${fmt(p.gapToLeader ?? 0)} back`}
+              {final ? `$${prize}${SEASON_FINAL ? ' · paid' : ''}` : i === 0 ? 'Leader' : `−${fmt(p.gapToLeader ?? 0)} back`}
             </span>
           </Link>
         )
@@ -188,7 +188,7 @@ async function Standings() {
 
   const standings = await getStandings()
   const daysLeft = daysUntil(SEASON_END)
-  const live = daysLeft >= 0
+  const live = daysLeft >= 0 && !SEASON_FINAL
   const ranked = standings.filter((p) => p.totalRounds > 0)
   const unranked = standings.filter((p) => p.totalRounds === 0)
   const anyMovement = live && ranked.some((p) => p.movement !== 0)

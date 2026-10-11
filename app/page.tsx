@@ -5,7 +5,7 @@ import SeasonStats from '@/components/SeasonStats'
 import StandingsChart from '@/components/StandingsChart'
 import { getStandings } from '@/lib/standings'
 import { displayName } from '@/lib/nameUtils'
-import { SEASON_END, daysUntil } from '@/lib/scoring'
+import { SEASON_END, SEASON_FINAL, daysUntil } from '@/lib/scoring'
 import { leagueCache } from '@/lib/cache'
 import { Suspense } from 'react'
 import { connection } from 'next/server'
@@ -41,7 +41,7 @@ async function Home() {
 
   const standings = await getStandings()
   const daysLeft = daysUntil(SEASON_END)
-  const live = daysLeft >= 0
+  const live = daysLeft >= 0 && !SEASON_FINAL
   const ranked = standings.filter((p) => p.totalRounds > 0)
   const [leader, chaser] = ranked
   const lead = leader && chaser ? leader.seasonScore - chaser.seasonScore : 0
@@ -57,7 +57,7 @@ async function Home() {
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-widest text-white/80">
-              {live ? (daysLeft === 0 ? 'Last day of the season' : `Final ${daysLeft} day${daysLeft === 1 ? '' : 's'}`) : 'Season 2 is in the books'}
+              {live ? (daysLeft === 0 ? 'Last day of the season' : `Final ${daysLeft} day${daysLeft === 1 ? '' : 's'}`) : SEASON_FINAL ? 'Season 2 is in the books · prizes paid' : 'Season 2 is in the books'}
             </p>
             <p className="font-display text-xl sm:text-2xl font-bold leading-tight mt-0.5">
               {leader
@@ -156,13 +156,15 @@ async function Home() {
                   ${amount}
                 </span>
                 <span className={`mt-1 text-[11px] sm:text-xs font-medium ${first ? 'text-white/85' : 'text-brass-600'}`}>
-                  {label}
+                  {!live && ranked[i] ? displayName(ranked[i].name) : label}
                 </span>
               </div>
             )
           })}
         </div>
-        <p className="mt-2 text-center text-xs text-gray-400 font-medium">$475 prize pool · decided Oct 10</p>
+        <p className="mt-2 text-center text-xs text-gray-400 font-medium">
+          {!live && SEASON_FINAL ? '$475 paid out · thanks for a great season' : '$475 prize pool · decided Oct 10'}
+        </p>
       </div>
 
       {/* ── LIVE SEASON SIGNAL ── */}

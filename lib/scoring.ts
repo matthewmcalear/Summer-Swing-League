@@ -21,6 +21,13 @@ export const SEASON_START = '2026-04-15'
 export const SEASON_END   = '2026-10-10'
 
 /**
+ * The commissioner has paid out the prizes: standings are final, the site shows the
+ * season as wrapped and no new rounds are accepted. Set back to false (and update
+ * the dates above) when the next season opens.
+ */
+export const SEASON_FINAL = true
+
+/**
  * Whole days from now until the end-of-day on the given date string.
  * When past the end-of-day, uses Math.floor so the day after is negative (not 0).
  */
