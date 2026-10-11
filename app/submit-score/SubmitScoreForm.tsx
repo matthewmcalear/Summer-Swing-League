@@ -1,0 +1,549 @@
+'use client'
+
+import { useEffect, useMemo, useState, useTransition } from 'react'
+import { localToday, formatCalendarDate } from '@/lib/dates'
+import { useRouter } from 'next/navigation'
+import { calculatePoints, difficultyFromSlope } from '@/lib/scoring'
+import { displayName } from '@/lib/nameUtils'
+import type { LibraryCourse } from '@/lib/courseLibrary'
+import { submitRound } from './actions'
+
+export type FormMember = { id: string; full_name: string; current_handicap: number }
+
+const DIFFICULTY_OPTIONS = [
+  { value: 'easy',    label: 'Easy (×0.95)'    },
+  { value: 'average', label: 'Average (×1.00)'  },
+  { value: 'tough',   label: 'Tough (×1.05)'   },
+]
+
+export default function SubmitScoreForm({ members, courses, legacyNames }: {
+  members: FormMember[]
+  courses: LibraryCourse[]
+  legacyNames: string[]
+}) {
+  const router = useRouter()
+
+  const [groupIds, setGroupIds]           = useState<string[]>([])
+  const [submitting, startSubmit]         = useTransition()
+  const [error, setError]                 = useState('')
+  const [selectedCourse, setSelectedCourse] = useState<LibraryCourse | null>(null)
+  const [difficultyAutoSet, setDifficultyAutoSet] = useState(false)
+  const [courseMode, setCourseMode] = useState<'select' | 'new'>('select')
+  const [liveRoundId, setLiveRoundId] = useState<string | null>(null)
+  const [imported, setImported]       = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [duplicateWarning, setDuplicateWarning] = useState<{
+    existing: { play_date: string; course_name: string; gross_score: number; total_points: number }
+  } | null>(null)
+
+  const [form, setForm] = useState({
+    member_id:        '',
+    holes:            '18',
+    gross_score:      '',
+    handicap_used:    '',
+    course_name:      '',
+    course_difficulty: 'average',
+    play_date:        '', // set on mount from the player's local clock (server renders in UTC)
+    notes:            '',
+  })
+
+  useEffect(() => {
+    setForm((f) => (f.play_date ? f : { ...f, play_date: localToday() }))
+  }, [])
+
+  // Prefill from a finished live round (/play hands off via ?live=<id>).
+  useEffect(() => {
+    const liveId = typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('live') : null
+    if (!liveId || liveRoundId) return
+    setLiveRoundId(liveId)
+    fetch(`/api/live/${liveId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((rd) => {
+        if (!rd) return
+        const gross = (rd.hole_scores || []).reduce((s: number, h: { strokes: number }) => s + h.strokes, 0)
+        const course = courses.find((c) => c.id === rd.course_id) || null
+        setSelectedCourse(course)
+        setDifficultyAutoSet(!!course)
+        setGroupIds(Array.isArray(rd.group_member_ids) ? rd.group_member_ids : [])
+        const member = members.find((m) => m.id === rd.member_id)
+        setForm((f) => ({
+          ...f,
+          member_id:         rd.member_id,
+          handicap_used:     member ? String(member.current_handicap) : f.handicap_used,
+          holes:             String(rd.holes),
+          gross_score:       String(gross),
+          course_name:       rd.course_name,
+          course_difficulty: course ? difficultyFromSlope(course.slope_rating) : f.course_difficulty,
+          play_date:         new Date(rd.play_date).toISOString().slice(0, 10),
+        }))
+        setImported(true)
+      })
+      .catch(() => {})
+  }, [courses, members, liveRoundId])
+
+  const courseLabel = (c: LibraryCourse) =>
+    `${c.name}${c.tee_name ? ` — ${c.tee_name}` : ''} (R ${c.course_rating}/S ${c.slope_rating}, par ${c.par})`
+
+  // Live point preview — uses the exact same shared formula as the server
+  const previewPoints = useMemo(() => {
+    const gross    = Number(form.gross_score)
+    const handicap = Number(form.handicap_used)
+    if (!gross || form.handicap_used === '' || isNaN(handicap)) return null
+    return calculatePoints({
+      holes:                   Number(form.holes) as 9 | 18,
+      gross,
+      handicap,
+      difficulty:              form.course_difficulty,
+      otherLeagueMembersCount: groupIds.length,
+      additionalPoints:        0,
+    }).totalPoints
+  }, [form, groupIds])
+
+  const toggleGroup = (id: string) => {
+    setGroupIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    )
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+
+    // Show confirmation step first (unless we're confirming a duplicate)
+    if (!showConfirm && !duplicateWarning) {
+      setShowConfirm(true)
+      return
+    }
+
+    startSubmit(async () => {
+      let result
+      try {
+        result = await submitRound({
+          ...form,
+          holes:             Number(form.holes),
+          gross_score:       Number(form.gross_score),
+          handicap_used:     Number(form.handicap_used),
+          additional_points: 0,
+          group_member_ids:  groupIds,
+          confirm_duplicate: !!duplicateWarning,
+          // Library course (if picked) lets the server compute a WHS differential.
+          course_id:         selectedCourse?.id ?? null,
+        })
+      } catch {
+        setError('Network error. Please try again.')
+        setShowConfirm(false)
+        setDuplicateWarning(null)
+        return
+      }
+
+      if (result.ok) {
+        // Submitted from a live round → save its pars to the course and clear it.
+        if (liveRoundId) {
+          fetch(`/api/live/${liveRoundId}/finalize`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({}),
+          }).catch(() => {})
+          if (typeof window !== 'undefined') localStorage.removeItem('ssl_live_round_id')
+        }
+        router.push('/success')
+      } else if (result.possibleDuplicate) {
+        setDuplicateWarning({ existing: result.existing })
+        setShowConfirm(false)
+      } else {
+        setError(result.error)
+        setShowConfirm(false)
+        setDuplicateWarning(null)
+      }
+    })
+  }
+
+  const selectedMember = members.find((m) => m.id === form.member_id)
+
+  const availableGroupMembers = members.filter((m) => m.id !== form.member_id)
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Submit a Round</h1>
+        <p className="text-gray-500 mt-1 text-sm">
+          Enter your round details below. Your handicap will be updated automatically.
+        </p>
+      </div>
+
+      {imported && (
+        <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-800">
+          ⛳ Imported from your live round — review the details below and submit to confirm.
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="card space-y-5">
+        {duplicateWarning ? (
+          /* ── Duplicate Warning ── */
+          <div className="space-y-5">
+            <div className="rounded-lg bg-amber-50 border border-amber-300 p-4">
+              <h2 className="text-lg font-bold text-amber-900 mb-3">⚠️ Possible duplicate round</h2>
+              <p className="text-sm text-amber-800 mb-3">
+                You already submitted a round on{' '}
+                <strong>{formatCalendarDate(duplicateWarning.existing.play_date, { month: 'short', day: 'numeric' })}</strong>{' '}
+                at <strong>{duplicateWarning.existing.course_name}</strong> with a gross score of{' '}
+                <strong>{duplicateWarning.existing.gross_score}</strong>{' '}
+                ({duplicateWarning.existing.total_points.toFixed(1)} pts).
+              </p>
+              <p className="text-sm text-amber-800">
+                Are you sure you want to submit this as a separate round? Late backfills are allowed.
+              </p>
+            </div>
+
+            {error && (
+              <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setDuplicateWarning(null)
+                  setShowConfirm(false)
+                }}
+                disabled={submitting}
+                className="btn-secondary flex-1 py-3 text-base"
+              >
+                ← Cancel
+              </button>
+              <button type="submit" disabled={submitting} className="btn-primary flex-1 py-3 text-base">
+                {submitting ? 'Submitting…' : 'Submit Anyway'}
+              </button>
+            </div>
+          </div>
+        ) : showConfirm ? (
+          /* ── Confirmation Step ── */
+          <div className="space-y-5">
+            <div className="rounded-lg bg-green-50 border border-green-200 p-4">
+              <h2 className="text-lg font-bold text-green-900 mb-3">Confirm submission</h2>
+              <div className="space-y-2 text-sm text-green-800">
+                <div><strong>Player:</strong> {selectedMember ? displayName(selectedMember.full_name) : ''}</div>
+                <div><strong>Score:</strong> {form.gross_score} ({form.holes} holes)</div>
+                <div><strong>Course:</strong> {form.course_name}</div>
+                <div><strong>Date:</strong> {formatCalendarDate(form.play_date, { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                {previewPoints !== null && (
+                  <div><strong>Est. points:</strong> {previewPoints.toFixed(1)}</div>
+                )}
+              </div>
+            </div>
+
+            {error && (
+              <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowConfirm(false)
+                  setDuplicateWarning(null)
+                }}
+                disabled={submitting}
+                className="btn-secondary flex-1 py-3 text-base"
+              >
+                ← Back to edit
+              </button>
+              <button type="submit" disabled={submitting} className="btn-primary flex-1 py-3 text-base">
+                {submitting ? 'Submitting…' : 'Confirm & Submit'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* ── Form Fields ── */
+          <>
+        {/* Player */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Player *</label>
+          <select
+            required
+            className="form-input"
+            value={form.member_id}
+            onChange={(e) => {
+              const member = members.find((m) => m.id === e.target.value)
+              // Pre-fill the player's handicap; they can still edit it.
+              setForm({ ...form, member_id: e.target.value, handicap_used: member ? String(member.current_handicap) : form.handicap_used })
+            }}
+          >
+            <option value="">Select your name…</option>
+            {members.map((m) => (
+              <option key={m.id} value={m.id}>
+                {displayName(m.full_name)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Handicap — auto-filled, editable */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Current Handicap (18-hole) *
+          </label>
+          <input
+            type="number"
+            step="0.1"
+            min="0"
+            max="54"
+            required
+            placeholder="e.g. 14.2"
+            className="form-input"
+            value={form.handicap_used}
+            onChange={(e) => setForm({ ...form, handicap_used: e.target.value })}
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Pre-filled from your profile. Update if your handicap has changed — it will be saved.
+          </p>
+        </div>
+
+        {/* Holes */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Holes Played *</label>
+          <div className="flex gap-3">
+            {['9', '18'].map((h) => (
+              <label
+                key={h}
+                className={`flex-1 flex items-center justify-center py-2.5 rounded-lg border cursor-pointer text-sm font-medium transition-colors ${
+                  form.holes === h
+                    ? 'bg-green-700 text-white border-green-700'
+                    : 'bg-surface text-gray-700 border-gray-300 hover:border-green-500'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="holes"
+                  value={h}
+                  className="sr-only"
+                  checked={form.holes === h}
+                  onChange={() => setForm({ ...form, holes: h })}
+                />
+                {h} holes
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Gross score */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Gross Score *</label>
+          <input
+            type="number"
+            required
+            min="1"
+            placeholder={form.holes === '9' ? 'e.g. 42' : 'e.g. 88'}
+            className="form-input"
+            value={form.gross_score}
+            onChange={(e) => setForm({ ...form, gross_score: e.target.value })}
+          />
+        </div>
+
+        {/* Course name */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Course Name *</label>
+          {courseMode === 'select' ? (
+            <select
+              required
+              className="form-input"
+              value={selectedCourse ? `lib:${selectedCourse.id}` : form.course_name ? `legacy:${form.course_name}` : ''}
+              onChange={(e) => {
+                const v = e.target.value
+                if (v === '__new__') {
+                  setCourseMode('new')
+                  setSelectedCourse(null)
+                  setForm((f) => ({ ...f, course_name: '' }))
+                } else if (v.startsWith('lib:')) {
+                  const c = courses.find((x) => x.id === v.slice(4)) || null
+                  setSelectedCourse(c)
+                  setDifficultyAutoSet(!!c)
+                  setForm((f) => ({
+                    ...f,
+                    course_name: c?.name ?? '',
+                    holes: c ? String(c.holes) : f.holes,
+                    // Auto-fill the league difficulty from slope (player can override).
+                    course_difficulty: c ? difficultyFromSlope(c.slope_rating) : f.course_difficulty,
+                  }))
+                } else if (v.startsWith('legacy:')) {
+                  setSelectedCourse(null)
+                  setForm((f) => ({ ...f, course_name: v.slice(7) }))
+                } else {
+                  setSelectedCourse(null)
+                  setForm((f) => ({ ...f, course_name: '' }))
+                }
+              }}
+            >
+              <option value="">Select a course…</option>
+              {courses.length > 0 && (
+                <optgroup label="Course library (rating &amp; slope)">
+                  {courses.map((c) => (
+                    <option key={c.id} value={`lib:${c.id}`}>{courseLabel(c)}</option>
+                  ))}
+                </optgroup>
+              )}
+              {legacyNames.length > 0 && (
+                <optgroup label="Previously played (no rating)">
+                  {legacyNames.map((name) => (
+                    <option key={name} value={`legacy:${name}`}>{name}</option>
+                  ))}
+                </optgroup>
+              )}
+              <option value="__new__">+ Add new course…</option>
+            </select>
+          ) : (
+            <div className="space-y-2">
+              <input
+                type="text"
+                required
+                autoFocus
+                placeholder="Enter new course name"
+                className="form-input"
+                value={form.course_name}
+                onChange={(e) => setForm({ ...form, course_name: e.target.value })}
+              />
+              <button
+                type="button"
+                className="text-sm text-green-700 hover:underline"
+                onClick={() => { setCourseMode('select'); setForm({ ...form, course_name: '' }) }}
+              >
+                ← Back to course list
+              </button>
+            </div>
+          )}
+          {selectedCourse ? (
+            <p className="text-xs text-green-700 mt-1">
+              ✓ Rating {selectedCourse.course_rating} · Slope {selectedCourse.slope_rating} · Par{' '}
+              {selectedCourse.par} — this round will count toward your suggested handicap.
+            </p>
+          ) : (
+            <p className="text-xs text-gray-400 mt-1">
+              Tip: pick a course from the library (with rating &amp; slope) so this round counts toward your
+              suggested handicap. Ask an admin to add yours if it&apos;s missing.
+            </p>
+          )}
+        </div>
+
+        {/* Difficulty */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Course Difficulty *</label>
+          {selectedCourse && difficultyAutoSet && (
+            <p className="text-xs text-green-700 mb-1.5">
+              Auto-set from slope {selectedCourse.slope_rating} — adjust if needed.
+            </p>
+          )}
+          <div className="flex gap-3">
+            {DIFFICULTY_OPTIONS.map(({ value, label }) => (
+              <label
+                key={value}
+                className={`flex-1 flex flex-col items-center py-2.5 px-1 rounded-lg border cursor-pointer text-xs font-medium transition-colors text-center ${
+                  form.course_difficulty === value
+                    ? 'bg-green-700 text-white border-green-700'
+                    : 'bg-surface text-gray-700 border-gray-300 hover:border-green-500'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="difficulty"
+                  value={value}
+                  className="sr-only"
+                  checked={form.course_difficulty === value}
+                  onChange={() => { setDifficultyAutoSet(false); setForm({ ...form, course_difficulty: value }) }}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Date */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Date Played *</label>
+          <input
+            type="date"
+            required
+            min="2026-04-15"
+            max="2026-10-10"
+            className="form-input"
+            value={form.play_date}
+            onChange={(e) => setForm({ ...form, play_date: e.target.value })}
+          />
+        </div>
+
+        {/* Group members */}
+        {availableGroupMembers.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Other League Members in Group
+              <span className="ml-1 text-gray-400 font-normal">(+1 point each)</span>
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {availableGroupMembers.map((m) => {
+                const checked = groupIds.includes(m.id)
+                return (
+                  <label
+                    key={m.id}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition-colors ${
+                      checked
+                        ? 'bg-green-50 border-green-500 text-green-800'
+                        : 'bg-surface border-gray-200 text-gray-700 hover:border-green-400'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleGroup(m.id)}
+                      className="accent-green-600"
+                    />
+                    {displayName(m.full_name)}
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Notes */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+          <textarea
+            rows={2}
+            placeholder="Any additional notes…"
+            className="form-input"
+            value={form.notes}
+            onChange={(e) => setForm({ ...form, notes: e.target.value })}
+          />
+        </div>
+
+        {/* Point preview */}
+        {previewPoints !== null && (
+          <div className="rounded-lg bg-green-50 border border-green-200 p-4 text-center">
+            <p className="text-sm text-green-700">Estimated points for this round</p>
+            <p className="text-3xl font-bold text-green-800">{previewPoints.toFixed(1)}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Group bonus: +{groupIds.length} · Difficulty: ×
+              {({ easy: '0.95', average: '1.00', tough: '1.05' })[form.course_difficulty]}
+            </p>
+          </div>
+        )}
+
+        {error && (
+          <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        <button type="submit" disabled={submitting} className="btn-primary w-full py-3 text-base">
+          {submitting ? 'Submitting…' : 'Review & Submit'}
+        </button>
+        </>
+        )}
+      </form>
+    </div>
+  )
+}
