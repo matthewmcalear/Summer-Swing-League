@@ -112,6 +112,9 @@ function NavDropdown({
 export default function NavBar() {
   const pathname = usePathname()
 
+  // PolyDan (/polydan) is a separate family app with its own header.
+  if (pathname.startsWith('/polydan')) return null
+
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
 

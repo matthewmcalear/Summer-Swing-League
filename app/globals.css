@@ -321,3 +321,167 @@ h1, h2, h3 {
 .dark .prize-gold   { background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.05)); }
 .dark .prize-silver { background: linear-gradient(135deg, #1e293b, #16202f); }
 .dark .prize-bronze { background: linear-gradient(135deg, rgba(205,127,50,0.12), rgba(205,127,50,0.05)); }
+
+/* ===========================================================================
+   PolyDan (/polydan) — its own Iron Man palette (ink, plate, gold, garnet),
+   scoped to the .polydan wrapper. Light = parchment; dark follows the site's
+   .dark class. Tokens are pd-* so they never collide with league tokens.
+   =========================================================================== */
+
+.polydan {
+  --pd-bg: #f4efe3;
+  --pd-surface: #fffdf8;
+  --pd-surface-2: #f3ecdc;
+  --pd-line: rgba(110, 86, 30, 0.18);
+  --pd-line-strong: rgba(110, 86, 30, 0.34);
+  --pd-ink: #1d1810;
+  --pd-ink-2: #50483a;
+  --pd-muted: #6f6651;
+  --pd-gold: #8a6a1c;
+  --pd-gold-hi: #b48c2c;
+  --pd-on-gold: #fffaf0;
+  --pd-garnet: #a53a30;
+  --pd-yes: #1d7a45;
+  --pd-yes-soft: rgba(29, 122, 69, 0.1);
+  --pd-no: #b13b31;
+  --pd-no-soft: rgba(177, 59, 49, 0.09);
+  --pd-island: #2d6fa3;
+  --pd-island-soft: rgba(45, 111, 163, 0.1);
+  --pd-series-1: #2a78d6;
+  --pd-series-2: #eb6834;
+  --pd-series-3: #1baf7a;
+  --pd-series-4: #eda100;
+  --pd-grid: #e7dfcc;
+  color: var(--pd-ink);
+}
+
+.dark .polydan {
+  --pd-bg: #110f0a;
+  --pd-surface: #1f1b14;
+  --pd-surface-2: #2c261d;
+  --pd-line: rgba(222, 190, 120, 0.2);
+  --pd-line-strong: rgba(222, 190, 120, 0.38);
+  --pd-ink: #f3ede0;
+  --pd-ink-2: #d6ccb4;
+  --pd-muted: #ada389;
+  --pd-gold: #d4ad57;
+  --pd-gold-hi: #ebd08a;
+  --pd-on-gold: #1b160d;
+  --pd-garnet: #e6887b;
+  --pd-yes: #5cc98a;
+  --pd-yes-soft: rgba(92, 201, 138, 0.15);
+  --pd-no: #ec8a7e;
+  --pd-no-soft: rgba(236, 138, 126, 0.15);
+  --pd-island: #6aa9dc;
+  --pd-island-soft: rgba(106, 169, 220, 0.12);
+  --pd-series-1: #3987e5;
+  --pd-series-2: #d95926;
+  --pd-series-3: #199e70;
+  --pd-series-4: #c98500;
+  --pd-grid: #332c21;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-pd-bg: var(--pd-bg);
+  --color-pd-surface: var(--pd-surface);
+  --color-pd-surface-2: var(--pd-surface-2);
+  --color-pd-line: var(--pd-line);
+  --color-pd-line-strong: var(--pd-line-strong);
+  --color-pd-ink: var(--pd-ink);
+  --color-pd-ink-2: var(--pd-ink-2);
+  --color-pd-muted: var(--pd-muted);
+  --color-pd-gold: var(--pd-gold);
+  --color-pd-gold-hi: var(--pd-gold-hi);
+  --color-pd-on-gold: var(--pd-on-gold);
+  --color-pd-garnet: var(--pd-garnet);
+  --color-pd-yes: var(--pd-yes);
+  --color-pd-yes-soft: var(--pd-yes-soft);
+  --color-pd-no: var(--pd-no);
+  --color-pd-no-soft: var(--pd-no-soft);
+  --color-pd-island: var(--pd-island);
+  --color-pd-island-soft: var(--pd-island-soft);
+  --font-pd-display: var(--font-pd-oswald), 'Inter', system-ui, sans-serif;
+}
+
+/* Page background on PolyDan routes (replaces the league's linen texture). */
+body:has(.polydan) {
+  background: #f4efe3;
+}
+.dark body:has(.polydan) {
+  background: #110f0a;
+}
+
+/* The league styles h1–h3 in Fraunces with tight tracking (unlayered, so it
+   beats utilities). revert-layer hands those properties back to Tailwind on
+   PolyDan pages, so font-pd-display / tracking-* utilities apply again. */
+.polydan :is(h1, h2, h3) {
+  font-family: revert-layer;
+  letter-spacing: revert-layer;
+  font-optical-sizing: revert-layer;
+}
+.polydan :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline-color: var(--pd-gold);
+}
+
+@layer components {
+  .pd-num {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Section heading in the Iron Man stats-page style. */
+  .pd-eyebrow {
+    font-family: var(--font-pd-display);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.75rem;
+    color: var(--pd-muted);
+  }
+  .pd-card {
+    background: var(--pd-surface);
+    border: 1px solid var(--pd-line);
+    border-radius: 12px;
+  }
+  .pd-field {
+    width: 100%;
+    background: var(--pd-surface);
+    border: 1px solid var(--pd-line-strong);
+    border-radius: 8px;
+    padding: 0.55rem 0.7rem;
+    color: var(--pd-ink);
+  }
+  .pd-field:focus {
+    outline: 2px solid var(--pd-gold);
+    outline-offset: 1px;
+  }
+  .pd-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    border-radius: 8px;
+    padding: 0.55rem 0.95rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: filter 0.15s, opacity 0.15s;
+  }
+  .pd-btn:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+  .pd-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .pd-btn-gold {
+    background: var(--pd-gold);
+    color: var(--pd-on-gold);
+  }
+  .pd-btn-ghost {
+    border: 1px solid var(--pd-line-strong);
+    color: var(--pd-ink);
+  }
+  .pd-btn-danger {
+    border: 1px solid var(--pd-no);
+    color: var(--pd-no);
+  }
+}
