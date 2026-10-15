@@ -8,6 +8,7 @@ import { prisma } from '@/lib/prisma'
 import { formatMoney } from '@/lib/polydan/money'
 import { NavLinks } from '@/components/polydan/NavLinks'
 import { AccountMenu } from '@/components/polydan/AccountMenu'
+import { LiveRefresh } from '@/components/polydan/ui'
 
 // PolyDan: the family's Iron Man prediction market, living inside the SSL site.
 // It has its own look and login; the league's nav and footer are hidden here
@@ -45,6 +46,8 @@ async function Header() {
 export default function PolydanLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className={`polydan ${oswald.variable} min-h-[70dvh]`}>
+      {/* Balances, odds and results update on their own on every page. */}
+      <LiveRefresh seconds={10} />
       <Suspense fallback={<div className="-mx-4 -mt-6 mb-5 h-12 sm:-mx-6 lg:-mx-8" />}>
         <Header />
       </Suspense>

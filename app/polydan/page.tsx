@@ -5,7 +5,6 @@ import { requireUser } from '@/lib/polydan/auth'
 import { getCurrentEdition, getEditionBoard } from '@/lib/polydan/queries'
 import { FieldBoard } from '@/components/polydan/FieldBoard'
 import { MarketCard, WinnerBoard } from '@/components/polydan/MarketCard'
-import { AutoRefresh } from '@/components/polydan/ui'
 
 const STATUS_TEXT = { SETUP: 'Coming up', LIVE: 'Live now', FINISHED: 'Finished' } as const
 
@@ -63,7 +62,6 @@ async function HomeContent() {
 
   return (
     <div className="space-y-6">
-      {edition.status === 'LIVE' && <AutoRefresh seconds={10} />}
       <header className="flex flex-wrap items-end gap-x-4 gap-y-1">
         <div>
           <p className="pd-eyebrow">

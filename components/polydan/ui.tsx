@@ -101,14 +101,33 @@ export function ActionForm({
   )
 }
 
-/** Keeps live pages fresh while the tab is visible. */
-export function AutoRefresh({ seconds = 10 }: { seconds?: number }) {
+/**
+ * Keeps every PolyDan page current: re-fetches the page's data every few
+ * seconds while it's on screen, and straight away when someone comes back to
+ * the tab or unlocks their phone. Nothing runs while the page is hidden.
+ * router.refresh() only swaps in fresh server data — whatever someone is
+ * typing (a bet amount, a PIN) is kept.
+ */
+export function LiveRefresh({ seconds = 10 }: { seconds?: number }) {
   const router = useRouter()
   useEffect(() => {
-    const id = setInterval(() => {
-      if (document.visibilityState === 'visible') router.refresh()
-    }, seconds * 1000)
-    return () => clearInterval(id)
+    let last = Date.now()
+    const refresh = () => {
+      if (document.visibilityState !== 'visible') return
+      if (Date.now() - last < 2000) return // focus + visibility often fire together
+      last = Date.now()
+      router.refresh()
+    }
+    const id = setInterval(refresh, seconds * 1000)
+    document.addEventListener('visibilitychange', refresh)
+    window.addEventListener('focus', refresh)
+    window.addEventListener('online', refresh)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', refresh)
+      window.removeEventListener('focus', refresh)
+      window.removeEventListener('online', refresh)
+    }
   }, [router, seconds])
   return null
 }

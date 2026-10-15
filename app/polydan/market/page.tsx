@@ -10,7 +10,6 @@ import { formatMoney } from '@/lib/polydan/money'
 import { PriceChart } from '@/components/polydan/PriceChart'
 import { Trading } from '@/components/polydan/Trading'
 import { StatusTag } from '@/components/polydan/MarketCard'
-import { AutoRefresh } from '@/components/polydan/ui'
 
 function ago(d: Date) {
   const s = Math.round((Date.now() - d.getTime()) / 1000)
@@ -41,7 +40,6 @@ async function MarketPageContent({ searchParams }: PageProps<'/polydan/market'>)
 
   return (
     <div className="space-y-5">
-      {market.tradable && <AutoRefresh seconds={8} />}
       <div>
         <Link href="/polydan" className="text-sm text-pd-muted hover:text-pd-ink">
           ← Iron Man {edition.number}
