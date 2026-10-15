@@ -5,6 +5,7 @@ import { headToHeadProbability, topNProbability, winnerProbabilities } from './h
 
 export type MarketSpec =
   | { kind: 'WINNER' }
+  | { kind: 'COPPER' }
   | { kind: 'TOP_N'; competitorId: number; n: number }
   | { kind: 'H2H'; a: number; b: number }
   | { kind: 'CUSTOM'; question: string; options: string[] }
@@ -36,6 +37,15 @@ async function draft(editionId: number, spec: MarketSpec): Promise<Draft> {
       const p = winnerProbabilities(field.map((c) => c.name))
       return {
         question: `Who wins Iron Man ${edition.number}?`,
+        outcomes: field.map((c, i) => ({ label: c.name, competitorId: c.id, p: p[i] })),
+      }
+    }
+    case 'COPPER': {
+      if (field.length < 2) throw new Error('Set the field first')
+      // All-round form is the best guide we have to Copper Cup points.
+      const p = winnerProbabilities(field.map((c) => c.name))
+      return {
+        question: `Who wins the Iron Man ${edition.number} Copper Cup?`,
         outcomes: field.map((c, i) => ({ label: c.name, competitorId: c.id, p: p[i] })),
       }
     }

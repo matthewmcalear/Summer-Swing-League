@@ -3,12 +3,19 @@ import Loading from '@/app/polydan/loading'
 import Link from 'next/link'
 import { requireAdmin } from '@/lib/polydan/auth'
 import { prisma } from '@/lib/prisma'
-import { getEditionBoard, getPlayerAccounts } from '@/lib/polydan/queries'
+import { getAllEvents, getCopperTable, getEditionBoard, getIdols, getPlayerAccounts } from '@/lib/polydan/queries'
 import { maxHouseLoss } from '@/lib/polydan/lmsr'
 import { formatMoney, formatOrdinal, formatPct } from '@/lib/polydan/money'
 import { StatusTag } from '@/components/polydan/MarketCard'
 import {
+  AddEventsForm,
   BalanceForm,
+  CopperFinalForm,
+  CopperScoresForm,
+  EventEditor,
+  IdolForm,
+  RemoveIdolForm,
+  ResetForm,
   CreateEditionForm,
   CreateUserForm,
   EditionStatusForm,
@@ -91,7 +98,7 @@ async function AdminPageContent({ searchParams }: PageProps<'/polydan/admin'>) {
       {tab === 'players' ? (
         <PlayersTab />
       ) : tab === 'setup' ? (
-        <EditionTab editionId={editionId} />
+        <EditionTab editionId={editionId} done={typeof sp.done === 'string' ? sp.done : undefined} />
       ) : !editionId ? (
         <p className="pd-card p-4 text-sm">
           No edition yet — start in the <Link href={href('setup')} className="text-pd-gold underline">Setup</Link> tab.
@@ -108,25 +115,46 @@ async function AdminPageContent({ searchParams }: PageProps<'/polydan/admin'>) {
 // ------------------------------------------------------------------ results
 
 async function ResultsTab({ editionId }: { editionId: number }) {
-  const { edition, field, standings } = await getEditionBoard(editionId)
-  const log = await prisma.pdResultEvent.findMany({
-    where: { editionId },
-    orderBy: { id: 'asc' },
-    include: { competitor: true },
-  })
+  const [{ edition, field, standings }, log, events, copper, idols] = await Promise.all([
+    getEditionBoard(editionId),
+    prisma.pdResultEvent.findMany({
+      where: { editionId },
+      orderBy: { id: 'asc' },
+      include: { competitor: true },
+    }),
+    getAllEvents(editionId),
+    getCopperTable(editionId),
+    getIdols(editionId),
+  ])
   if (!field.length) return <p className="pd-card p-4 text-sm">Set the field in the Setup tab first.</p>
 
   const rounds = [...new Set(log.map((e) => e.round))].sort((a, b) => b - a)
+  const nextEvent = events.find((e) => e.seq === standings.currentRound + 1) ?? null
   const word = { TO_ISLAND: '→ island', OUT: 'out', RETURN: 'back from island' }
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
+      <div className="space-y-5">
       <section className="pd-card p-4">
         <h2 className="mb-1 font-semibold">Record a round</h2>
         <p className="mb-4 text-sm text-pd-muted">
           Last place each round goes to Redemption Island or out. Markets that become certain lock straight away; nothing
           pays out until you settle.
         </p>
+        {nextEvent && !standings.finished && (
+          <div className="mb-4 rounded-lg border border-pd-line-strong bg-pd-surface-2 p-3 text-sm">
+            <p className="pd-eyebrow">Round {nextEvent.seq} event</p>
+            <p className="mt-0.5 text-base font-semibold">{nextEvent.name}</p>
+            {nextEvent.description && <p className="text-pd-muted">{nextEvent.description}</p>}
+            <p className="mt-1 flex flex-wrap gap-x-3 text-xs font-medium">
+              <span className={nextEvent.islandOpen ? 'text-pd-island' : 'text-pd-no'}>
+                {nextEvent.islandOpen ? '🏝 Redemption Island open' : '🚫 No Redemption Island — losers are out'}
+              </span>
+              {nextEvent.copperCup && <span className="text-pd-gold">🥉 Copper Cup event</span>}
+              {!nextEvent.revealed && <span className="text-pd-muted">🔒 Not revealed to the family yet</span>}
+            </p>
+          </div>
+        )}
         {standings.finished ? (
           <p className="text-sm font-medium text-pd-gold">
             Finished — {field.find((c) => c.id === standings.champion)?.name ?? 'dead heat'} is the champion.
@@ -139,9 +167,58 @@ async function ResultsTab({ editionId }: { editionId: number }) {
             competitors={field
               .filter((c) => c.standing.status !== 'OUT')
               .map((c) => ({ id: c.id, name: c.name, status: c.standing.status }))}
+            islandOpen={nextEvent?.islandOpen ?? true}
           />
         )}
       </section>
+
+      {copper.events.length > 0 && (
+        <section className="pd-card space-y-4 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-semibold">🥉 Copper Cup</h2>
+              <p className="text-sm text-pd-muted">
+                {copper.final
+                  ? 'Final — its market can now be settled.'
+                  : 'Enter each Copper Cup event’s points after it’s played.'}
+              </p>
+            </div>
+            <CopperFinalForm editionId={edition.id} final={copper.final} />
+          </div>
+          {copper.anyPoints && (
+            <ol className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+              {copper.rows.slice(0, 10).map((r, i) => (
+                <li key={r.id} className="flex gap-2">
+                  <span className="pd-num w-5 text-pd-muted">{i + 1}</span>
+                  <span className="font-medium">{r.name}</span>
+                  <span className="pd-num ml-auto font-semibold">{r.points}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+          <div className="space-y-2">
+            {copper.events.map((e) => (
+              <details key={e.id} className="rounded-lg border border-pd-line" open={!e.scored && e.seq === standings.currentRound}>
+                <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
+                  <span className="pd-num text-pd-gold">{e.seq}</span> {e.name}
+                  <span className={`ml-auto text-xs ${e.scored ? 'text-pd-yes' : 'text-pd-muted'}`}>
+                    {e.scored ? '✓ points in' : 'no points yet'}
+                  </span>
+                </summary>
+                <div className="border-t border-pd-line p-3">
+                  <CopperScoresForm
+                    event={e}
+                    competitors={field.map((c) => ({ id: c.id, name: c.name }))}
+                    scores={e.scores}
+                    locked={copper.final}
+                  />
+                </div>
+              </details>
+            ))}
+          </div>
+        </section>
+      )}
+      </div>
       <aside className="space-y-3">
         <div className="pd-card p-4">
           <div className="mb-2 flex items-center justify-between">
@@ -171,6 +248,35 @@ async function ResultsTab({ editionId }: { editionId: number }) {
           ) : (
             <p className="text-sm text-pd-muted">No results yet.</p>
           )}
+        </div>
+              <div className="pd-card space-y-3 p-4">
+          <h2 className="font-semibold">🗿 Immunity idol</h2>
+          {idols.holders.length > 0 ? (
+            <p className="text-sm">
+              Held by <span className="font-semibold">{idols.holders.map((h) => h.name).join(', ')}</span> — shown to
+              everyone.
+            </p>
+          ) : (
+            <p className="text-sm text-pd-muted">Nobody holds an idol.</p>
+          )}
+          {idols.log.length > 0 && (
+            <ul className="space-y-1.5 text-sm">
+              {idols.log.map((i) => (
+                <li key={i.id} className="flex items-center gap-2">
+                  <span className="min-w-0 flex-1">
+                    {i.name} <span className="text-pd-muted">{i.kind === 'FOUND' ? 'found it' : 'played it'}</span>
+                    {i.round && <span className="text-pd-muted"> · round {i.round}</span>}
+                  </span>
+                  <RemoveIdolForm idolId={i.id} />
+                </li>
+              ))}
+            </ul>
+          )}
+          <IdolForm
+            editionId={edition.id}
+            competitors={field.filter((c) => c.standing.status !== 'OUT').map((c) => ({ id: c.id, name: c.name }))}
+            round={Math.max(1, standings.currentRound + 1)}
+          />
         </div>
       </aside>
     </div>
@@ -411,8 +517,8 @@ function Stat({ label, value, strong }: { label: string; value: string; strong?:
 
 // ------------------------------------------------------------------ edition
 
-async function EditionTab({ editionId }: { editionId?: number }) {
-  const [edition, competitors, last] = await Promise.all([
+async function EditionTab({ editionId, done }: { editionId?: number; done?: string }) {
+  const [edition, competitors, last, events] = await Promise.all([
     editionId
       ? prisma.pdEdition.findUnique({
           where: { id: editionId },
@@ -421,8 +527,15 @@ async function EditionTab({ editionId }: { editionId?: number }) {
       : null,
     prisma.pdCompetitor.findMany({ orderBy: { name: 'asc' } }),
     prisma.pdEdition.findFirst({ orderBy: { number: 'desc' } }),
+    editionId ? getAllEvents(editionId) : Promise.resolve([]),
   ])
   return (
+    <div className="space-y-5">
+    {done && (
+      <p role="status" className="rounded-lg border border-pd-yes bg-pd-yes-soft p-3 text-sm font-medium text-pd-yes">
+        ✓ {done.slice(0, 200)}
+      </p>
+    )}
     <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
       {edition ? (
         <section className="pd-card space-y-4 p-4">
@@ -437,14 +550,42 @@ async function EditionTab({ editionId }: { editionId?: number }) {
             selected={edition.entries.map((e) => e.competitorId)}
             locked={edition._count.markets + edition._count.results > 0}
           />
+          <div className="space-y-3 border-t border-pd-line pt-4">
+            <div>
+              <h3 className="font-semibold">Events schedule {events.length > 0 && <span className="text-pd-muted">· {events.length}</span>}</h3>
+              <p className="text-sm text-pd-muted">
+                Round 1 is played on event 1, round 2 on event 2, and so on. Dashed events are hidden from the family;
+                recording a round reveals the next one.
+              </p>
+            </div>
+            {events.length > 0 && (
+              <ol className="space-y-2">
+                {events.map((e, i) => (
+                  <EventEditor key={e.id} event={e} isFirst={i === 0} isLast={i === events.length - 1} />
+                ))}
+              </ol>
+            )}
+            <AddEventsForm editionId={edition.id} count={events.length} />
+          </div>
         </section>
       ) : (
         <p className="pd-card p-4 text-sm text-pd-muted">Create the first edition →</p>
       )}
-      <aside className="pd-card h-fit p-4">
-        <h2 className="mb-3 font-semibold">New edition</h2>
-        <CreateEditionForm nextNumber={(last?.number ?? 9) + 1} />
+      <aside className="space-y-5">
+        <div className="pd-card h-fit p-4">
+          <h2 className="mb-3 font-semibold">New edition</h2>
+          <CreateEditionForm nextNumber={(last?.number ?? 9) + 1} />
+        </div>
+        <div className="pd-card h-fit space-y-2 border-pd-no p-4">
+          <h2 className="font-semibold text-pd-no">Danger zone</h2>
+          <p className="text-sm text-pd-muted">
+            Wipe PolyDan after testing: deletes every edition, event, market, bet, result, money entry and non-admin
+            player. Admin accounts (same PINs) and the competitor list stay.
+          </p>
+          <ResetForm />
+        </div>
       </aside>
+    </div>
     </div>
   )
 }

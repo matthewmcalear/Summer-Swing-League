@@ -7,6 +7,7 @@ const KIND_LABEL: Record<MarketView['kind'], string> = {
   TOP_N: 'Top finish',
   H2H: 'Head to head',
   CUSTOM: 'Special',
+  COPPER: 'Copper Cup',
 }
 
 export function StatusTag({ market }: { market: MarketView }) {

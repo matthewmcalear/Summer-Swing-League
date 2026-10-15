@@ -2,7 +2,8 @@ import { Suspense } from 'react'
 import Loading from '@/app/polydan/loading'
 import Link from 'next/link'
 import { requireUser } from '@/lib/polydan/auth'
-import { getCurrentEdition, getEditionBoard } from '@/lib/polydan/queries'
+import { getCopperTable, getCurrentEdition, getEditionBoard, getIdols, getPublicEvents } from '@/lib/polydan/queries'
+import { CopperCard, EventsCard } from '@/components/polydan/EventsCard'
 import { FieldBoard } from '@/components/polydan/FieldBoard'
 import { MarketCard, WinnerBoard } from '@/components/polydan/MarketCard'
 
@@ -56,6 +57,11 @@ async function HomeContent() {
   }
 
   const { edition, field, standings, markets } = await getEditionBoard(current.id)
+  const [events, copper, idols] = await Promise.all([
+    getPublicEvents(current.id, standings.currentRound),
+    getCopperTable(current.id),
+    getIdols(current.id),
+  ])
   const winner = markets.find((m) => m.kind === 'WINNER' && m.status !== 'VOID')
   const active = markets.filter((m) => m !== winner && (m.status === 'OPEN' || m.status === 'CLOSED'))
   const done = markets.filter((m) => m !== winner && (m.status === 'SETTLED' || m.status === 'VOID'))
@@ -72,15 +78,21 @@ async function HomeContent() {
         </div>
         {field.length > 0 && (
           <p className="pb-1 text-sm text-pd-muted pd-num">
-            {standings.currentRound > 0 && `Round ${standings.currentRound} · `}
+            {edition.status === 'LIVE' && !standings.finished
+              ? `Round ${standings.currentRound + 1} · `
+              : standings.currentRound > 0 && `${standings.currentRound} rounds · `}
             {standings.alive.length} of {field.length} left
           </p>
         )}
       </header>
 
-      {field.length > 0 && <FieldBoard field={field} />}
+      {field.length > 0 && <FieldBoard field={field} idolHolders={idols.holders.map((h) => h.id)} />}
+
+      <EventsCard {...events} />
 
       {winner && <WinnerBoard market={winner} />}
+
+      <CopperCard rows={copper.rows} final={copper.final} />
 
       {active.length > 0 && (
         <section>

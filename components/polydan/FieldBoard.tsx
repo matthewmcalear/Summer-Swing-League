@@ -8,7 +8,7 @@ interface Entry {
 }
 
 /** Who's still in, who's on Redemption Island, and the order people went out. */
-export function FieldBoard({ field }: { field: Entry[] }) {
+export function FieldBoard({ field, idolHolders = [] }: { field: Entry[]; idolHolders?: number[] }) {
   const inGame = field.filter((c) => c.standing.status === 'IN')
   const island = field.filter((c) => c.standing.status === 'ISLAND')
   const out = field
@@ -28,6 +28,7 @@ export function FieldBoard({ field }: { field: Entry[] }) {
               }`}
             >
               {c.standing.position === 1 ? `⚜ ${c.name}` : c.name}
+              {idolHolders.includes(c.id) && <span title="Has the immunity idol"> 🗿</span>}
             </span>
           ))}
           {!inGame.length && <span className="text-sm text-pd-muted">Nobody yet</span>}
@@ -40,6 +41,7 @@ export function FieldBoard({ field }: { field: Entry[] }) {
             {island.map((c) => (
               <span key={c.id} className="rounded-full bg-pd-island-soft px-2.5 py-1 text-sm text-pd-island">
                 🏝 {c.name}
+                {idolHolders.includes(c.id) && <span title="Has the immunity idol"> 🗿</span>}
               </span>
             ))}
           </div>
@@ -56,6 +58,12 @@ export function FieldBoard({ field }: { field: Entry[] }) {
             ))}
           </div>
         </div>
+      )}
+      {idolHolders.length > 0 && (
+        <p className="text-sm">
+          🗿 <span className="font-semibold">{field.filter((c) => idolHolders.includes(c.id)).map((c) => c.name).join(' & ')}</span>{' '}
+          {idolHolders.length > 1 ? 'hold' : 'holds'} an immunity idol — safe from elimination for one round when played.
+        </p>
       )}
     </section>
   )

@@ -5,6 +5,7 @@ import { getCurrentEdition, getTvBoard, type MarketView } from '@/lib/polydan/qu
 import { formatMoney, formatMultiple, formatOrdinal, formatPct } from '@/lib/polydan/money'
 import { LiveRefresh } from '@/components/polydan/ui'
 import { TvClock, TvControls } from '@/components/polydan/TvControls'
+import { EventTags } from '@/components/polydan/EventsCard'
 
 // Basement TV dashboard: a full-screen, always-dark, read-only view of the
 // event for a laptop plugged into the TV. Sized in em off a viewport-based
@@ -51,6 +52,10 @@ async function Tv() {
     .filter((c) => c.standing.status === 'OUT')
     .sort((a, b) => a.standing.position! - b.standing.position!)
   const champion = field.find((c) => c.id === standings.champion)
+  // The round being played now: one past the last recorded, until it's over.
+  const playingRound = standings.finished || edition.status !== 'LIVE' ? standings.currentRound : standings.currentRound + 1
+  const idolHolders = new Set(tv.idols.holders.map((h) => h.id))
+  const copperRows = tv.copper.rows.filter((r) => r.points !== 0).slice(0, 5)
   const latest = tv.results[0]
   const fresh = tv.latestIsFresh
 
@@ -70,9 +75,7 @@ async function Tv() {
           </span>
         )}
         <div className="mb-[0.4em] flex gap-[2em] text-[1.3em]">
-          {standings.currentRound > 0 && (
-            <Big label="Round" value={String(standings.currentRound)} />
-          )}
+          {playingRound > 0 && <Big label="Round" value={String(playingRound)} />}
           <Big label="Left" value={`${standings.alive.length} / ${field.length}`} />
           <Big label="Traded" value={formatMoney(tv.tradedCents)} />
         </div>
@@ -83,18 +86,35 @@ async function Tv() {
       </header>
 
       {/* ── Latest result banner ───────────────────────────────── */}
-      {champion ? (
-        <Banner tone="gold">
-          ⚜ {champion.name} is the Iron Man {edition.number} champion! ⚜
-        </Banner>
-      ) : (
-        latest && (
-          <Banner tone={fresh ? 'hot' : 'calm'}>
-            <span className="text-pd-muted">Round {latest.round} · </span>
-            {describe(latest)}
-          </Banner>
-        )
-      )}
+      <div className="flex gap-[1.2em]">
+        {!champion && tv.events.current && (
+          <div className="pd-card flex-[1.1] border-pd-gold px-[1.1em] py-[0.5em]">
+            <p className="pd-eyebrow text-[0.85em] text-pd-gold">Now playing · event {tv.events.current.seq}</p>
+            <p className="font-pd-display text-[1.9em] font-semibold uppercase leading-tight tracking-wide">
+              {tv.events.current.name}
+            </p>
+            <EventTags event={tv.events.current} className="text-[1.05em]" />
+          </div>
+        )}
+        <div className="flex flex-1 flex-col justify-center">
+          {champion ? (
+            <Banner tone="gold">
+              ⚜ {champion.name} is the Iron Man {edition.number} champion! ⚜
+            </Banner>
+          ) : tv.idolNews ? (
+            <Banner tone={tv.idolNews.fresh ? 'hot' : 'calm'}>
+              🗿 {tv.idolNews.name} plays the immunity idol{tv.idolNews.round ? ` in round ${tv.idolNews.round}` : ''}!
+            </Banner>
+          ) : (
+            latest && (
+              <Banner tone={fresh ? 'hot' : 'calm'}>
+                <span className="text-pd-muted">Round {latest.round} · </span>
+                {describe(latest)}
+              </Banner>
+            )
+          )}
+        </div>
+      </div>
 
       {/* ── Three columns ──────────────────────────────────────── */}
       <div className="grid min-h-0 flex-1 grid-cols-[1fr_1.45fr_1.1fr] gap-[1.2em]">
@@ -109,6 +129,7 @@ async function Tv() {
                 }`}
               >
                 {c.name}
+                {idolHolders.has(c.id) && ' 🗿'}
               </span>
             ))}
           </div>
@@ -158,7 +179,7 @@ async function Tv() {
           <Panel title="Latest bets" grow>
             {tv.trades.length ? (
               <ul className="space-y-[0.45em] text-[1.05em]">
-                {tv.trades.map((t) => (
+                {tv.trades.slice(0, copperRows.length ? 5 : 7).map((t) => (
                   <li key={t.id} className="truncate">
                     <span className="font-semibold">{t.user}</span>{' '}
                     <span className={t.shares > 0 ? 'text-pd-yes' : 'text-pd-no'}>
@@ -173,6 +194,19 @@ async function Tv() {
               <p className="text-[1.05em] text-pd-muted">No bets yet — be the first!</p>
             )}
           </Panel>
+          {copperRows.length > 0 && (
+            <Panel title={`🥉 Copper Cup${tv.copper.final ? ' · final' : ''}`}>
+              <ol className="space-y-[0.35em] text-[1.1em]">
+                {copperRows.map((r, i) => (
+                  <li key={r.id} className="flex gap-[0.6em]">
+                    <span className="pd-num w-[1.2em] text-pd-muted">{i + 1}</span>
+                    <span className="font-semibold">{r.name}</span>
+                    <span className="pd-num ml-auto font-semibold">{r.points}</span>
+                  </li>
+                ))}
+              </ol>
+            </Panel>
+          )}
           {tv.leaders.length > 0 && (
             <Panel title="Sharpest money">
               <ol className="space-y-[0.35em] text-[1.1em]">

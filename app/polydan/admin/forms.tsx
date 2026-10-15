@@ -6,6 +6,15 @@ import { DEFAULT_LIQUIDITY, normaliseOdds, type MarketKindName } from '@/lib/pol
 import { formatMoney, formatMultiple } from '@/lib/polydan/money'
 import { ActionForm, ConfirmSubmit, SubmitButton } from '@/components/polydan/ui'
 import {
+  addEvents,
+  deleteEvent,
+  moveEvent,
+  recordIdol,
+  removeIdol,
+  resetEverything,
+  saveCopperScores,
+  setCopperFinal,
+  updateEvent,
   addMarket,
   adjustBalance,
   createEdition,
@@ -48,11 +57,14 @@ export function ResultsForm({
   nextRound,
   currentRound,
   competitors,
+  islandOpen = true,
 }: {
   editionId: number
   nextRound: number
   currentRound: number
   competitors: (Named & { status: 'IN' | 'ISLAND' | 'OUT' })[]
+  /** False when this round's event has Redemption Island closed. */
+  islandOpen?: boolean
 }) {
   const [picks, setPicks] = useState<Record<number, string>>({})
   const chosen = Object.values(picks).filter(Boolean).length
@@ -83,8 +95,10 @@ export function ResultsForm({
               {c.status === 'ISLAND' && <span className="ml-1 text-xs font-normal">on Redemption Island</span>}
             </p>
             {/* Segmented control: large tap targets, the choice is unmistakable. */}
-            <div className="grid grid-cols-3 gap-1.5">
-              {CHOICES[c.status as 'IN' | 'ISLAND'].map(([v, label]) => {
+            <div className={`grid gap-1.5 ${!islandOpen && c.status === 'IN' ? 'grid-cols-2' : 'grid-cols-3'}`}>
+              {CHOICES[c.status as 'IN' | 'ISLAND']
+                .filter(([v]) => islandOpen || v !== 'TO_ISLAND')
+                .map(([v, label]) => {
                 const on = (picks[c.id] ?? '') === v
                 const tone =
                   v === 'OUT'
@@ -167,7 +181,7 @@ export function NewMarketForm({
 
   // Outcomes in the same order the server creates them, with history-based odds.
   const suggested = useMemo((): { label: string; p: number }[] => {
-    if (kind === 'WINNER') {
+    if (kind === 'WINNER' || kind === 'COPPER') {
       const p = winnerProbabilities(competitors.map((c) => c.name))
       return competitors.map((c, i) => ({ label: c.name, p: p[i] }))
     }
@@ -262,6 +276,7 @@ export function NewMarketForm({
             ['H2H', 'Head to head'],
             ['TOP_N', 'Top N'],
             ['CUSTOM', 'Custom'],
+            ['COPPER', 'Copper Cup'],
           ] as const
         ).map(([k, label]) => (
           <button
@@ -278,6 +293,12 @@ export function NewMarketForm({
       </div>
 
       {kind === 'WINNER' && hasWinner && <p className="text-sm text-pd-no">There’s already a winner market.</p>}
+      {kind === 'COPPER' && (
+        <p className="text-sm text-pd-muted">
+          One outcome per competitor; pays out the most Copper Cup points once you click Finalize Copper Cup (Results
+          tab). Ties split.
+        </p>
+      )}
       {kind === 'H2H' && (
         <>
           {pick(a, setA, 'Who lasts longer…')}
@@ -637,6 +658,247 @@ export function FieldForm({
           </div>
         </>
       )}
+    </ActionForm>
+  )
+}
+
+// ---------------------------------------------------------------- events
+
+export interface EventRow {
+  id: number
+  seq: number
+  name: string
+  description: string | null
+  islandOpen: boolean
+  copperCup: boolean
+  revealed: boolean
+}
+
+export function AddEventsForm({ editionId, count }: { editionId: number; count: number }) {
+  return (
+    <ActionForm action={addEvents} className="space-y-2" resetOnSuccess>
+      <input type="hidden" name="editionId" value={editionId} />
+      <label className="block text-sm font-medium">
+        {count ? 'Add more events' : 'Paste Steven’s events, one per line, in order'}
+        <textarea
+          name="events"
+          rows={count ? 2 : 6}
+          placeholder={'Trivia — buzzer round\nMini golf\nBlindfolded Jenga'}
+          className="pd-field mt-1 font-mono text-sm"
+        />
+      </label>
+      <p className="text-xs text-pd-muted">
+        Optional description after a dash: “Mini golf — 9 holes, lowest wins”. Then set Redemption Island and Copper Cup
+        for each below. Only event 1 starts visible to everyone.
+      </p>
+      <SubmitButton className="pd-btn pd-btn-gold w-full sm:w-auto" pendingText="Adding…">
+        Add events
+      </SubmitButton>
+    </ActionForm>
+  )
+}
+
+export function EventEditor({ event, isFirst, isLast }: { event: EventRow; isFirst: boolean; isLast: boolean }) {
+  const id = <input type="hidden" name="eventId" value={event.id} />
+  return (
+    <li className={`rounded-lg border-[1.5px] p-3 ${event.revealed ? 'border-pd-line-strong' : 'border-dashed border-pd-line'}`}>
+      <ActionForm action={updateEvent} className="space-y-2">
+        {id}
+        <div className="flex items-center gap-2">
+          <span className="pd-num w-7 shrink-0 text-center font-pd-display text-lg font-semibold text-pd-gold">{event.seq}</span>
+          <input name="name" defaultValue={event.name} required className="pd-field min-w-0 flex-1 font-medium" aria-label="Event name" />
+        </div>
+        <input
+          name="description"
+          defaultValue={event.description ?? ''}
+          placeholder="Description (optional)"
+          className="pd-field text-sm"
+          aria-label="Event description"
+        />
+        <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+          <Check name="islandOpen" defaultChecked={event.islandOpen} label="🏝 Redemption Island open" />
+          <Check name="copperCup" defaultChecked={event.copperCup} label="🥉 Copper Cup event" />
+          <Check name="revealed" defaultChecked={event.revealed} label="👁 Revealed to everyone" />
+        </div>
+        <SubmitButton className="pd-btn pd-btn-ghost pd-btn-sm" pendingText="Saving…">
+          Save event {event.seq}
+        </SubmitButton>
+      </ActionForm>
+      <div className="mt-2 flex flex-wrap gap-2 border-t border-pd-line pt-2">
+        {!isFirst && (
+          <ActionForm action={moveEvent}>
+            {id}
+            <input type="hidden" name="dir" value="up" />
+            <SubmitButton className="pd-btn pd-btn-ghost pd-btn-sm" pendingText="…">
+              ↑ Move up
+            </SubmitButton>
+          </ActionForm>
+        )}
+        {!isLast && (
+          <ActionForm action={moveEvent}>
+            {id}
+            <input type="hidden" name="dir" value="down" />
+            <SubmitButton className="pd-btn pd-btn-ghost pd-btn-sm" pendingText="…">
+              ↓ Move down
+            </SubmitButton>
+          </ActionForm>
+        )}
+        <ActionForm action={deleteEvent} className="ml-auto">
+          {id}
+          <ConfirmSubmit
+            className="pd-btn pd-btn-danger pd-btn-sm"
+            question={`Delete “${event.name}”? Later events move up one.`}
+            confirmLabel="Yes, delete"
+            pendingText="…"
+          >
+            Delete
+          </ConfirmSubmit>
+        </ActionForm>
+      </div>
+    </li>
+  )
+}
+
+function Check({ name, label, defaultChecked }: { name: string; label: string; defaultChecked: boolean }) {
+  return (
+    <label className="flex min-h-9 cursor-pointer items-center gap-2">
+      <input type="checkbox" name={name} defaultChecked={defaultChecked} className="size-4 accent-[var(--pd-gold)]" />
+      {label}
+    </label>
+  )
+}
+
+// ------------------------------------------------------------ copper cup
+
+export function CopperScoresForm({
+  event,
+  competitors,
+  scores,
+  locked,
+}: {
+  event: { id: number; seq: number; name: string }
+  competitors: Named[]
+  scores: Record<number, number>
+  locked: boolean
+}) {
+  return (
+    <ActionForm action={saveCopperScores} className="space-y-3">
+      <input type="hidden" name="eventId" value={event.id} />
+      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {competitors.map((c) => (
+          <li key={c.id}>
+            <label className="flex items-center gap-2 text-sm">
+              <span className="min-w-0 flex-1 truncate">{c.name}</span>
+              <input
+                name={`p_${c.id}`}
+                defaultValue={scores[c.id] ?? ''}
+                inputMode="decimal"
+                disabled={locked}
+                placeholder="–"
+                className="pd-field pd-num w-16 text-right"
+                aria-label={`${c.name} points`}
+              />
+            </label>
+          </li>
+        ))}
+      </ul>
+      {!locked && (
+        <SubmitButton className="pd-btn pd-btn-gold w-full sm:w-auto" pendingText="Saving…">
+          Save points for event {event.seq}
+        </SubmitButton>
+      )}
+    </ActionForm>
+  )
+}
+
+export function CopperFinalForm({ editionId, final }: { editionId: number; final: boolean }) {
+  return (
+    <ActionForm action={setCopperFinal}>
+      <input type="hidden" name="editionId" value={editionId} />
+      <input type="hidden" name="final" value={final ? 'false' : 'true'} />
+      {final ? (
+        <SubmitButton className="pd-btn pd-btn-ghost" pendingText="…">
+          Reopen Copper Cup
+        </SubmitButton>
+      ) : (
+        <ConfirmSubmit
+          className="pd-btn pd-btn-gold w-full sm:w-auto"
+          confirmClassName="pd-btn pd-btn-gold"
+          question="Lock the Copper Cup points as final? Its market can then pay out."
+          confirmLabel="Yes, finalize"
+          pendingText="…"
+        >
+          Finalize Copper Cup
+        </ConfirmSubmit>
+      )}
+    </ActionForm>
+  )
+}
+
+// ---------------------------------------------------------- immunity idol
+
+export function IdolForm({ editionId, competitors, round }: { editionId: number; competitors: Named[]; round: number }) {
+  return (
+    <ActionForm action={recordIdol} className="space-y-2" resetOnSuccess>
+      <input type="hidden" name="editionId" value={editionId} />
+      <div className="grid grid-cols-2 gap-2">
+        <select name="competitorId" required defaultValue="" className="pd-field" aria-label="Who">
+          <option value="" disabled>
+            Who?
+          </option>
+          {competitors.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <select name="kind" defaultValue="FOUND" className="pd-field" aria-label="What happened">
+          <option value="FOUND">found the idol</option>
+          <option value="PLAYED">played the idol</option>
+        </select>
+      </div>
+      <label className="flex items-center gap-2 text-sm">
+        in round
+        <input name="round" type="number" inputMode="numeric" min={1} defaultValue={round} className="pd-field pd-num w-20" />
+      </label>
+      <SubmitButton className="pd-btn pd-btn-gold w-full sm:w-auto" pendingText="Saving…">
+        Record idol
+      </SubmitButton>
+    </ActionForm>
+  )
+}
+
+export function RemoveIdolForm({ idolId }: { idolId: number }) {
+  return (
+    <ActionForm action={removeIdol}>
+      <input type="hidden" name="idolId" value={idolId} />
+      <ConfirmSubmit className="pd-btn pd-btn-danger pd-btn-sm" question="Remove this idol entry?" confirmLabel="Remove">
+        Remove
+      </ConfirmSubmit>
+    </ActionForm>
+  )
+}
+
+// ------------------------------------------------------------ hard reset
+
+export function ResetForm() {
+  const [typed, setTyped] = useState('')
+  return (
+    <ActionForm action={resetEverything} className="space-y-2">
+      <label className="block text-sm font-medium">
+        Type <span className="font-mono font-bold">RESET</span> to enable the button
+        <input
+          name="confirm"
+          value={typed}
+          onChange={(e) => setTyped(e.target.value)}
+          autoComplete="off"
+          autoCapitalize="characters"
+          className="pd-field mt-1 font-mono"
+        />
+      </label>
+      <SubmitButton className="pd-btn pd-btn-danger-solid w-full sm:w-auto" disabled={typed !== 'RESET'} pendingText="Resetting…">
+        Reset all PolyDan data
+      </SubmitButton>
     </ActionForm>
   )
 }

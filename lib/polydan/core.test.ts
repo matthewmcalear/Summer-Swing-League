@@ -175,3 +175,30 @@ describe('history priors', () => {
     expect(headToHeadProbability('Kiera', 'Megan')).toBeCloseTo(1 - h)
   })
 })
+
+describe('copper cup market', () => {
+  const m: MarketLike = {
+    kind: 'COPPER',
+    topN: null,
+    manualResult: null,
+    outcomes: [1, 2, 3].map((c) => ({ id: 10 + c, competitorId: c, isYes: null })),
+  }
+  const withCopper = (final: boolean, totals: [number, number][]) => {
+    const st = computeStandings([1, 2, 3], [])
+    st.copper = { final, totals: new Map(totals) }
+    return st
+  }
+
+  it('waits until the admin finalises the table', () => {
+    expect(resolveMarket(m, withCopper(false, [[1, 30]])).payouts).toBeNull()
+  })
+
+  it('pays the top scorer, and splits a tie', () => {
+    const r = resolveMarket(m, withCopper(true, [[1, 30], [2, 12]]))
+    expect(r.payouts!.get(11)).toBe(1)
+    expect([...r.dead].sort()).toEqual([12, 13])
+    const tie = resolveMarket(m, withCopper(true, [[1, 20], [3, 20]]))
+    expect(tie.payouts!.get(11)).toBe(0.5)
+    expect(tie.payouts!.get(13)).toBe(0.5)
+  })
+})

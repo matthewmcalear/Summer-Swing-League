@@ -260,7 +260,7 @@ export async function getLeaderboard() {
 
 /** Everything the basement TV dashboard shows, in one round trip. */
 export async function getTvBoard(editionId: number) {
-  const [board, results, trades, leaders] = await Promise.all([
+  const [board, results, trades, leaders, copper, idols] = await Promise.all([
     getEditionBoard(editionId),
     prisma.pdResultEvent.findMany({
       where: { editionId },
@@ -279,9 +279,21 @@ export async function getTvBoard(editionId: number) {
       },
     }),
     getLeaderboard(),
+    getCopperTable(editionId),
+    getIdols(editionId),
   ])
+  const events = await getPublicEvents(editionId, board.standings.currentRound)
+  const lastPlayed = idols.log.filter((i) => i.kind === 'PLAYED').at(-1)
   return {
     ...board,
+    events,
+    copper,
+    idols,
+    /** An idol was played more recently than the latest knockout: lead with it. */
+    idolNews:
+      lastPlayed && (!results[0] || lastPlayed.at > results[0].createdAt)
+        ? { name: lastPlayed.name, round: lastPlayed.round, fresh: Date.now() - lastPlayed.at.getTime() < 5 * 60_000 }
+        : null,
     results: results.map((r) => ({
       id: r.id,
       round: r.round,
@@ -305,4 +317,82 @@ export async function getTvBoard(editionId: number) {
     latestIsFresh: results.length > 0 && Date.now() - results[0].createdAt.getTime() < 5 * 60_000,
     tradedCents: board.markets.reduce((s, m) => s + m.volumeCents, 0),
   }
+}
+
+// --------------------------------------------------------------------------
+// Event schedule, Copper Cup and immunity idol
+// --------------------------------------------------------------------------
+
+export async function getAllEvents(editionId: number) {
+  return prisma.pdEvent.findMany({ where: { editionId }, orderBy: { seq: 'asc' } })
+}
+
+/**
+ * What the family may see of Steven's schedule: revealed events only. Hidden
+ * events' names never leave the server — just how many there are.
+ */
+export async function getPublicEvents(editionId: number, currentRound: number) {
+  const all = await getAllEvents(editionId)
+  const visible = all.filter((e) => e.revealed)
+  // The event being played now: the first one after the rounds already recorded.
+  const current = visible.find((e) => e.seq === currentRound + 1) ?? null
+  return {
+    visible,
+    current,
+    hidden: all.length - visible.length,
+    total: all.length,
+  }
+}
+
+export async function getCopperTable(editionId: number) {
+  const [edition, entries, events] = await Promise.all([
+    prisma.pdEdition.findUniqueOrThrow({ where: { id: editionId }, select: { copperFinal: true } }),
+    prisma.pdEditionEntry.findMany({ where: { editionId }, include: { competitor: true } }),
+    prisma.pdEvent.findMany({
+      where: { editionId, copperCup: true },
+      orderBy: { seq: 'asc' },
+      include: { copper: true },
+    }),
+  ])
+  const totals = new Map<number, number>()
+  for (const e of events) for (const s of e.copper) totals.set(s.competitorId, (totals.get(s.competitorId) ?? 0) + s.points)
+  const rows = entries
+    .map((e) => ({ id: e.competitorId, name: e.competitor.name, points: totals.get(e.competitorId) ?? 0 }))
+    .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name))
+  return {
+    final: edition.copperFinal,
+    events: events.map((e) => ({
+      id: e.id,
+      seq: e.seq,
+      name: e.name,
+      revealed: e.revealed,
+      scored: e.copper.length > 0,
+      scores: Object.fromEntries(e.copper.map((s) => [s.competitorId, s.points])) as Record<number, number>,
+    })),
+    rows,
+    anyPoints: totals.size > 0,
+  }
+}
+
+export async function getIdols(editionId: number) {
+  const log = await prisma.pdIdol.findMany({
+    where: { editionId },
+    orderBy: { id: 'asc' },
+    include: { competitor: { select: { name: true } } },
+  })
+  const entries = log.map((i) => ({
+    id: i.id,
+    kind: i.kind,
+    round: i.round,
+    name: i.competitor.name,
+    competitorId: i.competitorId,
+    at: i.createdAt,
+  }))
+  // Holders: found it and haven't played it since.
+  const holders = new Map<number, string>()
+  for (const i of entries) {
+    if (i.kind === 'FOUND') holders.set(i.competitorId, i.name)
+    else holders.delete(i.competitorId)
+  }
+  return { log: entries, holders: [...holders.entries()].map(([id, name]) => ({ id, name })) }
 }

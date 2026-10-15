@@ -30,6 +30,14 @@ export interface Standings {
   finished: boolean
   champion: number | null
   currentRound: number
+  /** Copper Cup points so far (attached by loadStandings; absent in pure tests). */
+  copper?: CopperTable
+}
+
+export interface CopperTable {
+  /** Admin has finalised the Copper Cup: the table can no longer change. */
+  final: boolean
+  totals: Map<number, number>
 }
 
 const ALLOWED: Record<ResultKind, Status[]> = {

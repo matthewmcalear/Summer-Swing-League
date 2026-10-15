@@ -7,7 +7,7 @@
 
 import type { Standings } from './standings'
 
-export type MarketKind = 'WINNER' | 'TOP_N' | 'H2H' | 'CUSTOM'
+export type MarketKind = 'WINNER' | 'TOP_N' | 'H2H' | 'CUSTOM' | 'COPPER'
 
 export interface OutcomeLike {
   id: number
@@ -70,6 +70,20 @@ export function resolveMarket(market: MarketLike, st: Standings): Resolution {
       if (pa == null && pb == null) return { dead: new Set(), payouts: null }
       // Whoever is still standing beats whoever is out; equal positions = dead heat.
       const winners = pa == null ? [a] : pb == null ? [b] : pa < pb ? [a] : pb < pa ? [b] : [a, b]
+      return {
+        dead: new Set(outcomes.filter((o) => !winners.includes(o)).map((o) => o.id)),
+        payouts: splitBetween(outcomes, winners),
+      }
+    }
+
+    case 'COPPER': {
+      // Settles only once the admin finalises the Copper Cup; most points wins,
+      // a tie at the top splits the payout.
+      const table = st.copper
+      if (!table?.final) return { dead: new Set(), payouts: null }
+      const pts = (o: OutcomeLike) => table.totals.get(o.competitorId ?? -1) ?? 0
+      const best = Math.max(...outcomes.map(pts))
+      const winners = outcomes.filter((o) => pts(o) === best)
       return {
         dead: new Set(outcomes.filter((o) => !winners.includes(o)).map((o) => o.id)),
         payouts: splitBetween(outcomes, winners),

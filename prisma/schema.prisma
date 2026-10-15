@@ -354,6 +354,8 @@ model PdCompetitor {
   entries  PdEditionEntry[]
   outcomes PdOutcome[]
   results  PdResultEvent[]
+  copper   PdCopperScore[]
+  idols    PdIdol[]
 
   @@map("polydan_competitors")
 }
@@ -367,15 +369,19 @@ enum PdEditionStatus {
 }
 
 model PdEdition {
-  id        Int             @id @default(autoincrement())
-  number    Int             @unique
-  date      DateTime?
-  status    PdEditionStatus @default(SETUP)
-  createdAt DateTime        @default(now())
+  id          Int             @id @default(autoincrement())
+  number      Int             @unique
+  date        DateTime?
+  status      PdEditionStatus @default(SETUP)
+  createdAt   DateTime        @default(now())
+  // Admin clicked "Finalize Copper Cup": the points table is final.
+  copperFinal Boolean         @default(false)
 
   entries PdEditionEntry[]
   results PdResultEvent[]
   markets PdMarket[]
+  events  PdEvent[]
+  idols   PdIdol[]
 
   @@map("polydan_editions")
 }
@@ -424,6 +430,7 @@ enum PdMarketKind {
   TOP_N
   H2H
   CUSTOM
+  COPPER // who wins the Copper Cup (most points across Copper Cup events)
 
   @@map("polydan_market_kind")
 }
@@ -506,4 +513,57 @@ model PdTrade {
 
   @@index([marketId, createdAt])
   @@map("polydan_trades")
+}
+
+// Steven's event schedule. Round N is played on the event with seq N.
+// Unrevealed events are visible only to admins.
+model PdEvent {
+  id          Int       @id @default(autoincrement())
+  editionId   Int
+  edition     PdEdition @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  seq         Int
+  name        String
+  description String?
+  islandOpen  Boolean   @default(true) // losers can go to Redemption Island
+  copperCup   Boolean   @default(false) // counts toward the Copper Cup
+  revealed    Boolean   @default(false)
+
+  copper PdCopperScore[]
+
+  @@unique([editionId, seq])
+  @@map("polydan_events")
+}
+
+// Copper Cup points one competitor earned in one event.
+model PdCopperScore {
+  eventId      Int
+  event        PdEvent      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  competitorId Int
+  competitor   PdCompetitor @relation(fields: [competitorId], references: [id])
+  points       Float
+
+  @@id([eventId, competitorId])
+  @@map("polydan_copper_scores")
+}
+
+enum PdIdolKind {
+  FOUND
+  PLAYED
+
+  @@map("polydan_idol_kind")
+}
+
+// Immunity idol log: who found it, and the round it was played.
+model PdIdol {
+  id           Int          @id @default(autoincrement())
+  editionId    Int
+  edition      PdEdition    @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  competitorId Int
+  competitor   PdCompetitor @relation(fields: [competitorId], references: [id])
+  kind         PdIdolKind
+  round        Int?
+  createdAt    DateTime     @default(now())
+
+  @@index([editionId])
+  @@map("polydan_idols")
 }

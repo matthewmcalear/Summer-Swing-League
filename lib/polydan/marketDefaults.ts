@@ -1,12 +1,13 @@
 // Shared by the server (market creation) and the admin form (odds preview).
 
-export type MarketKindName = 'WINNER' | 'TOP_N' | 'H2H' | 'CUSTOM'
+export type MarketKindName = 'WINNER' | 'TOP_N' | 'H2H' | 'CUSTOM' | 'COPPER'
 
 export const DEFAULT_LIQUIDITY: Record<MarketKindName, number> = {
   WINNER: 100,
   TOP_N: 50,
   H2H: 50,
   CUSTOM: 50,
+  COPPER: 80,
 }
 
 /** Lowest opening chance allowed (0.5%), so no outcome opens at an absurd payout. */

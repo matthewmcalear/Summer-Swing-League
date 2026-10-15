@@ -1,6 +1,6 @@
 import type { Prisma } from '@prisma/client'
 import { prisma } from '../prisma'
-import { computeStandings, type Standings } from './standings'
+import { computeStandings, type CopperTable, type Standings } from './standings'
 import { resolveMarket, type Resolution } from './resolve'
 import { prices, sellProceeds, sharesForSpend } from './lmsr'
 
@@ -18,14 +18,26 @@ export async function loadStandings(db: Db, editionId: number): Promise<Standing
     db.pdEditionEntry.findMany({ where: { editionId }, select: { competitorId: true } }),
     db.pdResultEvent.findMany({ where: { editionId }, orderBy: { id: 'asc' } }),
   ])
-  return computeStandings(
+  const st = computeStandings(
     entries.map((e) => e.competitorId),
     results,
   )
+  st.copper = await loadCopper(db, editionId)
+  return st
+}
+
+export async function loadCopper(db: Db, editionId: number): Promise<CopperTable> {
+  const [edition, scores] = await Promise.all([
+    db.pdEdition.findUnique({ where: { id: editionId }, select: { copperFinal: true } }),
+    db.pdCopperScore.findMany({ where: { event: { editionId } }, select: { competitorId: true, points: true } }),
+  ])
+  const totals = new Map<number, number>()
+  for (const s of scores) totals.set(s.competitorId, (totals.get(s.competitorId) ?? 0) + s.points)
+  return { final: edition?.copperFinal ?? false, totals }
 }
 
 interface PriceableMarket {
-  kind: 'WINNER' | 'TOP_N' | 'H2H' | 'CUSTOM'
+  kind: 'WINNER' | 'TOP_N' | 'H2H' | 'CUSTOM' | 'COPPER'
   topN: number | null
   b: number
   status: 'OPEN' | 'CLOSED' | 'SETTLED' | 'VOID'
