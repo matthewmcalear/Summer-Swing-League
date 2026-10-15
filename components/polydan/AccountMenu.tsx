@@ -26,6 +26,10 @@ export function AccountMenu({ name, balance }: { name: string; balance: string }
         <Link href="/polydan/portfolio" className="block px-4 py-3 text-sm font-medium hover:bg-pd-surface-2">
           My bets &amp; money
         </Link>
+        <Link href="/polydan/tv" className="block px-4 py-3 text-sm font-medium hover:bg-pd-surface-2">
+          📺 TV dashboard
+          <span className="block text-xs font-normal text-pd-muted">Full-screen view for the big screen</span>
+        </Link>
         <Link href="/polydan/login?switch=1" className="block px-4 py-3 text-sm font-medium hover:bg-pd-surface-2">
           Switch player
           <span className="block text-xs font-normal text-pd-muted">Someone else using this phone</span>

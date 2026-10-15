@@ -355,7 +355,9 @@ h1, h2, h3 {
   color: var(--pd-ink);
 }
 
-.dark .polydan {
+/* .pd-dark forces the dark palette (the basement TV dashboard). */
+.dark .polydan,
+.polydan .pd-dark {
   --pd-bg: #110f0a;
   --pd-surface: #1f1b14;
   --pd-surface-2: #2c261d;

@@ -257,3 +257,52 @@ export async function getLeaderboard() {
     .filter((u) => u.invested !== 0 || u.netWorth !== 0)
     .sort((a, b) => b.pnl - a.pnl)
 }
+
+/** Everything the basement TV dashboard shows, in one round trip. */
+export async function getTvBoard(editionId: number) {
+  const [board, results, trades, leaders] = await Promise.all([
+    getEditionBoard(editionId),
+    prisma.pdResultEvent.findMany({
+      where: { editionId },
+      orderBy: { id: 'desc' },
+      take: 6,
+      include: { competitor: { select: { name: true } } },
+    }),
+    prisma.pdTrade.findMany({
+      where: { market: { editionId } },
+      orderBy: { id: 'desc' },
+      take: 7,
+      include: {
+        user: { select: { name: true } },
+        outcome: { select: { label: true } },
+        market: { select: { question: true, kind: true } },
+      },
+    }),
+    getLeaderboard(),
+  ])
+  return {
+    ...board,
+    results: results.map((r) => ({
+      id: r.id,
+      round: r.round,
+      kind: r.kind,
+      name: r.competitor.name,
+      position: board.standings.byId.get(r.competitorId)?.position ?? null,
+      at: r.createdAt,
+    })),
+    trades: trades.map((t) => ({
+      id: t.id,
+      user: t.user.name,
+      outcome: t.outcome.label,
+      question: t.market.question,
+      kind: t.market.kind,
+      shares: t.shares,
+      costCents: t.costCents,
+      at: t.createdAt,
+    })),
+    leaders: leaders.slice(0, 5),
+    /** The latest result came in within the last 5 minutes (highlight it). */
+    latestIsFresh: results.length > 0 && Date.now() - results[0].createdAt.getTime() < 5 * 60_000,
+    tradedCents: board.markets.reduce((s, m) => s + m.volumeCents, 0),
+  }
+}
