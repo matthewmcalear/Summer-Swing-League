@@ -9,6 +9,8 @@ export function NavLinks({ isAdmin, mobile }: { isAdmin: boolean; mobile?: boole
     { href: '/polydan', label: 'Markets' },
     { href: '/polydan/portfolio', label: 'Portfolio' },
     { href: '/polydan/leaderboard', label: 'Leaders' },
+    // The TV view is for a laptop on the big screen, so it's a desktop-only tab.
+    ...(mobile ? [] : [{ href: '/polydan/tv', label: '📺 TV' }]),
     ...(isAdmin ? [{ href: '/polydan/admin', label: 'Admin' }] : []),
   ]
   return (

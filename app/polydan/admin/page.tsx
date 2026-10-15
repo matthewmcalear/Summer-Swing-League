@@ -64,6 +64,9 @@ async function AdminPageContent({ searchParams }: PageProps<'/polydan/admin'>) {
           <p className="pd-eyebrow">Admin</p>
           <h1 className="font-pd-display text-3xl font-bold uppercase tracking-wide">Control room</h1>
         </div>
+        <Link href="/polydan/tv" className="pd-btn pd-btn-ghost pd-btn-sm">
+          📺 Open TV dashboard
+        </Link>
         {editions.length > 1 && (
           <nav className="ml-auto flex gap-1 text-sm">
             {editions.map((e) => (
