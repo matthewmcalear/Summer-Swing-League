@@ -376,6 +376,8 @@ model PdEdition {
   createdAt   DateTime        @default(now())
   // Admin clicked "Finalize Copper Cup": the points table is final.
   copperFinal Boolean         @default(false)
+  // Copper Cup points by finishing place in an event: 1st, 2nd, 3rd, …
+  copperScale String          @default("10,8,6,5,4,3,2,1")
 
   entries PdEditionEntry[]
   results PdResultEvent[]
@@ -534,12 +536,14 @@ model PdEvent {
   @@map("polydan_events")
 }
 
-// Copper Cup points one competitor earned in one event.
+// Copper Cup result for one competitor in one event: finishing place and the
+// points that place earned on the edition's scale.
 model PdCopperScore {
   eventId      Int
   event        PdEvent      @relation(fields: [eventId], references: [id], onDelete: Cascade)
   competitorId Int
   competitor   PdCompetitor @relation(fields: [competitorId], references: [id])
+  place        Int?
   points       Float
 
   @@id([eventId, competitorId])

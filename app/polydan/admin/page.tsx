@@ -11,6 +11,7 @@ import {
   AddEventsForm,
   BalanceForm,
   CopperFinalForm,
+  CopperScaleForm,
   CopperScoresForm,
   EventEditor,
   IdolForm,
@@ -180,11 +181,12 @@ async function ResultsTab({ editionId }: { editionId: number }) {
               <p className="text-sm text-pd-muted">
                 {copper.final
                   ? 'Final — its market can now be settled.'
-                  : 'Enter each Copper Cup event’s points after it’s played.'}
+                  : 'After each Copper Cup event, enter everyone’s finishing place; points follow the scale.'}
               </p>
             </div>
             <CopperFinalForm editionId={edition.id} final={copper.final} />
           </div>
+          <CopperScaleForm editionId={edition.id} scale={copper.scale} locked={copper.final} />
           {copper.anyPoints && (
             <ol className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
               {copper.rows.slice(0, 10).map((r, i) => (
@@ -209,7 +211,8 @@ async function ResultsTab({ editionId }: { editionId: number }) {
                   <CopperScoresForm
                     event={e}
                     competitors={field.map((c) => ({ id: c.id, name: c.name }))}
-                    scores={e.scores}
+                    places={e.places}
+                    scale={copper.scale}
                     locked={copper.final}
                   />
                 </div>

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { headToHeadProbability, topNProbability, winnerProbabilities } from '@/lib/polydan/history'
 import { DEFAULT_LIQUIDITY, normaliseOdds, type MarketKindName } from '@/lib/polydan/marketDefaults'
 import { formatMoney, formatMultiple } from '@/lib/polydan/money'
+import { ordinalSuffix, parseScale, pointsForPlace } from '@/lib/polydan/copper'
 import { ActionForm, ConfirmSubmit, SubmitButton } from '@/components/polydan/ui'
 import {
   addEvents,
@@ -14,6 +15,7 @@ import {
   resetEverything,
   saveCopperScores,
   setCopperFinal,
+  setCopperScale,
   updateEvent,
   addMarket,
   adjustBalance,
@@ -773,40 +775,74 @@ function Check({ name, label, defaultChecked }: { name: string; label: string; d
 export function CopperScoresForm({
   event,
   competitors,
-  scores,
+  places,
+  scale,
   locked,
 }: {
   event: { id: number; seq: number; name: string }
   competitors: Named[]
-  scores: Record<number, number>
+  places: Record<number, number>
+  scale: string
   locked: boolean
 }) {
+  const points = parseScale(scale) ?? []
+  const [typed, setTyped] = useState<Record<number, string>>(() =>
+    Object.fromEntries(competitors.map((c) => [c.id, places[c.id] ? String(places[c.id]) : ''])),
+  )
   return (
     <ActionForm action={saveCopperScores} className="space-y-3">
       <input type="hidden" name="eventId" value={event.id} />
-      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {competitors.map((c) => (
-          <li key={c.id}>
-            <label className="flex items-center gap-2 text-sm">
-              <span className="min-w-0 flex-1 truncate">{c.name}</span>
-              <input
-                name={`p_${c.id}`}
-                defaultValue={scores[c.id] ?? ''}
-                inputMode="decimal"
-                disabled={locked}
-                placeholder="–"
-                className="pd-field pd-num w-16 text-right"
-                aria-label={`${c.name} points`}
-              />
-            </label>
-          </li>
-        ))}
+      <p className="text-xs text-pd-muted">Type each person&apos;s finishing place (1, 2, 3…). Leave blank if they didn&apos;t place.</p>
+      <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {competitors.map((c) => {
+          const place = Number(typed[c.id])
+          const pts = typed[c.id] ? pointsForPlace(points, place) : null
+          return (
+            <li key={c.id}>
+              <label className="flex items-center gap-2 text-sm">
+                <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                <input
+                  name={`place_${c.id}`}
+                  value={typed[c.id] ?? ''}
+                  onChange={(e) => setTyped((t) => ({ ...t, [c.id]: e.target.value.replace(/[^0-9]/g, '') }))}
+                  inputMode="numeric"
+                  disabled={locked}
+                  placeholder="place"
+                  className="pd-field pd-num w-20 text-center"
+                  aria-label={`${c.name} place`}
+                />
+                <span className="pd-num w-14 text-right text-xs text-pd-muted">
+                  {pts != null && Number.isInteger(place) && place > 0 ? `${place}${ordinalSuffix(place)} · ${pts}` : ''}
+                </span>
+              </label>
+            </li>
+          )
+        })}
       </ul>
       {!locked && (
         <SubmitButton className="pd-btn pd-btn-gold w-full sm:w-auto" pendingText="Saving…">
-          Save points for event {event.seq}
+          Save places for event {event.seq}
         </SubmitButton>
       )}
+    </ActionForm>
+  )
+}
+
+export function CopperScaleForm({ editionId, scale, locked }: { editionId: number; scale: string; locked: boolean }) {
+  return (
+    <ActionForm action={setCopperScale} className="space-y-1">
+      <input type="hidden" name="editionId" value={editionId} />
+      <label className="block text-sm font-medium">
+        Points for 1st, 2nd, 3rd… (everyone after gets 0)
+        <span className="mt-1 flex gap-2">
+          <input name="scale" defaultValue={scale.split(',').join(', ')} disabled={locked} className="pd-field pd-num min-w-0 flex-1" />
+          {!locked && (
+            <SubmitButton className="pd-btn pd-btn-ghost" pendingText="…">
+              Save scale
+            </SubmitButton>
+          )}
+        </span>
+      </label>
     </ActionForm>
   )
 }

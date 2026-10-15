@@ -202,3 +202,21 @@ describe('copper cup market', () => {
     expect(tie.payouts!.get(13)).toBe(0.5)
   })
 })
+
+import { parseScale, pointsForPlace } from './copper'
+
+describe('copper cup scoring', () => {
+  it('parses a scale and scores by place, 0 beyond it', () => {
+    const scale = parseScale('10, 8 6,5')!
+    expect(scale).toEqual([10, 8, 6, 5])
+    expect(pointsForPlace(scale, 1)).toBe(10)
+    expect(pointsForPlace(scale, 4)).toBe(5)
+    expect(pointsForPlace(scale, 5)).toBe(0)
+    expect(pointsForPlace(scale, 0)).toBe(0)
+  })
+  it('rejects nonsense scales', () => {
+    expect(parseScale('')).toBeNull()
+    expect(parseScale('10,eight')).toBeNull()
+    expect(parseScale('10,-2')).toBeNull()
+  })
+})

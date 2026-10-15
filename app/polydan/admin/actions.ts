@@ -10,6 +10,7 @@ import { computeStandings, type ResultKind } from '@/lib/polydan/standings'
 import { resolveMarket } from '@/lib/polydan/resolve'
 import { createMarket, type MarketSpec } from '@/lib/polydan/createMarket'
 import { formatMoney, parseDollarsToCents } from '@/lib/polydan/money'
+import { DEFAULT_COPPER_SCALE, parseScale, pointsForPlace } from '@/lib/polydan/copper'
 import type { ActionState } from '../actions'
 
 // Every admin action re-checks the session, runs, and reports back as an
@@ -379,26 +380,56 @@ export async function deleteEvent(_: ActionState, f: FormData) {
 
 // ------------------------------------------------------------ copper cup
 
-/** Saves one event's Copper Cup points: one "p_<competitorId>" field each; blank = none. */
+/**
+ * Saves one event's Copper Cup finishing places: one "place_<competitorId>"
+ * field each (blank = didn't place). Points come from the edition's scale.
+ */
 export async function saveCopperScores(_: ActionState, f: FormData) {
   return run(async () => {
     const event = await prisma.pdEvent.findUniqueOrThrow({ where: { id: int(f, 'eventId') } })
     if (!event.copperCup) throw new Error(`“${event.name}” isn't a Copper Cup event`)
     const edition = await prisma.pdEdition.findUniqueOrThrow({ where: { id: event.editionId } })
-    if (edition.copperFinal) throw new Error('The Copper Cup is finalised — reopen it to change points')
+    if (edition.copperFinal) throw new Error('The Copper Cup is finalised — reopen it to change places')
+    const scale = parseScale(edition.copperScale) ?? parseScale(DEFAULT_COPPER_SCALE)!
     const rows = [...f.entries()]
-      .filter(([k]) => k.startsWith('p_'))
-      .map(([k, v]) => ({ competitorId: Number(k.slice(2)), raw: String(v).trim() }))
-    for (const r of rows) if (r.raw && !Number.isFinite(Number(r.raw))) throw new Error(`“${r.raw}” isn't a number`)
+      .filter(([k, v]) => k.startsWith('place_') && String(v).trim())
+      .map(([k, v]) => ({ competitorId: Number(k.slice(6)), place: Number(String(v).trim()) }))
+    const bad = rows.find((r) => !Number.isInteger(r.place) || r.place < 1)
+    if (bad) throw new Error('Places must be whole numbers: 1, 2, 3…')
     await prisma.$transaction([
       prisma.pdCopperScore.deleteMany({ where: { eventId: event.id } }),
       prisma.pdCopperScore.createMany({
-        data: rows
-          .filter((r) => r.raw)
-          .map((r) => ({ eventId: event.id, competitorId: r.competitorId, points: Number(r.raw) })),
+        data: rows.map((r) => ({
+          eventId: event.id,
+          competitorId: r.competitorId,
+          place: r.place,
+          points: pointsForPlace(scale, r.place),
+        })),
       }),
     ])
-    return `Saved Copper Cup points for “${event.name}”`
+    return `Saved Copper Cup places for “${event.name}”`
+  })
+}
+
+/** Changes the points-per-place scale and re-scores every Copper Cup result. */
+export async function setCopperScale(_: ActionState, f: FormData) {
+  return run(async () => {
+    const editionId = int(f, 'editionId')
+    const scale = parseScale(str(f, 'scale'))
+    if (!scale) throw new Error('Enter points as numbers separated by commas, e.g. 10,8,6,5')
+    const edition = await prisma.pdEdition.findUniqueOrThrow({ where: { id: editionId } })
+    if (edition.copperFinal) throw new Error('The Copper Cup is finalised — reopen it to change the scale')
+    const scores = await prisma.pdCopperScore.findMany({ where: { event: { editionId }, place: { not: null } } })
+    await prisma.$transaction([
+      prisma.pdEdition.update({ where: { id: editionId }, data: { copperScale: scale.join(',') } }),
+      ...scores.map((sc) =>
+        prisma.pdCopperScore.update({
+          where: { eventId_competitorId: { eventId: sc.eventId, competitorId: sc.competitorId } },
+          data: { points: pointsForPlace(scale, sc.place!) },
+        }),
+      ),
+    ])
+    return `Points scale set to ${scale.join(' · ')}${scores.length ? ' — existing results re-scored' : ''}`
   })
 }
 

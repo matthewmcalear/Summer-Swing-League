@@ -346,7 +346,7 @@ export async function getPublicEvents(editionId: number, currentRound: number) {
 
 export async function getCopperTable(editionId: number) {
   const [edition, entries, events] = await Promise.all([
-    prisma.pdEdition.findUniqueOrThrow({ where: { id: editionId }, select: { copperFinal: true } }),
+    prisma.pdEdition.findUniqueOrThrow({ where: { id: editionId }, select: { copperFinal: true, copperScale: true } }),
     prisma.pdEditionEntry.findMany({ where: { editionId }, include: { competitor: true } }),
     prisma.pdEvent.findMany({
       where: { editionId, copperCup: true },
@@ -361,6 +361,7 @@ export async function getCopperTable(editionId: number) {
     .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name))
   return {
     final: edition.copperFinal,
+    scale: edition.copperScale,
     events: events.map((e) => ({
       id: e.id,
       seq: e.seq,
@@ -368,6 +369,10 @@ export async function getCopperTable(editionId: number) {
       revealed: e.revealed,
       scored: e.copper.length > 0,
       scores: Object.fromEntries(e.copper.map((s) => [s.competitorId, s.points])) as Record<number, number>,
+      places: Object.fromEntries(e.copper.filter((s) => s.place != null).map((s) => [s.competitorId, s.place!])) as Record<
+        number,
+        number
+      >,
     })),
     rows,
     anyPoints: totals.size > 0,
