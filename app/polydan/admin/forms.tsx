@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { headToHeadProbability, topNProbability, winnerProbabilities } from '@/lib/polydan/history'
 import { DEFAULT_LIQUIDITY, normaliseOdds, type MarketKindName } from '@/lib/polydan/marketDefaults'
 import { formatMoney, formatMultiple } from '@/lib/polydan/money'
-import { ActionForm, SubmitButton } from '@/components/polydan/ui'
+import { ActionForm, ConfirmSubmit, SubmitButton } from '@/components/polydan/ui'
 import {
   addMarket,
   adjustBalance,
@@ -20,6 +20,7 @@ import {
   settleOne,
   undoLastResult,
   voidOne,
+  deleteOne,
 } from './actions'
 
 interface Named {
@@ -56,36 +57,51 @@ export function ResultsForm({
   const [picks, setPicks] = useState<Record<number, string>>({})
   const chosen = Object.values(picks).filter(Boolean).length
   return (
-    <ActionForm action={recordResults} className="space-y-4" resetOnSuccess>
+    <ActionForm action={recordResults} className="space-y-4" resetOnSuccess onSuccess={() => setPicks({})}>
       <input type="hidden" name="editionId" value={editionId} />
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex flex-wrap items-center gap-2 text-sm font-medium">
         Round
         <input
           name="round"
           type="number"
+          inputMode="numeric"
           min={1}
           defaultValue={nextRound}
           key={nextRound}
-          className="pd-field w-20 py-1 pd-num"
+          className="pd-field pd-num w-20"
         />
-        {currentRound > 0 && <span className="text-xs text-pd-muted">(use {currentRound} to add to the last round)</span>}
+        {currentRound > 0 && (
+          <span className="text-xs font-normal text-pd-muted">use {currentRound} to add to the last round</span>
+        )}
       </label>
-      <ul className="grid gap-1.5 sm:grid-cols-2">
+      <ul className="grid gap-2 lg:grid-cols-2">
         {competitors.map((c) => (
-          <li key={c.id} className="flex items-center justify-between gap-2 rounded-lg border border-pd-line px-3 py-1.5">
-            <span className={`text-sm ${c.status === 'ISLAND' ? 'text-pd-island' : ''}`}>
+          <li key={c.id} className="rounded-lg border border-pd-line p-2.5">
+            <p className={`mb-2 font-medium ${c.status === 'ISLAND' ? 'text-pd-island' : ''}`}>
               {c.status === 'ISLAND' && '🏝 '}
               {c.name}
-            </span>
-            <span className="flex gap-0.5">
+              {c.status === 'ISLAND' && <span className="ml-1 text-xs font-normal">on Redemption Island</span>}
+            </p>
+            {/* Segmented control: large tap targets, the choice is unmistakable. */}
+            <div className="grid grid-cols-3 gap-1.5">
               {CHOICES[c.status as 'IN' | 'ISLAND'].map(([v, label]) => {
                 const on = (picks[c.id] ?? '') === v
+                const tone =
+                  v === 'OUT'
+                    ? on
+                      ? 'border-pd-no bg-pd-no text-white'
+                      : 'border-pd-no/50 text-pd-no'
+                    : v
+                      ? on
+                        ? 'border-pd-island bg-pd-island text-white'
+                        : 'border-pd-island/50 text-pd-island'
+                      : on
+                        ? 'border-pd-line-strong bg-pd-surface-2 text-pd-ink'
+                        : 'border-pd-line text-pd-muted'
                 return (
                   <label
                     key={v}
-                    className={`cursor-pointer rounded px-2 py-1 text-xs font-medium ${
-                      on ? (v === 'OUT' ? 'bg-pd-no text-white' : v ? 'bg-pd-island text-white' : 'bg-pd-surface-2') : 'text-pd-muted'
-                    }`}
+                    className={`flex min-h-10 cursor-pointer items-center justify-center rounded-md border-[1.5px] px-2 text-sm font-semibold ${tone}`}
                   >
                     <input
                       type="radio"
@@ -99,24 +115,31 @@ export function ResultsForm({
                   </label>
                 )
               })}
-            </span>
+            </div>
           </li>
         ))}
       </ul>
-      <SubmitButton disabled={!chosen} pendingText="Saving…">
-        Record {chosen || ''} result{chosen === 1 ? '' : 's'}
-      </SubmitButton>
+      <div className="sticky bottom-20 z-10 -mx-2 rounded-xl bg-pd-surface/95 p-2 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] backdrop-blur sm:static sm:mx-0 sm:bg-transparent sm:p-0 sm:shadow-none">
+        <SubmitButton className="pd-btn pd-btn-gold w-full sm:w-auto" disabled={!chosen} pendingText="Saving…">
+          {chosen ? `Record ${chosen} result${chosen === 1 ? '' : 's'} for round` : 'Pick who lost this round'}
+        </SubmitButton>
+      </div>
     </ActionForm>
   )
 }
 
 export function UndoForm({ editionId }: { editionId: number }) {
   return (
-    <ActionForm action={undoLastResult} confirm="Undo the most recent result?">
+    <ActionForm action={undoLastResult}>
       <input type="hidden" name="editionId" value={editionId} />
-      <SubmitButton className="text-xs text-pd-no hover:underline" pendingText="…">
+      <ConfirmSubmit
+        className="pd-btn pd-btn-danger pd-btn-sm"
+        question="Undo the most recent result?"
+        confirmLabel="Yes, undo"
+        pendingText="Undoing…"
+      >
         Undo last
-      </SubmitButton>
+      </ConfirmSubmit>
     </ActionForm>
   )
 }
@@ -360,51 +383,84 @@ export function NewMarketForm({
 
 export function MarketActions({
   market,
+  editionId,
 }: {
-  market: { id: number; kind: string; status: string; resolved: boolean; outcomes: { id: number; label: string }[] }
+  editionId: number
+  market: {
+    id: number
+    kind: string
+    status: string
+    resolved: boolean
+    hasBets: boolean
+    outcomes: { id: number; label: string }[]
+  }
 }) {
-  if (market.status === 'SETTLED' || market.status === 'VOID') return null
+  if (market.status === 'SETTLED') return null
   const id = <input type="hidden" name="marketId" value={market.id} />
+  const live = market.status !== 'VOID'
   return (
-    <div className="flex flex-wrap items-start gap-2">
-      {market.resolved && (
-        <ActionForm action={settleOne}>
+    <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-start">
+      {live && market.resolved && (
+        <ActionForm action={settleOne} className="col-span-2 sm:col-span-1">
           {id}
-          <SubmitButton className="pd-btn pd-btn-gold px-3 py-1 text-xs" pendingText="Paying…">
+          <SubmitButton className="pd-btn pd-btn-gold w-full" pendingText="Paying…">
             Settle & pay out
           </SubmitButton>
         </ActionForm>
       )}
-      {!market.resolved && (
+      {live && !market.resolved && (
         <ActionForm action={setMarketStatus}>
           {id}
           <input type="hidden" name="status" value={market.status === 'OPEN' ? 'CLOSED' : 'OPEN'} />
-          <SubmitButton className="pd-btn pd-btn-ghost px-3 py-1 text-xs" pendingText="…">
-            {market.status === 'OPEN' ? 'Pause trading' : 'Reopen'}
+          <SubmitButton className="pd-btn pd-btn-ghost w-full" pendingText="…">
+            {market.status === 'OPEN' ? 'Pause trading' : 'Reopen trading'}
           </SubmitButton>
         </ActionForm>
       )}
-      {market.kind === 'CUSTOM' && (
-        <ActionForm action={resolveCustom} className="flex items-center gap-1">
+      {live && market.kind === 'CUSTOM' && (
+        <ActionForm action={resolveCustom} className="col-span-2 flex gap-2 sm:col-span-1">
           {id}
-          <select name="outcomeId" className="pd-field w-auto py-1 text-xs" defaultValue="">
-            <option value="">No result</option>
+          <select name="outcomeId" className="pd-field min-w-0 flex-1 sm:w-auto" defaultValue="">
+            <option value="">No result yet</option>
             {market.outcomes.map((o) => (
               <option key={o.id} value={o.id}>
                 {o.label} wins
               </option>
             ))}
           </select>
-          <SubmitButton className="pd-btn pd-btn-ghost px-3 py-1 text-xs" pendingText="…">
+          <SubmitButton className="pd-btn pd-btn-ghost" pendingText="…">
             Set result
           </SubmitButton>
         </ActionForm>
       )}
-      <ActionForm action={voidOne} confirm="Void this market and refund everyone's stakes?">
+      {live && (
+        <ActionForm action={voidOne} className="contents sm:block">
+          {id}
+          <ConfirmSubmit
+            className="pd-btn pd-btn-danger w-full"
+            question="Void it and refund everyone's stakes? It stays listed as void."
+            confirmLabel="Yes, void"
+            pendingText="Voiding…"
+          >
+            Void
+          </ConfirmSubmit>
+        </ActionForm>
+      )}
+      <ActionForm action={deleteOne} className="contents sm:block">
         {id}
-        <SubmitButton className="pd-btn pd-btn-danger px-3 py-1 text-xs" pendingText="…">
-          Void
-        </SubmitButton>
+        <input type="hidden" name="editionId" value={editionId} />
+        <ConfirmSubmit
+          className="pd-btn pd-btn-danger w-full"
+          question={
+            live && market.hasBets
+              ? 'Delete it? Everyone who bet gets their stake back, then it disappears.'
+              : 'Delete this market for good?'
+          }
+          confirmLabel="Yes, delete"
+          pendingText="Deleting…"
+        >
+          Delete
+        </ConfirmSubmit>
       </ActionForm>
     </div>
   )
@@ -412,11 +468,18 @@ export function MarketActions({
 
 export function SettleAllForm({ editionId, disabled }: { editionId: number; disabled: boolean }) {
   return (
-    <ActionForm action={settleAll} confirm="Pay out every market that has a result?" className="flex items-center gap-3">
+    <ActionForm action={settleAll} className="w-full sm:w-auto">
       <input type="hidden" name="editionId" value={editionId} />
-      <SubmitButton pendingText="Paying out…" disabled={disabled}>
+      <ConfirmSubmit
+        className="pd-btn pd-btn-gold w-full sm:w-auto"
+        confirmClassName="pd-btn pd-btn-gold"
+        question="Pay out every market that has a result?"
+        confirmLabel="Yes, pay out"
+        pendingText="Paying out…"
+        disabled={disabled}
+      >
         Settle all decided
-      </SubmitButton>
+      </ConfirmSubmit>
     </ActionForm>
   )
 }
@@ -426,47 +489,53 @@ export function SettleAllForm({ editionId, disabled }: { editionId: number; disa
 export function CreateUserForm() {
   return (
     <ActionForm action={createUser} className="space-y-3" resetOnSuccess>
-      <label className="block text-sm">
+      <label className="block text-sm font-medium">
         Name
-        <input name="name" required className="pd-field mt-1" />
+        <input name="name" required autoComplete="off" className="pd-field mt-1" />
       </label>
-      <label className="block text-sm">
+      <label className="block text-sm font-medium">
         PIN (4–8 digits)
-        <input name="pin" required inputMode="numeric" pattern="\d{4,8}" className="pd-field mt-1 pd-num" />
+        <input name="pin" required inputMode="numeric" pattern="\d{4,8}" autoComplete="off" className="pd-field pd-num mt-1" />
       </label>
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="isAdmin" /> Admin
+        <input type="checkbox" name="isAdmin" className="size-4" /> Admin (can run PolyDan)
       </label>
-      <SubmitButton>Add player</SubmitButton>
+      <SubmitButton className="pd-btn pd-btn-gold w-full">Add player</SubmitButton>
     </ActionForm>
   )
 }
 
 export function BalanceForm({ userId }: { userId: number }) {
   return (
-    <ActionForm action={adjustBalance} className="flex flex-wrap items-center gap-1.5" resetOnSuccess>
+    <ActionForm action={adjustBalance} className="space-y-2" resetOnSuccess>
+      <p className="text-sm font-medium">Add or cash out money</p>
       <input type="hidden" name="userId" value={userId} />
-      <input name="amount" inputMode="decimal" placeholder="$" required className="pd-field w-20 py-1 text-sm pd-num" />
-      <input name="note" placeholder="Note (e-Transfer…)" className="pd-field w-36 py-1 text-sm" />
-      <select name="kind" className="pd-field w-auto py-1 text-sm" defaultValue="DEPOSIT">
-        <option value="DEPOSIT">Credit</option>
-        <option value="WITHDRAWAL">Cash out</option>
-      </select>
-      <SubmitButton className="pd-btn pd-btn-ghost px-3 py-1 text-xs" pendingText="…">
-        Apply
-      </SubmitButton>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-[7rem_9rem_1fr_auto]">
+        <input name="amount" inputMode="decimal" placeholder="$ amount" required className="pd-field pd-num" />
+        <select name="kind" className="pd-field" defaultValue="DEPOSIT">
+          <option value="DEPOSIT">Credit</option>
+          <option value="WITHDRAWAL">Cash out</option>
+        </select>
+        <input name="note" placeholder="Note (e.g. e-Transfer)" className="pd-field col-span-2 sm:col-span-1" />
+        <SubmitButton className="pd-btn pd-btn-gold col-span-2 sm:col-span-1" pendingText="Saving…">
+          Apply
+        </SubmitButton>
+      </div>
     </ActionForm>
   )
 }
 
 export function ResetPinForm({ userId }: { userId: number }) {
   return (
-    <ActionForm action={resetPin} className="flex items-center gap-1.5" resetOnSuccess>
+    <ActionForm action={resetPin} className="space-y-2" resetOnSuccess>
+      <p className="text-sm font-medium">Reset PIN</p>
       <input type="hidden" name="userId" value={userId} />
-      <input name="pin" placeholder="New PIN" inputMode="numeric" required className="pd-field w-24 py-1 text-sm pd-num" />
-      <SubmitButton className="pd-btn pd-btn-ghost px-3 py-1 text-xs" pendingText="…">
-        Reset
-      </SubmitButton>
+      <div className="flex gap-2">
+        <input name="pin" placeholder="New PIN" inputMode="numeric" required className="pd-field pd-num w-32" />
+        <SubmitButton className="pd-btn pd-btn-ghost" pendingText="…">
+          Reset PIN
+        </SubmitButton>
+      </div>
     </ActionForm>
   )
 }
@@ -476,31 +545,34 @@ export function ResetPinForm({ userId }: { userId: number }) {
 export function CreateEditionForm({ nextNumber }: { nextNumber: number }) {
   return (
     <ActionForm action={createEdition} className="space-y-3">
-      <label className="block text-sm">
+      <label className="block text-sm font-medium">
         Edition #
-        <input name="number" type="number" defaultValue={nextNumber} className="pd-field mt-1 pd-num" />
+        <input name="number" type="number" inputMode="numeric" defaultValue={nextNumber} className="pd-field pd-num mt-1" />
       </label>
-      <label className="block text-sm">
+      <label className="block text-sm font-medium">
         Date
         <input name="date" type="date" className="pd-field mt-1" />
       </label>
-      <SubmitButton>Create edition</SubmitButton>
+      <SubmitButton className="pd-btn pd-btn-gold w-full">Create edition</SubmitButton>
     </ActionForm>
   )
 }
 
 export function EditionStatusForm({ editionId, status }: { editionId: number; status: string }) {
   return (
-    <ActionForm action={setEditionStatus} className="flex items-center gap-1.5">
+    <ActionForm action={setEditionStatus} className="w-full space-y-1 sm:w-auto">
       <input type="hidden" name="editionId" value={editionId} />
-      <select name="status" defaultValue={status} className="pd-field w-auto py-1 text-sm">
-        <option value="SETUP">Coming up</option>
-        <option value="LIVE">Live</option>
-        <option value="FINISHED">Finished</option>
-      </select>
-      <SubmitButton className="pd-btn pd-btn-ghost px-3 py-1 text-xs" pendingText="…">
-        Set
-      </SubmitButton>
+      <span className="block text-sm font-medium">Status</span>
+      <div className="flex gap-2">
+        <select name="status" defaultValue={status} className="pd-field min-w-0 flex-1 sm:w-40 sm:flex-none">
+          <option value="SETUP">Coming up</option>
+          <option value="LIVE">Live</option>
+          <option value="FINISHED">Finished</option>
+        </select>
+        <SubmitButton className="pd-btn pd-btn-ghost" pendingText="…">
+          Save status
+        </SubmitButton>
+      </div>
     </ActionForm>
   )
 }
@@ -520,21 +592,27 @@ export function FieldForm({
   return (
     <ActionForm action={setField} className="space-y-3">
       <input type="hidden" name="editionId" value={editionId} />
-      {locked && <p className="text-sm text-pd-muted">The field is locked because markets or results exist.</p>}
-      <p className="text-sm text-pd-muted pd-num">{picked.size} selected</p>
-      <fieldset disabled={locked} className="grid grid-cols-2 gap-1 sm:grid-cols-3">
+      {locked ? (
+        <p className="rounded-lg bg-pd-surface-2 p-3 text-sm">
+          🔒 The field is locked because markets or results exist for this edition.
+        </p>
+      ) : (
+        <p className="text-sm text-pd-muted">Tick everyone competing, then save.</p>
+      )}
+      <fieldset disabled={locked} className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
         {competitors.map((c) => (
           <label
             key={c.id}
-            className={`flex cursor-pointer items-center gap-2 rounded-md border px-2 py-1 text-sm ${
-              picked.has(c.id) ? 'border-pd-gold bg-pd-surface-2' : 'border-pd-line'
-            }`}
+            className={`flex min-h-10 cursor-pointer items-center gap-2 rounded-md border-[1.5px] px-2.5 text-sm ${
+              picked.has(c.id) ? 'border-pd-gold bg-pd-surface-2 font-medium' : 'border-pd-line'
+            } ${locked ? 'cursor-default opacity-70' : ''}`}
           >
             <input
               type="checkbox"
               name="competitorId"
               value={c.id}
               checked={picked.has(c.id)}
+              className="size-4 accent-[var(--pd-gold)]"
               onChange={(e) => {
                 const next = new Set(picked)
                 if (e.target.checked) next.add(c.id)
@@ -548,11 +626,15 @@ export function FieldForm({
       </fieldset>
       {!locked && (
         <>
-          <label className="block text-sm">
+          <label className="block text-sm font-medium">
             New competitors (comma or one per line)
             <textarea name="newNames" rows={2} className="pd-field mt-1" />
           </label>
-          <SubmitButton>Save field</SubmitButton>
+          <div className="sticky bottom-20 z-10 -mx-2 rounded-xl bg-pd-surface/95 p-2 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] backdrop-blur sm:static sm:mx-0 sm:bg-transparent sm:p-0 sm:shadow-none">
+            <SubmitButton className="pd-btn pd-btn-gold w-full sm:w-auto" pendingText="Saving…">
+              Save field ({picked.size} selected)
+            </SubmitButton>
+          </div>
         </>
       )}
     </ActionForm>

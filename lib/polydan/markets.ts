@@ -211,3 +211,32 @@ export async function voidMarket(marketId: number): Promise<void> {
     await tx.pdMarket.update({ where: { id: marketId }, data: { status: 'VOID', settledAt: new Date() } })
   })
 }
+
+/**
+ * Removes a market entirely (e.g. opened by accident). If it's still live,
+ * everyone gets back exactly what they put in first. Paid-out markets can't be
+ * deleted: their payouts are part of people's balances.
+ */
+export async function deleteMarket(marketId: number): Promise<{ question: string; refundedCents: number }> {
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "polydan_markets" WHERE id = ${marketId} FOR UPDATE`
+    const market = await tx.pdMarket.findUniqueOrThrow({ where: { id: marketId } })
+    if (market.status === 'SETTLED') throw new TradeError("This market has paid out, so it can't be deleted")
+    let refundedCents = 0
+    if (market.status !== 'VOID') {
+      const net = await tx.pdTrade.groupBy({ by: ['userId'], where: { marketId }, _sum: { costCents: true } })
+      for (const row of net) {
+        const cents = row._sum.costCents ?? 0
+        if (cents === 0) continue
+        refundedCents += cents
+        await tx.pdLedgerEntry.create({
+          data: { userId: row.userId, kind: 'REFUND', amountCents: cents, note: `Refund: deleted “${market.question}”` },
+        })
+      }
+    }
+    // Keep everyone's money history; just detach it from the market being removed.
+    await tx.pdLedgerEntry.updateMany({ where: { marketId }, data: { marketId: null } })
+    await tx.pdMarket.delete({ where: { id: marketId } }) // outcomes, positions, trades cascade
+    return { question: market.question, refundedCents }
+  })
+}

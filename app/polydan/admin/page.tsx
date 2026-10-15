@@ -22,10 +22,10 @@ import {
 } from './forms'
 
 const TABS = [
-  { key: 'setup', label: 'Setup' },
-  { key: 'players', label: 'Players & money' },
-  { key: 'markets', label: 'Markets' },
-  { key: 'results', label: 'Results' },
+  { key: 'setup', label: 'Setup', short: 'Setup' },
+  { key: 'players', label: 'Players & money', short: 'Players' },
+  { key: 'markets', label: 'Markets', short: 'Markets' },
+  { key: 'results', label: 'Results', short: 'Results' },
 ] as const
 type Tab = (typeof TABS)[number]['key']
 
@@ -71,16 +71,19 @@ async function AdminPageContent({ searchParams }: PageProps<'/polydan/admin'>) {
         )}
       </header>
 
-      <nav className="flex gap-1 overflow-x-auto border-b border-pd-line text-sm">
+      {/* Segmented tabs: four equal buttons on phones, a tab row on wider screens. */}
+      <nav className="grid grid-cols-4 gap-1 rounded-xl bg-pd-surface-2 p-1 text-sm sm:flex sm:w-fit">
         {TABS.map((t) => (
           <Link
             key={t.key}
             href={href(t.key)}
-            className={`-mb-px whitespace-nowrap border-b-2 px-3 py-2 font-medium ${
-              tab === t.key ? 'border-pd-gold text-pd-ink' : 'border-transparent text-pd-muted hover:text-pd-ink'
+            aria-current={tab === t.key ? 'page' : undefined}
+            className={`flex min-h-10 items-center justify-center rounded-lg px-2 font-semibold sm:px-4 ${
+              tab === t.key ? 'bg-pd-surface text-pd-ink shadow-sm ring-1 ring-pd-line-strong' : 'text-pd-muted hover:text-pd-ink'
             }`}
           >
-            {t.label}
+            <span className="sm:hidden">{t.short}</span>
+            <span className="hidden sm:inline">{t.label}</span>
           </Link>
         ))}
       </nav>
@@ -96,7 +99,7 @@ async function AdminPageContent({ searchParams }: PageProps<'/polydan/admin'>) {
       ) : tab === 'results' ? (
         <ResultsTab editionId={editionId} />
       ) : (
-        <MarketsTab editionId={editionId} />
+        <MarketsTab editionId={editionId} done={typeof sp.done === 'string' ? sp.done : undefined} />
       )}
     </div>
   )
@@ -176,7 +179,7 @@ async function ResultsTab({ editionId }: { editionId: number }) {
 
 // ------------------------------------------------------------------ markets
 
-async function MarketsTab({ editionId }: { editionId: number }) {
+async function MarketsTab({ editionId, done }: { editionId: number; done?: string }) {
   const { field, markets } = await getEditionBoard(editionId)
   const [ledger, trades] = await Promise.all([
     prisma.pdLedgerEntry.groupBy({
@@ -204,8 +207,13 @@ async function MarketsTab({ editionId }: { editionId: number }) {
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
       <section className="space-y-3">
-        <div className={`pd-card flex flex-wrap items-center gap-3 p-4 ${decided.length ? 'border-pd-gold' : ''}`}>
-          <p className="flex-1 text-sm">
+        {done && (
+          <p role="status" className="rounded-lg border border-pd-yes bg-pd-yes-soft p-3 text-sm font-medium text-pd-yes">
+            ✓ {done.slice(0, 200)}
+          </p>
+        )}
+        <div className={`pd-card flex flex-wrap items-center gap-3 p-4 ${decided.length ? 'border-pd-gold ring-1 ring-pd-gold' : ''}`}>
+          <p className="min-w-48 flex-1 text-sm">
             {decided.length ? (
               <>
                 <span className="font-semibold">{decided.length}</span> market{decided.length > 1 ? 's have' : ' has'} a
@@ -233,11 +241,13 @@ async function MarketsTab({ editionId }: { editionId: number }) {
                 {m.outcomes.length === 2 && !m.resolved && ` · ${m.outcomes[0].label} ${formatPct(m.outcomes[0].price)}`}
               </p>
               <MarketActions
+                editionId={editionId}
                 market={{
                   id: m.id,
                   kind: m.kind,
                   status: m.status,
                   resolved: m.resolved,
+                  hasBets: trades.some((t) => t.marketId === m.id),
                   outcomes: m.outcomes.map((o) => ({ id: o.id, label: o.label })),
                 }}
               />
@@ -286,21 +296,57 @@ async function PlayersTab() {
         <div className="pd-card divide-y divide-pd-line">
           {players.map((u) => (
             <details key={u.id} className="group" open={u.bets.length > 0}>
-              <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 hover:bg-pd-surface-2/60">
-                <span className="w-4 text-pd-muted group-open:rotate-90">▸</span>
-                <span className="min-w-28 font-semibold">
-                  {u.name} {u.isAdmin && <span className="text-xs font-normal text-pd-gold">admin</span>}
-                </span>
-                <Stat label="Cash" value={formatMoney(u.balance)} strong />
-                <Stat label="Live bets" value={`${formatMoney(u.open)} · ${u.bets.filter((b) => !b.dead).length}`} />
-                <Stat label="Put in" value={formatMoney(u.invested)} />
-                <span className={`ml-auto text-sm font-semibold pd-num ${u.pnl > 0 ? 'text-pd-yes' : u.pnl < 0 ? 'text-pd-no' : 'text-pd-muted'}`}>
-                  {formatMoney(u.pnl, { sign: true })}
-                </span>
+              <summary className="cursor-pointer list-none px-4 py-3 hover:bg-pd-surface-2/60 [&::-webkit-details-marker]:hidden">
+                <div className="flex items-center gap-2">
+                  <span className="w-4 text-pd-muted transition group-open:rotate-90">▸</span>
+                  <span className="font-semibold">{u.name}</span>
+                  {u.isAdmin && <span className="text-xs text-pd-gold">admin</span>}
+                  <span
+                    className={`ml-auto text-sm font-semibold pd-num ${u.pnl > 0 ? 'text-pd-yes' : u.pnl < 0 ? 'text-pd-no' : 'text-pd-muted'}`}
+                  >
+                    {formatMoney(u.pnl, { sign: true })}
+                  </span>
+                </div>
+                <div className="mt-1.5 grid grid-cols-3 gap-2 pl-6 sm:flex sm:gap-6">
+                  <Stat label="Cash" value={formatMoney(u.balance)} strong />
+                  <Stat label="Live bets" value={`${formatMoney(u.open)} · ${u.bets.filter((b) => !b.dead).length}`} />
+                  <Stat label="Put in" value={formatMoney(u.invested)} />
+                </div>
               </summary>
-              <div className="space-y-3 px-4 pb-4 pl-12">
+              <div className="space-y-4 px-4 pb-4 sm:pl-10">
+                {u.bets.length > 0 && (
+                  <ul className="space-y-2 sm:hidden">
+                    {u.bets.map((b) => (
+                      <li key={b.outcomeId} className="rounded-lg border border-pd-line p-3 text-sm">
+                        <Link href={`/polydan/market?id=${b.market.id}`} className="block">
+                          <span className="font-semibold">{b.label}</span>
+                          {b.dead ? (
+                            <span className="ml-1.5 text-xs font-semibold text-pd-no">lost</span>
+                          ) : (
+                            b.market.resolved && <span className="ml-1.5 text-xs font-semibold text-pd-gold">won · awaiting payout</span>
+                          )}
+                          <span className="block text-xs text-pd-muted">{b.market.question}</span>
+                        </Link>
+                        <dl className="mt-2 grid grid-cols-3 gap-2 text-xs pd-num">
+                          <div>
+                            <dt className="text-pd-muted">Staked</dt>
+                            <dd className="font-semibold">{formatMoney(b.costCents)}</dd>
+                          </div>
+                          <div>
+                            <dt className="text-pd-muted">Worth now</dt>
+                            <dd className="font-semibold">{formatMoney(b.valueCents)}</dd>
+                          </div>
+                          <div>
+                            <dt className="text-pd-muted">Pays if right</dt>
+                            <dd className="font-semibold">{b.dead ? '—' : formatMoney(Math.floor(b.shares * 100))}</dd>
+                          </div>
+                        </dl>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 {u.bets.length > 0 ? (
-                  <table className="w-full text-sm">
+                  <table className="hidden w-full text-sm sm:table">
                     <thead>
                       <tr className="text-left text-xs text-pd-muted">
                         <th className="py-1 font-normal">Bet</th>
@@ -337,7 +383,7 @@ async function PlayersTab() {
                 ) : (
                   <p className="text-sm text-pd-muted">No live bets.</p>
                 )}
-                <div className="flex flex-wrap gap-3">
+                <div className="space-y-4 rounded-lg bg-pd-surface-2/60 p-3">
                   <BalanceForm userId={u.id} />
                   <ResetPinForm userId={u.id} />
                 </div>
@@ -346,7 +392,7 @@ async function PlayersTab() {
           ))}
         </div>
       </section>
-      <aside className="pd-card h-fit p-4">
+      <aside className="pd-card order-first h-fit p-4 lg:order-none">
         <h2 className="mb-3 font-semibold">Add a player</h2>
         <CreateUserForm />
       </aside>
@@ -357,7 +403,7 @@ async function PlayersTab() {
 function Stat({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
     <span className="text-sm">
-      <span className="text-xs text-pd-muted">{label} </span>
+      <span className="block text-xs text-pd-muted sm:inline">{label} </span>
       <span className={`pd-num ${strong ? 'font-semibold' : ''}`}>{value}</span>
     </span>
   )
@@ -380,10 +426,11 @@ async function EditionTab({ editionId }: { editionId?: number }) {
     <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
       {edition ? (
         <section className="pd-card space-y-4 p-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="font-semibold">Iron Man {edition.number} field</h2>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <h2 className="font-pd-display text-xl font-semibold uppercase tracking-wide">Iron Man {edition.number}</h2>
             <EditionStatusForm editionId={edition.id} status={edition.status} />
           </div>
+          <h3 className="font-semibold">Field</h3>
           <FieldForm
             editionId={edition.id}
             competitors={competitors}

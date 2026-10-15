@@ -5,7 +5,7 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { prisma } from '../prisma'
-import { balanceCents, executeTrade, settleMarket, TradeError, voidMarket } from './markets'
+import { balanceCents, deleteMarket, executeTrade, settleMarket, TradeError, voidMarket } from './markets'
 import { createMarket } from './createMarket'
 
 if (!process.env.DATABASE_URL?.includes('polydan_test')) throw new Error('Refusing to run against a non-test database')
@@ -134,5 +134,21 @@ describe('money flow', () => {
     const b0 = await balanceCents(prisma, users.Ben)
     await settleMarket(h.id)
     expect(await balanceCents(prisma, users.Ben)).toBe(b0 + Math.floor(tj.shares * 0.5 * 100 + 1e-6))
+  })
+
+  it('delete refunds live stakes and refuses paid-out markets', async () => {
+    const m = await createMarket(editionId, { kind: 'CUSTOM', question: 'Oops?', options: ['Yes', 'No'] })
+    const yes = await outcomeFor(m.id, 'Yes')
+    await prisma.pdLedgerEntry.create({ data: { userId: users.Cat, kind: 'DEPOSIT', amountCents: 1000 } })
+    const before = await balanceCents(prisma, users.Cat)
+    await executeTrade({ side: 'BUY', userId: users.Cat, outcomeId: yes, spendCents: 400 })
+    const r = await deleteMarket(m.id)
+    expect(r.refundedCents).toBe(400)
+    expect(await balanceCents(prisma, users.Cat)).toBe(before)
+    expect(await prisma.pdMarket.findUnique({ where: { id: m.id } })).toBeNull()
+    expect(await prisma.pdTrade.count({ where: { marketId: m.id } })).toBe(0)
+
+    const paid = await prisma.pdMarket.findFirstOrThrow({ where: { status: 'SETTLED' } })
+    await expect(deleteMarket(paid.id)).rejects.toThrow(/paid out/)
   })
 })

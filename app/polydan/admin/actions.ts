@@ -1,10 +1,11 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { hashPin, requireAdmin } from '@/lib/polydan/auth'
-import { loadStandings, priceMarket, settleMarket, voidMarket, TradeError } from '@/lib/polydan/markets'
+import { deleteMarket, loadStandings, priceMarket, settleMarket, voidMarket, TradeError } from '@/lib/polydan/markets'
 import { computeStandings, type ResultKind } from '@/lib/polydan/standings'
 import { resolveMarket } from '@/lib/polydan/resolve'
 import { createMarket, type MarketSpec } from '@/lib/polydan/createMarket'
@@ -260,4 +261,22 @@ export async function voidOne(_: ActionState, f: FormData) {
     await voidMarket(int(f, 'marketId'))
     return 'Voided — everyone got their stake back'
   })
+}
+
+// The deleted market's card (where an inline message would show) disappears,
+// so report back through a banner at the top of the Markets tab instead.
+export async function deleteOne(_: ActionState, f: FormData): Promise<ActionState> {
+  await requireAdmin()
+  let message: string
+  try {
+    const r = await deleteMarket(int(f, 'marketId'))
+    message = r.refundedCents
+      ? `Deleted “${r.question}” and refunded ${formatMoney(r.refundedCents)} to the people who bet`
+      : `Deleted “${r.question}”`
+  } catch (e) {
+    if (e instanceof Error) return { error: e.message }
+    throw e
+  }
+  revalidatePath('/polydan', 'layout')
+  redirect(`/polydan/admin?tab=markets&edition=${int(f, 'editionId')}&done=${encodeURIComponent(message)}`)
 }
