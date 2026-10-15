@@ -7,10 +7,11 @@ import { balanceCents } from '@/lib/polydan/markets'
 import { prisma } from '@/lib/prisma'
 import { formatMoney } from '@/lib/polydan/money'
 import { NavLinks } from '@/components/polydan/NavLinks'
+import { AccountMenu } from '@/components/polydan/AccountMenu'
 
 // PolyDan: the family's Iron Man prediction market, living inside the SSL site.
 // It has its own look and login; the league's nav and footer are hidden here
-// (see components/NavBar, BottomNav and SiteFooter).
+// (see components/NavBar, BottomNav and HideOnPolydan).
 
 const oswald = Oswald({ subsets: ['latin'], variable: '--font-pd-oswald', weight: ['400', '500', '600', '700'] })
 
@@ -33,13 +34,7 @@ async function Header() {
             <span className="hidden text-xs text-pd-muted sm:inline">Iron Man markets</span>
           </Link>
           <NavLinks isAdmin={user.isAdmin} />
-          <Link
-            href="/polydan/portfolio"
-            className="pd-num ml-auto rounded-full border border-pd-line-strong px-3 py-1 text-sm font-semibold"
-            title="Your balance"
-          >
-            {formatMoney(balance)}
-          </Link>
+          <AccountMenu name={user.name} balance={formatMoney(balance)} />
         </div>
       </header>
       <NavLinks isAdmin={user.isAdmin} mobile />

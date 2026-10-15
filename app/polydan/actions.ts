@@ -43,6 +43,29 @@ export async function setupAdmin(_: ActionState, form: FormData): Promise<Action
   redirect('/polydan/admin')
 }
 
+/**
+ * Open sign-up: anyone with the link can join and bet. Accounts start at $0
+ * (Matt credits money after being paid), so an account on its own has no
+ * value to abuse. Names are unique ignoring case, so nobody can register as
+ * "matt" to pass themselves off as Matt.
+ */
+export async function signup(_: ActionState, form: FormData): Promise<ActionState> {
+  if (String(form.get('website') ?? '')) return { error: 'Something went wrong — try again' } // bot trap
+  const name = String(form.get('name') ?? '').trim().replace(/\s+/g, ' ')
+  const pin = String(form.get('pin') ?? '').trim()
+  const confirm = String(form.get('confirm') ?? '').trim()
+  if (name.length < 2 || name.length > 24) return { error: 'Name must be 2–24 characters' }
+  if (!/^[\p{L}\p{N}][\p{L}\p{N} .'-]*$/u.test(name)) return { error: 'Use letters, numbers, spaces, . \' or -' }
+  if (!/^\d{4,8}$/.test(pin)) return { error: 'PIN must be 4–8 digits' }
+  if (pin !== confirm) return { error: "The two PINs don't match" }
+  if ((await prisma.pdUser.count()) === 0) return { error: 'PolyDan isn’t set up yet' }
+  const taken = await prisma.pdUser.findFirst({ where: { name: { equals: name, mode: 'insensitive' } } })
+  if (taken) return { error: `“${taken.name}” is taken — add a last initial, e.g. “${name} M”` }
+  const user = await prisma.pdUser.create({ data: { name, pinHash: hashPin(pin) } })
+  await startSession(user.id)
+  redirect('/polydan?welcome=1')
+}
+
 export async function logout() {
   await endSession()
   redirect('/polydan/login')

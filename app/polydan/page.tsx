@@ -11,11 +11,27 @@ const STATUS_TEXT = { SETUP: 'Coming up', LIVE: 'Live now', FINISHED: 'Finished'
 
 // Sync shell + boundary (the SSL pattern for Cache Components): the page itself
 // touches no request data, so navigation can show the placeholder instantly.
-export default function Home() {
+export default function Home(props: PageProps<'/polydan'>) {
   return (
     <Suspense fallback={<Loading />}>
+      <Welcome {...props} />
       <HomeContent />
     </Suspense>
+  )
+}
+
+/** Shown once, right after someone creates their own account. */
+async function Welcome({ searchParams }: PageProps<'/polydan'>) {
+  if ((await searchParams).welcome == null) return null
+  const user = await requireUser()
+  return (
+    <div className="mb-5 rounded-xl border border-pd-gold bg-pd-surface p-4 text-sm">
+      <p className="font-semibold">Welcome to PolyDan, {user.name}! 🎉</p>
+      <p className="mt-1 text-pd-muted">
+        Your account starts at $0. Send Matt money (e.g. an e-Transfer) and he&apos;ll add it to your balance — then
+        pick a market below and place your bets.
+      </p>
+    </div>
   )
 }
 
