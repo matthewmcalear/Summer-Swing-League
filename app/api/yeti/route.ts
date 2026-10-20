@@ -1,18 +1,23 @@
 import { NextResponse, connection } from 'next/server'
+import { APP_VERSION } from '@/lib/yeti/model'
 import { readBoard, saveBoard } from '@/lib/yeti/store'
 import { sanitizeBoard } from '@/lib/yeti/validate'
 
 // The shared lineup board behind /yeti.
 //
-//   GET  /api/yeti?v=12  → { version, updatedAt } when nothing changed since v12,
-//                          otherwise { version, updatedAt, board }
-//   PUT  /api/yeti        { baseVersion, board } → 200 saved | 409 someone saved
+//   GET  /api/yeti?v=12  → { version, updatedAt, app } when nothing changed since v12,
+//                          otherwise { version, updatedAt, app, board }
+//   PUT  /api/yeti        { baseVersion, board, app } → 200 saved | 409 someone saved
 //                          first (body has the newer board to rebase onto)
+//
+// `app` is the page-code version (APP_VERSION). Pages send theirs so an older
+// page's save can't wipe fields it doesn't know about; the server sends its own
+// so an older page can tell it should reload.
 
 const MAX_BODY = 256 * 1024
 
-const json = (body: unknown, status = 200) =>
-  NextResponse.json(body, { status, headers: { 'Cache-Control': 'no-store' } })
+const json = (body: Record<string, unknown>, status = 200) =>
+  NextResponse.json({ ...body, app: APP_VERSION }, { status, headers: { 'Cache-Control': 'no-store' } })
 
 export async function GET(request: Request) {
   await connection() // request-time only: never prerendered at build
@@ -32,7 +37,7 @@ export async function PUT(request: Request) {
   const text = await request.text()
   if (text.length > MAX_BODY) return json({ error: 'Board too large' }, 413)
 
-  let body: { baseVersion?: unknown; board?: unknown }
+  let body: { baseVersion?: unknown; board?: unknown; app?: unknown }
   try {
     body = JSON.parse(text)
   } catch {
@@ -46,7 +51,8 @@ export async function PUT(request: Request) {
   if (!board) return json({ error: 'Not a valid board' }, 400)
 
   try {
-    const result = await saveBoard(board, baseVersion)
+    const app = typeof body?.app === 'number' && Number.isInteger(body.app) ? body.app : undefined
+    const result = await saveBoard(board, baseVersion, app)
     const { ok, ...stored } = result
     return json(stored, ok ? 200 : 409)
   } catch (err) {

@@ -116,7 +116,19 @@ export function sanitizeGame(raw: unknown, playerIds: ReadonlySet<string>): Game
     dPairs,
     attendance,
     slots,
+    beer: cleanBeer(raw.beer, playerIds),
   }
+}
+
+/** Known players only, each once, at most LIMITS.beer. */
+export function cleanBeer(raw: unknown, playerIds: ReadonlySet<string>): string[] {
+  if (!Array.isArray(raw)) return []
+  const out: string[] = []
+  for (const id of raw) {
+    if (typeof id === 'string' && playerIds.has(id) && !out.includes(id)) out.push(id)
+    if (out.length >= LIMITS.beer) break
+  }
+  return out
 }
 
 export function sanitizeBoard(raw: unknown): Board | null {

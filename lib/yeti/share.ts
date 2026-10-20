@@ -1,3 +1,4 @@
+import { BEER, beerNames } from './beer'
 import { attendanceOf, formatGameDate, gameWhere, opponentLabel, type Board, type Game } from './model'
 import { analyzeGame, type LineInfo } from './insights'
 
@@ -12,18 +13,23 @@ import { analyzeGame, type LineInfo } from './insights'
  *   D2  Max – X
  *   G   Euan
  *   Out: Dan
+ *   🍺 Beer: Max
  *
- * Unconfirmed players get a "?" after their name.
+ * Unconfirmed players get a "?" after their name; whoever's bringing beer
+ * gets a 🍺. No skill levels — this goes to the whole team.
  */
 export function lineupText(board: Board, game: Game): string {
   const info = analyzeGame(board, game)
   const name = (s: LineInfo['slots'][number]) =>
-    s.player ? `${s.player.name}${attendanceOf(game, s.player.id) === 'maybe' ? '?' : ''}` : '___'
+    s.player
+      ? `${s.player.name}${attendanceOf(game, s.player.id) === 'maybe' ? '?' : ''}${game.beer.includes(s.player.id) ? ` ${BEER}` : ''}`
+      : '___'
   const row = (l: LineInfo) => `${l.label.padEnd(3)} ${l.slots.map(name).join(' – ')}`
 
   const where = gameWhere(game).replace(' · ', ' ')
   const title = ['Yeti lines', formatGameDate(game.date), where, opponentLabel(game)].filter(Boolean).join(' · ')
   const lines = [title, ...info.forwards.map(row), ...info.defence.map(row), `G   ${name(info.goalie.slots[0])}`]
   if (info.out.length) lines.push(`Out: ${info.out.map((p) => p.name).join(', ')}`)
+  if (info.beer.length) lines.push(`${BEER} Beer: ${beerNames(info.beer)}`)
   return lines.join('\n')
 }

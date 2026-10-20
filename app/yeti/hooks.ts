@@ -12,6 +12,8 @@ const EMPTY: SyncState = {
   canUndo: false,
   remoteChanges: 0,
   error: null,
+  pending: 0,
+  updateAvailable: false,
 }
 
 function safeStorage(): Storage | null {
@@ -33,7 +35,17 @@ export function useBoardSync() {
   useEffect(() => {
     if (!sync) return
     sync.start()
-    const onVisibility = () => sync.setVisible(document.visibilityState === 'visible')
+    const onVisibility = () => {
+      const visible = document.visibilityState === 'visible'
+      // Coming back to a page that's older than the site: quietly load the new
+      // one, as long as nothing is waiting to be saved.
+      const snap = sync.getSnapshot()
+      if (visible && snap.updateAvailable && snap.pending === 0) {
+        window.location.reload()
+        return
+      }
+      sync.setVisible(visible)
+    }
     const onOnline = () => void sync.refresh()
     document.addEventListener('visibilitychange', onVisibility)
     window.addEventListener('online', onOnline)

@@ -55,6 +55,8 @@ export interface Game {
   attendance: Record<string, Attendance>
   /** Slot id (see slotsFor) → player id. Empty slots are simply absent. */
   slots: Record<string, string>
+  /** Who's bringing the beer to this game (usually one player, on a rotation). */
+  beer: string[]
 }
 
 export interface Board {
@@ -75,7 +77,18 @@ export const LIMITS = {
   rinkLength: 24,
   fLines: { min: 2, max: 4, default: 3 },
   dPairs: { min: 2, max: 3, default: 2 },
+  beer: 4,
 } as const
+
+/**
+ * Version of the page code. Pages send it with every save so the server can
+ * tell a phone still running an older page — one that doesn't know about newer
+ * fields and so drops them — and keep those fields (see carryOverForOldPage in
+ * merge.ts). Bump it whenever the board gains a field.
+ *   1–2: no version sent (lines, roster, games; then time/rink/home)
+ *   3:   beer
+ */
+export const APP_VERSION = 3
 
 /** The other five Westmount teams, offered as quick picks for the opponent. */
 export const OPPONENTS = ['Kings', 'Hawks', 'Devils', 'Lightning', 'Coyotes'] as const
@@ -278,6 +291,7 @@ export function sheetSeed(): Board {
           'D2-LD': 'max', 'D2-RD': 'x',
           G: 'euan',
         },
+        beer: [],
       },
     ],
   }

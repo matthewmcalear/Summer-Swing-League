@@ -65,6 +65,7 @@ export default function YetiHelpPage() {
           <a href="#strength">Line strength</a>
           <a href="#warnings">Warnings</a>
           <a href="#tools">Auto lines &amp; sharing</a>
+          <a href="#beer">Beer 🍺</a>
           <a href="#roster">Roster</a>
           <a href="#games">Games</a>
           <a href="#privacy">Who sees what</a>
@@ -221,18 +222,40 @@ export default function YetiHelpPage() {
               <Users size={15} aria-hidden="true" /> Team sheet
             </dt>
             <dd>
-              The lines with just names and numbers — no skill levels, colors, strength or warnings — sized to fit one phone screen. Take a screenshot and post it in the team
-              WhatsApp. Tap the ✕ to go back.
+              The lines with just names and numbers — no skill levels, colors, strength or warnings — sized to fit one phone screen, with 🍺 by whoever’s bringing beer.
+              Take a screenshot and post it in the team WhatsApp. Tap the ✕ to go back.
             </dd>
             <dt>
               <Share2 size={15} aria-hidden="true" /> Share text
             </dt>
-            <dd>The same lines as plain text (also no skill levels), to copy or send.</dd>
+            <dd>The same lines as plain text (also no skill levels, and with the 🍺), to copy or send.</dd>
             <dt>3F · 2D</dt>
             <dd>How many forward lines (2–4) and D pairs (2–3) this game has. Removing a line sends its players to the bench.</dd>
             <dt>New game with no lines</dt>
             <dd>A card offers to copy the last game’s lines (anyone marked out is left off) or build them with Auto lines.</dd>
           </dl>
+        </section>
+
+        <section id="beer">
+          <h2>Beer 🍺</h2>
+          <ul>
+            <li>
+              Under the game details on the Lines tab is the beer line: <b>“Max is bringing beer”</b>, or <b>“Who’s bringing beer?”</b> with whose turn it is. Tap it to
+              choose.
+            </li>
+            <li>
+              The list is in <b>rotation order</b>: fewest beer turns this season first, then confirmed players ahead of unconfirmed ones, then whoever has gone longest
+              since his last turn. Anyone marked out for the game goes to the bottom. Each name shows his turns so far, his last turn and any turn already booked.
+            </li>
+            <li>
+              <b>“Max’s turn”</b> puts the next player in the rotation on beer in one tap. Or tap names to add or remove — usually one person, but up to four.
+            </li>
+            <li>
+              Whoever’s on beer gets a 🍺 on his card, in the Roster, in the Games list, on the Team sheet and in the share text. You can also switch it in his player
+              sheet (Roster → tap him).
+            </li>
+            <li>Beer never copies to the next game — the rotation moves on. If someone on beer is marked out, a note says so, so you can hand it to someone else.</li>
+          </ul>
         </section>
 
         <section id="roster">

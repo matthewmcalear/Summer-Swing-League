@@ -57,6 +57,8 @@ export interface GameInsights {
   counts: { in: number; maybe: number; out: number; slots: number; filled: number; open: number }
   /** Gap between the strongest and weakest line's average (null if fewer than two lines have players). */
   spread: { F: number | null; D: number | null }
+  /** Who's bringing beer to this game. */
+  beer: Player[]
   warnings: Warning[]
 }
 
@@ -190,5 +192,12 @@ export function analyzeGame(board: Board, game: Game): GameInsights {
     })
   }
 
-  return { forwards, defence, goalie, bench, out, placed, counts, spread, warnings }
+  const beer = game.beer.flatMap((id) => byId.get(id) ?? [])
+  for (const p of beer) {
+    if (attendanceOf(game, p.id) === 'out') {
+      warnings.push({ id: `beer-out-${p.id}`, level: 'note', text: `${p.name} is on beer but marked out`, player: p.id })
+    }
+  }
+
+  return { forwards, defence, goalie, bench, out, placed, counts, spread, beer, warnings }
 }

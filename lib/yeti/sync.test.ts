@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { applyAll } from './actions'
-import { attendanceOf, sheetSeed, type Board } from './model'
+import { APP_VERSION, attendanceOf, sheetSeed, type Board } from './model'
 import { BoardSync } from './sync'
 import { sanitizeBoard } from './validate'
 
@@ -15,10 +15,13 @@ class FakeServer {
   puts = 0
   conflicts = 0
   offline = false
+  /** Page version the server reports; undefined = an older server that doesn't send one. */
+  app: number | undefined = undefined
+  lastPutApp: unknown = undefined
 
   fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     if (this.offline) throw new TypeError('Failed to fetch')
-    const reply = (status: number, body: unknown) => new Response(JSON.stringify(body), { status })
+    const reply = (status: number, body: object) => new Response(JSON.stringify({ ...body, ...(this.app ? { app: this.app } : {}) }), { status })
     if (!init?.method || init.method === 'GET') {
       const v = Number(new URL(String(input), 'http://test').searchParams.get('v'))
       return v === this.version
@@ -26,7 +29,8 @@ class FakeServer {
         : reply(200, { version: this.version, updatedAt: this.updatedAt, board: this.board })
     }
     this.puts++
-    const { baseVersion, board } = JSON.parse(String(init.body))
+    const { baseVersion, board, app } = JSON.parse(String(init.body))
+    this.lastPutApp = app
     if (baseVersion !== this.version) {
       this.conflicts++
       return reply(409, { version: this.version, updatedAt: this.updatedAt, board: this.board })
@@ -170,5 +174,38 @@ describe('BoardSync', () => {
     const g = game(server.board)
     expect(attendanceOf(g, 'max')).toBe('out')
     expect(attendanceOf(g, 'hugo')).toBe('out')
+  })
+
+  it('tags every save with this page’s version', async () => {
+    const a = client()
+    await settle()
+    a.dispatch({ t: 'attend', game: GAME, player: 'owen', value: 'out' })
+    await settle()
+    expect(server.lastPutApp).toBe(APP_VERSION)
+  })
+
+  it('notices when the site has a newer page than this one', async () => {
+    server.app = APP_VERSION
+    const a = client()
+    await settle()
+    expect(a.getSnapshot().updateAvailable).toBe(false)
+    server.app = APP_VERSION + 1
+    await a.refresh()
+    expect(a.getSnapshot().updateAvailable).toBe(true)
+  })
+
+  it('reloads a board cached by older page code from the server, keeping unsent changes', async () => {
+    const storage = new MemoryStorage()
+    // What an older page left behind: its board (no beer field) and an unsent change.
+    const old = JSON.parse(JSON.stringify(sheetSeed()), (k, v) => (k === 'beer' ? undefined : v))
+    storage.setItem('yeti:board', JSON.stringify({ board: old, version: 1, updatedAt: null, pending: [{ t: 'attend', game: GAME, player: 'x', value: 'out' }] }))
+    server.board = applyAll(sheetSeed(), [{ t: 'setBeer', game: GAME, players: ['max'] }])
+    const a = client(storage)
+    expect(a.getSnapshot().board).toBeNull() // not trusted: loaded fresh instead
+    await settle()
+    await settle()
+    const g = game(server.board)
+    expect(g.beer).toEqual(['max'])
+    expect(attendanceOf(g, 'x')).toBe('out')
   })
 })

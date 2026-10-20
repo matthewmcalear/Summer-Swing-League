@@ -36,6 +36,9 @@
   --yt-on-mid: #0c1a2c;
   --yt-low: #e4eaf2;
   --yt-on-low: #0c1a2c;
+  --yt-beer: #9a5b00;
+  --yt-beer-soft: rgba(245, 158, 11, 0.16);
+  --yt-beer-line: rgba(217, 119, 6, 0.45);
   --yt-shadow: 0 1px 2px rgba(12, 26, 44, 0.1), 0 2px 6px rgba(12, 26, 44, 0.06);
 
   /* Cancel the league <main> padding: this page brings its own chrome. */
@@ -84,6 +87,9 @@
   --yt-on-mid: #e8eff8;
   --yt-low: #1b293d;
   --yt-on-low: #c9d6e7;
+  --yt-beer: #fbbf24;
+  --yt-beer-soft: rgba(251, 191, 36, 0.14);
+  --yt-beer-line: rgba(251, 191, 36, 0.4);
   --yt-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
   color-scheme: dark;
 }
@@ -660,6 +666,22 @@ body:has(.yeti) {
   background: #d97706;
   box-shadow: 0 0 0 2px var(--yt-surface);
 }
+/* 🍺 on the card of whoever's bringing beer. */
+.yt-chip-beer {
+  position: absolute;
+  right: 5px;
+  bottom: 4px;
+  font-size: 15px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+}
+.yt-chip[data-compact]:has(.yt-chip-beer) {
+  padding-right: 26px;
+}
+.yt-chip[data-compact] .yt-chip-beer {
+  bottom: 7px;
+  font-size: 14px;
+}
 .yt-chip[data-picked] {
   transform: translateY(-2px);
   box-shadow: 0 0 0 3px var(--yt-surface), 0 0 0 6px var(--yt-ink), 0 8px 18px rgba(12, 26, 44, 0.25);
@@ -1121,6 +1143,17 @@ body:has(.yeti) {
   gap: 10px;
   font-size: 14px;
 }
+.yt-inline-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--yt-muted);
+}
+.yt-beer-toggle[aria-pressed='true'] {
+  color: var(--yt-beer);
+  background: var(--yt-beer-soft);
+  border-color: var(--yt-beer-line);
+}
 .yt-danger-zone {
   display: flex;
   flex-wrap: wrap;
@@ -1233,9 +1266,10 @@ body:has(.yeti) {
   gap: 3px;
 }
 .yt-row-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
   font-family: var(--font-yt-display), var(--font-sans);
   font-weight: 700;
   font-size: 20px;
@@ -1270,7 +1304,17 @@ body:has(.yeti) {
   font-weight: 700;
   color: var(--yt-out);
 }
-.yt-row[data-att='out'] .yt-row-name {
+.yt-row-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.yt-beer-mark {
+  flex: none;
+  font-size: 17px;
+  line-height: 1;
+}
+.yt-row[data-att='out'] .yt-row-name-text {
   color: var(--yt-muted);
   text-decoration: line-through;
 }
@@ -1502,6 +1546,192 @@ body:has(.yeti) {
   user-select: text;
 }
 
+/* ── Beer ───────────────────────────────────────────────────────────────── */
+
+.yt-beer {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 9px 10px 9px 12px;
+  text-align: left;
+  font-size: 14.5px;
+  color: var(--yt-ink-2);
+  background: var(--yt-surface);
+  border: 1px dashed var(--yt-beer-line);
+  border-radius: 13px;
+}
+.yt-beer[data-set] {
+  color: var(--yt-ink);
+  background: var(--yt-beer-soft);
+  border-style: solid;
+}
+.yt-beer > svg {
+  flex: none;
+  color: var(--yt-muted);
+}
+.yt-beer-icon {
+  flex: none;
+  font-size: 22px;
+  line-height: 1;
+}
+.yt-beer-text {
+  flex: 1;
+  min-width: 0;
+}
+.yt-beer-text b {
+  font-family: var(--font-yt-display), var(--font-sans);
+  font-size: 18px;
+  color: var(--yt-ink);
+}
+.yt-beer-text small {
+  display: block;
+  font-size: 12.5px;
+  color: var(--yt-muted);
+}
+.yt-beer-next {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 10px 10px 10px 14px;
+  border-radius: 13px;
+  background: var(--yt-beer-soft);
+  border: 1px solid var(--yt-beer-line);
+}
+.yt-beer-next > span {
+  min-width: 0;
+  font-size: 13px;
+  color: var(--yt-ink-2);
+}
+.yt-beer-next b {
+  display: block;
+  font-family: var(--font-yt-display), var(--font-sans);
+  font-size: 21px;
+  line-height: 1.1;
+  color: var(--yt-ink);
+}
+.yt-beer-next small {
+  display: block;
+  font-size: 12px;
+  color: var(--yt-muted);
+}
+.yt-beer-next .yt-btn {
+  flex: none;
+  min-height: 42px;
+}
+.yt-beer-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.yt-beer-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 12px 8px 10px;
+  text-align: left;
+  border-radius: 12px;
+  background: var(--yt-ice);
+  border: 1px solid var(--yt-line);
+}
+.yt-beer-row[aria-checked='true'] {
+  background: var(--yt-beer-soft);
+  border-color: var(--yt-beer-line);
+}
+.yt-beer-row:disabled {
+  opacity: 0.5;
+}
+.yt-beer-check {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  color: #fff;
+  background: var(--yt-surface);
+  border: 2px solid var(--yt-line-strong);
+}
+.yt-beer-row[aria-checked='true'] .yt-beer-check {
+  background: #d97706;
+  border-color: #d97706;
+}
+.yt-beer-who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.yt-beer-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-yt-display), var(--font-sans);
+  font-weight: 700;
+  font-size: 19px;
+  line-height: 1.1;
+  color: var(--yt-ink);
+}
+.yt-beer-name i {
+  font-style: normal;
+  font-size: 16px;
+}
+.yt-beer-who small {
+  font-size: 12.5px;
+  color: var(--yt-muted);
+}
+.yt-beer-att {
+  flex: none;
+  min-width: 34px;
+  padding: 2px 7px;
+  border-radius: 7px;
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--yt-muted);
+  border: 1px solid var(--yt-line-strong);
+}
+.yt-beer-att[data-att='in'] {
+  color: var(--yt-in);
+  border-color: color-mix(in srgb, var(--yt-in) 40%, transparent);
+}
+.yt-beer-att[data-att='out'] {
+  color: var(--yt-out);
+  border-color: color-mix(in srgb, var(--yt-out) 40%, transparent);
+}
+.yt-beer-row[data-att='out'] .yt-beer-name {
+  color: var(--yt-muted);
+}
+.yt-game-beer {
+  margin-left: 6px;
+  font-weight: 650;
+  color: var(--yt-beer);
+}
+.yt-game-where > .yt-game-beer:first-child {
+  margin-left: 0;
+}
+
+/* A page left open across a deploy: offer the new one. */
+.yt-update {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  font-weight: 650;
+  color: #fff;
+  background: #1f5fc4;
+}
+
 /* ── Team sheet: names only, for a screenshot in the group chat ──────────── */
 
 .yt-ts {
@@ -1651,9 +1881,10 @@ body:has(.yeti) {
 }
 .yt-ts-player > span {
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   font-family: var(--font-yt-display), var(--font-sans);
   font-weight: 700;
   font-size: 21px;
@@ -1681,6 +1912,41 @@ body:has(.yeti) {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--yt-out);
+}
+.yt-ts-name > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.yt-ts-name > i {
+  flex: none;
+  font-style: normal;
+  font-size: 17px;
+  line-height: 1;
+}
+.yt-ts-beer {
+  margin: 0;
+  padding: 12px 18px 16px;
+  border-top: 1px solid var(--yt-line);
+  font-size: 15px;
+  color: var(--yt-ink-2);
+  background: var(--yt-beer-soft);
+}
+.yt-ts-beer b {
+  margin: 0 7px 0 2px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--yt-beer);
+}
+.yt-ts-out + .yt-ts-beer {
+  border-top: 0;
+  padding-top: 10px;
+}
+.yt-ts-out:has(+ .yt-ts-beer) {
+  padding-bottom: 10px;
 }
 .yt-ts-close {
   position: fixed;
