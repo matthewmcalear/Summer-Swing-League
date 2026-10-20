@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { applyAll } from './actions'
-import { attendanceOf, seedBoard, type Board } from './model'
+import { attendanceOf, sheetSeed, type Board } from './model'
 import { BoardSync } from './sync'
 import { sanitizeBoard } from './validate'
 
@@ -9,7 +9,7 @@ const game = (b: Board | null) => b!.games.find((g) => g.id === GAME)!
 
 /** In-memory stand-in for /api/yeti with the same contract as the real route. */
 class FakeServer {
-  board: Board = seedBoard()
+  board: Board = sheetSeed()
   version = 1
   updatedAt = '2026-10-20T12:00:00.000Z'
   puts = 0
@@ -124,7 +124,7 @@ describe('BoardSync', () => {
     expect(Object.keys(game(server.board).slots)).toHaveLength(0)
     expect(a.undo()).toBe(true)
     await settle()
-    expect(server.board).toEqual(seedBoard())
+    expect(server.board).toEqual(sheetSeed())
     expect(a.getSnapshot().canUndo).toBe(false)
   })
 

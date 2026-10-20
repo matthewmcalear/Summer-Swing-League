@@ -164,7 +164,7 @@ const SKILL_OPTIONS = SKILLS.map((s) => ({
 }))
 const POS_OPTIONS = POSITIONS.map((p) => ({ value: p, label: p }))
 
-function PlayerSheet({
+export function PlayerSheet({
   board,
   game,
   info,

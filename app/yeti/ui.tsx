@@ -6,6 +6,19 @@ import { SKILL_POINTS, type Attendance, type Fit, type Player } from '@/lib/yeti
 import type { SyncStatus } from '@/lib/yeti/sync'
 import type { Toast } from './hooks'
 
+// ── Logo ─────────────────────────────────────────────────────────────────────
+
+/** A snowy peak over a red line: the Yeti's mark. */
+export function YetiMark() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M1.5 20.5 8.6 7.2l3.7 6.6 2.6-4.1 7.6 10.8z" fill="#9cc3fb" />
+      <path d="M8.6 7.2 10.9 11.3 9.6 10.5 8.4 11.6 7.3 10.6z M14.9 9.7 16.6 12.1 15.3 11.6 14.4 12.4z" fill="#fff" />
+      <path d="M1.5 20.5h21" stroke="#c8102e" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 // ── Player chip ──────────────────────────────────────────────────────────────
 
 export function Pips({ skill }: { skill: Player['skill'] }) {

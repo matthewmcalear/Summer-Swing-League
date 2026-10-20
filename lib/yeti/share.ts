@@ -1,10 +1,10 @@
-import { attendanceOf, formatGameDate, type Board, type Game } from './model'
+import { attendanceOf, formatGameDate, gameWhere, opponentLabel, type Board, type Game } from './model'
 import { analyzeGame, type LineInfo } from './insights'
 
 /**
  * The lines as plain text for the team chat:
  *
- *   Yeti lines · Tue Oct 20 vs Kings
+ *   Yeti lines · Tue, Oct 20 · 22:20 Molson · vs Kings
  *   L1  Owen – Steven – DT
  *   L2  Liam – Matt – Steph
  *   L3  ___ – Peter – Tom
@@ -21,7 +21,8 @@ export function lineupText(board: Board, game: Game): string {
     s.player ? `${s.player.name}${attendanceOf(game, s.player.id) === 'maybe' ? '?' : ''}` : '___'
   const row = (l: LineInfo) => `${l.label.padEnd(3)} ${l.slots.map(name).join(' – ')}`
 
-  const title = `Yeti lines · ${formatGameDate(game.date)}${game.opponent ? ` vs ${game.opponent}` : ''}`
+  const where = gameWhere(game).replace(' · ', ' ')
+  const title = ['Yeti lines', formatGameDate(game.date), where, opponentLabel(game)].filter(Boolean).join(' · ')
   const lines = [title, ...info.forwards.map(row), ...info.defence.map(row), `G   ${name(info.goalie.slots[0])}`]
   if (info.out.length) lines.push(`Out: ${info.out.map((p) => p.name).join(', ')}`)
   return lines.join('\n')

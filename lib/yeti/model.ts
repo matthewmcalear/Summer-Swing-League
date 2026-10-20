@@ -41,7 +41,13 @@ export interface Game {
   id: string
   /** Calendar date, YYYY-MM-DD. */
   date: string
+  /** Puck drop, 24-hour HH:MM; '' when unknown. */
+  time: string
+  /** Arena (Molson, Desmarais…); '' when unknown. */
+  rink: string
   opponent: string
+  /** true = the Yeti are the home (local) team, false = visitors, null = unknown. */
+  home: boolean | null
   /** Forward lines (3 skaters each) and defence pairs this game. */
   fLines: number
   dPairs: number
@@ -56,6 +62,8 @@ export interface Board {
   players: Player[]
   /** Sorted by date, oldest first. */
   games: Game[]
+  /** Set once the league schedule has been loaded (see schedule.ts). */
+  schedule?: string
 }
 
 export const LIMITS = {
@@ -64,6 +72,7 @@ export const LIMITS = {
   nameLength: 20,
   numberLength: 3,
   opponentLength: 30,
+  rinkLength: 24,
   fLines: { min: 2, max: 4, default: 3 },
   dPairs: { min: 2, max: 3, default: 2 },
 } as const
@@ -188,6 +197,16 @@ export function isValidDate(date: string): boolean {
   return d.getUTCFullYear() === Number(m[1]) && d.getUTCMonth() === Number(m[2]) - 1 && d.getUTCDate() === Number(m[3])
 }
 
+/** 'vs Kings' at home, '@ Kings' away. */
+export function opponentLabel(game: Pick<Game, 'opponent' | 'home'>): string {
+  return game.opponent ? `${game.home === false ? '@' : 'vs'} ${game.opponent}` : ''
+}
+
+/** '22:20 · Molson' — whatever is known of the time and place. */
+export function gameWhere(game: Pick<Game, 'time' | 'rink'>): string {
+  return [game.time, game.rink].filter(Boolean).join(' · ')
+}
+
 /** 'Tue Oct 20' — read as a calendar date, so no time zone can shift it. */
 export function formatGameDate(date: string, opts: { year?: boolean } = {}): string {
   if (!isValidDate(date)) return date
@@ -214,7 +233,8 @@ export function addDays(date: string, days: number): string {
   return `${t.getUTCFullYear()}-${p(t.getUTCMonth() + 1)}-${p(t.getUTCDate())}`
 }
 
-// ── Seed: the 2026-27 roster and the Oct 20 lines from the lineup spreadsheet ─
+// ── The lineup spreadsheet: the 2026-27 roster and the Oct 20 lines ──────────
+// (A fresh board also gets the league schedule — see seedBoard in schedule.ts.)
 
 export const SEED_PLAYERS: Player[] = [
   { id: 'euan', name: 'Euan', number: '1', skill: 'Elite', pos: 'G' },
@@ -233,7 +253,7 @@ export const SEED_PLAYERS: Player[] = [
   { id: 'owen', name: 'Owen', number: '', skill: 'Elite', pos: 'F' },
 ]
 
-export function seedBoard(): Board {
+export function sheetSeed(): Board {
   const attendance: Record<string, Attendance> = {}
   for (const p of SEED_PLAYERS) attendance[p.id] = p.id === 'dan' ? 'out' : 'in'
   return {
@@ -243,7 +263,10 @@ export function seedBoard(): Board {
       {
         id: 'g-2026-10-20',
         date: '2026-10-20',
+        time: '',
+        rink: '',
         opponent: '',
+        home: null,
         fLines: 3,
         dPairs: 2,
         attendance,

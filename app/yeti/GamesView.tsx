@@ -1,10 +1,21 @@
 'use client'
 
 import { useState } from 'react'
-import { CalendarPlus, ChevronRight, Pencil, Trash2 } from 'lucide-react'
+import { CalendarPlus, ChevronRight, Clock, Pencil, Trash2 } from 'lucide-react'
 import { newGame, type Action } from '@/lib/yeti/actions'
 import { analyzeGame } from '@/lib/yeti/insights'
-import { LIMITS, OPPONENTS, addDays, formatGameDate, isValidDate, type Board, type Game } from '@/lib/yeti/model'
+import {
+  LIMITS,
+  OPPONENTS,
+  addDays,
+  formatGameDate,
+  gameWhere,
+  isValidDate,
+  opponentLabel,
+  type Board,
+  type Game,
+} from '@/lib/yeti/model'
+import { RINKS } from '@/lib/yeti/schedule'
 import { Segmented, Sheet } from './ui'
 
 interface GamesProps {
@@ -17,6 +28,24 @@ interface GamesProps {
   newId: () => string
 }
 
+const monthOf = (date: string) =>
+  new Date(Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, 1)).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+
+function byMonth(games: Game[]): [string, Game[]][] {
+  const out: [string, Game[]][] = []
+  for (const g of games) {
+    const m = monthOf(g.date)
+    const last = out[out.length - 1]
+    if (last && last[0] === m) last[1].push(g)
+    else out.push([m, [g]])
+  }
+  return out
+}
+
 export function GamesView({ board, currentId, today, dispatch, toast, select, newId }: GamesProps) {
   const [sheet, setSheet] = useState<null | 'new' | string>(null)
   const upcoming = board.games.filter((g) => g.date >= today)
@@ -24,17 +53,28 @@ export function GamesView({ board, currentId, today, dispatch, toast, select, ne
 
   const row = (g: Game) => {
     const info = analyzeGame(board, g)
-    const isToday = g.date === today
+    const where = gameWhere(g)
+    const untouched = info.counts.filled === 0 && info.counts.in === 0 && info.counts.out === 0
     return (
       <li key={g.id} className="yt-game" data-current={g.id === currentId || undefined}>
         <button type="button" className="yt-game-main" onClick={() => select(g.id)}>
           <span className="yt-game-date">
             {formatGameDate(g.date)}
-            {isToday && <span className="yt-badge">Today</span>}
+            {g.date === today && <span className="yt-badge">Today</span>}
           </span>
-          <span className="yt-game-opp">{g.opponent ? `vs ${g.opponent}` : 'Opponent TBD'}</span>
+          <span className="yt-game-opp">
+            {g.opponent ? opponentLabel(g) : 'Opponent TBD'}
+            {g.home !== null && <span className="yt-homeaway">{g.home ? 'Home' : 'Away'}</span>}
+          </span>
+          {where && (
+            <span className="yt-game-where">
+              <Clock size={13} aria-hidden="true" /> {where}
+            </span>
+          )}
           <span className="yt-game-stats">
-            {info.counts.in} in · {info.counts.maybe} unconfirmed · {info.counts.out} out · {info.counts.filled}/{info.counts.slots} spots
+            {untouched
+              ? 'No lines or attendance yet'
+              : `${info.counts.in} in · ${info.counts.maybe} unconfirmed · ${info.counts.out} out · ${info.counts.filled}/${info.counts.slots} spots`}
           </span>
           <ChevronRight className="yt-game-go" size={18} aria-hidden="true" />
         </button>
@@ -45,6 +85,14 @@ export function GamesView({ board, currentId, today, dispatch, toast, select, ne
     )
   }
 
+  const list = (games: Game[]) =>
+    byMonth(games).map(([month, gs]) => (
+      <div key={month} className="yt-month">
+        <h3>{month}</h3>
+        <ul className="yt-game-list">{gs.map(row)}</ul>
+      </div>
+    ))
+
   return (
     <div className="yt-games">
       <button type="button" className="yt-btn yt-add" data-primary onClick={() => setSheet('new')} disabled={board.games.length >= LIMITS.games}>
@@ -54,16 +102,18 @@ export function GamesView({ board, currentId, today, dispatch, toast, select, ne
       <section className="yt-group" aria-label="Upcoming games">
         <header>
           <h2>Upcoming</h2>
+          <span className="yt-muted">{upcoming.length}</span>
         </header>
-        {upcoming.length ? <ul className="yt-game-list">{upcoming.map(row)}</ul> : <p className="yt-empty">No upcoming games yet.</p>}
+        {upcoming.length ? list(upcoming) : <p className="yt-empty">No upcoming games.</p>}
       </section>
 
       {past.length > 0 && (
         <section className="yt-group" aria-label="Past games">
           <header>
             <h2>Past</h2>
+            <span className="yt-muted">{past.length}</span>
           </header>
-          <ul className="yt-game-list">{past.map(row)}</ul>
+          {list(past)}
         </section>
       )}
 
@@ -77,12 +127,36 @@ export function GamesView({ board, currentId, today, dispatch, toast, select, ne
   )
 }
 
-function OpponentPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+// ── Shared game fields ───────────────────────────────────────────────────────
+
+interface Details {
+  date: string
+  time: string
+  rink: string
+  opponent: string
+  home: boolean | null
+}
+
+function PickOrType({
+  label,
+  value,
+  options,
+  max,
+  placeholder,
+  onChange,
+}: {
+  label: string
+  value: string
+  options: readonly string[]
+  max: number
+  placeholder: string
+  onChange: (v: string) => void
+}) {
   return (
     <div className="yt-field">
-      <span className="yt-field-label">Opponent</span>
+      <span className="yt-field-label">{label}</span>
       <div className="yt-chips-row">
-        {OPPONENTS.map((o) => (
+        {options.map((o) => (
           <button key={o} type="button" className="yt-pill-btn" aria-pressed={value === o} onClick={() => onChange(value === o ? '' : o)}>
             {o}
           </button>
@@ -90,14 +164,50 @@ function OpponentPicker({ value, onChange }: { value: string; onChange: (v: stri
       </div>
       <input
         className="yt-input"
-        placeholder="Or type a name"
-        value={(OPPONENTS as readonly string[]).includes(value) ? '' : value}
-        maxLength={LIMITS.opponentLength}
+        placeholder={placeholder}
+        value={options.includes(value) ? '' : value}
+        maxLength={max}
+        aria-label={`${label} (other)`}
         onChange={(e) => onChange(e.target.value)}
       />
     </div>
   )
 }
+
+function DetailsFields({ value, onChange, autoFocusDate }: { value: Details; onChange: (d: Details) => void; autoFocusDate?: boolean }) {
+  const set = (patch: Partial<Details>) => onChange({ ...value, ...patch })
+  return (
+    <>
+      <div className="yt-form-row" data-even>
+        <label className="yt-field">
+          <span className="yt-field-label">Date</span>
+          <input className="yt-input" type="date" value={value.date} onChange={(e) => set({ date: e.target.value })} data-autofocus={autoFocusDate || undefined} />
+        </label>
+        <label className="yt-field">
+          <span className="yt-field-label">Time</span>
+          <input className="yt-input" type="time" value={value.time} onChange={(e) => set({ time: e.target.value })} />
+        </label>
+      </div>
+      <PickOrType label="Opponent" value={value.opponent} options={OPPONENTS} max={LIMITS.opponentLength} placeholder="Or type a name" onChange={(opponent) => set({ opponent })} />
+      <div className="yt-field">
+        <span className="yt-field-label">Yeti are</span>
+        <Segmented
+          label="Home or away"
+          value={value.home === null ? 'tbd' : value.home ? 'home' : 'away'}
+          onChange={(v) => set({ home: v === 'tbd' ? null : v === 'home' })}
+          options={[
+            { value: 'home', label: 'Home' },
+            { value: 'away', label: 'Away' },
+            { value: 'tbd', label: 'Not set' },
+          ]}
+        />
+      </div>
+      <PickOrType label="Rink" value={value.rink} options={RINKS} max={LIMITS.rinkLength} placeholder="Or type a rink" onChange={(rink) => set({ rink })} />
+    </>
+  )
+}
+
+// ── New game ─────────────────────────────────────────────────────────────────
 
 function NewGameSheet({
   board,
@@ -117,20 +227,19 @@ function NewGameSheet({
   newId: () => string
 }) {
   const last = board.games[board.games.length - 1]
-  // Default: a week after the latest game (league nights repeat), never before today.
+  // Default: a week after the latest game, never before today.
   const suggested = last ? addDays(last.date, 7) : today
-  const [date, setDate] = useState(suggested < today ? today : suggested)
-  const [opponent, setOpponent] = useState('')
+  const [details, setDetails] = useState<Details>({ date: suggested < today ? today : suggested, time: '', rink: '', opponent: '', home: null })
   const [copyLines, setCopyLines] = useState<'yes' | 'no'>(last ? 'yes' : 'no')
   const [copyAttendance, setCopyAttendance] = useState<'yes' | 'no'>('no')
 
   const create = () => {
-    if (!isValidDate(date)) return
+    if (!isValidDate(details.date)) return
     const id = `g-${newId()}`
-    const g = newGame(id, date, opponent, last, { copyLines: copyLines === 'yes', copyAttendance: copyAttendance === 'yes' })
+    const g = newGame({ id, ...details }, last, { copyLines: copyLines === 'yes', copyAttendance: copyAttendance === 'yes' })
     if (dispatch({ t: 'addGame', game: g })) {
       select(id)
-      toast(`Game on ${formatGameDate(date)} added`)
+      toast(`Game on ${formatGameDate(details.date)} added`)
     }
     onClose()
   }
@@ -141,16 +250,13 @@ function NewGameSheet({
       title="New game"
       onClose={onClose}
       footer={
-        <button type="button" className="yt-btn" data-primary disabled={!isValidDate(date)} onClick={create}>
+        <button type="button" className="yt-btn" data-primary disabled={!isValidDate(details.date)} onClick={create}>
           <CalendarPlus size={17} aria-hidden="true" /> Create game
         </button>
       }
     >
-      <label className="yt-field">
-        <span className="yt-field-label">Date</span>
-        <input className="yt-input" type="date" value={date} onChange={(e) => setDate(e.target.value)} data-autofocus />
-      </label>
-      <OpponentPicker value={opponent} onChange={setOpponent} />
+      <p className="yt-sheet-sub">The regular season is already loaded — use this for playoffs or extra games.</p>
+      <DetailsFields value={details} onChange={setDetails} autoFocusDate />
       {last && (
         <>
           <div className="yt-field">
@@ -183,6 +289,8 @@ function NewGameSheet({
   )
 }
 
+// ── Edit game ────────────────────────────────────────────────────────────────
+
 function EditGameSheet({
   board,
   gameId,
@@ -197,13 +305,18 @@ function EditGameSheet({
   toast: GamesProps['toast']
 }) {
   const game = board.games.find((g) => g.id === gameId)
-  const [date, setDate] = useState(game?.date ?? '')
-  const [opponent, setOpponent] = useState(game?.opponent ?? '')
+  const [details, setDetails] = useState<Details>({
+    date: game?.date ?? '',
+    time: game?.time ?? '',
+    rink: game?.rink ?? '',
+    opponent: game?.opponent ?? '',
+    home: game?.home ?? null,
+  })
   const [confirm, setConfirm] = useState(false)
   if (!game) return null
 
   const save = () => {
-    dispatch({ t: 'editGame', game: game.id, patch: { date: isValidDate(date) ? date : game.date, opponent } })
+    dispatch({ t: 'editGame', game: game.id, patch: { ...details, date: isValidDate(details.date) ? details.date : game.date } })
     onClose()
   }
 
@@ -218,11 +331,7 @@ function EditGameSheet({
         </button>
       }
     >
-      <label className="yt-field">
-        <span className="yt-field-label">Date</span>
-        <input className="yt-input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-      </label>
-      <OpponentPicker value={opponent} onChange={setOpponent} />
+      <DetailsFields value={details} onChange={setDetails} />
       <div className="yt-danger-zone">
         {board.games.length < 2 ? (
           <span className="yt-muted">This is the only game, so it can’t be deleted.</span>

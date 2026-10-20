@@ -1,12 +1,24 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
-import { AlertTriangle, ArrowDown, ArrowUp, Copy, Eraser, Info, LayoutGrid, Share2, Sparkles, X } from 'lucide-react'
+import { AlertTriangle, ArrowDown, ArrowUp, Clock, Copy, Eraser, Info, LayoutGrid, Pencil, Share2, Sparkles, Users, X } from 'lucide-react'
 import type { Action } from '@/lib/yeti/actions'
 import { suggestLineup, type BalanceMode } from '@/lib/yeti/balance'
 import type { GameInsights, LineInfo, SlotInfo } from '@/lib/yeti/insights'
-import { LIMITS, ROLE_LABEL, attendanceOf, slotLabel, type Board, type Game, type Player } from '@/lib/yeti/model'
+import {
+  LIMITS,
+  ROLE_LABEL,
+  attendanceOf,
+  formatGameDate,
+  gameWhere,
+  opponentLabel,
+  slotLabel,
+  type Board,
+  type Game,
+  type Player,
+} from '@/lib/yeti/model'
 import { lineupText } from '@/lib/yeti/share'
 import { ChipFace, Meter, Segmented, Sheet, chipLabel } from './ui'
 
@@ -20,6 +32,10 @@ export interface LinesHandlers {
   toBench: (playerId: string) => void
   markOut: (playerId: string) => void
   setPicked: (playerId: string | null) => void
+  /** Open the player editor (skill, number, position…). */
+  editPlayer: (playerId: string) => void
+  /** Open the screenshot-friendly team sheet (names only). */
+  openTeamSheet: () => void
 }
 
 // ── Draggable chip ───────────────────────────────────────────────────────────
@@ -171,6 +187,9 @@ export function Tray({
               Out
             </button>
           )}
+          <button type="button" className="yt-mini-btn" onClick={() => h.editPlayer(pickedPlayer.id)} aria-label={`Edit ${pickedPlayer.name}`}>
+            <Pencil size={14} aria-hidden="true" /> Edit
+          </button>
           <button type="button" className="yt-icon-btn" onClick={() => h.setPicked(null)} aria-label="Cancel">
             <X size={18} />
           </button>
@@ -240,9 +259,53 @@ export function LinesView({
   const [showAllWarnings, setShowAllWarnings] = useState(false)
   const active = !!(picked || dragging)
   const warnings = showAllWarnings ? info.warnings : info.warnings.slice(0, 3)
+  const where = gameWhere(game)
+  const versus = opponentLabel(game)
+  // An empty game can start from the most recent earlier game that has lines.
+  const source =
+    info.counts.filled === 0
+      ? board.games.filter((g) => g.date < game.date && Object.keys(g.slots).length > 0).pop()
+      : undefined
 
   return (
     <div className="yt-lines">
+      {(where || versus) && (
+        <p className="yt-gameinfo">
+          {where && (
+            <span>
+              <Clock size={14} aria-hidden="true" /> {where}
+            </span>
+          )}
+          {versus && <b>{versus}</b>}
+          {game.home !== null && <span className="yt-homeaway">{game.home ? 'Home' : 'Away'}</span>}
+        </p>
+      )}
+
+      {info.counts.filled === 0 && (
+        <section className="yt-start" aria-label="Start the lines">
+          <p>
+            <b>No lines yet for this game.</b> {source ? 'Start from the last game’s lines, or let Auto lines build them.' : 'Drag players in, or let Auto lines build them.'}
+          </p>
+          <div>
+            {source && (
+              <button
+                type="button"
+                className="yt-btn"
+                data-primary
+                onClick={() => {
+                  if (h.dispatch({ t: 'copyLines', game: game.id, from: source.id })) h.toast(`Lines copied from ${formatGameDate(source.date)}`, { undo: true })
+                }}
+              >
+                <Copy size={17} aria-hidden="true" /> Copy {formatGameDate(source.date)}
+              </button>
+            )}
+            <button type="button" className="yt-btn" onClick={() => setSheet('auto')}>
+              <Sparkles size={17} aria-hidden="true" /> Auto lines
+            </button>
+          </div>
+        </section>
+      )}
+
       <section className="yt-summary" aria-label="Attendance">
         <span className="yt-count" data-att="in">
           <b>{info.counts.in}</b> in
@@ -309,15 +372,20 @@ export function LinesView({
         <button type="button" className="yt-btn" onClick={() => setSheet('auto')}>
           <Sparkles size={17} aria-hidden="true" /> Auto lines
         </button>
+        <button type="button" className="yt-btn" onClick={h.openTeamSheet}>
+          <Users size={17} aria-hidden="true" /> Team sheet
+        </button>
         <button type="button" className="yt-btn" onClick={() => setSheet('share')}>
-          <Share2 size={17} aria-hidden="true" /> Share
+          <Share2 size={17} aria-hidden="true" /> Share text
         </button>
         <button type="button" className="yt-btn" onClick={() => setSheet('layout')}>
           <LayoutGrid size={17} aria-hidden="true" /> {game.fLines}F · {game.dPairs}D
         </button>
       </div>
-      <p className="yt-help">
+      <p className="yt-help-text">
         Press and hold a player to drag, or tap a player and then tap a spot. Line strength is the average skill (Elite 4 · Good 3 · Mid 2 · Low 1).
+        Team sheet shows just the names, ready to screenshot for the group chat.{' '}
+        <Link href="/yeti/help">How it all works →</Link>
       </p>
 
       <LineMenu line={menuLine} game={game} onClose={() => setMenuLine(null)} h={h} />

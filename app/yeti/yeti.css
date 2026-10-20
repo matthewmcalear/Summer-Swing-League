@@ -169,6 +169,33 @@ body:has(.yeti) {
   height: 24px;
   flex: none;
 }
+/* Narrow phones: the logo alone, so the game button keeps its room. */
+@media (max-width: 400px) {
+  .yt-brand span { display: none; }
+}
+.yt-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding-right: 6px;
+  color: #fff;
+  font-family: var(--font-yt-display), var(--font-sans);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: 0.14em;
+}
+.yt-back svg:nth-child(2) {
+  width: 22px;
+  height: 22px;
+}
+.yt-header-title {
+  margin-left: auto;
+  padding-right: 8px;
+  font-size: 15px;
+  font-weight: 650;
+  color: rgba(255, 255, 255, 0.85);
+}
 .yt-game-pill {
   flex: 1;
   min-width: 0;
@@ -248,6 +275,55 @@ body:has(.yeti) {
   padding-bottom: calc(190px + env(safe-area-inset-bottom));
 }
 
+.yt-gameinfo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: -2px 2px 12px;
+  font-size: 14px;
+  color: var(--yt-ink-2);
+}
+.yt-gameinfo > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.yt-gameinfo b {
+  font-family: var(--font-yt-display), var(--font-sans);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--yt-ink);
+}
+.yt-gameinfo .yt-homeaway {
+  margin-left: 0;
+}
+.yt-start {
+  margin: 0 0 14px;
+  padding: 14px;
+  border-radius: 15px;
+  background: var(--yt-surface);
+  border: 1px dashed var(--yt-blue);
+}
+.yt-start p {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--yt-ink-2);
+}
+.yt-start p b {
+  color: var(--yt-ink);
+}
+.yt-start div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.yt-start .yt-btn {
+  flex: 1 1 140px;
+}
 .yt-summary {
   display: flex;
   align-items: center;
@@ -630,7 +706,7 @@ body:has(.yeti) {
 
 .yt-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-top: 18px;
 }
@@ -666,7 +742,7 @@ body:has(.yeti) {
   padding: 0 8px;
   font-size: 14px;
 }
-.yt-help {
+.yt-help-text {
   margin: 14px 4px 0;
   font-size: 12.5px;
   line-height: 1.45;
@@ -1015,6 +1091,9 @@ body:has(.yeti) {
   grid-template-columns: minmax(0, 1fr) 92px;
   gap: 10px;
 }
+.yt-form-row[data-even] {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
 .yt-chips-row {
   display: flex;
   flex-wrap: wrap;
@@ -1248,9 +1327,18 @@ body:has(.yeti) {
   font-size: 12.5px;
   color: var(--yt-muted);
 }
+.yt-game-where {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--yt-ink-2);
+  font-variant-numeric: tabular-nums;
+}
 .yt-game-go {
   grid-column: 2;
-  grid-row: 1 / span 3;
+  grid-row: 1 / span 4;
   align-self: center;
   color: var(--yt-muted);
 }
@@ -1267,6 +1355,30 @@ body:has(.yeti) {
 }
 .yt-games > .yt-add {
   margin: 0 0 4px;
+}
+.yt-month + .yt-month {
+  margin-top: 14px;
+}
+.yt-month h3 {
+  margin: 0 4px 7px;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--yt-ink-2);
+}
+.yt-homeaway {
+  display: inline-block;
+  margin-left: 7px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  vertical-align: 1px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--yt-muted);
+  background: var(--yt-ice);
+  border: 1px solid var(--yt-line);
 }
 
 /* ── Bottom sheets ───────────────────────────────────────────────────────── */
@@ -1388,6 +1500,336 @@ body:has(.yeti) {
   border-radius: 12px;
   -webkit-user-select: text;
   user-select: text;
+}
+
+/* ── Team sheet: names only, for a screenshot in the group chat ──────────── */
+
+.yt-ts {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  overflow-y: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: calc(env(safe-area-inset-top) + 14px) 12px calc(env(safe-area-inset-bottom) + 14px);
+  background: var(--yt-bg);
+  animation: yt-fade 0.15s ease-out;
+}
+.yt-ts-card {
+  width: 100%;
+  max-width: 480px;
+  overflow: hidden;
+  background: var(--yt-surface);
+  border: 1px solid var(--yt-line);
+  border-radius: 22px;
+  box-shadow: 0 12px 32px rgba(12, 26, 44, 0.14);
+}
+.yt-ts-head {
+  padding: 16px 20px 18px;
+  color: #fff;
+  background: linear-gradient(160deg, #173163 0%, #0c1a2c 62%);
+  border-bottom: 4px solid #c8102e;
+}
+.yt-ts-brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-yt-display), var(--font-sans);
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: 0.16em;
+  opacity: 0.92;
+}
+.yt-ts-brand svg {
+  width: 22px;
+  height: 22px;
+}
+.yt-ts-date {
+  margin-top: 10px;
+  font-family: var(--font-yt-display), var(--font-sans);
+  font-weight: 700;
+  font-size: 36px;
+  line-height: 1;
+}
+.yt-ts-where {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 9px;
+  margin-top: 7px;
+  font-size: 15.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+  font-variant-numeric: tabular-nums;
+}
+.yt-ts-where span {
+  padding: 1px 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.16);
+}
+.yt-ts-section {
+  padding: 12px 14px 6px;
+}
+.yt-ts-section + .yt-ts-section {
+  border-top: 1px solid var(--yt-line);
+}
+.yt-ts-section h2 {
+  margin: 0 2px 6px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--yt-muted);
+}
+.yt-ts-section ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.yt-ts-roles,
+.yt-ts-line {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+.yt-ts-roles > span:last-child,
+.yt-ts-names {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.yt-ts-roles[data-count='2'] > span:last-child,
+.yt-ts-names[data-count='2'] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.yt-ts-names[data-count='1'] > * {
+  grid-column: 2;
+}
+.yt-ts-roles i {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-align: center;
+  color: var(--yt-muted);
+}
+.yt-ts-line {
+  padding: 5px 0;
+}
+.yt-ts-label {
+  font-family: var(--font-yt-display), var(--font-sans);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--yt-muted);
+}
+.yt-ts-player {
+  min-width: 0;
+  min-height: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 5px 4px;
+  text-align: center;
+  border-radius: 11px;
+  background: var(--yt-ice);
+  border: 1px solid var(--yt-line);
+}
+.yt-ts-player small {
+  font-family: var(--font-yt-display), var(--font-sans);
+  font-weight: 600;
+  font-size: 12.5px;
+  line-height: 1;
+  color: var(--yt-muted);
+}
+.yt-ts-player > span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-yt-display), var(--font-sans);
+  font-weight: 700;
+  font-size: 21px;
+  line-height: 1.1;
+  color: var(--yt-ink);
+}
+.yt-ts-player[data-empty] {
+  font-size: 18px;
+  color: var(--yt-muted);
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--yt-line-strong);
+}
+.yt-ts-out {
+  margin: 0;
+  padding: 12px 18px 16px;
+  border-top: 1px solid var(--yt-line);
+  font-size: 15px;
+  color: var(--yt-ink-2);
+}
+.yt-ts-out b {
+  margin-right: 7px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--yt-out);
+}
+.yt-ts-close {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 26px);
+  right: max(24px, calc(50% - 228px));
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* ── How it works (/yeti/help) ────────────────────────────────────────────── */
+
+.yt-main.yt-help {
+  padding-bottom: 48px;
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--yt-ink-2);
+}
+.yt-help h1 {
+  margin: 6px 2px 8px;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--yt-ink);
+}
+.yt-help-lead {
+  margin: 0 2px 14px;
+  font-size: 16px;
+}
+.yt-help b {
+  color: var(--yt-ink);
+}
+.yt-help-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 6px;
+}
+.yt-help-toc a {
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--yt-ink);
+  background: var(--yt-surface);
+  border: 1px solid var(--yt-line-strong);
+}
+.yt-help section {
+  margin-top: 14px;
+  padding: 16px 16px 6px;
+  background: var(--yt-surface);
+  border: 1px solid var(--yt-line);
+  border-radius: 16px;
+  scroll-margin-top: 70px;
+}
+.yt-help h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--yt-ink);
+}
+.yt-help h3 {
+  margin: 14px 0 6px;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--yt-ink);
+}
+.yt-help p {
+  margin: 0 0 10px;
+}
+.yt-help ul {
+  margin: 0 0 10px;
+  padding-left: 20px;
+  list-style: disc;
+}
+.yt-help li {
+  margin-bottom: 7px;
+}
+.yt-help li svg,
+.yt-help dt svg {
+  display: inline-block;
+  vertical-align: -2px;
+}
+.yt-help-list {
+  margin: 0 0 10px;
+}
+.yt-help-list dt {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  font-weight: 700;
+  color: var(--yt-ink);
+}
+.yt-help-list dd {
+  margin: 3px 0 0;
+}
+.yt-help-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 4px 0 12px;
+}
+.yt-help-cards:has(> :nth-child(2):last-child) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 260px;
+}
+.yt-help-chip {
+  cursor: default;
+}
+.yt-help-chip .yt-chip-name {
+  font-size: 17px;
+}
+.yt-help-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+.yt-help-att {
+  font-weight: 700;
+}
+.yt-help-att[data-att='in'] { color: var(--yt-in); }
+.yt-help-att[data-att='maybe'] { color: var(--yt-maybe); }
+.yt-help-att[data-att='out'] { color: var(--yt-out); }
+.yt-help-warn {
+  font-weight: 700;
+  color: var(--yt-out);
+}
+.yt-help .yt-spread {
+  cursor: default;
+}
+.yt-help-back {
+  margin-top: 20px;
+}
+.yt-help-back .yt-btn {
+  width: 100%;
+}
+.yt-help-text a {
+  font-weight: 650;
+  color: var(--yt-blue);
+  white-space: nowrap;
 }
 
 /* ── Loading / error ─────────────────────────────────────────────────────── */

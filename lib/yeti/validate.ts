@@ -22,6 +22,7 @@ import {
  */
 
 const ID_RE = /^[A-Za-z0-9_-]{1,40}$/
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 
@@ -47,6 +48,11 @@ export function isSkill(v: unknown): v is Skill {
 
 export function isPosition(v: unknown): v is Position {
   return typeof v === 'string' && (POSITIONS as readonly string[]).includes(v)
+}
+
+/** 24-hour HH:MM, or '' when missing or malformed. */
+export function cleanTime(v: unknown): string {
+  return typeof v === 'string' && TIME_RE.test(v.trim()) ? v.trim() : ''
 }
 
 export function isAttendance(v: unknown): v is Attendance {
@@ -99,7 +105,18 @@ export function sanitizeGame(raw: unknown, playerIds: ReadonlySet<string>): Game
     }
   }
 
-  return { id: raw.id, date, opponent: cleanText(raw.opponent, LIMITS.opponentLength), fLines, dPairs, attendance, slots }
+  return {
+    id: raw.id,
+    date,
+    time: cleanTime(raw.time),
+    rink: cleanText(raw.rink, LIMITS.rinkLength),
+    opponent: cleanText(raw.opponent, LIMITS.opponentLength),
+    home: typeof raw.home === 'boolean' ? raw.home : null,
+    fLines,
+    dPairs,
+    attendance,
+    slots,
+  }
 }
 
 export function sanitizeBoard(raw: unknown): Board | null {
@@ -126,5 +143,6 @@ export function sanitizeBoard(raw: unknown): Board | null {
   }
   games.sort(compareGames)
 
-  return { v: 1, players, games }
+  const schedule = cleanText(raw.schedule, 40)
+  return schedule ? { v: 1, players, games, schedule } : { v: 1, players, games }
 }

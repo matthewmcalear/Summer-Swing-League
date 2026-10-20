@@ -14,6 +14,7 @@ import {
 import {
   cleanNumber,
   cleanText,
+  cleanTime,
   isAttendance,
   isId,
   isPosition,
@@ -49,12 +50,14 @@ export type Action =
   | { t: 'layout'; game: string; fLines: number; dPairs: number }
   /** Replace the whole lineup (auto-balance). */
   | { t: 'setSlots'; game: string; slots: Record<string, string> }
+  /** Start a game from another game's lines (anyone marked out for this game is left off). */
+  | { t: 'copyLines'; game: string; from: string }
   | { t: 'clearSlots'; game: string }
   | { t: 'addPlayer'; player: Player; game?: string; attendance?: Attendance }
   | { t: 'editPlayer'; player: string; patch: Partial<Omit<Player, 'id'>> }
   | { t: 'removePlayer'; player: string }
   | { t: 'addGame'; game: Game }
-  | { t: 'editGame'; game: string; patch: { date?: string; opponent?: string } }
+  | { t: 'editGame'; game: string; patch: Partial<Pick<Game, 'date' | 'opponent' | 'time' | 'rink' | 'home'>> }
   | { t: 'removeGame'; game: string }
   /** Put the board back as it was (undo). */
   | { t: 'restore'; board: Board }
@@ -178,6 +181,19 @@ export function apply(board: Board, action: Action): Board {
         return clean ? { ...g, slots: clean.slots } : g
       })
 
+    case 'copyLines': {
+      const from = board.games.find((g) => g.id === action.from)
+      if (!from || action.from === action.game) return board
+      const known = new Set(board.players.map((p) => p.id))
+      return withGame(board, action.game, (g) => {
+        const slots: Record<string, string> = {}
+        for (const [slot, pid] of Object.entries(from.slots)) {
+          if (known.has(pid) && attendanceOf(g, pid) !== 'out') slots[slot] = pid
+        }
+        return { ...g, fLines: from.fLines, dPairs: from.dPairs, slots }
+      })
+    }
+
     case 'clearSlots':
       return withGame(board, action.game, (g) => (Object.keys(g.slots).length ? { ...g, slots: {} } : g))
 
@@ -232,11 +248,19 @@ export function apply(board: Board, action: Action): Board {
 
     case 'editGame': {
       const next = withGame(board, action.game, (g) => {
-        const date = action.patch.date !== undefined ? action.patch.date : g.date
-        const opponent = action.patch.opponent !== undefined ? cleanText(action.patch.opponent, LIMITS.opponentLength) : g.opponent
-        const clean = sanitizeGame({ ...g, date, opponent }, new Set(Object.keys(g.attendance).concat(Object.values(g.slots))))
-        if (!clean || (clean.date === g.date && clean.opponent === g.opponent)) return g
-        return { ...g, date: clean.date, opponent: clean.opponent }
+        const p = action.patch
+        const merged = {
+          ...g,
+          date: p.date !== undefined ? p.date : g.date,
+          opponent: p.opponent !== undefined ? p.opponent : g.opponent,
+          time: p.time !== undefined ? p.time : g.time,
+          rink: p.rink !== undefined ? p.rink : g.rink,
+          home: p.home !== undefined ? p.home : g.home,
+        }
+        const clean = sanitizeGame(merged, new Set(Object.keys(g.attendance).concat(Object.values(g.slots))))
+        if (!clean) return g // e.g. an impossible date
+        const same = clean.date === g.date && clean.opponent === g.opponent && clean.time === g.time && clean.rink === g.rink && clean.home === g.home
+        return same ? g : { ...g, date: clean.date, opponent: clean.opponent, time: clean.time, rink: clean.rink, home: clean.home }
       })
       return next === board ? board : { ...next, games: next.games.slice().sort(compareGames) }
     }
@@ -257,11 +281,9 @@ export function applyAll(board: Board, actions: readonly Action[]): Board {
   return actions.reduce(apply, board)
 }
 
-/** A new game dated `date`, optionally starting from another game's lines and/or attendance. */
+/** A new game, optionally starting from another game's lines and/or attendance. */
 export function newGame(
-  id: string,
-  date: string,
-  opponent: string,
+  details: { id: string; date: string; opponent?: string; time?: string; rink?: string; home?: boolean | null },
   from: Game | undefined,
   opts: { copyLines: boolean; copyAttendance: boolean },
 ): Game {
@@ -271,9 +293,12 @@ export function newGame(
     for (const [slot, pid] of Object.entries(from.slots)) if (attendance[pid] !== 'out') slots[slot] = pid
   }
   return {
-    id,
-    date,
-    opponent: cleanText(opponent, LIMITS.opponentLength),
+    id: details.id,
+    date: details.date,
+    time: cleanTime(details.time),
+    rink: cleanText(details.rink, LIMITS.rinkLength),
+    opponent: cleanText(details.opponent, LIMITS.opponentLength),
+    home: typeof details.home === 'boolean' ? details.home : null,
     fLines: from?.fLines ?? LIMITS.fLines.default,
     dPairs: from?.dPairs ?? LIMITS.dPairs.default,
     attendance,
