@@ -49,8 +49,8 @@ export default function BottomNav() {
   // The Dan's Birthday event pages are an immersive sub-app with their own
   // sticky bars — hide the global bottom nav there so they don't collide.
   if (pathname.startsWith('/dans-bday')) return null
-  // PolyDan (/polydan) has its own bottom tabs.
-  if (pathname.startsWith('/polydan')) return null
+  // PolyDan (/polydan) and Yeti lines (/yeti) have their own bottom tabs.
+  if (pathname.startsWith('/polydan') || pathname.startsWith('/yeti')) return null
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)

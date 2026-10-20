@@ -571,3 +571,20 @@ model PdIdol {
   @@index([editionId])
   @@map("polydan_idols")
 }
+
+// ===========================================================================
+// Yeti lines (/yeti) — the lineup board for Steven's Westmount team. One JSON
+// document per board (roster, games, lines), with a version number so two
+// phones editing at once never overwrite each other. Deploys don't run
+// migrations, so lib/yeti/store.ts also creates this table on first use with
+// the same DDL that `prisma db push` would.
+// ===========================================================================
+
+model YetiBoard {
+  id         String   @id
+  data       Json
+  version    Int      @default(1)
+  updated_at DateTime @default(now()) @updatedAt
+
+  @@map("yeti_boards")
+}
