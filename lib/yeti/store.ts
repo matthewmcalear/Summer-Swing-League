@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { seedBoard, type Board } from './model'
+import type { Board } from './model'
+import { SCHEDULE_ID, applySchedule, seedBoard } from './schedule'
 import { sanitizeBoard } from './validate'
 
 /**
@@ -56,8 +57,24 @@ const toStored = (row: { data: Prisma.JsonValue; version: number; updated_at: Da
 
 const isUniqueViolation = (err: unknown) => err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002'
 
-/** The current board; the first ever read creates it from the 2026-27 roster. */
+/**
+ * The current board. The first ever read creates it (roster, Oct 20 lines and
+ * the season schedule); a board from before the schedule existed gets the
+ * schedule loaded once, under the same version check as any other save.
+ */
 export async function readBoard(): Promise<StoredBoard> {
+  const current = await readRow()
+  if (current.board.schedule === SCHEDULE_ID) return current
+  const { count } = await prisma.yetiBoard.updateMany({
+    where: { id: BOARD_ID, version: current.version },
+    data: { data: applySchedule(current.board) as unknown as Prisma.InputJsonValue, version: { increment: 1 } },
+  })
+  if (count === 1) console.log('[yeti] loaded the league schedule into the board')
+  // Either way the row now holds the latest board (ours, or a newer save that beat us).
+  return readRow()
+}
+
+async function readRow(): Promise<StoredBoard> {
   await ensureTable()
   const row = await prisma.yetiBoard.findUnique({ where: { id: BOARD_ID } })
   if (row) return toStored(row)
@@ -83,5 +100,7 @@ export async function saveBoard(board: Board, baseVersion: number): Promise<Save
     data: { data: board as unknown as Prisma.InputJsonValue, version: { increment: 1 } },
   })
   const now = await readBoard()
+  // A save from a phone still running the old page drops the schedule fields;
+  // readBoard just put them back, which bumps the version — still a success.
   return { ok: count === 1, ...now }
 }

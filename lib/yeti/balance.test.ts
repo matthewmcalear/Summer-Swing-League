@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { apply, applyAll } from './actions'
 import { suggestLineup } from './balance'
 import { analyzeGame } from './insights'
-import { attendanceOf, fitFor, parseSlot, seedBoard, type Board } from './model'
+import { attendanceOf, fitFor, parseSlot, sheetSeed, type Board } from './model'
 import { lineupText } from './share'
 
 const GAME = 'g-2026-10-20'
 const game = (b: Board) => b.games.find((g) => g.id === GAME)!
 
 describe('insights on the Oct 20 lines', () => {
-  const info = analyzeGame(seedBoard(), game(seedBoard()))
+  const info = analyzeGame(sheetSeed(), game(sheetSeed()))
 
   it('counts attendance and open spots', () => {
     // 3 lines × 3 + 2 pairs × 2 + goalie = 14 spots; L3 LW is open in the sheet.
@@ -30,19 +30,19 @@ describe('insights on the Oct 20 lines', () => {
   })
 
   it('flags an in player left out of the lineup, like the sheet’s Allocated column', () => {
-    const b = apply(seedBoard(), { t: 'bench', game: GAME, player: 'liam' })
+    const b = apply(sheetSeed(), { t: 'bench', game: GAME, player: 'liam' })
     const w = analyzeGame(b, game(b)).warnings.find((x) => x.id === 'unplaced-liam')
     expect(w?.text).toBe('Liam is in but not in the lineup')
   })
 
   it('flags players out of position', () => {
-    const b = apply(seedBoard(), { t: 'place', game: GAME, player: 'hugo', slot: 'F3-LW' })
+    const b = apply(sheetSeed(), { t: 'place', game: GAME, player: 'hugo', slot: 'F3-LW' })
     const w = analyzeGame(b, game(b)).warnings.find((x) => x.id === 'fit-hugo')
     expect(w?.text).toBe('Hugo (D) is playing up front')
   })
 
   it('flags an empty net', () => {
-    const b = apply(seedBoard(), { t: 'bench', game: GAME, player: 'euan' })
+    const b = apply(sheetSeed(), { t: 'bench', game: GAME, player: 'euan' })
     expect(analyzeGame(b, game(b)).warnings[0]).toMatchObject({ id: 'no-goalie', player: 'euan' })
   })
 })
@@ -61,7 +61,7 @@ describe('suggestLineup', () => {
   }
 
   it('rebuild keeps everyone in position and evens out the forward lines', () => {
-    const b = seedBoard()
+    const b = sheetSeed()
     const s = suggestLineup(b, game(b), 'rebuild')
     validate(b, s.slots)
     expect(Object.keys(s.slots)).toHaveLength(13)
@@ -74,12 +74,12 @@ describe('suggestLineup', () => {
   })
 
   it('rebuild is deterministic', () => {
-    const b = seedBoard()
+    const b = sheetSeed()
     expect(suggestLineup(b, game(b), 'rebuild')).toEqual(suggestLineup(b, game(b), 'rebuild'))
   })
 
   it('fill only drops bench players into open spots', () => {
-    const b = applyAll(seedBoard(), [
+    const b = applyAll(sheetSeed(), [
       { t: 'attend', game: GAME, player: 'dan', value: 'in' },
       { t: 'bench', game: GAME, player: 'max' },
     ])
@@ -92,12 +92,12 @@ describe('suggestLineup', () => {
   })
 
   it('puts an available goalie in an empty net', () => {
-    const b = apply(seedBoard(), { t: 'bench', game: GAME, player: 'euan' })
+    const b = apply(sheetSeed(), { t: 'bench', game: GAME, player: 'euan' })
     expect(suggestLineup(b, game(b), 'fill').slots.G).toBe('euan')
   })
 
   it('prefers confirmed players and leaves holes on the last line', () => {
-    const b = applyAll(seedBoard(), [
+    const b = applyAll(sheetSeed(), [
       { t: 'clearSlots', game: GAME },
       { t: 'attend', game: GAME, player: 'liam', value: 'maybe' },
       { t: 'attend', game: GAME, player: 'owen', value: 'out' },
@@ -116,7 +116,7 @@ describe('suggestLineup', () => {
 
 describe('lineupText', () => {
   it('formats the lines for the team chat', () => {
-    expect(lineupText(seedBoard(), game(seedBoard()))).toBe(
+    expect(lineupText(sheetSeed(), game(sheetSeed()))).toBe(
       [
         'Yeti lines · Tue, Oct 20',
         'L1  Owen – Steven – DT',
@@ -131,12 +131,12 @@ describe('lineupText', () => {
   })
 
   it('marks unconfirmed players and shows the opponent', () => {
-    const b = applyAll(seedBoard(), [
+    const b = applyAll(sheetSeed(), [
       { t: 'attend', game: GAME, player: 'max', value: 'maybe' },
       { t: 'editGame', game: GAME, patch: { opponent: 'Kings' } },
     ])
     const text = lineupText(b, game(b))
-    expect(text.split('\n')[0]).toBe('Yeti lines · Tue, Oct 20 vs Kings')
+    expect(text.split('\n')[0]).toBe('Yeti lines · Tue, Oct 20 · vs Kings')
     expect(text).toContain('D2  Max? – X')
   })
 })

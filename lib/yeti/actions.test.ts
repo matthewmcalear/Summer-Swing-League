@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { apply, applyAll, newGame, type Action } from './actions'
-import { attendanceOf, defaultGameId, formatGameDate, seedBoard, slotOf, type Board } from './model'
+import { attendanceOf, defaultGameId, formatGameDate, sheetSeed, slotOf, type Board } from './model'
 import { sanitizeBoard } from './validate'
 
 const GAME = 'g-2026-10-20'
 const game = (b: Board) => b.games.find((g) => g.id === GAME)!
-const run = (...actions: Action[]) => applyAll(seedBoard(), actions)
+const run = (...actions: Action[]) => applyAll(sheetSeed(), actions)
 
 describe('seed board (from the lineup spreadsheet)', () => {
   it('has the 14-player roster and the Oct 20 lines', () => {
-    const b = seedBoard()
+    const b = sheetSeed()
     expect(b.players).toHaveLength(14)
     const g = game(b)
     expect(g.slots['F1-LW']).toBe('owen')
@@ -20,7 +20,7 @@ describe('seed board (from the lineup spreadsheet)', () => {
   })
 
   it('survives sanitizing unchanged', () => {
-    expect(sanitizeBoard(seedBoard())).toEqual(seedBoard())
+    expect(sanitizeBoard(sheetSeed())).toEqual(sheetSeed())
   })
 })
 
@@ -51,7 +51,7 @@ describe('place', () => {
   })
 
   it('ignores slots outside the layout and unknown players', () => {
-    const b = seedBoard()
+    const b = sheetSeed()
     expect(apply(b, { t: 'place', game: GAME, player: 'tom', slot: 'F4-C' })).toBe(b)
     expect(apply(b, { t: 'place', game: GAME, player: 'nobody', slot: 'F3-LW' })).toBe(b)
     expect(apply(b, { t: 'place', game: 'nope', player: 'tom', slot: 'F3-LW' })).toBe(b)
@@ -109,7 +109,7 @@ describe('roster', () => {
   })
 
   it('ignores invalid skill or position and blank names', () => {
-    const b = seedBoard()
+    const b = sheetSeed()
     expect(apply(b, { t: 'editPlayer', player: 'max', patch: { skill: 'Legend' as never, name: '   ' } })).toBe(b)
   })
 
@@ -129,8 +129,8 @@ describe('roster', () => {
 
 describe('games', () => {
   it('creates a game from the last lines, attendance unconfirmed', () => {
-    const b = seedBoard()
-    const g = newGame('g2', '2026-10-27', 'Kings', game(b), { copyLines: true, copyAttendance: false })
+    const b = sheetSeed()
+    const g = newGame({ id: 'g2', date: '2026-10-27', opponent: 'Kings' }, game(b), { copyLines: true, copyAttendance: false })
     const next = apply(b, { t: 'addGame', game: g })
     const added = next.games.find((x) => x.id === 'g2')!
     expect(added.slots['F1-LW']).toBe('owen')
@@ -140,14 +140,14 @@ describe('games', () => {
 
   it('keeps out players out of copied lines when attendance is copied', () => {
     const b = run({ t: 'attend', game: GAME, player: 'tom', value: 'out' })
-    const g = newGame('g2', '2026-10-27', '', game(b), { copyLines: true, copyAttendance: true })
+    const g = newGame({ id: 'g2', date: '2026-10-27' }, game(b), { copyLines: true, copyAttendance: true })
     expect(slotOf(g, 'tom')).toBeNull()
     expect(attendanceOf(g, 'dan')).toBe('out')
   })
 
   it('re-sorts games when a date changes and rejects bad dates', () => {
-    const b = applyAll(seedBoard(), [
-      { t: 'addGame', game: newGame('g2', '2026-10-27', '', undefined, { copyLines: false, copyAttendance: false }) },
+    const b = applyAll(sheetSeed(), [
+      { t: 'addGame', game: newGame({ id: 'g2', date: '2026-10-27' }, undefined, { copyLines: false, copyAttendance: false }) },
       { t: 'editGame', game: 'g2', patch: { date: '2026-10-13' } },
     ])
     expect(b.games.map((g) => g.id)).toEqual(['g2', GAME])
@@ -155,7 +155,7 @@ describe('games', () => {
   })
 
   it('picks the next game on or after today by default', () => {
-    const b = apply(seedBoard(), { t: 'addGame', game: newGame('g2', '2026-10-27', '', undefined, { copyLines: false, copyAttendance: false }) })
+    const b = apply(sheetSeed(), { t: 'addGame', game: newGame({ id: 'g2', date: '2026-10-27' }, undefined, { copyLines: false, copyAttendance: false }) })
     expect(defaultGameId(b, '2026-10-20')).toBe(GAME)
     expect(defaultGameId(b, '2026-10-21')).toBe('g2')
     expect(defaultGameId(b, '2026-12-01')).toBe('g2')
@@ -168,7 +168,7 @@ describe('games', () => {
 
 describe('restore', () => {
   it('puts the board back exactly', () => {
-    const before = seedBoard()
+    const before = sheetSeed()
     const after = apply(before, { t: 'attend', game: GAME, player: 'owen', value: 'out' })
     expect(apply(after, { t: 'restore', board: before })).toEqual(before)
   })

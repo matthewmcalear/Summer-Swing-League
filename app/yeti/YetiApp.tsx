@@ -15,14 +15,16 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core'
-import { CalendarDays, ChevronDown, LayoutGrid, RefreshCw, Undo2, Users } from 'lucide-react'
+import Link from 'next/link'
+import { CalendarDays, ChevronDown, CircleHelp, LayoutGrid, RefreshCw, Undo2, Users } from 'lucide-react'
 import { analyzeGame } from '@/lib/yeti/insights'
 import { attendanceOf, defaultGameId, findGame, formatGameDate, localDate, slotLabel } from '@/lib/yeti/model'
 import { GamesView } from './GamesView'
 import { useBoardSync, useLocalState, useToasts, useToday, vibrate } from './hooks'
 import { LinesView, Tray, type LinesHandlers } from './LinesView'
-import { RosterView } from './RosterView'
-import { ChipFace, SyncBadge, Toasts } from './ui'
+import { PlayerSheet, RosterView } from './RosterView'
+import { TeamSheet } from './TeamSheet'
+import { ChipFace, SyncBadge, Toasts, YetiMark } from './ui'
 
 type Tab = 'lines' | 'roster' | 'games'
 
@@ -38,16 +40,6 @@ function newId(): string {
   return Array.from(bytes, (b) => (b % 36).toString(36)).join('')
 }
 
-function YetiMark() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M1.5 20.5 8.6 7.2l3.7 6.6 2.6-4.1 7.6 10.8z" fill="#9cc3fb" />
-      <path d="M8.6 7.2 10.9 11.3 9.6 10.5 8.4 11.6 7.3 10.6z M14.9 9.7 16.6 12.1 15.3 11.6 14.4 12.4z" fill="#fff" />
-      <path d="M1.5 20.5h21" stroke="#c8102e" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  )
-}
-
 export default function YetiApp() {
   const { state, dispatch, undo, refresh } = useBoardSync()
   const { toasts, show: toast, dismiss } = useToasts()
@@ -55,6 +47,8 @@ export default function YetiApp() {
   const [chosenGame, setChosenGame] = useLocalState<string | null>('yeti:game', null)
   const [pickedRaw, setPicked] = useState<string | null>(null)
   const [dragging, setDragging] = useState<{ id: string; width: number } | null>(null)
+  const [editingPlayer, setEditingPlayer] = useState<string | null>(null)
+  const [teamSheet, setTeamSheet] = useState(false)
   const today = useToday(localDate)
 
   const board = state.board
@@ -149,6 +143,14 @@ export default function YetiApp() {
       setPicked,
       toBench,
       markOut,
+      editPlayer: (playerId) => {
+        setPicked(null)
+        setEditingPlayer(playerId)
+      },
+      openTeamSheet: () => {
+        setPicked(null)
+        setTeamSheet(true)
+      },
       tapChip: (playerId, slotId) => {
         if (picked && picked !== playerId) {
           if (slotId) {
@@ -280,12 +282,15 @@ export default function YetiApp() {
           <button type="button" className="yt-icon-btn" onClick={doUndo} disabled={!state.canUndo} aria-label="Undo last change">
             <Undo2 size={20} />
           </button>
+          <Link href="/yeti/help" className="yt-icon-btn" aria-label="How it works">
+            <CircleHelp size={20} />
+          </Link>
         </div>
       </header>
 
-      <main className="yt-main" data-tab={activeTab}>
+      <div className="yt-main" data-tab={activeTab}>
         {body}
-      </main>
+      </div>
 
       <div className="yt-dock">
         <Toasts toasts={toasts} onUndo={doUndo} onDismiss={dismiss} />
@@ -315,6 +320,22 @@ export default function YetiApp() {
           </div>
         </nav>
       </div>
+
+      {teamSheet && game && info && <TeamSheet game={game} info={info} onClose={() => setTeamSheet(false)} />}
+
+      {editingPlayer && board && game && info && (
+        <PlayerSheet
+          key={editingPlayer}
+          board={board}
+          game={game}
+          info={info}
+          playerId={editingPlayer}
+          onClose={() => setEditingPlayer(null)}
+          dispatch={dispatch}
+          toast={toast}
+          newId={newId}
+        />
+      )}
 
       <DragOverlay dropAnimation={{ duration: 160, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' }}>
         {draggedPlayer && game ? (
