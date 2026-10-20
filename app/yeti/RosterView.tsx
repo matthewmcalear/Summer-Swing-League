@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { CheckCheck, Plus, Trash2, UserMinus } from 'lucide-react'
 import type { Action } from '@/lib/yeti/actions'
+import { BEER } from '@/lib/yeti/beer'
 import type { GameInsights } from '@/lib/yeti/insights'
 import {
   LIMITS,
@@ -116,7 +117,14 @@ export function RosterView({ board, game, info, dispatch, toast, newId }: Roster
                 <span className="yt-row-skill" data-skill={p.skill} aria-hidden="true" />
                 <span className="yt-row-num">{p.number || '–'}</span>
                 <span className="yt-row-text">
-                  <span className="yt-row-name">{p.name}</span>
+                  <span className="yt-row-name">
+                    <span className="yt-row-name-text">{p.name}</span>
+                    {game.beer.includes(p.id) && (
+                      <span className="yt-beer-mark" role="img" aria-label="bringing beer">
+                        {BEER}
+                      </span>
+                    )}
+                  </span>
                   <span className="yt-row-sub">
                     <span className="yt-tag" data-skill={p.skill}>
                       {p.skill}
@@ -302,6 +310,26 @@ export function PlayerSheet({
         />
       </div>
 
+      {player && (
+        <div className="yt-field yt-inline">
+          <span>
+            {BEER} Beer for {formatGameDate(game.date)}
+            <small className="yt-inline-sub">{beerTurnsLabel(board, player.id, game.id)}</small>
+          </span>
+          <button
+            type="button"
+            className="yt-mini-btn yt-beer-toggle"
+            aria-pressed={game.beer.includes(player.id)}
+            onClick={() => {
+              const on = !game.beer.includes(player.id)
+              if (dispatch({ t: 'beer', game: game.id, player: player.id, on })) toast(on ? `${BEER} ${player.name} is on beer` : `${player.name} is off beer`)
+            }}
+          >
+            {game.beer.includes(player.id) ? `${BEER} Bringing` : 'Put on beer'}
+          </button>
+        </div>
+      )}
+
       {player && slot && (
         <div className="yt-field yt-inline">
           <span>
@@ -343,4 +371,10 @@ export function PlayerSheet({
       )}
     </Sheet>
   )
+}
+
+/** "2 beer turns this season" — counting every game but this one. */
+function beerTurnsLabel(board: Board, playerId: string, gameId: string): string {
+  const n = board.games.filter((g) => g.id !== gameId && g.beer.includes(playerId)).length
+  return n === 0 ? 'No other beer turns this season' : `${n} other beer ${n === 1 ? 'turn' : 'turns'} this season`
 }

@@ -12,6 +12,7 @@ import {
   type Player,
 } from './model'
 import {
+  cleanBeer,
   cleanNumber,
   cleanText,
   cleanTime,
@@ -53,6 +54,10 @@ export type Action =
   /** Start a game from another game's lines (anyone marked out for this game is left off). */
   | { t: 'copyLines'; game: string; from: string }
   | { t: 'clearSlots'; game: string }
+  /** Add or remove one player from who's bringing beer to a game. */
+  | { t: 'beer'; game: string; player: string; on: boolean }
+  /** Set exactly who's bringing beer (e.g. "his turn", or [] to clear). */
+  | { t: 'setBeer'; game: string; players: string[] }
   | { t: 'addPlayer'; player: Player; game?: string; attendance?: Attendance }
   | { t: 'editPlayer'; player: string; patch: Partial<Omit<Player, 'id'>> }
   | { t: 'removePlayer'; player: string }
@@ -197,6 +202,22 @@ export function apply(board: Board, action: Action): Board {
     case 'clearSlots':
       return withGame(board, action.game, (g) => (Object.keys(g.slots).length ? { ...g, slots: {} } : g))
 
+    case 'beer': {
+      if (!hasPlayer(board, action.player)) return board
+      return withGame(board, action.game, (g) => {
+        const has = g.beer.includes(action.player)
+        if (has === action.on) return g
+        if (action.on && g.beer.length >= LIMITS.beer) return g
+        return { ...g, beer: action.on ? [...g.beer, action.player] : g.beer.filter((id) => id !== action.player) }
+      })
+    }
+
+    case 'setBeer':
+      return withGame(board, action.game, (g) => {
+        const beer = cleanBeer(action.players, new Set(board.players.map((p) => p.id)))
+        return beer.length === g.beer.length && beer.every((id, i) => id === g.beer[i]) ? g : { ...g, beer }
+      })
+
     case 'addPlayer': {
       const player = sanitizePlayer(action.player)
       if (!player || hasPlayer(board, player.id) || board.players.length >= LIMITS.players) return board
@@ -234,7 +255,7 @@ export function apply(board: Board, action: Action): Board {
         games: board.games.map((g) => {
           const attendance = { ...g.attendance }
           delete attendance[action.player]
-          return { ...g, attendance, slots: withoutPlayer(g.slots, action.player) }
+          return { ...g, attendance, slots: withoutPlayer(g.slots, action.player), beer: g.beer.filter((id) => id !== action.player) }
         }),
       }
     }
@@ -303,5 +324,6 @@ export function newGame(
     dPairs: from?.dPairs ?? LIMITS.dPairs.default,
     attendance,
     slots,
+    beer: [], // the beer rotation moves on every game; never copied
   }
 }

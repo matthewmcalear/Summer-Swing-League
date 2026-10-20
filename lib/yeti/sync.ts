@@ -1,5 +1,5 @@
 import { apply, applyAll, type Action } from './actions'
-import type { Board } from './model'
+import { APP_VERSION, type Board } from './model'
 import { sanitizeBoard } from './validate'
 
 /**
@@ -12,6 +12,10 @@ import { sanitizeBoard } from './validate'
  * page is visible it polls for changes made elsewhere. Everything is cached in
  * localStorage, so the board opens instantly and edits made offline are sent
  * once the connection is back.
+ *
+ * Saves carry this page's APP_VERSION so the server can protect fields an older
+ * page doesn't know about; the server reports its own version, so a page that
+ * has been open since before a deploy knows to reload (updateAvailable).
  */
 
 export type SyncStatus = 'loading' | 'live' | 'saving' | 'offline' | 'error'
@@ -26,6 +30,10 @@ export interface SyncState {
   /** Increments whenever a change made on another phone arrives. */
   remoteChanges: number
   error: string | null
+  /** Changes made here that the server doesn't have yet. */
+  pending: number
+  /** The server is running newer page code than this page: reload to get it. */
+  updateAvailable: boolean
 }
 
 export interface SyncOptions {
@@ -41,6 +49,7 @@ interface ServerPayload {
   version: number
   updatedAt: string | null
   board?: unknown
+  app?: number
 }
 
 interface Cached {
@@ -48,6 +57,8 @@ interface Cached {
   version: number
   updatedAt: string | null
   pending: Action[]
+  /** Page version that wrote the cache; a board cached by older code may lack fields. */
+  app?: number
 }
 
 const UNDO_LIMIT = 40
@@ -62,6 +73,7 @@ export class BoardSync {
   private status: SyncStatus = 'loading'
   private remoteChanges = 0
   private error: string | null = null
+  private serverApp = APP_VERSION
 
   private inflight = false
   private fetching = false
@@ -113,6 +125,8 @@ export class BoardSync {
       canUndo: this.undoStack.length > 0,
       remoteChanges: this.remoteChanges,
       error: this.error,
+      pending: this.pending.length,
+      updateAvailable: this.serverApp > APP_VERSION,
     }
   }
 
@@ -220,6 +234,7 @@ export class BoardSync {
 
   /** Take in a board from the server (a poll result or a 409 conflict). */
   private receive(body: ServerPayload) {
+    if (typeof body.app === 'number') this.serverApp = body.app
     if (body.board === undefined || body.board === null) return // unchanged
     const incoming = sanitizeBoard(body.board)
     if (!incoming) return
@@ -249,10 +264,11 @@ export class BoardSync {
       const res = await this.fetchImpl(this.endpoint, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ baseVersion: this.version, board }),
+        body: JSON.stringify({ baseVersion: this.version, board, app: APP_VERSION }),
       })
       if (res.ok) {
         const body = (await res.json()) as ServerPayload
+        if (typeof body.app === 'number') this.serverApp = body.app
         this.pending = this.pending.slice(batch.length)
         this.server = sanitizeBoard(body.board) ?? board
         this.version = body.version
@@ -302,12 +318,20 @@ export class BoardSync {
       const raw = this.storage.getItem(this.storageKey)
       if (!raw) return
       const cached = JSON.parse(raw) as Cached
+      const pending = Array.isArray(cached.pending) ? cached.pending.filter((a) => a && typeof a === 'object' && 't' in a) : []
+      if (cached.app !== APP_VERSION) {
+        // Cached by older page code, which drops fields it doesn't know. Keep the
+        // unsent changes (minus whole-board undos in the old format) and load
+        // the board fresh from the server.
+        this.pending = pending.filter((a) => a.t !== 'restore')
+        return
+      }
       const board = sanitizeBoard(cached.board)
       if (!board || typeof cached.version !== 'number') return
       this.server = board
       this.version = cached.version
       this.updatedAt = cached.updatedAt ?? null
-      this.pending = Array.isArray(cached.pending) ? cached.pending.filter((a) => a && typeof a === 'object' && 't' in a) : []
+      this.pending = pending
       this.view = applyAll(board, this.pending)
     } catch {
       // A corrupt cache just means a fresh load from the server.
@@ -317,7 +341,7 @@ export class BoardSync {
   private persist() {
     if (!this.storage || !this.server) return
     try {
-      const cached: Cached = { board: this.server, version: this.version, updatedAt: this.updatedAt, pending: this.pending }
+      const cached: Cached = { board: this.server, version: this.version, updatedAt: this.updatedAt, pending: this.pending, app: APP_VERSION }
       this.storage.setItem(this.storageKey, JSON.stringify(cached))
     } catch {
       // Storage full or blocked (private mode): the board still works, just not offline.

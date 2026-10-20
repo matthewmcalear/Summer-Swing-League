@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { CalendarPlus, ChevronRight, Clock, Pencil, Trash2 } from 'lucide-react'
 import { newGame, type Action } from '@/lib/yeti/actions'
+import { BEER, beerNames } from '@/lib/yeti/beer'
 import { analyzeGame } from '@/lib/yeti/insights'
 import {
   LIMITS,
@@ -66,9 +67,18 @@ export function GamesView({ board, currentId, today, dispatch, toast, select, ne
             {g.opponent ? opponentLabel(g) : 'Opponent TBD'}
             {g.home !== null && <span className="yt-homeaway">{g.home ? 'Home' : 'Away'}</span>}
           </span>
-          {where && (
+          {(where || info.beer.length > 0) && (
             <span className="yt-game-where">
-              <Clock size={13} aria-hidden="true" /> {where}
+              {where && (
+                <>
+                  <Clock size={13} aria-hidden="true" /> {where}
+                </>
+              )}
+              {info.beer.length > 0 && (
+                <span className="yt-game-beer">
+                  {BEER} {beerNames(info.beer)}
+                </span>
+              )}
             </span>
           )}
           <span className="yt-game-stats">

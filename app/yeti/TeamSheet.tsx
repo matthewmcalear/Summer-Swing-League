@@ -2,14 +2,16 @@
 
 import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
+import { BEER, beerNames } from '@/lib/yeti/beer'
 import type { GameInsights, LineInfo } from '@/lib/yeti/insights'
 import { D_ROLES, F_ROLES, formatGameDate, gameWhere, opponentLabel, type Game } from '@/lib/yeti/model'
 import { YetiMark } from './ui'
 
 /**
  * The lines for the whole team, made to be screenshotted into the group chat:
- * names and numbers only. No skill levels, colors, line strength, warnings or
- * who hasn't confirmed — those stay in the coaches' view.
+ * names and numbers only, plus 🍺 by whoever's bringing beer. No skill levels,
+ * colors, line strength, warnings or who hasn't confirmed — those stay in the
+ * coaches' view.
  */
 export function TeamSheet({ game, info, onClose }: { game: Game; info: GameInsights; onClose: () => void }) {
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -42,7 +44,14 @@ export function TeamSheet({ game, info, onClose }: { game: Game; info: GameInsig
             {s.player ? (
               <>
                 {s.player.number && <small>{s.player.number}</small>}
-                <span>{s.player.name}</span>
+                <span className="yt-ts-name">
+                  <span>{s.player.name}</span>
+                  {game.beer.includes(s.player.id) && (
+                    <i role="img" aria-label="bringing beer">
+                      {BEER}
+                    </i>
+                  )}
+                </span>
               </>
             ) : (
               '—'
@@ -98,6 +107,11 @@ export function TeamSheet({ game, info, onClose }: { game: Game; info: GameInsig
         {info.out.length > 0 && (
           <p className="yt-ts-out">
             <b>Out</b> {info.out.map((p) => p.name).join(', ')}
+          </p>
+        )}
+        {info.beer.length > 0 && (
+          <p className="yt-ts-beer">
+            <span aria-hidden="true">{BEER}</span> <b>Beer</b> {beerNames(info.beer)}
           </p>
         )}
       </article>

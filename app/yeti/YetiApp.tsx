@@ -288,6 +288,12 @@ export default function YetiApp() {
         </div>
       </header>
 
+      {state.updateAvailable && (
+        <button type="button" className="yt-update" onClick={() => window.location.reload()}>
+          <RefreshCw size={15} aria-hidden="true" /> Yeti Lines was updated — tap to refresh
+        </button>
+      )}
+
       <div className="yt-main" data-tab={activeTab}>
         {body}
       </div>
@@ -341,7 +347,7 @@ export default function YetiApp() {
         {draggedPlayer && game ? (
           <div className="yt-overlay" style={{ ['--overlay-w' as string]: `${Math.max(88, Math.min(150, dragging!.width))}px` }}>
             <div className="yt-chip" data-skill={draggedPlayer.skill} data-att={attendanceOf(game, draggedPlayer.id)}>
-              <ChipFace player={draggedPlayer} attendance={attendanceOf(game, draggedPlayer.id)} />
+              <ChipFace player={draggedPlayer} attendance={attendanceOf(game, draggedPlayer.id)} beer={game.beer.includes(draggedPlayer.id)} />
             </div>
           </div>
         ) : null}

@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+import { carryOverForOldPage } from './merge'
 import type { Board } from './model'
 import { SCHEDULE_ID, applySchedule, seedBoard } from './schedule'
 import { sanitizeBoard } from './validate'
@@ -91,10 +92,17 @@ async function readRow(): Promise<StoredBoard> {
   }
 }
 
-/** Save `board` if the stored version is still `baseVersion`; either way, return what's stored now. */
-export async function saveBoard(board: Board, baseVersion: number): Promise<SaveResult> {
+/**
+ * Save `board` if the stored version is still `baseVersion`; either way, return
+ * what's stored now. `appVersion` is the page version that sent it — an older
+ * page's save keeps the fields that page doesn't know about (merge.ts).
+ */
+export async function saveBoard(board: Board, baseVersion: number, appVersion?: number): Promise<SaveResult> {
   await ensureTable()
+  const based = await readRow()
+  if (based.version === baseVersion) board = carryOverForOldPage(board, based.board, appVersion)
   // No row yet (fresh database) → count 0 → readBoard creates it and the caller rebases.
+  // Anyone who saved since `based` was read bumps the version, so this can't overwrite them.
   const { count } = await prisma.yetiBoard.updateMany({
     where: { id: BOARD_ID, version: baseVersion },
     data: { data: board as unknown as Prisma.InputJsonValue, version: { increment: 1 } },

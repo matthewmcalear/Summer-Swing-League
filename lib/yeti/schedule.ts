@@ -101,6 +101,7 @@ export function applySchedule(board: Board): Board {
       dPairs: LIMITS.dPairs.default,
       attendance: {},
       slots: {},
+      beer: [],
     }
     games.push(game)
   }

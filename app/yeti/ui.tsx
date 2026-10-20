@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { X } from 'lucide-react'
+import { BEER } from '@/lib/yeti/beer'
 import { SKILL_POINTS, type Attendance, type Fit, type Player } from '@/lib/yeti/model'
 import type { SyncStatus } from '@/lib/yeti/sync'
 import type { Toast } from './hooks'
@@ -38,11 +39,14 @@ export function ChipFace({
   attendance,
   fit,
   compact,
+  beer,
 }: {
   player: Player
   attendance: Attendance
   fit?: Fit | null
   compact?: boolean
+  /** Bringing beer to this game. */
+  beer?: boolean
 }) {
   return (
     <>
@@ -62,14 +66,19 @@ export function ChipFace({
           ?
         </span>
       )}
+      {beer && (
+        <span className="yt-chip-beer" title="Bringing beer">
+          {BEER}
+        </span>
+      )}
     </>
   )
 }
 
-export function chipLabel(player: Player, attendance: Attendance, where: string | null): string {
+export function chipLabel(player: Player, attendance: Attendance, where: string | null, beer = false): string {
   const att = attendance === 'maybe' ? ', unconfirmed' : attendance === 'out' ? ', out' : ''
   const num = player.number ? ` number ${player.number}` : ''
-  return `${player.name}${num}, ${player.skill}, ${player.pos}${att}${where ? `, ${where}` : ', on the bench'}`
+  return `${player.name}${num}, ${player.skill}, ${player.pos}${att}${beer ? ', bringing beer' : ''}${where ? `, ${where}` : ', on the bench'}`
 }
 
 // ── Strength meter ───────────────────────────────────────────────────────────

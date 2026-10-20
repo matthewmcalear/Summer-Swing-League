@@ -20,6 +20,7 @@ import {
   type Player,
 } from '@/lib/yeti/model'
 import { lineupText } from '@/lib/yeti/share'
+import { BeerButton, BeerSheet } from './BeerSheet'
 import { ChipFace, Meter, Segmented, Sheet, chipLabel } from './ui'
 
 export interface LinesHandlers {
@@ -57,6 +58,7 @@ export function DraggableChip({
 }) {
   const { setNodeRef, listeners, isDragging } = useDraggable({ id: `p:${player.id}`, data: { player: player.id } })
   const attendance = attendanceOf(game, player.id)
+  const beer = game.beer.includes(player.id)
   return (
     <button
       ref={setNodeRef}
@@ -70,10 +72,10 @@ export function DraggableChip({
       data-dragging={isDragging || undefined}
       data-compact={compact || undefined}
       aria-pressed={picked}
-      aria-label={chipLabel(player, attendance, slot ? slotLabel(slot.def) : null)}
+      aria-label={chipLabel(player, attendance, slot ? slotLabel(slot.def) : null, beer)}
       onClick={onTap}
     >
-      <ChipFace player={player} attendance={attendance} fit={slot?.fit} compact={compact} />
+      <ChipFace player={player} attendance={attendance} fit={slot?.fit} compact={compact} beer={beer} />
     </button>
   )
 }
@@ -255,7 +257,7 @@ export function LinesView({
   h: LinesHandlers
 }) {
   const [menuLine, setMenuLine] = useState<LineInfo | null>(null)
-  const [sheet, setSheet] = useState<null | 'auto' | 'share' | 'layout'>(null)
+  const [sheet, setSheet] = useState<null | 'auto' | 'share' | 'layout' | 'beer'>(null)
   const [showAllWarnings, setShowAllWarnings] = useState(false)
   const active = !!(picked || dragging)
   const warnings = showAllWarnings ? info.warnings : info.warnings.slice(0, 3)
@@ -280,6 +282,8 @@ export function LinesView({
           {game.home !== null && <span className="yt-homeaway">{game.home ? 'Home' : 'Away'}</span>}
         </p>
       )}
+
+      <BeerButton board={board} game={game} beer={info.beer} onOpen={() => setSheet('beer')} />
 
       {info.counts.filled === 0 && (
         <section className="yt-start" aria-label="Start the lines">
@@ -392,6 +396,7 @@ export function LinesView({
       <AutoSheet open={sheet === 'auto'} board={board} game={game} info={info} onClose={() => setSheet(null)} h={h} />
       <ShareSheet open={sheet === 'share'} board={board} game={game} onClose={() => setSheet(null)} h={h} />
       <LayoutSheet open={sheet === 'layout'} game={game} info={info} onClose={() => setSheet(null)} h={h} />
+      <BeerSheet open={sheet === 'beer'} board={board} game={game} onClose={() => setSheet(null)} dispatch={h.dispatch} toast={h.toast} />
     </div>
   )
 }
