@@ -112,8 +112,8 @@ function NavDropdown({
 export default function NavBar() {
   const pathname = usePathname()
 
-  // PolyDan (/polydan) and Yeti lines (/yeti) are separate apps with their own header.
-  if (pathname.startsWith('/polydan') || pathname.startsWith('/yeti')) return null
+  // PolyDan (/polydan), Yeti lines (/yeti) and Sparx (/sparx) are separate apps with their own header.
+  if (pathname.startsWith('/polydan') || pathname.startsWith('/yeti') || pathname.startsWith('/sparx')) return null
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
