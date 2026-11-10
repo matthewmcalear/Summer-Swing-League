@@ -12,7 +12,7 @@
   --sx-primary: #1c2026;
   --sx-on-primary: #ffffff;
   --sx-danger: #b3261e;
-  --sx-wear-on: #3a424f;
+  --sx-free: #1baf7a;
   --sx-wear-off: #d9dde3;
   --sx-others: #eb6834;
   --sx-me: #2a78d6;
@@ -33,7 +33,7 @@
   --sx-primary: #f0f1f3;
   --sx-on-primary: #14171c;
   --sx-danger: #ff8a80;
-  --sx-wear-on: #c3cad4;
+  --sx-free: #199e70;
   --sx-wear-off: #343a44;
   --sx-others: #d95926;
   --sx-me: #3987e5;
@@ -135,6 +135,7 @@ body:has(.sparx) main { max-width: none; padding: 0; }
 .sx-key { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 2px; }
 .sx-key-others { background: var(--sx-others); }
 .sx-key-me { background: var(--sx-me); }
+.sx-key-free { background: var(--sx-free); }
 
 /* ── Logging ──────────────────────────────────────────────────────────────── */
 
@@ -206,9 +207,15 @@ body:has(.sparx) main { max-width: none; padding: 0; }
 
 .sx-wear { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 1px; height: 12px; margin-top: 10px; }
 .sx-wear i { background: var(--sx-wear-off); border-radius: 1px; }
-.sx-wear i.on { background: var(--sx-wear-on); }
+.sx-wear i.on-others { background: var(--sx-others); }
+.sx-wear i.on-me { background: var(--sx-me); }
+.sx-wear i.on-free { background: var(--sx-free); }
+
+.sx-ring-mix { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 8px; font-size: 13px; color: var(--sx-ink-2); }
+.sx-ring-mix > span { display: inline-flex; align-items: center; gap: 6px; }
 
 .sx-ring-meta { display: block; margin-top: 8px; font-size: 13px; color: var(--sx-ink-2); }
+.sx-ring-mix + .sx-ring-meta { margin-top: 4px; }
 
 .sx-entries { padding: 0 8px; border-top: 1px solid var(--sx-line); }
 .sx-entries button {
@@ -279,7 +286,7 @@ body:has(.sparx) main { max-width: none; padding: 0; }
 .sx-input input { flex: 1; min-width: 0; font-size: 18px; color: var(--sx-ink); background: none; border: 0; outline: 0; }
 .sx-input:focus-within { outline: 2px solid var(--sx-me); outline-offset: 1px; }
 
-.sx-segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 12px; padding: 4px; background: var(--sx-bg); border-radius: 10px; }
+.sx-segmented { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 12px; padding: 4px; background: var(--sx-bg); border-radius: 10px; }
 .sx-segmented button { min-height: 44px; font-size: 15px; font-weight: 600; color: var(--sx-ink-2); background: none; border: 0; border-radius: 7px; }
 .sx-segmented button[aria-pressed='true'] { color: var(--sx-on-primary); background: var(--sx-primary); }
 

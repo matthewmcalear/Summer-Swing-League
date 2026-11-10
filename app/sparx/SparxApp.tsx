@@ -66,6 +66,11 @@ function statusText(s: SyncState) {
   return s.offline ? 'Offline' : 'Saved'
 }
 
+function entryLabel(entry: Entry) {
+  if (entry.who === 'others') return 'Paid by others'
+  return `${entry.who === 'me' ? 'My own' : 'Free'} · ${plural(entry.uses, 'sharpening')}`
+}
+
 // ── App ──────────────────────────────────────────────────────────────────────
 
 export default function SparxApp() {
@@ -180,6 +185,7 @@ function Login({ sync }: { sync: LedgerSync }) {
 type SheetState =
   | { kind: 'paid' }
   | { kind: 'own' }
+  | { kind: 'free' }
   | { kind: 'saving' }
   | { kind: 'newRing' }
   | { kind: 'ring'; ring: Ring; number: number }
@@ -229,6 +235,13 @@ function Tracker({ ledger, state, sync }: { ledger: Ledger; state: SyncState; sy
     return true
   }
 
+  const logFree = (uses: number) => {
+    const entry: Entry = { id: newId(), who: 'free', uses, date: localDate() }
+    if (!send({ type: 'add', ringId: current.id, entry })) return false
+    showToast(`Added ${plural(uses, 'free sharpening')}`, { type: 'remove', id: entry.id })
+    return true
+  }
+
   const paidChips = [1, 2, 3, 4].map((n) => n * ledger.pricePerUse)
   const lastRingCost = [...ledger.rings].reverse().find((r) => r.cost > 0)?.cost ?? 0
 
@@ -272,6 +285,22 @@ function Tracker({ ledger, state, sync }: { ledger: Ledger; state: SyncState; sy
               Other
             </button>
           </div>
+
+          <div className="sx-log-head sx-log-second">
+            <h2>
+              <i className="sx-key sx-key-free" aria-hidden /> Free sharpenings given
+            </h2>
+          </div>
+          <div className="sx-chips">
+            {[1, 2, 3, 4].map((n) => (
+              <button key={n} className="sx-chip" aria-label={`Log ${plural(n, 'free sharpening')}`} onClick={() => logFree(n)}>
+                {n}
+              </button>
+            ))}
+            <button className="sx-chip sx-chip-other" onClick={() => setSheet({ kind: 'free' })}>
+              Other
+            </button>
+          </div>
         </section>
 
         <section aria-label="Rings">
@@ -307,6 +336,12 @@ function Tracker({ ledger, state, sync }: { ledger: Ledger; state: SyncState; sy
       {sheet?.kind === 'own' && (
         <Sheet title="I sharpened my own" onClose={close}>
           <NumberForm label="How many sharpenings" submit="Add" onSubmit={(n) => logOwn(n) && (close(), true)} />
+        </Sheet>
+      )}
+
+      {sheet?.kind === 'free' && (
+        <Sheet title="Free sharpenings given" onClose={close}>
+          <NumberForm label="How many sharpenings" submit="Add" onSubmit={(n) => logFree(n) && (close(), true)} />
         </Sheet>
       )}
 
@@ -464,7 +499,11 @@ function Progress({ ledger, status }: { ledger: Ledger; status: string }) {
         </ul>
 
         <p className="sx-line">
-          {usd(t.value)} back of {usd(t.spent)} spent · ≈{Math.round(t.uses).toLocaleString('en-US')} sharpenings so far
+          {usd(t.value)} back of {usd(t.spent)} spent
+        </p>
+        <p className="sx-line">
+          ≈{Math.round(t.uses).toLocaleString('en-US')} sharpenings so far
+          {t.freeUses > 0 && `, ${t.freeUses.toLocaleString('en-US')} of them free`}
         </p>
         <p className="sx-line">{outlook}</p>
       </div>
@@ -483,6 +522,8 @@ function Segment({ who, share, amount, name }: { who: 'others' | 'me'; share: nu
 
 // ── Rings ────────────────────────────────────────────────────────────────────
 
+const MIX_LABEL: Record<Entry['who'], string> = { others: 'paid', me: 'mine', free: 'free' }
+
 function RingCard({
   ring,
   number,
@@ -499,8 +540,16 @@ function RingCard({
   onEdit: () => void
 }) {
   const s = summarizeRing(ring, ledger)
-  const used = Math.round(s.uses)
-  const filled = Math.min(ledger.usesPerRing, used)
+  // Grouped by kind so a ring reads at a glance. Paid uses are estimated from the money.
+  const mix: [Entry['who'], number][] = [
+    ['others', Math.round(s.fromOthers / ledger.pricePerUse)],
+    ['me', s.ownUses],
+    ['free', s.freeUses],
+  ]
+  const used = mix.reduce((n, [, count]) => n + count, 0)
+  const ticks = mix.flatMap(([who, count]) => Array<Entry['who']>(count).fill(who))
+  const shown = mix.filter(([, count]) => count > 0)
+  const mixText = shown.map(([who, n]) => `${n} ${MIX_LABEL[who]}`).join(', ')
 
   return (
     <details className="sx-card sx-ring" open={isCurrent}>
@@ -512,11 +561,21 @@ function RingCard({
           </span>
           <span className="sx-ring-net">{signed(s.net)} net</span>
         </span>
-        <span className="sx-wear" role="img" aria-label={`About ${used} of ${ledger.usesPerRing} uses`}>
+        <span className="sx-wear" role="img" aria-label={`About ${used} of ${ledger.usesPerRing} uses${mixText ? `: ${mixText}` : ''}`}>
           {Array.from({ length: ledger.usesPerRing }, (_, i) => (
-            <i key={i} className={i < filled ? 'on' : undefined} />
+            <i key={i} className={ticks[i] ? `on-${ticks[i]}` : undefined} />
           ))}
         </span>
+        {shown.length > 0 && (
+          <span className="sx-ring-mix" aria-hidden>
+            {shown.map(([who, n]) => (
+              <span key={who}>
+                <i className={`sx-key sx-key-${who}`} />
+                {n} {MIX_LABEL[who]}
+              </span>
+            ))}
+          </span>
+        )}
         <span className="sx-ring-meta">
           ≈{used} of {ledger.usesPerRing} uses · {usd(s.value)} in · {ring.cost > 0 ? `${usd(ring.cost)} ring` : 'came with the machine'}
         </span>
@@ -530,7 +589,7 @@ function RingCard({
             <li key={entry.id}>
               <button onClick={() => onEntry(entry)}>
                 <i className={`sx-key sx-key-${entry.who}`} aria-hidden />
-                <span className="sx-entry-what">{entry.who === 'others' ? 'Paid by others' : `My own · ${plural(entry.uses, 'sharpening')}`}</span>
+                <span className="sx-entry-what">{entryLabel(entry)}</span>
                 {entry.date && <span className="sx-entry-date">{shortDate(entry.date)}</span>}
                 <span className="sx-entry-value">{usd(entryValue(entry, ledger))}</span>
               </button>
@@ -647,10 +706,13 @@ function EntryForm({ entry, onSave, onDelete }: { entry: Entry; onSave: (entry: 
     <form onSubmit={submit}>
       <div className="sx-segmented" role="group" aria-label="Who it was for">
         <button type="button" aria-pressed={who === 'others'} onClick={() => setWho('others')}>
-          Paid by others
+          Paid
         </button>
         <button type="button" aria-pressed={who === 'me'} onClick={() => setWho('me')}>
-          My own
+          Mine
+        </button>
+        <button type="button" aria-pressed={who === 'free'} onClick={() => setWho('free')}>
+          Free
         </button>
       </div>
       <label className="sx-field">

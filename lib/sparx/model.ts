@@ -22,7 +22,12 @@ export interface OwnEntry extends EntryBase {
   who: 'me'
   uses: number
 }
-export type Entry = PaidEntry | OwnEntry
+/** Given away: wears the ring, brings in nothing. */
+export interface FreeEntry extends EntryBase {
+  who: 'free'
+  uses: number
+}
+export type Entry = PaidEntry | OwnEntry | FreeEntry
 
 export interface Ring {
   id: string
@@ -39,13 +44,15 @@ export interface Ledger {
   savingPerOwnUse: number
   /** Oldest first; the last one is the ring on the machine now. */
   rings: Ring[]
+  /** Set once the free sharpenings from the notes are in, so they're only ever added once. */
+  freeFromNotes?: boolean
 }
 
 /** Starting data, from the notes. The own-use dollars there were $5 each: $55, $40, $35 → 11, 8, 7. */
 export function seedLedger(): Ledger {
   const paid = (id: string, amount: number): Entry => ({ id, who: 'others', amount, date: null })
   const own = (id: string, uses: number): Entry => ({ id, who: 'me', uses, date: null })
-  return {
+  return withFreeFromNotes({
     unitCost: 1432,
     pricePerUse: 5,
     usesPerRing: 60,
@@ -55,17 +62,34 @@ export function seedLedger(): Ledger {
       { id: 'ring-2', cost: 121, date: null, entries: [paid('note-4', 160), own('note-5', 8)] },
       { id: 'ring-3', cost: 127, date: null, entries: [own('note-6', 7), paid('note-7', 60)] },
     ],
-  }
+  })
+}
+
+/** Adds the free sharpenings from the notes to a ledger that doesn't have them yet. */
+export function withFreeFromNotes(ledger: Ledger): Ledger {
+  const fromNotes: [ringId: string, uses: number][] = [
+    ['ring-1', 8],
+    ['ring-2', 5],
+    ['ring-3', 2],
+  ]
+  const next = fromNotes.reduce<Ledger>(
+    (l, [ringId, uses], i) => applyAction(l, { type: 'add', ringId, entry: { id: `note-free-${i + 1}`, who: 'free', uses, date: null } }),
+    ledger,
+  )
+  return { ...next, freeFromNotes: true }
 }
 
 // ── Numbers ──────────────────────────────────────────────────────────────────
 
-export const entryValue = (entry: Entry, ledger: Ledger) =>
-  entry.who === 'others' ? entry.amount : entry.uses * ledger.savingPerOwnUse
+export function entryValue(entry: Entry, ledger: Ledger) {
+  if (entry.who === 'others') return entry.amount
+  return entry.who === 'me' ? entry.uses * ledger.savingPerOwnUse : 0
+}
 
 export interface RingSummary {
   fromOthers: number
   ownUses: number
+  freeUses: number
   saved: number
   value: number
   /** Paid sharpenings are estimated from the money ($67 at $5 ≈ 13.4), so this can be fractional. */
@@ -77,19 +101,23 @@ export interface RingSummary {
 export function summarizeRing(ring: Ring, ledger: Ledger): RingSummary {
   let fromOthers = 0
   let ownUses = 0
+  let freeUses = 0
   for (const e of ring.entries) {
     if (e.who === 'others') fromOthers += e.amount
-    else ownUses += e.uses
+    else if (e.who === 'me') ownUses += e.uses
+    else freeUses += e.uses
   }
   const saved = ownUses * ledger.savingPerOwnUse
   const value = fromOthers + saved
-  return { fromOthers, ownUses, saved, value, uses: fromOthers / ledger.pricePerUse + ownUses, cost: ring.cost, net: value - ring.cost }
+  const uses = fromOthers / ledger.pricePerUse + ownUses + freeUses
+  return { fromOthers, ownUses, freeUses, saved, value, uses, cost: ring.cost, net: value - ring.cost }
 }
 
 export interface Totals {
   spent: number
   fromOthers: number
   ownUses: number
+  freeUses: number
   saved: number
   value: number
   uses: number
@@ -107,12 +135,14 @@ export function summarize(ledger: Ledger): Totals {
   let spent = ledger.unitCost
   let fromOthers = 0
   let ownUses = 0
+  let freeUses = 0
   let uses = 0
   for (const ring of ledger.rings) {
     const s = summarizeRing(ring, ledger)
     spent += s.cost
     fromOthers += s.fromOthers
     ownUses += s.ownUses
+    freeUses += s.freeUses
     uses += s.uses
   }
   const saved = ownUses * ledger.savingPerOwnUse
@@ -122,6 +152,7 @@ export function summarize(ledger: Ledger): Totals {
     spent,
     fromOthers,
     ownUses,
+    freeUses,
     saved,
     value,
     uses,
@@ -139,7 +170,7 @@ export interface Forecast {
 }
 
 /**
- * Sharpenings left until break-even, at the paid/own mix so far. New rings have
+ * Sharpenings left until break-even, at the paid/own/free mix so far. New rings have
  * to be bought along the way and each one pushes the goal out, so this walks
  * ring by ring. Null when a ring costs more than it brings in (never pays off).
  */
@@ -265,10 +296,10 @@ export function parseEntry(v: unknown): Entry | null {
     const amount = money(e.amount, 0.01)
     return amount === null ? null : { id: e.id, who: 'others', amount, date }
   }
-  if (e.who === 'me') {
+  if (e.who === 'me' || e.who === 'free') {
     const uses = e.uses
     if (typeof uses !== 'number' || !Number.isInteger(uses) || uses < 1 || uses > MAX_USES) return null
-    return { id: e.id, who: 'me', uses, date }
+    return { id: e.id, who: e.who, uses, date }
   }
   return null
 }

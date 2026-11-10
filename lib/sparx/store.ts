@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { applyAction, seedLedger, type Action, type Ledger } from './model'
+import { applyAction, seedLedger, withFreeFromNotes, type Action, type Ledger } from './model'
 
 /**
  * The ledger lives in one row of sparx_ledgers. Saves only land if nobody saved
@@ -51,8 +51,23 @@ const toStored = (row: { data: Prisma.JsonValue; version: number }): StoredLedge
 
 const isUniqueViolation = (err: unknown) => err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002'
 
-/** The current ledger. The first ever read creates it from the notes. */
+/**
+ * The current ledger. The first ever read creates it from the notes; a ledger
+ * from before free sharpenings existed gets the ones in the notes added once,
+ * under the same version check as any other save.
+ */
 export async function readLedger(): Promise<StoredLedger> {
+  const current = await readRow()
+  if (current.ledger.freeFromNotes) return current
+  await prisma.sparxLedger.updateMany({
+    where: { id: LEDGER_ID, version: current.version },
+    data: { data: withFreeFromNotes(current.ledger) as unknown as Prisma.InputJsonValue, version: { increment: 1 } },
+  })
+  // Either way the row now holds the latest ledger (ours, or a newer save that beat us).
+  return readRow()
+}
+
+async function readRow(): Promise<StoredLedger> {
   await ensureTable()
   const row = await prisma.sparxLedger.findUnique({ where: { id: LEDGER_ID } })
   if (row) return toStored(row)
