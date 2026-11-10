@@ -15,13 +15,11 @@ import {
   type Ring,
 } from '@/lib/sparx/model'
 import { EMPTY_SYNC, LedgerSync, type SyncState } from '@/lib/sparx/sync'
+import { NOTES_UNTIL, timeline } from '@/lib/sparx/timeline'
+import { monthLabel, usd } from './format'
+import Payoff from './Payoff'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function usd(n: number) {
-  const v = Math.round(n * 100) / 100
-  return `$${v.toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(v) ? 0 : 2, maximumFractionDigits: 2 })}`
-}
 
 const signed = (n: number) => `${n < 0 ? '−' : '+'}${usd(Math.abs(n))}`
 const plural = (n: number, word: string) => `${n.toLocaleString('en-US')} ${word}${n === 1 ? '' : 's'}`
@@ -203,6 +201,9 @@ function Tracker({ ledger, state, sync }: { ledger: Ledger; state: SyncState; sy
     [],
   )
 
+  const today = useSyncExternalStore(noopSubscribe, localDate, () => null) ?? NOTES_UNTIL
+  const tl = timeline(ledger, today)
+
   const current = ledger.rings[ledger.rings.length - 1]
   const close = () => setSheet(null)
 
@@ -247,7 +248,7 @@ function Tracker({ ledger, state, sync }: { ledger: Ledger; state: SyncState; sy
 
   return (
     <>
-      <Progress ledger={ledger} status={statusText(state)} />
+      <Progress ledger={ledger} status={statusText(state)} payoff={tl.payoff} />
 
       <div className="sx-col sx-body">
         <section className="sx-card" aria-label="Log a sharpening">
@@ -302,6 +303,8 @@ function Tracker({ ledger, state, sync }: { ledger: Ledger; state: SyncState; sy
             </button>
           </div>
         </section>
+
+        <Payoff timeline={tl} />
 
         <section aria-label="Rings">
           <div className="sx-rings-head">
@@ -453,16 +456,17 @@ function Tracker({ ledger, state, sync }: { ledger: Ledger; state: SyncState; sy
 
 // ── Progress bar ─────────────────────────────────────────────────────────────
 
-function Progress({ ledger, status }: { ledger: Ledger; status: string }) {
+function Progress({ ledger, status, payoff }: { ledger: Ledger; status: string; payoff: number | null }) {
   const t = summarize(ledger)
   const pct = Math.floor(t.paidOff * 100)
   const f = forecast(ledger)
+  const when = payoff === null ? '' : `, around ${monthLabel(payoff)}`
 
   let outlook: string
   if (t.toGo <= 0) outlook = t.ahead > 0 ? `Paid off, and ${usd(t.ahead)} ahead.` : 'Paid off.'
   else if (!f) outlook = 'At these numbers, a ring costs more than it brings in.'
-  else if (f.newRings === 0) outlook = `About ${plural(f.uses, 'more sharpening')} to go, all on this ring.`
-  else outlook = `About ${plural(f.uses, 'more sharpening')} and ${plural(f.newRings, 'more ring')} to pay it off.`
+  else if (f.newRings === 0) outlook = `About ${plural(f.uses, 'more sharpening')} to go, all on this ring${when}.`
+  else outlook = `About ${plural(f.uses, 'more sharpening')} and ${plural(f.newRings, 'more ring')} to pay it off${when}.`
 
   const label = `${pct}% paid off: ${usd(t.fromOthers)} paid by others, ${usd(t.saved)} saved on my own, ${usd(t.toGo)} to go.`
 

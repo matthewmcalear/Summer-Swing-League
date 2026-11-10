@@ -169,21 +169,31 @@ export interface Forecast {
   newRings: number
 }
 
+export interface PayoffPath {
+  /** Sharpenings from now, and what's still owed by then. A ring purchase is a step up at the same point. */
+  points: { uses: number; left: number }[]
+  newRings: number
+}
+
 /**
- * Sharpenings left until break-even, at the paid/own/free mix so far. New rings have
- * to be bought along the way and each one pushes the goal out, so this walks
- * ring by ring. Null when a ring costs more than it brings in (never pays off).
+ * The way to break-even, at the paid/own/free mix so far. New rings have to be
+ * bought along the way and each one pushes the goal out, so this walks ring by
+ * ring. Null when a ring costs more than it brings in (never pays off).
  */
-export function forecast(ledger: Ledger): Forecast | null {
+export function payoffPath(ledger: Ledger): PayoffPath | null {
   const totals = summarize(ledger)
-  if (totals.toGo <= 0) return { uses: 0, newRings: 0 }
+  const points = [{ uses: 0, left: totals.toGo }]
+  if (totals.toGo <= 0) return { points, newRings: 0 }
 
   const perUse = totals.uses > 0 ? totals.value / totals.uses : ledger.pricePerUse
   if (perUse <= 0) return null
 
   const current = ledger.rings[ledger.rings.length - 1]
   const left = Math.max(0, ledger.usesPerRing - summarizeRing(current, ledger).uses)
-  if (totals.toGo <= left * perUse) return { uses: Math.ceil(totals.toGo / perUse), newRings: 0 }
+  if (totals.toGo <= left * perUse) {
+    points.push({ uses: totals.toGo / perUse, left: 0 })
+    return { points, newRings: 0 }
+  }
 
   const ringCost = [...ledger.rings].reverse().find((r) => r.cost > 0)?.cost ?? 0
   const fullRing = ledger.usesPerRing * perUse
@@ -192,9 +202,11 @@ export function forecast(ledger: Ledger): Forecast | null {
   let owed = totals.toGo - left * perUse
   let uses = left
   let newRings = 0
+  points.push({ uses, left: owed })
   while (owed > 0) {
     newRings++
     owed += ringCost
+    points.push({ uses, left: owed })
     if (owed <= fullRing) {
       uses += owed / perUse
       owed = 0
@@ -202,8 +214,16 @@ export function forecast(ledger: Ledger): Forecast | null {
       owed -= fullRing
       uses += ledger.usesPerRing
     }
+    points.push({ uses, left: owed })
   }
-  return { uses: Math.ceil(uses), newRings }
+  return { points, newRings }
+}
+
+/** Sharpenings left until break-even, and how many rings that takes. */
+export function forecast(ledger: Ledger): Forecast | null {
+  const path = payoffPath(ledger)
+  if (!path) return null
+  return { uses: Math.ceil(path.points[path.points.length - 1].uses), newRings: path.newRings }
 }
 
 // ── Changes ──────────────────────────────────────────────────────────────────
