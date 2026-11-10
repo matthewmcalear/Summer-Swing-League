@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyAction, forecast, parseAction, seedLedger, summarize, summarizeRing, type Action, type Entry } from './model'
+import { applyAction, entryValue, forecast, parseAction, seedLedger, summarize, summarizeRing, withFreeFromNotes, type Action, type Entry } from './model'
 
 const at = (saving: number) => ({ ...seedLedger(), savingPerOwnUse: saving })
 
@@ -27,13 +27,54 @@ describe('the numbers from the notes', () => {
 
   it('estimates uses per ring from the money', () => {
     const ledger = seedLedger()
-    expect(ledger.rings.map((r) => Math.round(summarizeRing(r, ledger).uses))).toEqual([46, 40, 19])
+    expect(ledger.rings.map((r) => Math.round(summarizeRing(r, ledger).uses))).toEqual([54, 45, 21])
+  })
+})
+
+describe('free sharpenings', () => {
+  const free = (id: string, uses: number): Entry => ({ id, who: 'free', uses, date: null })
+
+  it('has the ones from the notes on each ring', () => {
+    const ledger = seedLedger()
+    expect(ledger.rings.map((r) => summarizeRing(r, ledger).freeUses)).toEqual([8, 5, 2])
+    expect(summarize(ledger).freeUses).toBe(15)
+  })
+
+  it('wears the ring but adds no money', () => {
+    const before = seedLedger()
+    const after = applyAction(before, { type: 'add', ringId: 'ring-3', entry: free('f', 4) })
+    expect(summarize(after).value).toBe(summarize(before).value)
+    expect(summarizeRing(after.rings[2], after).uses).toBe(summarizeRing(before.rings[2], before).uses + 4)
+    expect(entryValue(free('f', 4), after)).toBe(0)
+  })
+
+  it('makes the estimate longer, since the average sharpening brings in less', () => {
+    const before = seedLedger()
+    const after = applyAction(before, { type: 'add', ringId: 'ring-3', entry: free('f', 30) })
+    expect(forecast(after)!.uses).toBeGreaterThan(forecast(before)!.uses)
+  })
+
+  it('adds the notes to an older ledger exactly where they belong', () => {
+    const older = seedLedger()
+    delete older.freeFromNotes
+    older.rings = older.rings.map((r) => ({ ...r, entries: r.entries.filter((e) => e.who !== 'free') }))
+    older.rings[2].entries.push({ id: 'logged-since', who: 'others', amount: 5, date: '2026-11-10' })
+
+    const next = withFreeFromNotes(older)
+    expect(next.freeFromNotes).toBe(true)
+    expect(next.rings.map((r) => summarizeRing(r, next).freeUses)).toEqual([8, 5, 2])
+    expect(next.rings[2].entries.map((e) => e.id)).toContain('logged-since')
+  })
+
+  it('does not double up if the notes are added twice', () => {
+    const once = seedLedger()
+    expect(summarize(withFreeFromNotes(once)).freeUses).toBe(15)
   })
 })
 
 describe('forecast', () => {
   it('counts the rings that have to be bought along the way', () => {
-    expect(forecast(seedLedger())).toEqual({ uses: 246, newRings: 4 })
+    expect(forecast(seedLedger())).toEqual({ uses: 304, newRings: 5 })
   })
 
   it('needs no new ring when the current one covers it', () => {
@@ -62,7 +103,7 @@ describe('applyAction', () => {
 
   it('adds to the given ring and does not double-count a retry', () => {
     const once = applyAction(seedLedger(), add)
-    expect(once.rings[2].entries).toHaveLength(3)
+    expect(once.rings[2].entries).toHaveLength(4)
     expect(applyAction(once, add)).toBe(once)
   })
 
@@ -70,7 +111,7 @@ describe('applyAction', () => {
     const ledger = seedLedger()
     const target = ledger.rings[0].entries[1]
     const removed = applyAction(ledger, { type: 'remove', id: target.id })
-    expect(removed.rings[0].entries).toHaveLength(2)
+    expect(removed.rings[0].entries).toHaveLength(3)
     const back = applyAction(removed, { type: 'add', ringId: 'ring-1', entry: target, at: 1 })
     expect(back.rings[0].entries).toEqual(ledger.rings[0].entries)
   })
@@ -109,6 +150,8 @@ describe('parseAction', () => {
     [{ type: 'add', ringId: 'r', entry: { id: 'x', who: 'others', amount: 0, date: null } }],
     [{ type: 'add', ringId: 'r', entry: { id: 'x', who: 'others', amount: -5, date: null } }],
     [{ type: 'add', ringId: 'r', entry: { id: 'x', who: 'me', uses: 1.5, date: null } }],
+    [{ type: 'add', ringId: 'r', entry: { id: 'x', who: 'free', uses: 0, date: null } }],
+    [{ type: 'add', ringId: 'r', entry: { id: 'x', who: 'free', amount: 5, date: null } }],
     [{ type: 'add', ringId: 'r', entry: { id: 'x', who: 'me', uses: 1, date: 'yesterday' } }],
     [{ type: 'add', ringId: 'bad id!', entry: { id: 'x', who: 'me', uses: 1, date: null } }],
     [{ type: 'newRing', id: 'r', cost: Number.NaN, date: null }],
