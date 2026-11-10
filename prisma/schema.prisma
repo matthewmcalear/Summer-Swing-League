@@ -588,3 +588,19 @@ model YetiBoard {
 
   @@map("yeti_boards")
 }
+
+// ===========================================================================
+// Sparx (/sparx) — private payback tracker for the sharpening machine. One JSON
+// document (rings and what each one brought in). Deploys don't run migrations,
+// so lib/sparx/store.ts also creates this table on first use with the same DDL
+// that `prisma db push` would.
+// ===========================================================================
+
+model SparxLedger {
+  id         String   @id
+  data       Json
+  version    Int      @default(1)
+  updated_at DateTime @default(now()) @updatedAt
+
+  @@map("sparx_ledgers")
+}
