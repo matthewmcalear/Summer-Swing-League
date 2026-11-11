@@ -9,7 +9,7 @@ import history from '@/data/polydan/iron-man-history.json'
 import { executeTrade, TradeError } from '@/lib/polydan/markets'
 import { formatMoney } from '@/lib/polydan/money'
 import { draftFromForm, MAX_PENDING_PER_PLAYER, type ProposalDraft } from '@/lib/polydan/proposals'
-import { duplicateOf, getCurrentEdition } from '@/lib/polydan/queries'
+import { duplicateOf, getCurrentEdition, isMissingTable } from '@/lib/polydan/queries'
 
 export interface ActionState {
   error?: string
@@ -120,13 +120,18 @@ export async function proposeMarket(_: ActionState, form: FormData): Promise<Act
     if (e instanceof Error) return { error: e.message }
     throw e
   }
-  const waiting = await prisma.pdProposal.count({ where: { userId: user.id, status: 'PENDING' } })
-  if (waiting >= MAX_PENDING_PER_PLAYER)
-    return { error: `You already have ${waiting} suggestions waiting. Hang on until those are looked at.` }
-  const dup = await duplicateOf(edition.id, d)
-  if (dup === 'market') return { error: 'That market is already open — go bet on it!' }
-  if (dup === 'proposal') return { error: 'Someone has already suggested that one. It’s waiting for approval.' }
-  await prisma.pdProposal.create({ data: { editionId: edition.id, userId: user.id, ...d } })
+  try {
+    const waiting = await prisma.pdProposal.count({ where: { userId: user.id, status: 'PENDING' } })
+    if (waiting >= MAX_PENDING_PER_PLAYER)
+      return { error: `You already have ${waiting} suggestions waiting. Hang on until those are looked at.` }
+    const dup = await duplicateOf(edition.id, d)
+    if (dup === 'market') return { error: 'That market is already open — go bet on it!' }
+    if (dup === 'proposal') return { error: 'Someone has already suggested that one. It’s waiting for approval.' }
+    await prisma.pdProposal.create({ data: { editionId: edition.id, userId: user.id, ...d } })
+  } catch (e) {
+    if (isMissingTable(e)) return { error: 'Suggestions aren’t switched on yet. Try again soon!' }
+    throw e
+  }
   revalidatePath('/polydan', 'layout')
   return { ok: 'Sent for approval. It opens for betting as soon as it’s approved.' }
 }

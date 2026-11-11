@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import { prisma } from '../prisma'
 import { balanceCents, loadStandings, priceMarket } from './markets'
 import { prices } from './lmsr'
@@ -450,6 +450,24 @@ export async function getIdols(editionId: number) {
 // Player-suggested markets
 // --------------------------------------------------------------------------
 
+/**
+ * The proposals table is new: deploys don't create tables (that's a manual
+ * `prisma db push`), so until it exists these reads fall back to "nothing
+ * waiting" instead of breaking every page for admins.
+ */
+export function isMissingTable(e: unknown): boolean {
+  return e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2021'
+}
+
+async function orIfMissing<T>(p: Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await p
+  } catch (e) {
+    if (isMissingTable(e)) return fallback
+    throw e
+  }
+}
+
 type DraftLike = Pick<ProposalDraft, 'kind' | 'question' | 'a' | 'b' | 'topN'>
 
 /**
@@ -486,6 +504,10 @@ async function competitorNames(ids: number[]) {
 
 /** Admin queue: everything waiting (oldest first) plus the last few decided. */
 export async function getProposalsForAdmin(editionId: number) {
+  return orIfMissing(loadProposalsForAdmin(editionId), { pending: [], decided: [] })
+}
+
+async function loadProposalsForAdmin(editionId: number) {
   const [pending, decided] = await Promise.all([
     prisma.pdProposal.findMany({
       where: { editionId, status: 'PENDING' },
@@ -516,8 +538,12 @@ export async function getProposalsForAdmin(editionId: number) {
   }
 }
 
-/** A player's own suggestions, newest first, with what became of them. */
+/** A player's own suggestions, newest first, with what became of them. Null until the table exists. */
 export async function getMyProposals(userId: number) {
+  return orIfMissing(loadMyProposals(userId), null)
+}
+
+async function loadMyProposals(userId: number) {
   const rows = await prisma.pdProposal.findMany({
     where: { userId },
     orderBy: { id: 'desc' },
@@ -537,7 +563,7 @@ export async function getMyProposals(userId: number) {
 }
 
 export async function pendingProposalCount() {
-  return prisma.pdProposal.count({ where: { status: 'PENDING' } })
+  return orIfMissing(prisma.pdProposal.count({ where: { status: 'PENDING' } }), 0)
 }
 
 /** Everything the player's Suggest page needs. */
@@ -553,8 +579,10 @@ export async function getSuggestPage(userId: number) {
   return {
     edition,
     open: edition != null && edition.status !== 'FINISHED',
+    /** False until the proposals table has been created on this database. */
+    ready: mine != null,
     competitors: entries.map((e) => ({ id: e.competitorId, name: e.competitor.name })).sort((a, b) => a.name.localeCompare(b.name)),
-    mine,
+    mine: mine ?? [],
     adminName: admin?.name ?? 'An admin',
   }
 }

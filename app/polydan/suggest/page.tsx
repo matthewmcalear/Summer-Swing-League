@@ -19,7 +19,7 @@ export default function SuggestPage() {
 
 async function SuggestPageContent() {
   const user = await requireUser()
-  const { edition, open, competitors, mine, adminName } = await getSuggestPage(user.id)
+  const { edition, open, ready, competitors, mine, adminName } = await getSuggestPage(user.id)
 
   return (
     <div className="space-y-6">
@@ -31,7 +31,9 @@ async function SuggestPageContent() {
         </p>
       </header>
 
-      {open ? (
+      {!ready ? (
+        <p className="pd-card p-4 text-sm text-pd-muted">Suggestions are switching on shortly. Check back soon!</p>
+      ) : open ? (
         <section className="pd-card max-w-xl p-4">
           <SuggestForm competitors={competitors} />
         </section>
