@@ -6,10 +6,12 @@ import type { ChartSeries } from '@/lib/polydan/queries'
 // Step-line chart of each outcome's price over time (prices only change on
 // trades and results). ≤4 series, fixed slot order, direct labels at the
 // line ends + a legend, crosshair tooltip listing every series.
+//
+// `fill` (the TV): the chart takes its parent's height and scales its text
+// and spacing with the surrounding font size instead of a fixed 220px.
 
 const SLOTS = ['var(--pd-series-1)', 'var(--pd-series-2)', 'var(--pd-series-3)', 'var(--pd-series-4)']
-const H = 220
-const PAD = { top: 12, right: 96, bottom: 26, left: 36 }
+const BASE_H = 220
 
 function fmtTime(t: number, spanMs: number) {
   const d = new Date(t)
@@ -18,27 +20,49 @@ function fmtTime(t: number, spanMs: number) {
     : d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
 }
 
-export function PriceChart({ series, binaryLabel }: { series: ChartSeries[]; binaryLabel?: string }) {
-  const wrap = useRef<HTMLDivElement>(null)
-  const [measured, setW] = useState<number | null>(null)
-  const w = measured ?? 0
+export function PriceChart({
+  series,
+  binaryLabel,
+  fill = false,
+}: {
+  series: ChartSeries[]
+  binaryLabel?: string
+  fill?: boolean
+}) {
+  const plot = useRef<HTMLDivElement>(null)
+  const [box, setBox] = useState<{ w: number; h: number; k: number } | null>(null)
+  const measured = box != null
+  const w = box?.w ?? 0
+  const H = box?.h ?? BASE_H
+  const k = box?.k ?? 1 // text/spacing scale
+  const PAD = { top: 12 * k, right: 96 * k, bottom: 26 * k, left: 36 * k }
   const [hover, setHover] = useState<number | null>(null)
 
   useEffect(() => {
-    const el = wrap.current
+    const el = plot.current
     if (!el) return
-    const ro = new ResizeObserver(([e]) => setW(Math.max(280, e.contentRect.width)))
+    const ro = new ResizeObserver(([e]) =>
+      setBox({
+        w: Math.max(280, e.contentRect.width),
+        h: fill ? Math.max(60, Math.floor(e.contentRect.height)) : BASE_H,
+        k: fill ? (parseFloat(getComputedStyle(el).fontSize) || 13) / 13 : 1,
+      }),
+    )
     ro.observe(el)
     return () => ro.disconnect()
-  }, [])
+  }, [fill])
 
   const times = series[0]?.points.map((p) => p.t) ?? []
   const t0 = times[0] ?? 0
   const t1 = Math.max(times.at(-1) ?? 1, t0 + 60_000)
   const innerW = w - PAD.left - PAD.right
   const innerH = H - PAD.top - PAD.bottom
+  // Fill mode zooms the y-axis to the data (a 21-way race lives under 30%),
+  // in steps that keep the gridlines on round percentages.
+  const peak = Math.max(0, ...series.flatMap((s) => s.points.map((pt) => pt.p)))
+  const yMax = fill ? ([0.2, 0.4, 0.6, 0.8].find((m) => peak * 1.1 <= m) ?? 1) : 1
   const x = (t: number) => PAD.left + ((t - t0) / (t1 - t0)) * innerW
-  const y = (p: number) => PAD.top + (1 - p) * innerH
+  const y = (p: number) => PAD.top + (1 - p / yMax) * innerH
 
   const paths = useMemo(
     () =>
@@ -53,7 +77,7 @@ export function PriceChart({ series, binaryLabel }: { series: ChartSeries[]; bin
           .join(''),
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [series, w],
+    [series, w, H, k, yMax],
   )
 
   // Direct labels at the right edge, nudged apart so they never collide.
@@ -61,10 +85,14 @@ export function PriceChart({ series, binaryLabel }: { series: ChartSeries[]; bin
     const ends = series
       .map((s, i) => ({ i, label: binaryLabel ?? s.label, p: s.points.at(-1)?.p ?? 0, y: y(s.points.at(-1)?.p ?? 0) }))
       .sort((a, b) => a.y - b.y)
-    for (let k = 1; k < ends.length; k++) ends[k].y = Math.max(ends[k].y, ends[k - 1].y + 15)
+    const gap = 15 * k
+    for (let i = 1; i < ends.length; i++) ends[i].y = Math.max(ends[i].y, ends[i - 1].y + gap)
+    // Pushed past the bottom of the plot? Stack them back up from the bottom.
+    const floor = PAD.top + innerH
+    for (let i = ends.length - 1; i >= 0; i--) ends[i].y = Math.min(ends[i].y, floor - (ends.length - 1 - i) * gap)
     return ends
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [series, w, binaryLabel])
+  }, [series, w, H, k, yMax, binaryLabel])
 
   if (!series.length) return null
 
@@ -80,32 +108,39 @@ export function PriceChart({ series, binaryLabel }: { series: ChartSeries[]; bin
   const hx = hv != null ? x(times[hv]) : 0
 
   return (
-    <div ref={wrap} className="relative w-full select-none" style={{ minHeight: H }}>
-      {measured != null && (
-        <>
-          {series.length > 1 && (
-            <ul className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-pd-ink-2">
-              {series.map((s, i) => (
-                <li key={s.outcomeId} className="flex items-center gap-1.5">
-                  <span className="inline-block h-0.5 w-4 rounded" style={{ background: SLOTS[i] }} />
-                  {s.label}
-                </li>
-              ))}
-            </ul>
-          )}
-          <svg width={w} height={H} role="img" aria-label="Price history chart">
-            {[0, 0.25, 0.5, 0.75, 1].map((g) => (
+    <div className={`w-full select-none ${fill ? 'flex h-full min-h-0 flex-col' : ''}`}>
+      {measured && series.length > 1 && (
+        <ul
+          className={
+            fill
+              ? 'mb-[0.5em] flex flex-wrap gap-x-[1.2em] gap-y-[0.2em] text-[0.85em] text-pd-ink-2'
+              : 'mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-pd-ink-2'
+          }
+        >
+          {series.map((s, i) => (
+            <li key={s.outcomeId} className="flex items-center gap-[0.4em]">
+              <span className="inline-block h-[0.15em] w-[1.3em] rounded" style={{ background: SLOTS[i] }} />
+              {s.label}
+            </li>
+          ))}
+        </ul>
+      )}
+      <div ref={plot} className={`relative ${fill ? 'min-h-0 flex-1' : ''}`} style={fill ? undefined : { minHeight: BASE_H }}>
+        {measured && (
+          <>
+          <svg width={w} height={H} role="img" aria-label="Price history chart" className="block">
+            {[0, 0.25, 0.5, 0.75, 1].map((f) => f * yMax).map((g) => (
               <g key={g}>
                 <line x1={PAD.left} x2={PAD.left + innerW} y1={y(g)} y2={y(g)} stroke="var(--pd-grid)" strokeWidth={1} />
-                <text x={PAD.left - 6} y={y(g) + 4} textAnchor="end" fontSize={11} fill="var(--pd-muted)" className="pd-num">
+                <text x={PAD.left - 6 * k} y={y(g) + 4 * k} textAnchor="end" fontSize={11 * k} fill="var(--pd-muted)" className="pd-num">
                   {Math.round(g * 100)}%
                 </text>
               </g>
             ))}
-            <text x={PAD.left} y={H - 6} fontSize={11} fill="var(--pd-muted)">
+            <text x={PAD.left} y={H - 6 * k} fontSize={11 * k} fill="var(--pd-muted)">
               {fmtTime(t0, t1 - t0)}
             </text>
-            <text x={PAD.left + innerW} y={H - 6} fontSize={11} fill="var(--pd-muted)" textAnchor="end">
+            <text x={PAD.left + innerW} y={H - 6 * k} fontSize={11 * k} fill="var(--pd-muted)" textAnchor="end">
               Now
             </text>
             {paths.map((d, i) => (
@@ -114,7 +149,7 @@ export function PriceChart({ series, binaryLabel }: { series: ChartSeries[]; bin
                 d={d}
                 fill="none"
                 stroke={SLOTS[i]}
-                strokeWidth={2}
+                strokeWidth={2 * k}
                 strokeLinejoin="round"
                 strokeLinecap="round"
               />
@@ -124,14 +159,14 @@ export function PriceChart({ series, binaryLabel }: { series: ChartSeries[]; bin
                 key={s.outcomeId}
                 cx={x(s.points.at(-1)!.t)}
                 cy={y(s.points.at(-1)!.p)}
-                r={4}
+                r={4 * k}
                 fill={SLOTS[i]}
                 stroke="var(--pd-surface)"
-                strokeWidth={2}
+                strokeWidth={2 * k}
               />
             ))}
             {labels.map((l) => (
-              <text key={l.i} x={PAD.left + innerW + 10} y={l.y + 4} fontSize={12} fill="var(--pd-ink)">
+              <text key={l.i} x={PAD.left + innerW + 10 * k} y={l.y + 4 * k} fontSize={12 * k} fill="var(--pd-ink)">
                 <tspan fontWeight={600} className="pd-num">
                   {Math.round(l.p * 100)}%
                 </tspan>
@@ -166,8 +201,9 @@ export function PriceChart({ series, binaryLabel }: { series: ChartSeries[]; bin
               ))}
             </div>
           )}
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   )
 }

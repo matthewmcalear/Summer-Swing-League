@@ -38,6 +38,8 @@ export interface MarketView {
   editionId: number
   kind: MarketRow['kind']
   question: string
+  /** TOP_N only: the N. */
+  topN: number | null
   status: MarketRow['status']
   b: number
   tradable: boolean
@@ -45,21 +47,25 @@ export interface MarketView {
   resolved: boolean
   outcomes: OutcomeView[]
   volumeCents: number
+  /** Number of trades (buys and sells) placed in this market. */
+  bets: number
 }
 
-function toView(m: MarketRow, st: Standings, volumeCents: number): MarketView {
+function toView(m: MarketRow, st: Standings, volumeCents: number, bets = 0): MarketView {
   const priced = priceMarket(m, st)
   return {
     id: m.id,
     editionId: m.editionId,
     kind: m.kind,
     question: m.question,
+    topN: m.topN,
     status: m.status,
     b: m.b,
     tradable: priced.tradable,
     lockedReason: priced.lockedReason,
     resolved: priced.resolution.payouts != null,
     volumeCents,
+    bets,
     outcomes: m.outcomes.map((o) => ({
       id: o.id,
       label: o.label,
@@ -72,13 +78,16 @@ function toView(m: MarketRow, st: Standings, volumeCents: number): MarketView {
   }
 }
 
-async function volumes(marketIds: number[]): Promise<Map<number, number>> {
+async function volumes(marketIds: number[]): Promise<Map<number, { cents: number; bets: number }>> {
   const rows = await prisma.pdTrade.findMany({
     where: { marketId: { in: marketIds } },
     select: { marketId: true, costCents: true },
   })
-  const v = new Map<number, number>()
-  for (const r of rows) v.set(r.marketId, (v.get(r.marketId) ?? 0) + Math.abs(r.costCents))
+  const v = new Map<number, { cents: number; bets: number }>()
+  for (const r of rows) {
+    const cur = v.get(r.marketId) ?? { cents: 0, bets: 0 }
+    v.set(r.marketId, { cents: cur.cents + Math.abs(r.costCents), bets: cur.bets + 1 })
+  }
   return v
 }
 
@@ -99,7 +108,7 @@ export async function getEditionBoard(editionId: number) {
     edition,
     standings,
     field,
-    markets: markets.map((m) => toView(m, standings, vol.get(m.id) ?? 0)),
+    markets: markets.map((m) => toView(m, standings, vol.get(m.id)?.cents ?? 0, vol.get(m.id)?.bets ?? 0)),
   }
 }
 
@@ -107,6 +116,47 @@ export interface ChartSeries {
   outcomeId: number
   label: string
   points: { t: number; p: number }[]
+}
+
+type TradeTick = { outcomeId: number; shares: number; createdAt: Date; pricesAfter: Prisma.JsonValue }
+
+/**
+ * Price history for a chart: the opening prices, the prices after every trade,
+ * and now. Binary markets chart the first side; multi-outcome markets the
+ * current top 4. With `since`, everything earlier collapses into one starting
+ * point at that time (the TV charts event day, not the whole week).
+ */
+function priceHistory(m: MarketRow, view: MarketView, trades: TradeTick[], since?: number): ChartSeries[] {
+  // Opening quantities = today's minus every share traded since.
+  const openQ = new Map(m.outcomes.map((o) => [o.id, o.q]))
+  for (const t of trades) openQ.set(t.outcomeId, openQ.get(t.outcomeId)! - t.shares)
+  const opening = prices(
+    m.outcomes.map((o) => openQ.get(o.id)!),
+    m.b,
+  )
+  let snapshots: { t: number; prices: Record<string, number> }[] = [
+    { t: m.createdAt.getTime(), prices: Object.fromEntries(m.outcomes.map((o, i) => [o.id, opening[i]])) },
+    ...trades.map((t) => ({ t: t.createdAt.getTime(), prices: t.pricesAfter as Record<string, number> })),
+    { t: Date.now(), prices: Object.fromEntries(view.outcomes.map((o) => [o.id, o.price])) },
+  ]
+  if (since != null && since > snapshots[0].t) {
+    const before = snapshots.filter((s) => s.t <= since)
+    snapshots = [{ t: since, prices: before.at(-1)!.prices }, ...snapshots.filter((s) => s.t > since)]
+  }
+  const charted =
+    view.outcomes.length === 2
+      ? [view.outcomes[0]]
+      : [...view.outcomes]
+          .sort((a, b) => b.price - a.price)
+          .slice(0, 4)
+          // Colour follows the outcome, not its rank: keep a stable order so a
+          // lead change doesn't repaint the lines.
+          .sort((a, b) => view.outcomes.indexOf(a) - view.outcomes.indexOf(b))
+  return charted.map((o) => ({
+    outcomeId: o.id,
+    label: o.label,
+    points: snapshots.map((s) => ({ t: s.t, p: s.prices[o.id] ?? 0 })),
+  }))
 }
 
 export async function getMarketDetail(marketId: number, userId: number) {
@@ -126,35 +176,9 @@ export async function getMarketDetail(marketId: number, userId: number) {
     m,
     standings,
     trades.reduce((s, t) => s + Math.abs(t.costCents), 0),
+    trades.length,
   )
-
-  // Opening quantities = today's minus every share traded since.
-  const openQ = new Map(m.outcomes.map((o) => [o.id, o.q]))
-  for (const t of trades) openQ.set(t.outcomeId, openQ.get(t.outcomeId)! - t.shares)
-  const opening = prices(
-    m.outcomes.map((o) => openQ.get(o.id)!),
-    m.b,
-  )
-  const snapshots: { t: number; prices: Record<string, number> }[] = [
-    { t: m.createdAt.getTime(), prices: Object.fromEntries(m.outcomes.map((o, i) => [o.id, opening[i]])) },
-    ...trades.map((t) => ({ t: t.createdAt.getTime(), prices: t.pricesAfter as Record<string, number> })),
-    { t: Date.now(), prices: Object.fromEntries(view.outcomes.map((o) => [o.id, o.price])) },
-  ]
-  // Binary markets chart the first side; multi-outcome markets the current top 4.
-  const charted =
-    view.outcomes.length === 2
-      ? [view.outcomes[0]]
-      : [...view.outcomes]
-          .sort((a, b) => b.price - a.price)
-          .slice(0, 4)
-          // Colour follows the outcome, not its rank: keep a stable order so a
-          // lead change doesn't repaint the lines.
-          .sort((a, b) => view.outcomes.indexOf(a) - view.outcomes.indexOf(b))
-  const series: ChartSeries[] = charted.map((o) => ({
-    outcomeId: o.id,
-    label: o.label,
-    points: snapshots.map((s) => ({ t: s.t, p: s.prices[o.id] ?? 0 })),
-  }))
+  const series = priceHistory(m, view, trades)
 
   const costBasis = new Map<number, number>()
   for (const t of trades)
@@ -271,7 +295,7 @@ export async function getTvBoard(editionId: number) {
     prisma.pdTrade.findMany({
       where: { market: { editionId } },
       orderBy: { id: 'desc' },
-      take: 7,
+      take: 12,
       include: {
         user: { select: { name: true } },
         outcome: { select: { label: true } },
@@ -282,11 +306,28 @@ export async function getTvBoard(editionId: number) {
     getCopperTable(editionId),
     getIdols(editionId),
   ])
-  const events = await getPublicEvents(editionId, board.standings.currentRound)
+  const winnerView = board.markets.find((m) => m.kind === 'WINNER' && m.status !== 'VOID')
+  const [events, winnerRow, winnerTrades, firstResult] = await Promise.all([
+    getPublicEvents(editionId, board.standings.currentRound),
+    winnerView ? loadMarketRow(winnerView.id) : null,
+    winnerView
+      ? prisma.pdTrade.findMany({
+          where: { marketId: winnerView.id },
+          orderBy: { id: 'asc' },
+          select: { outcomeId: true, shares: true, createdAt: true, pricesAfter: true },
+        })
+      : [],
+    prisma.pdResultEvent.findFirst({ where: { editionId }, orderBy: { id: 'asc' }, select: { createdAt: true } }),
+  ])
+  // Once the event is under way, chart from just before the first knockout.
+  const chartSince = firstResult ? firstResult.createdAt.getTime() - 30 * 60_000 : undefined
   const lastPlayed = idols.log.filter((i) => i.kind === 'PLAYED').at(-1)
   return {
     ...board,
     events,
+    /** Winner odds over time (top 4), once anyone has bet on it. */
+    winnerSeries:
+      winnerView && winnerRow && winnerTrades.length ? priceHistory(winnerRow, winnerView, winnerTrades, chartSince) : [],
     copper,
     idols,
     /** An idol was played more recently than the latest knockout: lead with it. */
