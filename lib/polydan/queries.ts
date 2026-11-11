@@ -272,7 +272,9 @@ export async function getPlayerAccounts() {
       .map((p) => ({ ...p, costCents: costOf.get(`${u.id}:${p.outcomeId}`) ?? 0 }))
     const open = bets.reduce((t, p) => t + p.valueCents, 0)
     const netWorth = balance + open
-    return { ...u, balance, invested, open, netWorth, pnl: netWorth - invested, bets }
+    // Has ever traded (open, sold or settled): such accounts can't be removed.
+    const traded = basis.some((b) => b.userId === u.id)
+    return { ...u, balance, invested, open, netWorth, pnl: netWorth - invested, bets, traded }
   })
 }
 

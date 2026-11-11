@@ -44,6 +44,26 @@ export async function createUser(_: ActionState, f: FormData) {
   })
 }
 
+// Removes a player who never bet (e.g. a test account), with their money
+// entries. Anyone who has traded stays: their trades are part of each
+// market's price history. Admins can't be removed here.
+export async function removePlayer(_: ActionState, f: FormData) {
+  return run(async () => {
+    const u = await prisma.pdUser.findUniqueOrThrow({
+      where: { id: int(f, 'userId') },
+      include: { _count: { select: { trades: true } } },
+    })
+    if (u.isAdmin) throw new Error(`${u.name} is an admin and can't be removed`)
+    if (u._count.trades > 0) throw new Error(`${u.name} has placed bets, so the account has to stay. Cash them out instead.`)
+    await prisma.$transaction([
+      prisma.pdPosition.deleteMany({ where: { userId: u.id } }),
+      prisma.pdLedgerEntry.deleteMany({ where: { userId: u.id } }),
+      prisma.pdUser.delete({ where: { id: u.id } }),
+    ])
+    return `Removed ${u.name}`
+  })
+}
+
 export async function resetPin(_: ActionState, f: FormData) {
   return run(async () => {
     const pin = str(f, 'pin')

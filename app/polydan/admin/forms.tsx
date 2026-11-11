@@ -22,6 +22,7 @@ import {
   createEdition,
   createUser,
   recordResults,
+  removePlayer,
   resetPin,
   resolveCustom,
   setEditionStatus,
@@ -559,6 +560,26 @@ export function ResetPinForm({ userId }: { userId: number }) {
           Reset PIN
         </SubmitButton>
       </div>
+    </ActionForm>
+  )
+}
+
+export function RemovePlayerForm({ userId, name, cashCents }: { userId: number; name: string; cashCents: number }) {
+  return (
+    <ActionForm action={removePlayer}>
+      <input type="hidden" name="userId" value={userId} />
+      <ConfirmSubmit
+        className="pd-btn pd-btn-danger"
+        question={
+          cashCents !== 0
+            ? `Remove ${name}? Their ${formatMoney(cashCents)} goes too. This can't be undone.`
+            : `Remove ${name} for good?`
+        }
+        confirmLabel="Yes, remove"
+        pendingText="Removing…"
+      >
+        Remove player
+      </ConfirmSubmit>
     </ActionForm>
   )
 }

@@ -23,6 +23,7 @@ import {
   FieldForm,
   MarketActions,
   NewMarketForm,
+  RemovePlayerForm,
   ResetPinForm,
   ResultsForm,
   SettleAllForm,
@@ -498,6 +499,14 @@ async function PlayersTab() {
                 <div className="space-y-4 rounded-lg bg-pd-surface-2/60 p-3">
                   <BalanceForm userId={u.id} />
                   <ResetPinForm userId={u.id} />
+                  {!u.isAdmin &&
+                    (u.traded ? (
+                      <p className="text-xs text-pd-muted">
+                        {u.name} has placed bets, so the account stays (cash them out instead).
+                      </p>
+                    ) : (
+                      <RemovePlayerForm userId={u.id} name={u.name} cashCents={u.balance} />
+                    ))}
                 </div>
               </div>
             </details>
