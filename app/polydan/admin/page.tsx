@@ -3,7 +3,15 @@ import Loading from '@/app/polydan/loading'
 import Link from 'next/link'
 import { requireAdmin } from '@/lib/polydan/auth'
 import { prisma } from '@/lib/prisma'
-import { getAllEvents, getCopperTable, getEditionBoard, getIdols, getPlayerAccounts } from '@/lib/polydan/queries'
+import {
+  getAllEvents,
+  getCopperTable,
+  getEditionBoard,
+  getIdols,
+  getPlayerAccounts,
+  getProposalsForAdmin,
+  pendingProposalCount,
+} from '@/lib/polydan/queries'
 import { maxHouseLoss } from '@/lib/polydan/lmsr'
 import { formatMoney, formatOrdinal, formatPct } from '@/lib/polydan/money'
 import { StatusTag } from '@/components/polydan/MarketCard'
@@ -23,6 +31,7 @@ import {
   FieldForm,
   MarketActions,
   NewMarketForm,
+  ProposalReview,
   RemovePlayerForm,
   ResetPinForm,
   ResultsForm,
@@ -51,7 +60,10 @@ export default function AdminPage(props: PageProps<'/polydan/admin'>) {
 async function AdminPageContent({ searchParams }: PageProps<'/polydan/admin'>) {
   await requireAdmin()
   const sp = await searchParams
-  const editions = await prisma.pdEdition.findMany({ orderBy: { number: 'desc' } })
+  const [editions, pending] = await Promise.all([
+    prisma.pdEdition.findMany({ orderBy: { number: 'desc' } }),
+    pendingProposalCount(),
+  ])
   const editionId = Number(sp.edition) || editions.find((e) => e.status === 'LIVE')?.id || editions[0]?.id
   // Land on Setup until an edition is live, then on Results (the day-of job).
   const live = editions.find((e) => e.id === editionId)?.status === 'LIVE'
@@ -96,6 +108,11 @@ async function AdminPageContent({ searchParams }: PageProps<'/polydan/admin'>) {
           >
             <span className="sm:hidden">{t.short}</span>
             <span className="hidden sm:inline">{t.label}</span>
+            {t.key === 'markets' && pending > 0 && (
+              <span className="ml-1 min-w-[1.25rem] rounded-full bg-pd-no px-1.5 text-center text-xs leading-5 font-bold text-white">
+                {pending}
+              </span>
+            )}
           </Link>
         ))}
       </nav>
@@ -294,13 +311,14 @@ async function ResultsTab({ editionId }: { editionId: number }) {
 
 async function MarketsTab({ editionId, done }: { editionId: number; done?: string }) {
   const { field, markets } = await getEditionBoard(editionId)
-  const [ledger, trades] = await Promise.all([
+  const [ledger, trades, proposals] = await Promise.all([
     prisma.pdLedgerEntry.groupBy({
       by: ['marketId', 'kind'],
       where: { market: { editionId } },
       _sum: { amountCents: true },
     }),
     prisma.pdTrade.findMany({ where: { market: { editionId } }, select: { marketId: true, outcomeId: true, shares: true } }),
+    getProposalsForAdmin(editionId),
   ])
   // House view per market: money taken in, paid out, and the worst case.
   const house = (marketId: number) => {
@@ -324,6 +342,41 @@ async function MarketsTab({ editionId, done }: { editionId: number; done?: strin
           <p role="status" className="rounded-lg border border-pd-yes bg-pd-yes-soft p-3 text-sm font-medium text-pd-yes">
             ✓ {done.slice(0, 200)}
           </p>
+        )}
+        {proposals.pending.length > 0 && (
+          <div className="pd-card space-y-3 border-pd-gold p-4 ring-1 ring-pd-gold">
+            <h2 className="font-semibold">
+              💡 Suggested by players · {proposals.pending.length} waiting
+            </h2>
+            {proposals.pending.map((p) => (
+              <ProposalReview key={p.id} proposal={{ ...p, when: timeAgo(p.at) }} />
+            ))}
+          </div>
+        )}
+        {proposals.decided.length > 0 && (
+          <details className="pd-card p-4 text-sm">
+            <summary className="cursor-pointer text-pd-muted">Recently decided suggestions</summary>
+            <ul className="mt-2 space-y-1.5">
+              {proposals.decided.map((p) => (
+                <li key={p.id}>
+                  <span className={p.status === 'APPROVED' ? 'text-pd-yes' : 'text-pd-no'}>
+                    {p.status === 'APPROVED' ? '✓' : '✗'}
+                  </span>{' '}
+                  {p.market ? (
+                    <Link href={`/polydan/market?id=${p.market.id}`} className="hover:underline">
+                      {p.market.question}
+                    </Link>
+                  ) : (
+                    p.title
+                  )}{' '}
+                  <span className="text-pd-muted">
+                    · {p.by}
+                    {p.reply && ` · “${p.reply}”`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </details>
         )}
         <div className={`pd-card flex flex-wrap items-center gap-3 p-4 ${decided.length ? 'border-pd-gold ring-1 ring-pd-gold' : ''}`}>
           <p className="min-w-48 flex-1 text-sm">
@@ -603,4 +656,13 @@ async function EditionTab({ editionId, done }: { editionId?: number; done?: stri
     </div>
     </div>
   )
+}
+
+/** "just now", "12 min ago", "3 h ago", "2 d ago" (server time is fine for a gap). */
+function timeAgo(d: Date): string {
+  const min = Math.round((Date.now() - d.getTime()) / 60_000)
+  if (min < 1) return 'just now'
+  if (min < 60) return `${min} min ago`
+  if (min < 48 * 60) return `${Math.round(min / 60)} h ago`
+  return `${Math.round(min / 1440)} d ago`
 }

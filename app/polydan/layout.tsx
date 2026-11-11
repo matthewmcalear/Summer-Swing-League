@@ -4,6 +4,7 @@ import { Oswald } from 'next/font/google'
 import Link from 'next/link'
 import { currentUser } from '@/lib/polydan/auth'
 import { balanceCents } from '@/lib/polydan/markets'
+import { pendingProposalCount } from '@/lib/polydan/queries'
 import { prisma } from '@/lib/prisma'
 import { formatMoney } from '@/lib/polydan/money'
 import { NavLinks } from '@/components/polydan/NavLinks'
@@ -25,7 +26,10 @@ export const metadata: Metadata = {
 async function Header() {
   const user = await currentUser()
   if (!user) return null
-  const balance = await balanceCents(prisma, user.id)
+  const [balance, pending] = await Promise.all([
+    balanceCents(prisma, user.id),
+    user.isAdmin ? pendingProposalCount() : 0,
+  ])
   return (
     <>
       <header className="sticky top-0 z-20 -mx-4 -mt-6 mb-5 border-b border-pd-line bg-pd-bg/90 backdrop-blur sm:-mx-6 lg:-mx-8">
@@ -34,11 +38,11 @@ async function Header() {
             <span className="font-pd-display text-xl font-bold uppercase tracking-wide text-pd-gold">PolyDan</span>
             <span className="hidden text-xs text-pd-muted sm:inline">Iron Man markets</span>
           </Link>
-          <NavLinks isAdmin={user.isAdmin} />
+          <NavLinks isAdmin={user.isAdmin} pending={pending} />
           <AccountMenu name={user.name} balance={formatMoney(balance)} />
         </div>
       </header>
-      <NavLinks isAdmin={user.isAdmin} mobile />
+      <NavLinks isAdmin={user.isAdmin} pending={pending} mobile />
     </>
   )
 }

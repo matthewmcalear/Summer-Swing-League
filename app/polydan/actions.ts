@@ -8,6 +8,8 @@ import { currentUser, endSession, hashPin, startSession, verifyPin } from '@/lib
 import history from '@/data/polydan/iron-man-history.json'
 import { executeTrade, TradeError } from '@/lib/polydan/markets'
 import { formatMoney } from '@/lib/polydan/money'
+import { draftFromForm, MAX_PENDING_PER_PLAYER, type ProposalDraft } from '@/lib/polydan/proposals'
+import { duplicateOf, getCurrentEdition } from '@/lib/polydan/queries'
 
 export interface ActionState {
   error?: string
@@ -94,4 +96,37 @@ export async function trade(_: ActionState, form: FormData): Promise<ActionState
     if (e instanceof TradeError) return { error: e.message }
     throw e
   }
+}
+
+/**
+ * A player suggests a market for the current Iron Man. It waits for an admin
+ * to approve (which opens it) or reject it. Capped per player so the queue
+ * stays manageable, and duplicates of open or waiting markets are refused.
+ */
+export async function proposeMarket(_: ActionState, form: FormData): Promise<ActionState> {
+  const user = await currentUser()
+  if (!user) return { error: 'Log in again' }
+  const edition = await getCurrentEdition()
+  if (!edition || edition.status === 'FINISHED') return { error: 'There’s no Iron Man taking suggestions right now' }
+  const field = await prisma.pdEditionEntry.findMany({ where: { editionId: edition.id }, select: { competitorId: true } })
+  let d: ProposalDraft
+  try {
+    d = draftFromForm(
+      (k) => String(form.get(k) ?? ''),
+      field.map((e) => e.competitorId),
+    )
+  } catch (e) {
+    // Only validation messages reach the player; anything else is a real error.
+    if (e instanceof Error) return { error: e.message }
+    throw e
+  }
+  const waiting = await prisma.pdProposal.count({ where: { userId: user.id, status: 'PENDING' } })
+  if (waiting >= MAX_PENDING_PER_PLAYER)
+    return { error: `You already have ${waiting} suggestions waiting. Hang on until those are looked at.` }
+  const dup = await duplicateOf(edition.id, d)
+  if (dup === 'market') return { error: 'That market is already open — go bet on it!' }
+  if (dup === 'proposal') return { error: 'Someone has already suggested that one. It’s waiting for approval.' }
+  await prisma.pdProposal.create({ data: { editionId: edition.id, userId: user.id, ...d } })
+  revalidatePath('/polydan', 'layout')
+  return { ok: 'Sent for approval. It opens for betting as soon as it’s approved.' }
 }

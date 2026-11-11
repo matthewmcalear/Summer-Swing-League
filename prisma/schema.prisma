@@ -313,6 +313,7 @@ model PdUser {
   ledger    PdLedgerEntry[]
   positions PdPosition[]
   trades    PdTrade[]
+  proposals PdProposal[]
 
   @@map("polydan_users")
 }
@@ -379,11 +380,12 @@ model PdEdition {
   // Copper Cup points by finishing place in an event: 1st, 2nd, 3rd, …
   copperScale String          @default("10,8,6,5,4,3,2,1")
 
-  entries PdEditionEntry[]
-  results PdResultEvent[]
-  markets PdMarket[]
-  events  PdEvent[]
-  idols   PdIdol[]
+  entries   PdEditionEntry[]
+  results   PdResultEvent[]
+  markets   PdMarket[]
+  events    PdEvent[]
+  idols     PdIdol[]
+  proposals PdProposal[]
 
   @@map("polydan_editions")
 }
@@ -460,9 +462,10 @@ model PdMarket {
   createdAt    DateTime       @default(now())
   settledAt    DateTime?
 
-  outcomes PdOutcome[]
-  trades   PdTrade[]
-  ledger   PdLedgerEntry[]
+  outcomes  PdOutcome[]
+  trades    PdTrade[]
+  ledger    PdLedgerEntry[]
+  proposals PdProposal[]
 
   @@index([editionId])
   @@map("polydan_markets")
@@ -570,6 +573,40 @@ model PdIdol {
 
   @@index([editionId])
   @@map("polydan_idols")
+}
+
+enum PdProposalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+
+  @@map("polydan_proposal_status")
+}
+
+// A market a player suggested. An admin approves it (which opens the market,
+// possibly with edited wording) or rejects it with a reason.
+model PdProposal {
+  id        Int              @id @default(autoincrement())
+  editionId Int
+  edition   PdEdition        @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      PdUser           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      PdMarketKind // H2H, TOP_N or CUSTOM
+  question  String? // CUSTOM: the question
+  options   String[] // CUSTOM: the outcomes
+  a         Int? // H2H: first person · TOP_N: the person
+  b         Int? // H2H: second person
+  topN      Int? // TOP_N: the N
+  note      String? // the player's note: how it gets decided
+  status    PdProposalStatus @default(PENDING)
+  reply     String? // admin's reason when rejecting
+  marketId  Int? // the market it became
+  market    PdMarket?        @relation(fields: [marketId], references: [id], onDelete: SetNull)
+  createdAt DateTime         @default(now())
+  decidedAt DateTime?
+
+  @@index([editionId, status])
+  @@map("polydan_proposals")
 }
 
 // ===========================================================================

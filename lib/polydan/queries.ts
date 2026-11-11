@@ -3,6 +3,7 @@ import { prisma } from '../prisma'
 import { balanceCents, loadStandings, priceMarket } from './markets'
 import { prices } from './lmsr'
 import type { Standings } from './standings'
+import { describeDraft, sameMarket, type ProposalDraft, type ProposalKind } from './proposals'
 
 // Read models for the pages. Everything is computed per request from the
 // ledger, the result log and the LMSR quantities — nothing derived is stored.
@@ -443,4 +444,117 @@ export async function getIdols(editionId: number) {
     else holders.delete(i.competitorId)
   }
   return { log: entries, holders: [...holders.entries()].map(([id, name]) => ({ id, name })) }
+}
+
+// --------------------------------------------------------------------------
+// Player-suggested markets
+// --------------------------------------------------------------------------
+
+type DraftLike = Pick<ProposalDraft, 'kind' | 'question' | 'a' | 'b' | 'topN'>
+
+/**
+ * Is this market already open (not void) or already waiting for approval?
+ * Returns which, so the message can say so.
+ */
+export async function duplicateOf(
+  editionId: number,
+  d: DraftLike,
+  ignoreProposal?: number,
+): Promise<'market' | 'proposal' | null> {
+  const [markets, pending] = await Promise.all([
+    prisma.pdMarket.findMany({
+      where: { editionId, kind: d.kind, status: { not: 'VOID' } },
+      include: { outcomes: { orderBy: [{ sort: 'asc' }, { id: 'asc' }] } },
+    }),
+    prisma.pdProposal.findMany({ where: { editionId, kind: d.kind, status: 'PENDING', id: { not: ignoreProposal ?? -1 } } }),
+  ])
+  const asDraft = (m: (typeof markets)[number]): DraftLike => {
+    if (m.kind === 'H2H') return { kind: 'H2H', question: null, a: m.outcomes[0]?.competitorId ?? null, b: m.outcomes[1]?.competitorId ?? null, topN: null }
+    if (m.kind === 'TOP_N') return { kind: 'TOP_N', question: null, a: m.outcomes.find((o) => o.isYes)?.competitorId ?? null, b: null, topN: m.topN }
+    return { kind: 'CUSTOM', question: m.question, a: null, b: null, topN: null }
+  }
+  if (markets.some((m) => sameMarket(asDraft(m), d))) return 'market'
+  if (pending.some((p) => sameMarket({ ...p, kind: p.kind as ProposalKind }, d))) return 'proposal'
+  return null
+}
+
+async function competitorNames(ids: number[]) {
+  const rows = await prisma.pdCompetitor.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } })
+  const map = new Map(rows.map((r) => [r.id, r.name]))
+  return (id: number) => map.get(id) ?? '?'
+}
+
+/** Admin queue: everything waiting (oldest first) plus the last few decided. */
+export async function getProposalsForAdmin(editionId: number) {
+  const [pending, decided] = await Promise.all([
+    prisma.pdProposal.findMany({
+      where: { editionId, status: 'PENDING' },
+      orderBy: { id: 'asc' },
+      include: { user: { select: { name: true } } },
+    }),
+    prisma.pdProposal.findMany({
+      where: { editionId, status: { not: 'PENDING' } },
+      orderBy: { decidedAt: 'desc' },
+      take: 8,
+      include: { user: { select: { name: true } }, market: { select: { id: true, question: true } } },
+    }),
+  ])
+  const nameOf = await competitorNames([...pending, ...decided].flatMap((p) => [p.a, p.b]).filter((x): x is number => x != null))
+  const view = (p: (typeof pending)[number]) => ({
+    id: p.id,
+    kind: p.kind as ProposalKind,
+    question: p.question,
+    options: p.options,
+    note: p.note,
+    by: p.user.name,
+    at: p.createdAt,
+    title: describeDraft({ ...p, kind: p.kind as ProposalKind }, nameOf),
+  })
+  return {
+    pending: pending.map(view),
+    decided: decided.map((p) => ({ ...view(p), status: p.status, reply: p.reply, market: p.market })),
+  }
+}
+
+/** A player's own suggestions, newest first, with what became of them. */
+export async function getMyProposals(userId: number) {
+  const rows = await prisma.pdProposal.findMany({
+    where: { userId },
+    orderBy: { id: 'desc' },
+    take: 20,
+    include: { market: { select: { id: true, question: true } } },
+  })
+  const nameOf = await competitorNames(rows.flatMap((p) => [p.a, p.b]).filter((x): x is number => x != null))
+  return rows.map((p) => ({
+    id: p.id,
+    // Once approved, show the market's final wording (the admin may have edited it).
+    title: p.market?.question ?? describeDraft({ ...p, kind: p.kind as ProposalKind }, nameOf),
+    status: p.status,
+    reply: p.reply,
+    market: p.market,
+    at: p.createdAt,
+  }))
+}
+
+export async function pendingProposalCount() {
+  return prisma.pdProposal.count({ where: { status: 'PENDING' } })
+}
+
+/** Everything the player's Suggest page needs. */
+export async function getSuggestPage(userId: number) {
+  const edition = await getCurrentEdition()
+  const [entries, mine, admin] = await Promise.all([
+    edition
+      ? prisma.pdEditionEntry.findMany({ where: { editionId: edition.id }, include: { competitor: true } })
+      : Promise.resolve([]),
+    getMyProposals(userId),
+    prisma.pdUser.findFirst({ where: { isAdmin: true }, orderBy: { id: 'asc' }, select: { name: true } }),
+  ])
+  return {
+    edition,
+    open: edition != null && edition.status !== 'FINISHED',
+    competitors: entries.map((e) => ({ id: e.competitorId, name: e.competitor.name })).sort((a, b) => a.name.localeCompare(b.name)),
+    mine,
+    adminName: admin?.name ?? 'An admin',
+  }
 }

@@ -19,6 +19,8 @@ import {
   updateEvent,
   addMarket,
   adjustBalance,
+  approveProposal,
+  rejectProposal,
   createEdition,
   createUser,
   recordResults,
@@ -485,6 +487,73 @@ export function MarketActions({
         >
           Delete
         </ConfirmSubmit>
+      </ActionForm>
+    </div>
+  )
+}
+
+/**
+ * One player suggestion: approve it as-is (custom questions can be reworded
+ * first) or reject it with an optional reason the player will see.
+ */
+export function ProposalReview({
+  proposal: p,
+}: {
+  proposal: {
+    id: number
+    kind: 'CUSTOM' | 'H2H' | 'TOP_N'
+    title: string
+    question: string | null
+    options: string[]
+    note: string | null
+    by: string
+    when: string
+  }
+}) {
+  const id = <input type="hidden" name="proposalId" value={p.id} />
+  return (
+    <div className="space-y-3 rounded-lg border border-pd-line bg-pd-surface p-3">
+      <p className="text-xs text-pd-muted">
+        <span className="font-semibold text-pd-ink-2">{p.by}</span> · {p.when} ·{' '}
+        {p.kind === 'CUSTOM' ? 'their own question' : p.kind === 'H2H' ? 'head to head' : 'top finish'}
+      </p>
+      {p.note && (
+        <p className="rounded-md bg-pd-surface-2 px-2.5 py-1.5 text-sm">
+          <span className="text-pd-muted">How it’s decided: </span>
+          {p.note}
+        </p>
+      )}
+      <ActionForm action={approveProposal} className="space-y-2">
+        {id}
+        {p.kind === 'CUSTOM' ? (
+          <>
+            <label className="block text-xs font-medium text-pd-muted">
+              Question (edit before approving if needed)
+              <input name="question" defaultValue={p.question ?? ''} required className="pd-field mt-1 text-sm text-pd-ink" />
+            </label>
+            <label className="block text-xs font-medium text-pd-muted">
+              Options, one per line
+              <textarea
+                name="options"
+                defaultValue={p.options.join('\n')}
+                rows={Math.min(6, Math.max(2, p.options.length))}
+                className="pd-field mt-1 text-sm text-pd-ink"
+              />
+            </label>
+          </>
+        ) : (
+          <p className="font-semibold">{p.title}</p>
+        )}
+        <SubmitButton className="pd-btn pd-btn-gold" pendingText="Opening…">
+          Approve & open
+        </SubmitButton>
+      </ActionForm>
+      <ActionForm action={rejectProposal} className="flex flex-wrap gap-2">
+        {id}
+        <input name="reply" maxLength={200} placeholder="Reason (optional, they’ll see it)" className="pd-field min-w-0 flex-1 text-sm" />
+        <SubmitButton className="pd-btn pd-btn-danger" pendingText="…">
+          Reject
+        </SubmitButton>
       </ActionForm>
     </div>
   )

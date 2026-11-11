@@ -109,6 +109,20 @@ async function HomeContent() {
         <p className="pd-card p-6 text-center text-sm text-pd-muted">No markets open yet — check back soon.</p>
       )}
 
+      <Link
+        href="/polydan/suggest"
+        className="pd-card flex items-center gap-3 p-4 text-sm hover:bg-pd-surface-2/60"
+      >
+        <span className="text-xl" aria-hidden>
+          💡
+        </span>
+        <span className="flex-1">
+          <span className="font-semibold">Got an idea for a market?</span>{' '}
+          <span className="text-pd-muted">Suggest one and it opens once it’s approved.</span>
+        </span>
+        <span className="font-semibold text-pd-gold">Suggest →</span>
+      </Link>
+
       {done.length > 0 && (
         <details className="group">
           <summary className="pd-eyebrow cursor-pointer list-none">

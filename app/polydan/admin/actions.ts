@@ -9,6 +9,8 @@ import { deleteMarket, loadStandings, priceMarket, settleMarket, voidMarket, Tra
 import { computeStandings, type ResultKind } from '@/lib/polydan/standings'
 import { resolveMarket } from '@/lib/polydan/resolve'
 import { createMarket, type MarketSpec } from '@/lib/polydan/createMarket'
+import { cleanCustom, specFor, type ProposalKind } from '@/lib/polydan/proposals'
+import { duplicateOf } from '@/lib/polydan/queries'
 import { formatMoney, parseDollarsToCents } from '@/lib/polydan/money'
 import { DEFAULT_COPPER_SCALE, parseScale, pointsForPlace } from '@/lib/polydan/copper'
 import type { ActionState } from '../actions'
@@ -235,6 +237,48 @@ export async function addMarket(_: ActionState, f: FormData) {
     const odds = oddsRaw ? (JSON.parse(oddsRaw) as Record<string, number>) : undefined
     const m = await createMarket(editionId, spec, b, odds)
     return `Opened “${m.question}”`
+  })
+}
+
+// ------------------------------------------------- player-suggested markets
+
+/**
+ * Opens a player's suggested market. Custom questions can be reworded first
+ * (the suggestion keeps the player's original wording). The proposal is
+ * claimed before the market is created, so a double click can't open two.
+ */
+export async function approveProposal(_: ActionState, f: FormData) {
+  return run(async () => {
+    const p = await prisma.pdProposal.findUniqueOrThrow({ where: { id: int(f, 'proposalId') } })
+    if (p.status !== 'PENDING') throw new Error('Already decided')
+    let draft = { kind: p.kind as ProposalKind, question: p.question, options: p.options, a: p.a, b: p.b, topN: p.topN }
+    if (p.kind === 'CUSTOM') draft = { ...draft, ...cleanCustom(str(f, 'question'), String(f.get('options') ?? '')) }
+    if ((await duplicateOf(p.editionId, draft, p.id)) === 'market') throw new Error('That market is already open')
+    const claimed = await prisma.pdProposal.updateMany({
+      where: { id: p.id, status: 'PENDING' },
+      data: { status: 'APPROVED', decidedAt: new Date() },
+    })
+    if (!claimed.count) throw new Error('Already decided')
+    try {
+      const m = await createMarket(p.editionId, specFor(draft))
+      await prisma.pdProposal.update({ where: { id: p.id }, data: { marketId: m.id } })
+      return `Opened “${m.question}”`
+    } catch (e) {
+      await prisma.pdProposal.update({ where: { id: p.id }, data: { status: 'PENDING', decidedAt: null } })
+      throw e
+    }
+  })
+}
+
+export async function rejectProposal(_: ActionState, f: FormData) {
+  return run(async () => {
+    const reply = str(f, 'reply').slice(0, 200) || null
+    const done = await prisma.pdProposal.updateMany({
+      where: { id: int(f, 'proposalId'), status: 'PENDING' },
+      data: { status: 'REJECTED', reply, decidedAt: new Date() },
+    })
+    if (!done.count) throw new Error('Already decided')
+    return 'Suggestion rejected'
   })
 }
 
@@ -508,6 +552,7 @@ export async function resetEverything(_: ActionState, f: FormData): Promise<Acti
   if (str(f, 'confirm') !== 'RESET') return { error: 'Type RESET (in capitals) to confirm' }
   const removed = await prisma.$transaction(async (tx) => {
     const players = await tx.pdUser.count({ where: { isAdmin: false } })
+    await tx.pdProposal.deleteMany()
     await tx.pdTrade.deleteMany()
     await tx.pdPosition.deleteMany()
     await tx.pdOutcome.deleteMany()
