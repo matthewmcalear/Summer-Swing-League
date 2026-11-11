@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '../prisma'
 import { balanceCents, loadStandings, priceMarket } from './markets'
-import { prices } from './lmsr'
+import { cashOutCents, prices } from './lmsr'
 import type { Standings } from './standings'
 import { describeDraft, sameMarket, type ProposalDraft, type ProposalKind } from './proposals'
 
@@ -207,7 +207,7 @@ export async function getMarketDetail(marketId: number, userId: number) {
   }
 }
 
-/** Open positions valued at today's prices (or the known payout). */
+/** Open positions valued at what they'd sell for right now (or the known payout). */
 async function openPositions(userId?: number) {
   const rows = await prisma.pdPosition.findMany({
     where: { ...(userId ? { userId } : {}), shares: { gt: 1e-9 }, outcome: { market: { status: { in: ['OPEN', 'CLOSED'] } } } },
@@ -233,7 +233,7 @@ async function openPositions(userId?: number) {
       label: r.outcome.label,
       shares: r.shares,
       price,
-      valueCents: Math.floor(r.shares * price * 100),
+      valueCents: cashOutCents(view.outcomes, view.b, view.resolved, r.outcomeId, r.shares),
     }
   })
 }

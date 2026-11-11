@@ -59,6 +59,7 @@ async function MarketPageContent({ searchParams }: PageProps<'/polydan/market'>)
         outcomes={market.outcomes}
         b={market.b}
         tradable={market.tradable}
+        resolved={market.resolved}
         lockedReason={market.lockedReason}
         balanceCents={balance}
         holdings={myPositions}

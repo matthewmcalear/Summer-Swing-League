@@ -56,7 +56,8 @@ async function PortfolioPageContent() {
       </div>
 
       <section>
-        <h2 className="pd-eyebrow mb-2">Open positions</h2>
+        <h2 className="pd-eyebrow">Open positions</h2>
+        <p className="mb-2 text-xs text-pd-muted">Each bet is valued at what it would sell for right now.</p>
         {positions.length ? (
           <ul className="pd-card divide-y divide-pd-line">
             {positions.map((p) => {
@@ -75,7 +76,7 @@ async function PortfolioPageContent() {
                     </div>
                     <div className="text-right">
                       <p className="font-semibold pd-num">{formatMoney(p.valueCents)}</p>
-                      <p className={`text-xs pd-num ${pnl >= 0 ? 'text-pd-yes' : 'text-pd-no'}`}>{formatMoney(pnl, { sign: true })}</p>
+                      <p className={`text-xs pd-num ${pnl > 0 ? 'text-pd-yes' : pnl < 0 ? 'text-pd-no' : 'text-pd-muted'}`}>{formatMoney(pnl, { sign: true })}</p>
                     </div>
                   </Link>
                 </li>

@@ -3,7 +3,7 @@
 import { useActionState, useMemo, useState } from 'react'
 import { trade } from '@/app/polydan/actions'
 import type { OutcomeView } from '@/lib/polydan/queries'
-import { prices, sellProceeds, sharesForSpend } from '@/lib/polydan/lmsr'
+import { cashOutCents, prices, sellProceeds, sharesForSpend } from '@/lib/polydan/lmsr'
 import { formatMoney, formatMultiple, formatPct } from '@/lib/polydan/money'
 import { Notice, SubmitButton } from './ui'
 
@@ -20,6 +20,7 @@ export function Trading({
   outcomes,
   b,
   tradable,
+  resolved,
   lockedReason,
   balanceCents,
   holdings,
@@ -28,6 +29,8 @@ export function Trading({
   outcomes: OutcomeView[]
   b: number
   tradable: boolean
+  /** The result is in: holdings are worth their payout. */
+  resolved: boolean
   lockedReason: string | null
   balanceCents: number
   holdings: Holding[]
@@ -96,7 +99,7 @@ export function Trading({
                 <p className={`font-medium ${o.dead ? 'text-pd-muted line-through' : ''}`}>{o.label}</p>
                 {h && (
                   <p className="text-xs text-pd-gold pd-num">
-                    You hold {h.shares.toFixed(2)} · worth {formatMoney(Math.floor(h.shares * o.price * 100))}
+                    You hold {h.shares.toFixed(2)} · worth {formatMoney(cashOutCents(outcomes, b, resolved, o.id, h.shares))}
                   </p>
                 )}
               </div>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buyCost, maxHouseLoss, prices, seedQuantities, sellProceeds, sharesForSpend } from './lmsr'
+import { buyCost, cashOutCents, maxHouseLoss, prices, seedQuantities, sellProceeds, sharesForSpend } from './lmsr'
 import { computeStandings, type ResultEventLike } from './standings'
 import { resolveMarket, type MarketLike } from './resolve'
 import { headToHeadProbability, topNProbability, winnerProbabilities } from './history'
@@ -218,5 +218,45 @@ describe('copper cup scoring', () => {
     expect(parseScale('')).toBeNull()
     expect(parseScale('10,eight')).toBeNull()
     expect(parseScale('10,-2')).toBeNull()
+  })
+})
+
+describe('cashOutCents', () => {
+  // A thin yes/no market like the Top 10s: liquidity 50, opening at 40% yes.
+  const b = 50
+  const open = seedQuantities([0.4, 0.6], b)
+  const view = (q: number[], dead: boolean[] = [false, false]) => {
+    const p = prices(q, b)
+    return [
+      { id: 1, q: q[0], price: p[0], dead: dead[0] },
+      { id: 2, q: q[1], price: p[1], dead: dead[1] },
+    ]
+  }
+
+  it('values a fresh $10 bet at about $10, not at shares × the new price', () => {
+    const shares = sharesForSpend(open, b, 0, 10)
+    const after = [open[0] + shares, open[1]]
+    const markToLast = Math.floor(shares * prices(after, b)[0] * 100)
+    expect(markToLast).toBeGreaterThan(1100) // the old way showed a $1+ paper profit
+    expect(cashOutCents(view(after), b, false, 1, shares)).toBeGreaterThanOrEqual(999)
+    expect(cashOutCents(view(after), b, false, 1, shares)).toBeLessThanOrEqual(1000)
+  })
+
+  it('shows a real gain once someone else bets the price up', () => {
+    const mine = sharesForSpend(open, b, 0, 10)
+    const q1 = [open[0] + mine, open[1]]
+    const theirs = sharesForSpend(q1, b, 0, 20)
+    const q2 = [q1[0] + theirs, q1[1]]
+    expect(cashOutCents(view(q2), b, false, 1, mine)).toBeGreaterThan(1100)
+  })
+
+  it('uses the payout once the result is in, and zero for a dead outcome', () => {
+    const settled = [
+      { id: 1, q: 0, price: 1, dead: false },
+      { id: 2, q: 0, price: 0, dead: true },
+    ]
+    expect(cashOutCents(settled, b, true, 1, 12.5)).toBe(1250)
+    expect(cashOutCents(settled, b, true, 2, 12.5)).toBe(0)
+    expect(cashOutCents(view(open), b, false, 3, 5)).toBe(0) // not an outcome of this market
   })
 })

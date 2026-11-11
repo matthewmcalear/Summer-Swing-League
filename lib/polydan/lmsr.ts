@@ -38,6 +38,36 @@ export function sellProceeds(q: number[], b: number, i: number, shares: number):
   return -buyCost(q, b, i, -shares)
 }
 
+/**
+ * What a holding is worth right now, in cents: what selling it would actually
+ * pay, after its own price impact and rounded down exactly like a real sale
+ * (lib/polydan/markets.ts executeTrade). Valuing at shares × last price would
+ * count your own bet's price move as profit: buy $10 and it would show as
+ * $11 straight away. Once the result is in (or the outcome is dead) each
+ * share is worth its payout, which is what `price` holds then.
+ */
+export function cashOutCents(
+  outcomes: { id: number; q: number; price: number; dead: boolean }[],
+  b: number,
+  resolved: boolean,
+  outcomeId: number,
+  shares: number,
+): number {
+  const o = outcomes.find((x) => x.id === outcomeId)
+  if (!o || !(shares > 0)) return 0
+  if (resolved || o.dead) return Math.floor(shares * o.price * 100)
+  const live = outcomes.filter((x) => !x.dead)
+  const i = live.findIndex((x) => x.id === outcomeId)
+  return Math.floor(
+    sellProceeds(
+      live.map((x) => x.q),
+      b,
+      i,
+      shares,
+    ) * 100,
+  )
+}
+
 /** Shares of outcome i that `spend` dollars buy (exact inverse of buyCost). */
 export function sharesForSpend(q: number[], b: number, i: number, spend: number): number {
   const p = prices(q, b)[i]
