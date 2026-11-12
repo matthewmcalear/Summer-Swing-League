@@ -13,6 +13,7 @@ export function NavLinks({ isAdmin, mobile, pending = 0 }: { isAdmin: boolean; m
     { href: '/polydan/suggest', label: mobile ? 'Suggest' : '💡 Suggest' },
     // The TV view is for a laptop on the big screen, so it's a desktop-only tab.
     ...(mobile ? [] : [{ href: '/polydan/tv', label: '📺 TV' }]),
+    ...(mobile ? [] : [{ href: '/polydan/about', label: 'How it works' }]),
     ...(isAdmin ? [{ href: '/polydan/admin', label: 'Admin' }] : []),
   ]
   return (

@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { hashPin, requireAdmin } from '@/lib/polydan/auth'
 import { deleteMarket, loadStandings, priceMarket, settleMarket, voidMarket, TradeError } from '@/lib/polydan/markets'
 import { computeStandings, type ResultKind } from '@/lib/polydan/standings'
-import { resolveMarket } from '@/lib/polydan/resolve'
+import { autoRule, resolveMarket, type AutoRule } from '@/lib/polydan/resolve'
 import { createMarket, type MarketSpec } from '@/lib/polydan/createMarket'
 import { cleanCustom, specFor, type ProposalKind } from '@/lib/polydan/proposals'
 import { duplicateOf } from '@/lib/polydan/queries'
@@ -227,9 +227,58 @@ export async function recordResults(_: ActionState, f: FormData) {
     const upcoming = revealed?.count
       ? await prisma.pdEvent.findUnique({ where: { editionId_seq: { editionId, seq: round + 1 } } })
       : null
+    const opened = next.finished ? null : await openNextRoundMarket(editionId, next)
     return `Round ${round} recorded (${events.length} result${events.length > 1 ? 's' : ''})${
       next.finished ? ' — we have a champion!' : upcoming ? ` · revealed event ${upcoming.seq}: ${upcoming.name}` : ''
-    }`
+    }${opened ? ` · opened “${opened}”` : ''}`
+  })
+}
+
+/**
+ * Opens "Who loses round N?" for the round about to be played, unless it's
+ * already there or nobody in the main game plays it (the island finale).
+ * Never fails the round: a problem here just means no market.
+ */
+async function openNextRoundMarket(editionId: number, st: ReturnType<typeof computeStandings>): Promise<string | null> {
+  try {
+    const round = st.currentRound + 1
+    const [event, markets] = await Promise.all([
+      prisma.pdEvent.findUnique({ where: { editionId_seq: { editionId, seq: round } } }),
+      prisma.pdMarket.findMany({ where: { editionId, kind: 'CUSTOM' }, select: { manualResult: true } }),
+    ])
+    const onIsland = [...st.byId.values()].some((s) => s.status === 'ISLAND')
+    if (event && !event.islandOpen && onIsland) return null // island finale: the main game sits out
+    if ([...st.byId.values()].filter((s) => s.status === 'IN').length < 3) return null
+    if (markets.some((m) => { const r = autoRule(m.manualResult); return r?.auto === 'ROUND_LOSER' && r.round === round })) return null
+    return (await createMarket(editionId, { kind: 'AUTO', rule: { auto: 'ROUND_LOSER', round } })).question
+  } catch {
+    return null
+  }
+}
+
+/** Admin opens one of the self-settling specials by hand. */
+export async function openAutoMarket(_: ActionState, f: FormData) {
+  return run(async () => {
+    const editionId = int(f, 'editionId')
+    const which = str(f, 'auto')
+    const [results, entries, existing] = await Promise.all([
+      prisma.pdResultEvent.findMany({ where: { editionId }, orderBy: { id: 'asc' } }),
+      prisma.pdEditionEntry.findMany({ where: { editionId } }),
+      prisma.pdMarket.findMany({ where: { editionId, kind: 'CUSTOM', status: { not: 'VOID' } }, select: { manualResult: true } }),
+    ])
+    const st = computeStandings(entries.map((e) => e.competitorId), results)
+    const rule: AutoRule =
+      which === 'FIRST_ISLAND' || which === 'FIRST_OUT' ? { auto: which } : { auto: 'ROUND_LOSER', round: st.currentRound + 1 }
+    const log = [...st.rounds.values()]
+    if (rule.auto === 'FIRST_ISLAND' && log.some((r) => r.toIsland.length)) throw new Error('Someone has already gone to the island')
+    if (rule.auto === 'FIRST_OUT' && log.some((r) => r.out.length)) throw new Error('Someone is already out')
+    const same = existing.some((m) => {
+      const r = autoRule(m.manualResult)
+      return r?.auto === rule.auto && (rule.auto !== 'ROUND_LOSER' || (r as { round: number }).round === rule.round)
+    })
+    if (same) throw new Error('That market is already open')
+    const m = await createMarket(editionId, { kind: 'AUTO', rule })
+    return `Opened “${m.question}”`
   })
 }
 
@@ -330,7 +379,7 @@ export async function setMarketStatus(_: ActionState, f: FormData) {
 export async function resolveCustom(_: ActionState, f: FormData) {
   return run(async () => {
     const m = await prisma.pdMarket.findUniqueOrThrow({ where: { id: int(f, 'marketId') }, include: { outcomes: true } })
-    if (m.kind !== 'CUSTOM') throw new Error('Only custom markets are resolved by hand')
+    if (m.kind !== 'CUSTOM' || autoRule(m.manualResult)) throw new Error('Only custom markets are resolved by hand')
     if (m.status === 'SETTLED' || m.status === 'VOID') throw new Error('Already settled')
     const winner = str(f, 'outcomeId')
     if (!winner) {

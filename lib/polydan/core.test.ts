@@ -295,3 +295,44 @@ describe('cashOutCents', () => {
     expect(cashOutCents(view(open), b, false, 3, 5)).toBe(0) // not an outcome of this market
   })
 })
+
+describe('self-settling specials', () => {
+  const field = [1, 2, 3, 4, 5]
+  const market = (manualResult: unknown, ids = field): MarketLike => ({
+    kind: 'CUSTOM',
+    topN: null,
+    manualResult,
+    outcomes: ids.map((id) => ({ id: id * 10, competitorId: id, isYes: null })),
+  })
+  const log = [ev(1, 5, 'TO_ISLAND'), ev(2, 4, 'TO_ISLAND'), ev(2, 3, 'TO_ISLAND'), ev(3, 5, 'OUT')]
+
+  it('stay open until the thing happens', () => {
+    const st = computeStandings(field, [])
+    expect(resolveMarket(market({ auto: 'FIRST_ISLAND' }), st).payouts).toBeNull()
+    expect(resolveMarket(market({ auto: 'ROUND_LOSER', round: 1 }), st).payouts).toBeNull()
+  })
+
+  it('pay the first person sent to the island, and the first one out for good', () => {
+    const st = computeStandings(field, log)
+    const island = resolveMarket(market({ auto: 'FIRST_ISLAND' }), st)
+    expect(island.payouts!.get(50)).toBe(1)
+    expect(island.payouts!.get(40)).toBe(0)
+    expect(resolveMarket(market({ auto: 'FIRST_OUT' }), st).payouts!.get(50)).toBe(1)
+  })
+
+  it('split a round between two losers, and ignore island knockouts', () => {
+    const st = computeStandings(field, log)
+    const r2 = resolveMarket(market({ auto: 'ROUND_LOSER', round: 2 }, [1, 2, 3, 4]), st)
+    expect(r2.payouts!.get(30)).toBe(0.5)
+    expect(r2.payouts!.get(40)).toBe(0.5)
+    expect(r2.payouts!.get(10)).toBe(0)
+    // Round 3: only an islander went out, so nobody in the main game lost yet.
+    expect(resolveMarket(market({ auto: 'ROUND_LOSER', round: 3 }, [1, 2]), st).payouts).toBeNull()
+  })
+
+  it('leave hand-settled custom markets alone', () => {
+    const st = computeStandings(field, log)
+    expect(resolveMarket(market(null), st).payouts).toBeNull()
+    expect(resolveMarket(market({ 10: 1 }), st).payouts!.get(10)).toBe(1)
+  })
+})

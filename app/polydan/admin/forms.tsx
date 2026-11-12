@@ -17,6 +17,7 @@ import {
   updateEvent,
   addMarket,
   adjustBalance,
+  openAutoMarket,
   cashOutEveryone,
   approveProposal,
   rejectProposal,
@@ -620,6 +621,28 @@ export function CashOutEveryoneForm({ totalCents, disabled }: { totalCents: numb
         Mark everyone as paid
       </ConfirmSubmit>
     </ActionForm>
+  )
+}
+
+/** One-tap buttons for the specials that settle themselves from the results. */
+export function AutoMarketButtons({ editionId, nextRound }: { editionId: number; nextRound: number }) {
+  const items = [
+    ['ROUND_LOSER', `Who loses round ${nextRound}?`],
+    ['FIRST_ISLAND', 'First to Redemption Island'],
+    ['FIRST_OUT', 'First knocked out for good'],
+  ] as const
+  return (
+    <div className="space-y-2">
+      {items.map(([auto, label]) => (
+        <ActionForm key={auto} action={openAutoMarket}>
+          <input type="hidden" name="editionId" value={editionId} />
+          <input type="hidden" name="auto" value={auto} />
+          <SubmitButton className="pd-btn pd-btn-ghost pd-btn-sm w-full" pendingText="Opening…">
+            {label}
+          </SubmitButton>
+        </ActionForm>
+      ))}
+    </div>
   )
 }
 

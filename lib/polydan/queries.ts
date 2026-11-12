@@ -1,3 +1,4 @@
+import { autoRule, type AutoRule } from './resolve'
 import { Prisma } from '@prisma/client'
 import { prisma } from '../prisma'
 import { balanceCents, loadStandings, priceMarket } from './markets'
@@ -50,6 +51,8 @@ export interface MarketView {
   volumeCents: number
   /** Number of trades (buys and sells) placed in this market. */
   bets: number
+  /** Set for the self-settling specials (first to the island, who loses round N…). */
+  auto: AutoRule | null
 }
 
 function toView(m: MarketRow, st: Standings, volumeCents: number, bets = 0): MarketView {
@@ -67,6 +70,7 @@ function toView(m: MarketRow, st: Standings, volumeCents: number, bets = 0): Mar
     resolved: priced.resolution.payouts != null,
     volumeCents,
     bets,
+    auto: autoRule(m.manualResult),
     outcomes: m.outcomes.map((o) => ({
       id: o.id,
       label: o.label,

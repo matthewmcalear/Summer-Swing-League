@@ -34,8 +34,18 @@ export interface Standings {
   finished: boolean
   champion: number | null
   currentRound: number
+  /** Who lost each recorded round, for the round-by-round markets. */
+  rounds: Map<number, RoundLog>
   /** Copper Cup points so far (attached by loadStandings; absent in pure tests). */
   copper?: CopperTable
+}
+
+export interface RoundLog {
+  /** Lost the main game this round: sent to the island or straight out. */
+  losers: number[]
+  toIsland: number[]
+  /** Knocked out for good this round (from the main game or the island). */
+  out: number[]
 }
 
 export interface CopperTable {
@@ -68,14 +78,20 @@ export function computeStandings(field: number[], events: ResultEventLike[]): St
   // Events are applied in log order, grouped by round for tie handling.
   const rounds = [...new Set(events.map((e) => e.round))].sort((a, b) => a - b)
   let currentRound = 0
+  const log = new Map<number, RoundLog>()
 
   for (const round of rounds) {
     currentRound = round
     const outThisRound: { s: Standing; rank: number }[] = []
+    const entry: RoundLog = { losers: [], toIsland: [], out: [] }
+    log.set(round, entry)
     for (const e of events.filter((x) => x.round === round)) {
       const s = byId.get(e.competitorId)
       const err = transitionError(s?.status, e.kind)
       if (err || !s) throw new Error(`Round ${round}: ${err}`)
+      if (s.status === 'IN' && e.kind !== 'RETURN') entry.losers.push(s.competitorId)
+      if (e.kind === 'TO_ISLAND') entry.toIsland.push(s.competitorId)
+      if (e.kind === 'OUT') entry.out.push(s.competitorId)
       s.status = NEXT[e.kind]
       if (e.kind === 'OUT') {
         s.outRound = round
@@ -100,5 +116,6 @@ export function computeStandings(field: number[], events: ResultEventLike[]): St
     finished: field.length > 1 && alive.length <= 1,
     champion,
     currentRound,
+    rounds: log,
   }
 }

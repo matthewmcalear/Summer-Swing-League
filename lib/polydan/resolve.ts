@@ -22,6 +22,35 @@ export interface MarketLike {
   outcomes: OutcomeLike[]
 }
 
+/**
+ * Self-settling specials: CUSTOM markets with one outcome per competitor,
+ * decided by the results log instead of by the admin. Stored in the market's
+ * manualResult as {"auto": …}.
+ */
+export type AutoRule =
+  | { auto: 'FIRST_ISLAND' } // first sent to Redemption Island
+  | { auto: 'FIRST_OUT' } // first knocked out for good
+  | { auto: 'ROUND_LOSER'; round: number } // loses that round's event
+
+export function autoRule(manualResult: unknown): AutoRule | null {
+  const m = manualResult as { auto?: string; round?: number } | null
+  if (!m || typeof m !== 'object' || typeof m.auto !== 'string') return null
+  if (m.auto === 'FIRST_ISLAND' || m.auto === 'FIRST_OUT') return { auto: m.auto }
+  if (m.auto === 'ROUND_LOSER' && Number.isInteger(m.round)) return { auto: 'ROUND_LOSER', round: m.round! }
+  return null
+}
+
+/** The competitors an auto rule pays, or null while it's undecided. Several share the payout. */
+function autoWinners(rule: AutoRule, st: Standings): number[] | null {
+  const rounds = [...st.rounds.entries()].sort((a, b) => a[0] - b[0])
+  if (rule.auto === 'ROUND_LOSER') {
+    const r = st.rounds.get(rule.round)
+    return r && r.losers.length ? r.losers : null
+  }
+  const hit = rounds.find(([, r]) => (rule.auto === 'FIRST_ISLAND' ? r.toIsland : r.out).length > 0)
+  return hit ? (rule.auto === 'FIRST_ISLAND' ? hit[1].toIsland : hit[1].out) : null
+}
+
 export interface Resolution {
   /** Outcomes that can no longer pay out: hidden from pricing, not tradable. */
   dead: Set<number>
@@ -91,6 +120,18 @@ export function resolveMarket(market: MarketLike, st: Standings): Resolution {
     }
 
     case 'CUSTOM': {
+      const rule = autoRule(market.manualResult)
+      if (rule) {
+        const ids = autoWinners(rule, st)
+        if (!ids) return { dead: new Set(), payouts: null }
+        const winners = outcomes.filter((o) => o.competitorId != null && ids.includes(o.competitorId))
+        // Nobody in the market lost (e.g. a late addition): everyone gets an equal share back.
+        if (!winners.length) return { dead: new Set(), payouts: splitBetween(outcomes, outcomes) }
+        return {
+          dead: new Set(outcomes.filter((o) => !winners.includes(o)).map((o) => o.id)),
+          payouts: splitBetween(outcomes, winners),
+        }
+      }
       const manual = market.manualResult as Record<string, number> | null
       if (!manual) return { dead: new Set(), payouts: null }
       const payouts = new Map(outcomes.map((o) => [o.id, Number(manual[o.id] ?? 0)]))

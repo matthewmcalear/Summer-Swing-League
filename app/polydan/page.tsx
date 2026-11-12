@@ -1,3 +1,4 @@
+import { FinishGrid, MarketSection } from '@/components/polydan/MarketSections'
 import { Suspense } from 'react'
 import Loading from '@/app/polydan/loading'
 import Link from 'next/link'
@@ -64,6 +65,12 @@ async function HomeContent() {
   ])
   const winner = markets.find((m) => m.kind === 'WINNER' && m.status !== 'VOID')
   const active = markets.filter((m) => m !== winner && (m.status === 'OPEN' || m.status === 'CLOSED'))
+  // Sections: what's being decided right now first, then how far people go, rivalries, props.
+  const thisRound = active.filter((m) => m.auto)
+  const copperMarket = active.filter((m) => m.kind === 'COPPER')
+  const finish = active.filter((m) => m.kind === 'TOP_N')
+  const h2h = active.filter((m) => m.kind === 'H2H')
+  const props = active.filter((m) => m.kind === 'CUSTOM' && !m.auto)
   const done = markets.filter((m) => m !== winner && (m.status === 'SETTLED' || m.status === 'VOID'))
 
   return (
@@ -94,16 +101,22 @@ async function HomeContent() {
 
       <CopperCard rows={copper.rows} final={copper.final} />
 
-      {active.length > 0 && (
-        <section>
-          <h2 className="pd-eyebrow mb-3">More markets</h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {active.map((m) => (
-              <MarketCard key={m.id} market={m} />
-            ))}
-          </div>
-        </section>
-      )}
+      <MarketSection
+        title="This round"
+        hint="Quick ones that settle as soon as the round is recorded. If two people lose together, each pays half."
+        markets={thisRound}
+      />
+
+      <MarketSection title="Copper Cup" markets={copperMarket} />
+
+      <FinishGrid
+        markets={finish}
+        people={field.map((c) => ({ id: c.id, name: c.name, out: c.standing.status === 'OUT' }))}
+      />
+
+      <MarketSection title="Head to head" hint="Who lasts longer." markets={h2h} />
+
+      <MarketSection title="Props" hint="Side bets, including ones the family suggested." markets={props} />
 
       {!markets.length && (
         <p className="pd-card p-6 text-center text-sm text-pd-muted">No markets open yet — check back soon.</p>
@@ -121,6 +134,17 @@ async function HomeContent() {
           <span className="text-pd-muted">Suggest one and it opens once it’s approved.</span>
         </span>
         <span className="font-semibold text-pd-gold">Suggest →</span>
+      </Link>
+
+      <Link href="/polydan/about" className="pd-card flex items-center gap-3 p-4 text-sm hover:bg-pd-surface-2/60">
+        <span className="text-xl" aria-hidden>
+          ❓
+        </span>
+        <span className="flex-1">
+          <span className="font-semibold">New here?</span>{' '}
+          <span className="text-pd-muted">How betting, odds and payouts work.</span>
+        </span>
+        <span className="font-semibold text-pd-gold">How it works →</span>
       </Link>
 
       {done.length > 0 && (

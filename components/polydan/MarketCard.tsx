@@ -49,14 +49,19 @@ function CardShell({ market, children }: { market: MarketView; children: React.R
       className="pd-card flex flex-col gap-3 p-4 transition hover:border-pd-line-strong hover:shadow-lg"
     >
       <div className="flex items-center gap-2">
-        <span className="pd-eyebrow">{KIND_LABEL[market.kind]}</span>
+        <span className="pd-eyebrow">{market.auto ? 'This round' : KIND_LABEL[market.kind]}</span>
         <span className="ml-auto">
           <StatusTag market={market} />
         </span>
       </div>
       <h3 className="font-semibold leading-snug">{market.question}</h3>
       {children}
-      <p className="mt-auto text-xs text-pd-muted pd-num">{formatMoney(market.volumeCents)} traded</p>
+      <p className="mt-auto flex items-center justify-between text-xs text-pd-muted pd-num">
+        <span>{formatMoney(market.volumeCents)} traded</span>
+        <span className="font-pd-display text-sm font-bold uppercase tracking-wider text-pd-gold">
+          {market.tradable ? 'Bet →' : 'View →'}
+        </span>
+      </p>
     </Link>
   )
 }
@@ -156,6 +161,12 @@ export function WinnerBoard({ market }: { market: MarketView }) {
           </li>
         ))}
       </ol>
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <span className="pd-btn pd-btn-gold">{market.tradable ? 'Bet on the winner →' : 'See the market →'}</span>
+        <span className="text-xs text-pd-muted">
+          {market.tradable ? 'Pick anyone, see the price chart, buy or sell.' : 'Price chart and every bet placed.'}
+        </span>
+      </div>
     </Link>
   )
 }

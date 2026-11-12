@@ -2,6 +2,17 @@ import { prisma } from '../prisma'
 import { seedQuantities } from './lmsr'
 import { DEFAULT_LIQUIDITY, normaliseOdds } from './marketDefaults'
 import { headToHeadProbability, topNProbability, winnerProbabilities } from './history'
+import { computeStandings } from './standings'
+import type { AutoRule } from './resolve'
+
+/** Liquidity for the self-settling specials: thin, so the house risks little on each. */
+export const AUTO_LIQUIDITY = 30
+
+export function autoQuestion(rule: AutoRule): string {
+  if (rule.auto === 'FIRST_ISLAND') return 'Who goes to Redemption Island first?'
+  if (rule.auto === 'FIRST_OUT') return 'Who is knocked out for good first?'
+  return `Who loses round ${rule.round}?`
+}
 
 export type MarketSpec =
   | { kind: 'WINNER' }
@@ -9,12 +20,14 @@ export type MarketSpec =
   | { kind: 'TOP_N'; competitorId: number; n: number }
   | { kind: 'H2H'; a: number; b: number }
   | { kind: 'CUSTOM'; question: string; options: string[] }
+  | { kind: 'AUTO'; rule: AutoRule }
 
 export { DEFAULT_LIQUIDITY }
 
 interface Draft {
   question: string
   topN?: number
+  manualResult?: AutoRule
   outcomes: { label: string; competitorId?: number; isYes?: boolean; p: number }[]
 }
 
@@ -75,6 +88,27 @@ async function draft(editionId: number, spec: MarketSpec): Promise<Draft> {
         ],
       }
     }
+    case 'AUTO': {
+      // One outcome per person still in the main game; weaker form = likelier to lose.
+      const results = await prisma.pdResultEvent.findMany({ where: { editionId }, orderBy: { id: 'asc' } })
+      const st = computeStandings(
+        field.map((c) => c.id),
+        results,
+      )
+      const pool =
+        spec.rule.auto === 'FIRST_OUT'
+          ? field.filter((c) => st.byId.get(c.id)!.status !== 'OUT')
+          : field.filter((c) => st.byId.get(c.id)!.status === 'IN')
+      if (pool.length < 3) throw new Error('Not enough people left for that market')
+      const strength = winnerProbabilities(pool.map((c) => c.name))
+      const weak = strength.map((p) => 1 / Math.sqrt(p))
+      const total = weak.reduce((s, w) => s + w, 0)
+      return {
+        question: autoQuestion(spec.rule),
+        manualResult: spec.rule,
+        outcomes: pool.map((c, i) => ({ label: c.name, competitorId: c.id, p: weak[i] / total })),
+      }
+    }
     case 'CUSTOM': {
       const options = spec.options.map((o) => o.trim()).filter(Boolean)
       if (!spec.question.trim()) throw new Error('Write the question')
@@ -91,7 +125,7 @@ async function draft(editionId: number, spec: MarketSpec): Promise<Draft> {
 export async function createMarket(
   editionId: number,
   spec: MarketSpec,
-  b: number = DEFAULT_LIQUIDITY[spec.kind],
+  b: number = spec.kind === 'AUTO' ? AUTO_LIQUIDITY : DEFAULT_LIQUIDITY[spec.kind],
   /** Admin-set opening odds as {outcome label: weight}, scaled to 100%. */
   openingOdds?: Record<string, number>,
 ) {
@@ -108,7 +142,8 @@ export async function createMarket(
   return prisma.pdMarket.create({
     data: {
       editionId,
-      kind: spec.kind,
+      kind: spec.kind === 'AUTO' ? 'CUSTOM' : spec.kind,
+      manualResult: d.manualResult,
       question: d.question,
       topN: d.topN,
       b,

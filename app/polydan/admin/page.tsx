@@ -18,6 +18,7 @@ import { StatusTag } from '@/components/polydan/MarketCard'
 import {
   AddEventsForm,
   BalanceForm,
+  AutoMarketButtons,
   CashOutEveryoneForm,
   CopperFinalForm,
   CopperScoresForm,
@@ -315,7 +316,7 @@ async function ResultsTab({ editionId }: { editionId: number }) {
 // ------------------------------------------------------------------ markets
 
 async function MarketsTab({ editionId, done }: { editionId: number; done?: string }) {
-  const { field, markets } = await getEditionBoard(editionId)
+  const { field, markets, standings } = await getEditionBoard(editionId)
   const [ledger, trades, proposals] = await Promise.all([
     prisma.pdLedgerEntry.groupBy({
       by: ['marketId', 'kind'],
@@ -415,7 +416,7 @@ async function MarketsTab({ editionId, done }: { editionId: number; done?: strin
                 editionId={editionId}
                 market={{
                   id: m.id,
-                  kind: m.kind,
+                  kind: m.auto ? 'AUTO' : m.kind,
                   status: m.status,
                   resolved: m.resolved,
                   hasBets: trades.some((t) => t.marketId === m.id),
@@ -427,13 +428,25 @@ async function MarketsTab({ editionId, done }: { editionId: number; done?: strin
         })}
         {!markets.length && <p className="pd-card p-4 text-sm text-pd-muted">No markets yet — open one →</p>}
       </section>
-      <aside className="pd-card h-fit p-4">
-        <h2 className="mb-3 font-semibold">Open a market</h2>
-        <NewMarketForm
-          editionId={editionId}
-          competitors={competitors}
-          hasWinner={markets.some((m) => m.kind === 'WINNER' && m.status !== 'VOID')}
-        />
+      <aside className="h-fit space-y-4">
+        <div className="pd-card p-4">
+          <h2 className="mb-3 font-semibold">Open a market</h2>
+          <NewMarketForm
+            editionId={editionId}
+            competitors={competitors}
+            hasWinner={markets.some((m) => m.kind === 'WINNER' && m.status !== 'VOID')}
+          />
+        </div>
+        {!standings.finished && (
+          <div className="pd-card p-4">
+            <h2 className="font-semibold">Quick specials</h2>
+            <p className="mb-3 text-xs text-pd-muted">
+              These settle themselves from the results. “Who loses round N?” also opens on its own each time you record
+              a round.
+            </p>
+            <AutoMarketButtons editionId={editionId} nextRound={standings.currentRound + 1} />
+          </div>
+        )}
       </aside>
     </div>
   )
