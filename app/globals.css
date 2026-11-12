@@ -394,6 +394,11 @@ h1, h2, h3 {
 body:has(.polydan) {
   background: #050a11;
 }
+/* The league's page-enter animation transforms the wrapper, which would trap
+   the fixed HUD backdrop in a box while it runs. */
+.page-enter:has(.polydan) {
+  animation: none;
+}
 /* Dark scrollbars and form controls whatever the league's theme. */
 :root:has(.polydan) {
   color-scheme: dark;
