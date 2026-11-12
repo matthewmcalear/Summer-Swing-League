@@ -36,6 +36,7 @@ import {
   RemovePlayerForm,
   ResetPinForm,
   ResultsForm,
+  RetuneForm,
   SettleAllForm,
   UndoForm,
 } from './forms'
@@ -339,6 +340,7 @@ async function MarketsTab({ editionId, done }: { editionId: number; done?: strin
     return maxHouseLoss(openQ, m.b)
   }
   const decided = markets.filter((m) => m.resolved && (m.status === 'OPEN' || m.status === 'CLOSED'))
+  const live = markets.filter((m) => !m.resolved && (m.status === 'OPEN' || m.status === 'CLOSED'))
   const competitors = field.map((c) => ({ id: c.id, name: c.name }))
 
   return (
@@ -436,6 +438,18 @@ async function MarketsTab({ editionId, done }: { editionId: number; done?: strin
             competitors={competitors}
             hasWinner={markets.some((m) => m.kind === 'WINNER' && m.status !== 'VOID')}
           />
+        </div>
+        <div className="pd-card space-y-2 p-4">
+          <h2 className="font-semibold">House risk</h2>
+          <p className="text-sm">
+            Worst case across {live.length} open markets:{' '}
+            <span className="font-semibold pd-num">{formatMoney(Math.round(live.reduce((s, m) => s + risk(m), 0) * 100))}</span>
+          </p>
+          <p className="text-xs text-pd-muted">
+            A ceiling, not a forecast: it assumes heavy betting on the right answer in every market. Retuning lowers
+            liquidity and tidies the odds on markets with no bets; markets with bets keep their terms.
+          </p>
+          <RetuneForm editionId={editionId} />
         </div>
         {!standings.finished && (
           <div className="pd-card p-4">

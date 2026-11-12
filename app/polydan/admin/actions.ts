@@ -8,7 +8,7 @@ import { hashPin, requireAdmin } from '@/lib/polydan/auth'
 import { deleteMarket, loadStandings, priceMarket, settleMarket, voidMarket, TradeError } from '@/lib/polydan/markets'
 import { computeStandings, type ResultKind } from '@/lib/polydan/standings'
 import { autoRule, resolveMarket, type AutoRule } from '@/lib/polydan/resolve'
-import { createMarket, type MarketSpec } from '@/lib/polydan/createMarket'
+import { createMarket, retuneUnbetMarkets, type MarketSpec } from '@/lib/polydan/createMarket'
 import { cleanCustom, specFor, type ProposalKind } from '@/lib/polydan/proposals'
 import { duplicateOf } from '@/lib/polydan/queries'
 import { formatMoney, parseDollarsToCents } from '@/lib/polydan/money'
@@ -254,6 +254,15 @@ async function openNextRoundMarket(editionId: number, st: ReturnType<typeof comp
   } catch {
     return null
   }
+}
+
+/** Lowers the house's exposure on every market nobody has bet on yet. */
+export async function retuneMarkets(_: ActionState, f: FormData) {
+  return run(async () => {
+    const r = await retuneUnbetMarkets(int(f, 'editionId'))
+    if (!r.markets) throw new Error('Every open market already has bets on it')
+    return `Retuned ${r.changed} of ${r.markets} unbet markets: their worst case went from ${formatMoney(r.beforeCents)} to ${formatMoney(r.afterCents)}`
+  })
 }
 
 /** Admin opens one of the self-settling specials by hand. */

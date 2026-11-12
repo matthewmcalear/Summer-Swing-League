@@ -1,12 +1,13 @@
 import { prisma } from '../prisma'
 import { seedQuantities } from './lmsr'
-import { DEFAULT_LIQUIDITY, normaliseOdds } from './marketDefaults'
+import { AUTO_LIQUIDITY, coherentTopN, DEFAULT_LIQUIDITY, normaliseOdds, OPENING_BAND } from './marketDefaults'
+import { prices, maxHouseLoss } from './lmsr'
+import { autoRule } from './resolve'
 import { headToHeadProbability, topNProbability, winnerProbabilities } from './history'
 import { computeStandings } from './standings'
 import type { AutoRule } from './resolve'
 
-/** Liquidity for the self-settling specials: thin, so the house risks little on each. */
-export const AUTO_LIQUIDITY = 30
+export { AUTO_LIQUIDITY }
 
 export function autoQuestion(rule: AutoRule): string {
   if (rule.auto === 'FIRST_ISLAND') return 'Who goes to Redemption Island first?'
@@ -158,4 +159,70 @@ export async function createMarket(
       },
     },
   })
+}
+
+/**
+ * House-risk tune-up for markets nobody has bet on yet (bets lock a market's
+ * terms, so those are left alone). Each one keeps its opening odds but:
+ *  - drops to the current default liquidity for its kind, which is what caps
+ *    the house's loss;
+ *  - top-N chances are made coherent across the field (they sum to N) and
+ *    every two-way market is kept inside the opening band;
+ *  - long lists (winner-style) get a floor on the smallest chance.
+ * Returns the worst-case totals before and after.
+ */
+export async function retuneUnbetMarkets(editionId: number) {
+  const markets = await prisma.pdMarket.findMany({
+    where: { editionId, status: { in: ['OPEN', 'CLOSED'] }, trades: { none: {} } },
+    include: { outcomes: { orderBy: [{ sort: 'asc' }, { id: 'asc' }] } },
+  })
+  const bet = await prisma.pdMarket.findMany({
+    where: { editionId, kind: 'TOP_N', status: { in: ['OPEN', 'CLOSED'] }, trades: { some: {} } },
+    include: { outcomes: { orderBy: [{ sort: 'asc' }, { id: 'asc' }] } },
+  })
+  const open = markets.map((m) => ({ m, p: prices(m.outcomes.map((o) => o.q), m.b) }))
+  const risk = (q: number[], b: number) => maxHouseLoss(q, b)
+  const before = open.reduce((s, x) => s + risk(x.m.outcomes.map((o) => o.q), x.m.b), 0)
+
+  // Top-N: fix each N as a group so the Yes chances add up to N.
+  const target = new Map<number, number[]>()
+  const ns = [...new Set(open.filter((x) => x.m.kind === 'TOP_N').map((x) => x.m.topN ?? 1))]
+  for (const n of ns) {
+    const group = open.filter((x) => x.m.kind === 'TOP_N' && (x.m.topN ?? 1) === n)
+    const yesAt = (x: (typeof group)[number]) => x.m.outcomes.findIndex((o) => o.isYes)
+    // Markets that already have bets keep their price, so the rest share what's left of N.
+    const taken = bet
+      .filter((m) => (m.topN ?? 1) === n)
+      .reduce((sum, m) => sum + prices(m.outcomes.map((o) => o.q), m.b)[m.outcomes.findIndex((o) => o.isYes)], 0)
+    const fixed = coherentTopN(group.map((x) => x.p[yesAt(x)]), Math.max(n - taken, 0.5))
+    group.forEach((x, i) => target.set(x.m.id, x.m.outcomes.map((o) => (o.isYes ? fixed[i] : 1 - fixed[i]))))
+  }
+  let after = 0
+  let changed = 0
+  for (const { m, p } of open) {
+    const auto = m.kind === 'CUSTOM' && autoRule(m.manualResult)
+    const b = Math.min(m.b, auto ? AUTO_LIQUIDITY : DEFAULT_LIQUIDITY[m.kind])
+    let probs = target.get(m.id) ?? p
+    if (m.outcomes.length === 2) {
+      const a = Math.min(OPENING_BAND[1], Math.max(OPENING_BAND[0], probs[0]))
+      probs = [a, 1 - a]
+    } else {
+      // Many outcomes: nobody opens below 2.5%, then rescale to 100%.
+      const floored = probs.map((x) => Math.max(x, 0.025))
+      const total = floored.reduce((s, x) => s + x, 0)
+      probs = floored.map((x) => x / total)
+    }
+    const q = seedQuantities(probs, b)
+    after += risk(q, b)
+    if (b === m.b && probs.every((x, i) => Math.abs(x - p[i]) < 1e-6)) continue
+    changed++
+    await prisma.$transaction(async (tx) => {
+      // Re-check under a lock: a bet placed in the meantime wins, and the market is left as it is.
+      await tx.$queryRaw`SELECT id FROM "polydan_markets" WHERE id = ${m.id} FOR UPDATE`
+      if (await tx.pdTrade.count({ where: { marketId: m.id } })) return
+      await tx.pdMarket.update({ where: { id: m.id }, data: { b } })
+      for (const [i, o] of m.outcomes.entries()) await tx.pdOutcome.update({ where: { id: o.id }, data: { q: q[i] } })
+    })
+  }
+  return { markets: open.length, changed, beforeCents: Math.round(before * 100), afterCents: Math.round(after * 100) }
 }

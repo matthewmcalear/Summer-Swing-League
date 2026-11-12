@@ -336,3 +336,21 @@ describe('self-settling specials', () => {
     expect(resolveMarket(market({ 10: 1 }), st).payouts!.get(10)).toBe(1)
   })
 })
+
+import { coherentTopN } from './marketDefaults'
+
+describe('coherentTopN', () => {
+  it('scales Yes chances so they add up to N, keeping the order', () => {
+    const raw = [0.77, 0.77, 0.7, 0.66, 0.6, 0.5, 0.49, 0.4, 0.33, 0.32, 0.31, 0.6, 0.65, 0.57, 0.56, 0.5, 0.49, 0.32, 0.32, 0.67, 0.72]
+    const fixed = coherentTopN(raw, 10)
+    expect(fixed.reduce((s, p) => s + p, 0)).toBeCloseTo(10, 3)
+    expect(fixed[0]).toBeGreaterThan(fixed[4])
+    expect(fixed[4]).toBeGreaterThan(fixed[10])
+    expect(fixed[0]).toBeLessThan(raw[0]) // the raw set summed to more than 10
+  })
+  it('keeps every chance inside the opening band', () => {
+    const fixed = coherentTopN([0.9, 0.5, 0.02, 0.01, 0.01, 0.01], 1)
+    expect(Math.min(...fixed)).toBeGreaterThanOrEqual(0.1)
+    expect(Math.max(...fixed)).toBeLessThanOrEqual(0.9)
+  })
+})

@@ -18,6 +18,7 @@ import {
   addMarket,
   adjustBalance,
   openAutoMarket,
+  retuneMarkets,
   cashOutEveryone,
   approveProposal,
   rejectProposal,
@@ -643,6 +644,23 @@ export function AutoMarketButtons({ editionId, nextRound }: { editionId: number;
         </ActionForm>
       ))}
     </div>
+  )
+}
+
+export function RetuneForm({ editionId }: { editionId: number }) {
+  return (
+    <ActionForm action={retuneMarkets}>
+      <input type="hidden" name="editionId" value={editionId} />
+      <ConfirmSubmit
+        className="pd-btn pd-btn-ghost pd-btn-sm w-full"
+        confirmClassName="pd-btn pd-btn-gold pd-btn-sm"
+        question="Lower liquidity and tidy the opening odds on every market with no bets yet?"
+        confirmLabel="Yes, retune"
+        pendingText="Retuning…"
+      >
+        Retune unbet markets
+      </ConfirmSubmit>
+    </ActionForm>
   )
 }
 
