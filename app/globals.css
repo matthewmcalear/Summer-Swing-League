@@ -323,38 +323,46 @@ h1, h2, h3 {
 .dark .prize-bronze { background: linear-gradient(135deg, rgba(205,127,50,0.12), rgba(205,127,50,0.05)); }
 
 /* ===========================================================================
-   PolyDan (/polydan) — its own Iron Man palette (ink, plate, gold, garnet),
-   scoped to the .polydan wrapper. Always light (parchment), TV included: it
-   ignores the league's dark mode. Tokens are pd-* so they never collide with
-   league tokens.
+   PolyDan (/polydan) — an Iron Man suit-HUD look: near-black glass panels,
+   arc-reactor cyan linework, hot-rod red and gold accents. Scoped to the
+   .polydan wrapper and always dark, TV included: it ignores the league's
+   theme. Tokens are pd-* so they never collide with league tokens.
    =========================================================================== */
 
 .polydan {
-  --pd-bg: #f4efe3;
-  --pd-surface: #fffdf8;
-  --pd-surface-2: #f3ecdc;
-  --pd-line: rgba(110, 86, 30, 0.18);
-  --pd-line-strong: rgba(110, 86, 30, 0.34);
-  --pd-ink: #1d1810;
-  --pd-ink-2: #50483a;
-  --pd-muted: #6f6651;
-  --pd-gold: #8a6a1c;
-  --pd-gold-hi: #b48c2c;
-  --pd-on-gold: #fffaf0;
-  --pd-garnet: #a53a30;
-  --pd-yes: #1d7a45;
-  --pd-yes-soft: rgba(29, 122, 69, 0.1);
-  --pd-no: #b13b31;
-  --pd-no-soft: rgba(177, 59, 49, 0.09);
-  --pd-island: #2d6fa3;
-  --pd-island-soft: rgba(45, 111, 163, 0.1);
-  --pd-series-1: #2a78d6;
-  --pd-series-2: #eb6834;
-  --pd-series-3: #1baf7a;
-  --pd-series-4: #eda100;
-  --pd-grid: #e7dfcc;
+  --pd-bg: #050a11;
+  --pd-surface: #0b1622;
+  --pd-surface-2: #11212f;
+  --pd-line: rgba(94, 214, 255, 0.16);
+  --pd-line-strong: rgba(94, 214, 255, 0.38);
+  --pd-ink: #e8f7ff;
+  --pd-ink-2: #b4cfdf;
+  --pd-muted: #86a4b8;
+  --pd-arc: #5ad6ff; /* arc-reactor cyan: linework and glow */
+  --pd-gold: #f2b632;
+  --pd-gold-hi: #ffd76a;
+  --pd-on-gold: #1c1302;
+  --pd-on-solid: #04101a; /* text on a solid red / cyan / green chip */
+  --pd-garnet: #e5382b;
+  --pd-yes: #35e0a1;
+  --pd-yes-soft: rgba(53, 224, 161, 0.13);
+  --pd-no: #ff6257;
+  --pd-no-soft: rgba(255, 98, 87, 0.13);
+  --pd-island: #5ad6ff;
+  --pd-island-soft: rgba(90, 214, 255, 0.12);
+  /* Chart series: validated on the dark surface (lightness band, CVD, contrast). */
+  --pd-series-1: #3987d6;
+  --pd-series-2: #e0602f;
+  --pd-series-3: #199e73;
+  --pd-series-4: #b88a10;
+  --pd-grid: #1b3346;
+  /* Squared-off instrument panels: Tailwind's rounded-md/lg/xl/2xl read these. */
+  --radius-md: 3px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-2xl: 5px;
   color: var(--pd-ink);
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -366,9 +374,11 @@ h1, h2, h3 {
   --color-pd-ink: var(--pd-ink);
   --color-pd-ink-2: var(--pd-ink-2);
   --color-pd-muted: var(--pd-muted);
+  --color-pd-arc: var(--pd-arc);
   --color-pd-gold: var(--pd-gold);
   --color-pd-gold-hi: var(--pd-gold-hi);
   --color-pd-on-gold: var(--pd-on-gold);
+  --color-pd-on-solid: var(--pd-on-solid);
   --color-pd-garnet: var(--pd-garnet);
   --color-pd-yes: var(--pd-yes);
   --color-pd-yes-soft: var(--pd-yes-soft);
@@ -376,16 +386,17 @@ h1, h2, h3 {
   --color-pd-no-soft: var(--pd-no-soft);
   --color-pd-island: var(--pd-island);
   --color-pd-island-soft: var(--pd-island-soft);
-  --font-pd-display: var(--font-pd-oswald), 'Inter', system-ui, sans-serif;
+  --font-pd-display: var(--font-pd-display-face), 'Inter', system-ui, sans-serif;
+  --font-pd-mono: var(--font-pd-mono-face), ui-monospace, 'SF Mono', Menlo, monospace;
 }
 
 /* Page background on PolyDan routes (replaces the league's linen texture). */
 body:has(.polydan) {
-  background: #f4efe3;
+  background: #050a11;
 }
-/* Light scrollbars and form controls even when the league is in dark mode. */
+/* Dark scrollbars and form controls whatever the league's theme. */
 :root:has(.polydan) {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 /* The league styles h1–h3 in Fraunces with tight tracking (unlayered, so it
@@ -396,39 +407,166 @@ body:has(.polydan) {
   letter-spacing: revert-layer;
   font-optical-sizing: revert-layer;
 }
+.polydan h1 {
+  text-shadow: 0 0 18px rgba(90, 214, 255, 0.35);
+}
 .polydan :where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline-color: var(--pd-gold);
+  outline-color: var(--pd-arc);
+}
+.polydan ::selection {
+  background: rgba(90, 214, 255, 0.3);
 }
 
-@layer components {
-  .pd-num {
-    font-variant-numeric: tabular-nums;
+/* ---- HUD backdrop: fixed behind every PolyDan page (components/polydan/HudBackdrop). ---- */
+.pd-hud {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 45% at 50% -8%, rgba(60, 170, 255, 0.2), transparent 70%),
+    radial-gradient(45% 40% at 105% 100%, rgba(229, 56, 43, 0.14), transparent 70%),
+    radial-gradient(40% 35% at -5% 85%, rgba(242, 182, 50, 0.07), transparent 70%),
+    #050a11;
+}
+/* Fine targeting grid, fading out toward the bottom. */
+.pd-hud::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(94, 214, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(94, 214, 255, 0.055) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(120% 90% at 50% 0%, #000 30%, transparent 85%);
+}
+/* Faint scanlines over the backdrop only, so text stays crisp. */
+.pd-hud::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 3px);
+}
+.pd-hud-rings {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(135vh, 135vw);
+  height: min(135vh, 135vw);
+  translate: -50% -50%;
+  opacity: 0.5;
+}
+.pd-hud-rings g {
+  transform-origin: 50% 50%;
+  transform-box: view-box;
+}
+.pd-spin-slow {
+  animation: pd-spin 180s linear infinite;
+}
+.pd-spin-rev {
+  animation: pd-spin 120s linear infinite reverse;
+}
+.pd-spin-mid {
+  animation: pd-spin 70s linear infinite;
+}
+@keyframes pd-spin {
+  to {
+    transform: rotate(360deg);
   }
-  /* Section heading in the Iron Man stats-page style. */
+}
+@keyframes pd-pulse {
+  0%,
+  100% {
+    opacity: 0.75;
+    filter: drop-shadow(0 0 3px rgba(90, 214, 255, 0.7));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 9px rgba(90, 214, 255, 1));
+  }
+}
+.pd-reactor {
+  animation: pd-pulse 3.2s ease-in-out infinite;
+}
+@keyframes pd-sweep {
+  from {
+    background-position: -40% 0;
+  }
+  to {
+    background-position: 140% 0;
+  }
+}
+/* A light that runs along the header's bottom edge. */
+.pd-edge {
+  height: 1px;
+  background:
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent) no-repeat,
+    linear-gradient(90deg, var(--pd-garnet), var(--pd-gold) 30%, var(--pd-arc) 70%, transparent);
+  background-size: 18% 100%, 100% 100%;
+  animation: pd-sweep 7s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pd-spin-slow,
+  .pd-spin-rev,
+  .pd-spin-mid,
+  .pd-reactor,
+  .pd-edge {
+    animation: none;
+  }
+}
+@layer components {
+  /* Everything on the page sits above the backdrop (utilities like sticky / fixed still win). */
+  .polydan > :not(.pd-hud) {
+    position: relative; /* no z-index: the TV's full-screen layer must still cover the header */
+  }
+  .pd-num {
+    font-family: var(--font-pd-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+  /* Section label, HUD readout style. */
   .pd-eyebrow {
     font-family: var(--font-pd-display);
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.18em;
     font-size: 0.75rem;
-    color: var(--pd-muted);
+    color: var(--pd-arc);
+    opacity: 0.85;
   }
+  /* A glass panel with lit corner brackets (top-left, bottom-right). */
   .pd-card {
-    background: var(--pd-surface);
+    position: relative;
+    background:
+      linear-gradient(var(--pd-arc), var(--pd-arc)) top left / 14px 2px no-repeat,
+      linear-gradient(var(--pd-arc), var(--pd-arc)) top left / 2px 14px no-repeat,
+      linear-gradient(var(--pd-arc), var(--pd-arc)) bottom right / 14px 2px no-repeat,
+      linear-gradient(var(--pd-arc), var(--pd-arc)) bottom right / 2px 14px no-repeat,
+      linear-gradient(180deg, rgba(17, 36, 54, 0.88), rgba(8, 17, 28, 0.9));
     border: 1px solid var(--pd-line);
-    border-radius: 12px;
+    border-radius: 3px;
+    box-shadow:
+      inset 0 1px 0 rgba(140, 225, 255, 0.07),
+      0 0 22px rgba(20, 130, 220, 0.07);
+    backdrop-filter: blur(3px);
   }
   .pd-field {
     width: 100%;
-    background: var(--pd-surface);
+    background: rgba(5, 12, 20, 0.85);
     border: 1px solid var(--pd-line-strong);
-    border-radius: 8px;
+    border-radius: 3px;
     padding: 0.55rem 0.7rem;
     color: var(--pd-ink);
   }
+  .pd-field::placeholder {
+    color: var(--pd-muted);
+    opacity: 0.7;
+  }
   .pd-field:focus {
-    outline: 2px solid var(--pd-gold);
+    outline: 2px solid var(--pd-arc);
     outline-offset: 1px;
+    box-shadow: 0 0 14px rgba(90, 214, 255, 0.35);
   }
   .pd-btn {
     display: inline-flex;
@@ -436,43 +574,51 @@ body:has(.polydan) {
     justify-content: center;
     gap: 0.4rem;
     min-height: 2.5rem; /* comfortable tap target on phones */
-    border-radius: 8px;
+    border-radius: 3px;
     padding: 0.5rem 1rem;
-    font-weight: 600;
-    font-size: 0.9rem;
+    font-family: var(--font-pd-display);
+    font-weight: 700;
+    font-size: 0.98rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     line-height: 1.2;
     white-space: nowrap;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
-    transition: filter 0.15s, opacity 0.15s;
+    transition: filter 0.15s, opacity 0.15s, box-shadow 0.15s;
   }
   .pd-btn:hover:not(:disabled) {
-    filter: brightness(1.08);
+    filter: brightness(1.12);
   }
   .pd-btn:disabled {
-    opacity: 0.45;
+    opacity: 0.4;
     cursor: not-allowed;
   }
   .pd-btn-gold {
-    background: var(--pd-gold);
+    background: linear-gradient(180deg, var(--pd-gold-hi), var(--pd-gold) 55%, #c98a12);
     color: var(--pd-on-gold);
+    box-shadow:
+      0 0 0 1px rgba(255, 215, 106, 0.5),
+      0 0 16px rgba(242, 182, 50, 0.3);
   }
   .pd-btn-ghost {
-    background: var(--pd-surface);
-    border: 1.5px solid var(--pd-line-strong);
+    background: rgba(90, 214, 255, 0.06);
+    border: 1px solid var(--pd-line-strong);
     color: var(--pd-ink);
   }
+  .pd-btn-ghost:hover:not(:disabled) {
+    box-shadow: 0 0 14px rgba(90, 214, 255, 0.25);
+  }
   .pd-btn-danger {
-    background: var(--pd-surface);
-    border: 1.5px solid var(--pd-no);
+    background: rgba(255, 98, 87, 0.07);
+    border: 1px solid var(--pd-no);
     color: var(--pd-no);
   }
   .pd-btn-danger-solid {
     background: var(--pd-no);
-    color: #fff;
+    color: var(--pd-on-solid);
   }
   .pd-btn-sm {
     min-height: 2.25rem;
     padding: 0.35rem 0.8rem;
-    font-size: 0.82rem;
+    font-size: 0.88rem;
   }
 }

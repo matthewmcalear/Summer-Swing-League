@@ -109,7 +109,7 @@ async function AdminPageContent({ searchParams }: PageProps<'/polydan/admin'>) {
             <span className="sm:hidden">{t.short}</span>
             <span className="hidden sm:inline">{t.label}</span>
             {t.key === 'markets' && pending > 0 && (
-              <span className="ml-1 min-w-[1.25rem] rounded-full bg-pd-no px-1.5 text-center text-xs leading-5 font-bold text-white">
+              <span className="ml-1 min-w-[1.25rem] rounded-full bg-pd-no px-1.5 text-center text-xs leading-5 font-bold text-pd-on-solid">
                 {pending}
               </span>
             )}

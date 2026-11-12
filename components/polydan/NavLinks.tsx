@@ -36,7 +36,7 @@ export function NavLinks({ isAdmin, mobile, pending = 0 }: { isAdmin: boolean; m
             {l.label}
             {l.href === '/polydan/admin' && pending > 0 && (
               <span
-                className="ml-1 inline-block min-w-[1.25rem] rounded-full bg-pd-no px-1.5 text-center text-xs leading-5 font-bold text-white"
+                className="ml-1 inline-block min-w-[1.25rem] rounded-full bg-pd-no px-1.5 text-center text-xs leading-5 font-bold text-pd-on-solid"
                 aria-label={`${pending} suggestion${pending === 1 ? '' : 's'} waiting`}
               >
                 {pending}

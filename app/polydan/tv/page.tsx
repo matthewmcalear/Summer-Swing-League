@@ -85,8 +85,8 @@ async function Tv() {
           </h1>
         </div>
         {edition.status === 'LIVE' && (
-          <span className="mb-[0.5em] flex items-center gap-[0.4em] rounded-full bg-pd-no px-[0.8em] py-[0.2em] text-[1em] font-bold uppercase tracking-wider text-white">
-            <span className="inline-block size-[0.55em] animate-pulse rounded-full bg-white" /> Live
+          <span className="mb-[0.5em] flex items-center gap-[0.4em] rounded-full bg-pd-no px-[0.8em] py-[0.2em] text-[1em] font-bold uppercase tracking-wider text-pd-on-solid">
+            <span className="inline-block size-[0.55em] animate-pulse rounded-full bg-pd-on-solid" /> Live
           </span>
         )}
         <div className="mb-[0.4em] flex gap-[2em] text-[1.3em]">

@@ -108,11 +108,11 @@ export function ResultsForm({
                 const tone =
                   v === 'OUT'
                     ? on
-                      ? 'border-pd-no bg-pd-no text-white'
+                      ? 'border-pd-no bg-pd-no text-pd-on-solid'
                       : 'border-pd-no/50 text-pd-no'
                     : v
                       ? on
-                        ? 'border-pd-island bg-pd-island text-white'
+                        ? 'border-pd-island bg-pd-island text-pd-on-solid'
                         : 'border-pd-island/50 text-pd-island'
                       : on
                         ? 'border-pd-line-strong bg-pd-surface-2 text-pd-ink'
