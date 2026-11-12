@@ -219,18 +219,17 @@ async function Tv() {
               <p className="text-[1.05em] text-pd-muted">No bets yet. The most-bet markets show up here.</p>
             )}
           </Panel>
-          {topNs.map((n) => (
-            <Panel key={n} title={n === 1 ? 'Will they win?' : `Will they finish top ${n}?`} className="flex-[1.6]">
-              <AutoScroll>
-                <TopNBoard
-                  markets={markets.filter((m) => m.kind === 'TOP_N' && showable(m) && topNOf(m) === n)}
-                  nameOf={nameOf}
-                />
-              </AutoScroll>
+          {topNs.length > 0 && (
+            <Panel title="How far they go" className="flex-[2]">
+              <FinishBoard
+                ns={topNs}
+                markets={markets.filter((m) => m.kind === 'TOP_N' && showable(m))}
+                nameOf={nameOf}
+              />
             </Panel>
-          ))}
+          )}
           {others.length > 0 && (
-            <Panel title="Other markets" grow={topNs.length === 0}>
+            <Panel title="Other markets" className="flex-[1.4]">
               <AutoScroll>
                 <ul className="space-y-[0.55em]">
                   {others.map((m) => (
@@ -375,33 +374,58 @@ function PopularRow({ rank, market }: { rank: number; market: MarketView }) {
 }
 
 /** One row per person: their chance of a top-N finish, then ✓/✗ once it's settled. */
-function TopNBoard({ markets, nameOf }: { markets: MarketView[]; nameOf: Map<number, string> }) {
-  const rows = markets
-    .map((m) => {
-      const yes = m.outcomes.find((o) => o.isYes)!
-      return { id: m.id, name: nameOf.get(yes.competitorId ?? -1) ?? m.question, p: yes.price, settled: m.resolved }
-    })
-    .sort((a, b) => b.p - a.p || a.name.localeCompare(b.name))
+/** Every top-N market in one board: a row per person, a column per N. */
+function FinishBoard({ ns, markets, nameOf }: { ns: number[]; markets: MarketView[]; nameOf: Map<number, string> }) {
+  const people = new Map<number, Map<number, MarketView>>()
+  for (const m of markets) {
+    const id = m.outcomes.find((o) => o.isYes)?.competitorId
+    if (id == null) continue
+    if (!people.has(id)) people.set(id, new Map())
+    people.get(id)!.set(topNOf(m), m)
+  }
+  const yes = (m?: MarketView) => m?.outcomes.find((o) => o.isYes)?.price ?? -1
+  const widest = ns[ns.length - 1]
+  const rows = [...people.entries()]
+    .map(([id, byN]) => ({ id, name: nameOf.get(id) ?? '?', byN }))
+    .sort((a, b) => yes(b.byN.get(widest)) - yes(a.byN.get(widest)) || a.name.localeCompare(b.name))
+  const cols = { gridTemplateColumns: `minmax(0,1fr) repeat(${ns.length}, 4.2em)` }
+  const label = (n: number) => (n === 1 ? 'Win' : n === 2 ? 'Final 2' : `Top ${n}`)
   return (
-    <ol className="space-y-[0.45em]">
-      {rows.map((r) => (
-        <li key={r.id} className="grid grid-cols-[6.5em_1fr_3em] items-center gap-[0.6em] text-[1.1em]">
-          <span className={`truncate font-semibold ${r.settled && r.p < 0.5 ? 'text-pd-muted line-through' : ''}`}>
-            {r.name}
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="mb-[0.4em] grid shrink-0 gap-[0.6em] text-[0.85em] text-pd-muted" style={cols}>
+        <span />
+        {ns.map((n) => (
+          <span key={n} className="text-right">
+            {label(n)}
           </span>
-          {r.settled ? (
-            <span className={`text-[0.9em] font-semibold ${r.p >= 0.5 ? 'text-pd-yes' : 'text-pd-muted'}`}>
-              {r.p >= 0.5 ? '✓ Made it' : '✗ Missed'}
-            </span>
-          ) : (
-            <span className="h-[0.55em] overflow-hidden rounded-full bg-pd-surface-2">
-              <span className="block h-full rounded-full bg-pd-gold" style={{ width: `${Math.max(r.p * 100, 2)}%` }} />
-            </span>
-          )}
-          <span className="pd-num text-right font-bold">{r.settled ? '' : formatPct(r.p)}</span>
-        </li>
-      ))}
-    </ol>
+        ))}
+      </div>
+      <div className="min-h-0 flex-1">
+        <AutoScroll>
+          <ol className="space-y-[0.4em]">
+            {rows.map((r) => (
+              <li key={r.id} className="grid items-center gap-[0.6em] text-[1.1em]" style={cols}>
+                <span className="truncate font-semibold">{r.name}</span>
+                {ns.map((n) => {
+                  const m = r.byN.get(n)
+                  const p = yes(m)
+                  return (
+                    <span
+                      key={n}
+                      className={`pd-num text-right font-bold ${
+                        !m ? 'text-pd-muted' : m.resolved ? (p >= 0.5 ? 'text-pd-yes' : 'text-pd-muted') : ''
+                      }`}
+                    >
+                      {!m ? '·' : m.resolved ? (p >= 0.5 ? '✓' : '✗') : formatPct(p)}
+                    </span>
+                  )
+                })}
+              </li>
+            ))}
+          </ol>
+        </AutoScroll>
+      </div>
+    </div>
   )
 }
 
