@@ -40,12 +40,14 @@ import {
   SettleAllForm,
   UndoForm,
 } from './forms'
+import { GuideTab } from './Guide'
 
 const TABS = [
   { key: 'setup', label: 'Setup', short: 'Setup' },
   { key: 'players', label: 'Players & money', short: 'Players' },
   { key: 'markets', label: 'Markets', short: 'Markets' },
   { key: 'results', label: 'Results', short: 'Results' },
+  { key: 'guide', label: '📋 Day-of guide', short: 'Guide' },
 ] as const
 type Tab = (typeof TABS)[number]['key']
 
@@ -98,7 +100,7 @@ async function AdminPageContent({ searchParams }: PageProps<'/polydan/admin'>) {
       </header>
 
       {/* Segmented tabs: four equal buttons on phones, a tab row on wider screens. */}
-      <nav className="grid grid-cols-4 gap-1 rounded-xl bg-pd-surface-2 p-1 text-sm sm:flex sm:w-fit">
+      <nav className="grid grid-cols-5 gap-1 rounded-xl bg-pd-surface-2 p-1 text-sm sm:flex sm:w-fit">
         {TABS.map((t) => (
           <Link
             key={t.key}
@@ -119,7 +121,9 @@ async function AdminPageContent({ searchParams }: PageProps<'/polydan/admin'>) {
         ))}
       </nav>
 
-      {tab === 'players' ? (
+      {tab === 'guide' ? (
+        <GuideTab tabHref={href} />
+      ) : tab === 'players' ? (
         <PlayersTab />
       ) : tab === 'setup' ? (
         <EditionTab editionId={editionId} done={typeof sp.done === 'string' ? sp.done : undefined} />
