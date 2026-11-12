@@ -4,7 +4,9 @@
 // or straight OUT; surviving the island RETURNs you to the game; losing on
 // the island puts you OUT. Your finishing position is fixed the moment you go
 // OUT: it's one more than the number of people still not out after that
-// round, so two people going out in the same round tie (as in Steven's sheet).
+// round, so people going out in the same round share a place, unless Steven
+// orders them by score (rank 1 = did best). Either way they went out in that
+// round.
 
 export type ResultKind = 'TO_ISLAND' | 'OUT' | 'RETURN'
 export type Status = 'IN' | 'ISLAND' | 'OUT'
@@ -13,6 +15,8 @@ export interface ResultEventLike {
   round: number
   competitorId: number
   kind: ResultKind
+  /** OUT only: order among people out in the same round, 1 = did best. Blank = shared place. */
+  rank?: number | null
 }
 
 export interface Standing {
@@ -67,7 +71,7 @@ export function computeStandings(field: number[], events: ResultEventLike[]): St
 
   for (const round of rounds) {
     currentRound = round
-    const outThisRound: Standing[] = []
+    const outThisRound: { s: Standing; rank: number }[] = []
     for (const e of events.filter((x) => x.round === round)) {
       const s = byId.get(e.competitorId)
       const err = transitionError(s?.status, e.kind)
@@ -75,11 +79,13 @@ export function computeStandings(field: number[], events: ResultEventLike[]): St
       s.status = NEXT[e.kind]
       if (e.kind === 'OUT') {
         s.outRound = round
-        outThisRound.push(s)
+        outThisRound.push({ s, rank: e.rank ?? 1 })
       }
     }
     const stillAlive = [...byId.values()].filter((s) => s.status !== 'OUT').length
-    for (const s of outThisRound) s.position = stillAlive + 1
+    // Places start just below everyone still alive; anyone who did better
+    // in the same round pushes you down one.
+    for (const o of outThisRound) o.s.position = stillAlive + 1 + outThisRound.filter((x) => x.rank < o.rank).length
   }
 
   const alive = [...byId.values()].filter((s) => s.status !== 'OUT').map((s) => s.competitorId)

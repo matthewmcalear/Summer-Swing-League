@@ -18,8 +18,8 @@ import { StatusTag } from '@/components/polydan/MarketCard'
 import {
   AddEventsForm,
   BalanceForm,
+  CashOutEveryoneForm,
   CopperFinalForm,
-  CopperScaleForm,
   CopperScoresForm,
   EventEditor,
   IdolForm,
@@ -190,6 +190,9 @@ async function ResultsTab({ editionId }: { editionId: number }) {
               .filter((c) => c.standing.status !== 'OUT')
               .map((c) => ({ id: c.id, name: c.name, status: c.standing.status }))}
             islandOpen={nextEvent?.islandOpen ?? true}
+            safe={idols.log
+              .filter((i) => i.kind === 'PLAYED' && i.round === standings.currentRound + 1)
+              .map((i) => i.competitorId)}
           />
         )}
       </section>
@@ -202,12 +205,11 @@ async function ResultsTab({ editionId }: { editionId: number }) {
               <p className="text-sm text-pd-muted">
                 {copper.final
                   ? 'Final — its market can now be settled.'
-                  : 'After each Copper Cup event, enter everyone’s finishing place; points follow the scale.'}
+                  : 'After each Copper Cup event, type everyone’s points. People who are out still play.'}
               </p>
             </div>
             <CopperFinalForm editionId={edition.id} final={copper.final} />
           </div>
-          <CopperScaleForm editionId={edition.id} scale={copper.scale} locked={copper.final} />
           {copper.anyPoints && (
             <ol className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
               {copper.rows.slice(0, 10).map((r, i) => (
@@ -231,9 +233,8 @@ async function ResultsTab({ editionId }: { editionId: number }) {
                 <div className="border-t border-pd-line p-3">
                   <CopperScoresForm
                     event={e}
-                    competitors={field.map((c) => ({ id: c.id, name: c.name }))}
-                    places={e.places}
-                    scale={copper.scale}
+                    competitors={field.map((c) => ({ id: c.id, name: c.name, out: c.standing.status === 'OUT' }))}
+                    scores={e.scores}
                     locked={copper.final}
                   />
                 </div>
@@ -283,12 +284,16 @@ async function ResultsTab({ editionId }: { editionId: number }) {
           ) : (
             <p className="text-sm text-pd-muted">Nobody holds an idol.</p>
           )}
+          <p className="text-xs text-pd-muted">
+            Played before the event starts, only by whoever won it, and never on Redemption Island. Log it before you
+            record the round: that person can&apos;t lose it.
+          </p>
           {idols.log.length > 0 && (
             <ul className="space-y-1.5 text-sm">
               {idols.log.map((i) => (
                 <li key={i.id} className="flex items-center gap-2">
                   <span className="min-w-0 flex-1">
-                    {i.name} <span className="text-pd-muted">{i.kind === 'FOUND' ? 'found it' : 'played it'}</span>
+                    {i.name} <span className="text-pd-muted">{i.kind === 'FOUND' ? 'won it' : 'played it'}</span>
                     {i.round && <span className="text-pd-muted"> · round {i.round}</span>}
                   </span>
                   <RemoveIdolForm idolId={i.id} />
@@ -437,12 +442,77 @@ async function MarketsTab({ editionId, done }: { editionId: number; done?: strin
 // ------------------------------------------------------------------ players
 
 async function PlayersTab() {
-  const players = await getPlayerAccounts()
+  const [players, unsettled] = await Promise.all([
+    getPlayerAccounts(),
+    prisma.pdMarket.count({ where: { status: { in: ['OPEN', 'CLOSED'] } } }),
+  ])
   const total = (k: 'balance' | 'open' | 'invested') => players.reduce((t, p) => t + p[k], 0)
+  // Settle-up: what each person walks away with, biggest payout first.
+  const owed = players.filter((p) => p.balance > 0 || p.invested !== 0 || p.open > 0).sort((a, b) => b.balance - a.balance)
+  const house = total('invested') - total('balance') - total('open')
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
       <section className="space-y-3">
+        <div className="pd-card space-y-3 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="font-semibold">💰 Settle up</h2>
+              <p className="text-sm text-pd-muted">
+                {unsettled > 0
+                  ? `${unsettled} market${unsettled === 1 ? ' is' : 's are'} still unsettled, so these numbers can still move. When the event is over, settle them in the Markets tab first.`
+                  : 'Every market is settled. Pay each person their “Pay them” amount, then mark everyone as paid.'}
+              </p>
+            </div>
+            <CashOutEveryoneForm totalCents={total('balance')} disabled={unsettled > 0 || total('balance') <= 0} />
+          </div>
+          {owed.length > 0 ? (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-pd-muted">
+                  <th className="py-1 font-normal">Player</th>
+                  <th className="py-1 text-right font-normal">Put in</th>
+                  {unsettled > 0 && <th className="py-1 text-right font-normal">Live bets</th>}
+                  <th className="py-1 text-right font-normal">Up / down</th>
+                  <th className="py-1 text-right font-normal">Pay them</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-pd-line">
+                {owed.map((p) => (
+                  <tr key={p.id}>
+                    <td className="py-1.5 font-medium">{p.name}</td>
+                    <td className="py-1.5 text-right pd-num">{formatMoney(p.invested)}</td>
+                    {unsettled > 0 && <td className="py-1.5 text-right pd-num text-pd-muted">{formatMoney(p.open)}</td>}
+                    <td
+                      className={`py-1.5 text-right pd-num ${p.pnl > 0 ? 'text-pd-yes' : p.pnl < 0 ? 'text-pd-no' : 'text-pd-muted'}`}
+                    >
+                      {formatMoney(p.pnl, { sign: true })}
+                    </td>
+                    <td className="py-1.5 text-right font-semibold pd-num">{formatMoney(p.balance)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-pd-line-strong font-semibold">
+                  <td className="py-1.5">Total</td>
+                  <td className="py-1.5 text-right pd-num">{formatMoney(total('invested'))}</td>
+                  {unsettled > 0 && <td className="py-1.5 text-right pd-num">{formatMoney(total('open'))}</td>}
+                  <td />
+                  <td className="py-1.5 text-right pd-num">{formatMoney(total('balance'))}</td>
+                </tr>
+              </tfoot>
+            </table>
+          ) : (
+            <p className="text-sm text-pd-muted">Nobody has put money in yet.</p>
+          )}
+          {owed.length > 0 && (
+            <p className="text-xs text-pd-muted">
+              The house (you) is {house >= 0 ? 'up' : 'down'} {formatMoney(Math.abs(house))}
+              {unsettled > 0 ? ' if everything stopped now' : ''}: what people put in, minus what they get back.
+            </p>
+          )}
+        </div>
+
         {/* What the family holds right now — i.e. what you'd owe if everyone cashed out. */}
         <div className="grid grid-cols-3 gap-3">
           {(

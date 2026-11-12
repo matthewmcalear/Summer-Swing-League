@@ -41,10 +41,16 @@ describe('lmsr', () => {
   })
 })
 
-const ev = (round: number, competitorId: number, kind: ResultEventLike['kind']): ResultEventLike => ({
+const ev = (
+  round: number,
+  competitorId: number,
+  kind: ResultEventLike['kind'],
+  rank?: number,
+): ResultEventLike => ({
   round,
   competitorId,
   kind,
+  rank,
 })
 
 describe('standings', () => {
@@ -74,6 +80,32 @@ describe('standings', () => {
     expect(st.byId.get(4)!.position).toBe(4)
     expect(st.byId.get(5)!.position).toBe(4)
     expect(st.alive).toEqual([1, 2, 3])
+  })
+
+  it('orders people out in the same round when Steven ranks them by score', () => {
+    const st = computeStandings(field, [ev(1, 4, 'OUT', 2), ev(1, 5, 'OUT', 1)])
+    expect(st.byId.get(5)!.position).toBe(4)
+    expect(st.byId.get(4)!.position).toBe(5)
+    expect(st.byId.get(4)!.outRound).toBe(1) // still out in the same round
+    // Three out: two share the better place, the worst scorer is below both.
+    const three = computeStandings(field, [ev(1, 3, 'OUT', 1), ev(1, 4, 'OUT', 1), ev(1, 5, 'OUT', 2)])
+    expect([3, 4, 5].map((id) => three.byId.get(id)!.position)).toEqual([3, 3, 5])
+  })
+
+  it('settles a head-to-head on that order instead of a dead heat', () => {
+    const h2h = {
+      kind: 'H2H' as const,
+      topN: null,
+      manualResult: null,
+      outcomes: [
+        { id: 1, competitorId: 4, isYes: null },
+        { id: 2, competitorId: 5, isYes: null },
+      ],
+    }
+    expect(resolveMarket(h2h, computeStandings(field, [ev(1, 4, 'OUT'), ev(1, 5, 'OUT')])).payouts!.get(1)).toBe(0.5)
+    const ranked = resolveMarket(h2h, computeStandings(field, [ev(1, 4, 'OUT', 1), ev(1, 5, 'OUT', 2)]))
+    expect(ranked.payouts!.get(1)).toBe(1)
+    expect(ranked.payouts!.get(2)).toBe(0)
   })
 
   it('island competitors are still alive', () => {
@@ -203,21 +235,24 @@ describe('copper cup market', () => {
   })
 })
 
-import { parseScale, pointsForPlace } from './copper'
+import { ordinalSuffix, parseCopperPoints } from './copper'
 
-describe('copper cup scoring', () => {
-  it('parses a scale and scores by place, 0 beyond it', () => {
-    const scale = parseScale('10, 8 6,5')!
-    expect(scale).toEqual([10, 8, 6, 5])
-    expect(pointsForPlace(scale, 1)).toBe(10)
-    expect(pointsForPlace(scale, 4)).toBe(5)
-    expect(pointsForPlace(scale, 5)).toBe(0)
-    expect(pointsForPlace(scale, 0)).toBe(0)
+describe('copper cup points', () => {
+  it('reads typed points: blank is no score, 0 counts', () => {
+    expect(parseCopperPoints('  ')).toBeNull()
+    expect(parseCopperPoints('0')).toBe(0)
+    expect(parseCopperPoints(' 12 ')).toBe(12)
+    expect(parseCopperPoints('2.5')).toBe(2.5)
   })
-  it('rejects nonsense scales', () => {
-    expect(parseScale('')).toBeNull()
-    expect(parseScale('10,eight')).toBeNull()
-    expect(parseScale('10,-2')).toBeNull()
+  it('rejects nonsense and likely typos', () => {
+    expect(() => parseCopperPoints('five')).toThrow('isn’t a number')
+    expect(() => parseCopperPoints('-2')).toThrow('isn’t a number')
+    expect(() => parseCopperPoints('35000')).toThrow('typo')
+  })
+  it('writes places', () => {
+    expect([1, 2, 3, 4, 11, 12, 13, 17, 21, 22].map((n) => n + ordinalSuffix(n))).toEqual([
+      '1st', '2nd', '3rd', '4th', '11th', '12th', '13th', '17th', '21st', '22nd',
+    ])
   })
 })
 

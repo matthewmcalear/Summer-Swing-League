@@ -1,23 +1,17 @@
-// Copper Cup scoring: points by finishing place in each Copper Cup event.
-// The scale is the edition's list "10,8,6,…" — 1st place gets the first
-// number, 2nd the second, and anyone placed beyond the list gets 0. People
-// tied on a place each get that place's points.
+// Copper Cup scoring: each Copper Cup event has its own rule (a point per
+// right answer, 5 for landing in the hoop, …), so the admin types each
+// person's points for the event and the cup is the running total.
 
-export const DEFAULT_COPPER_SCALE = '10,8,6,5,4,3,2,1'
+const MAX_POINTS = 1000
 
-export function parseScale(raw: string): number[] | null {
-  const parts = raw
-    .split(/[,\s]+/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-  if (!parts.length || parts.length > 50) return null
-  const nums = parts.map(Number)
-  return nums.every((n) => Number.isFinite(n) && n >= 0) ? nums : null
-}
-
-export function pointsForPlace(scale: number[], place: number): number {
-  if (!Number.isInteger(place) || place < 1) return 0
-  return scale[place - 1] ?? 0
+/** One person's points for an event: blank = didn't score, else a number ≥ 0. Throws a readable error. */
+export function parseCopperPoints(raw: string): number | null {
+  const s = raw.trim()
+  if (!s) return null
+  const n = Number(s)
+  if (!Number.isFinite(n) || n < 0) throw new Error(`“${s}” isn’t a number of points`)
+  if (n > MAX_POINTS) throw new Error(`${s} points is more than ${MAX_POINTS}: typo?`)
+  return Math.round(n * 100) / 100
 }
 
 export function ordinalSuffix(n: number): string {

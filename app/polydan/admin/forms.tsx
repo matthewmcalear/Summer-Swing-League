@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react'
 import { headToHeadProbability, topNProbability, winnerProbabilities } from '@/lib/polydan/history'
 import { DEFAULT_LIQUIDITY, normaliseOdds, type MarketKindName } from '@/lib/polydan/marketDefaults'
 import { formatMoney, formatMultiple } from '@/lib/polydan/money'
-import { ordinalSuffix, parseScale, pointsForPlace } from '@/lib/polydan/copper'
 import { ActionForm, ConfirmSubmit, SubmitButton } from '@/components/polydan/ui'
 import {
   addEvents,
@@ -15,10 +14,10 @@ import {
   resetEverything,
   saveCopperScores,
   setCopperFinal,
-  setCopperScale,
   updateEvent,
   addMarket,
   adjustBalance,
+  cashOutEveryone,
   approveProposal,
   rejectProposal,
   createEdition,
@@ -63,6 +62,7 @@ export function ResultsForm({
   currentRound,
   competitors,
   islandOpen = true,
+  safe = [],
 }: {
   editionId: number
   nextRound: number
@@ -70,11 +70,23 @@ export function ResultsForm({
   competitors: (Named & { status: 'IN' | 'ISLAND' | 'OUT' })[]
   /** False when this round's event has Redemption Island closed. */
   islandOpen?: boolean
+  /** Played the idol for the next round: can't lose it. */
+  safe?: number[]
 }) {
   const [picks, setPicks] = useState<Record<number, string>>({})
+  const [ranks, setRanks] = useState<Record<number, string>>({})
   const chosen = Object.values(picks).filter(Boolean).length
+  const outs = competitors.filter((c) => picks[c.id] === 'OUT')
   return (
-    <ActionForm action={recordResults} className="space-y-4" resetOnSuccess onSuccess={() => setPicks({})}>
+    <ActionForm
+      action={recordResults}
+      className="space-y-4"
+      resetOnSuccess
+      onSuccess={() => {
+        setPicks({})
+        setRanks({})
+      }}
+    >
       <input type="hidden" name="editionId" value={editionId} />
       <label className="flex flex-wrap items-center gap-2 text-sm font-medium">
         Round
@@ -98,8 +110,10 @@ export function ResultsForm({
               {c.status === 'ISLAND' && '🏝 '}
               {c.name}
               {c.status === 'ISLAND' && <span className="ml-1 text-xs font-normal">on Redemption Island</span>}
+              {safe.includes(c.id) && <span className="ml-1 text-xs font-normal text-pd-gold">🛡 played the idol: safe</span>}
             </p>
-            {/* Segmented control: large tap targets, the choice is unmistakable. */}
+            {safe.includes(c.id) ? null : (
+            /* Segmented control: large tap targets, the choice is unmistakable. */
             <div className={`grid gap-1.5 ${!islandOpen && c.status === 'IN' ? 'grid-cols-2' : 'grid-cols-3'}`}>
               {CHOICES[c.status as 'IN' | 'ISLAND']
                 .filter(([v]) => islandOpen || v !== 'TO_ISLAND')
@@ -135,9 +149,42 @@ export function ResultsForm({
                 )
               })}
             </div>
+            )}
           </li>
         ))}
       </ul>
+      {outs.length > 1 && (
+        <div className="rounded-lg border border-pd-line-strong bg-pd-surface-2 p-3 text-sm">
+          <p className="font-semibold">{outs.length} going out together</p>
+          <p className="mb-2 text-xs text-pd-muted">
+            They share a place unless Steven orders them by score. 1 = did best; same number = same place.
+          </p>
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {outs.map((c) => (
+              <li key={c.id}>
+                <label className="flex items-center gap-2">
+                  <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                  <select
+                    name={`rank_${c.id}`}
+                    value={ranks[c.id] ?? ''}
+                    onChange={(e) => setRanks((r) => ({ ...r, [c.id]: e.target.value }))}
+                    className="pd-field w-32"
+                    aria-label={`${c.name} order`}
+                  >
+                    <option value="">Shared place</option>
+                    {outs.map((_, i) => (
+                      <option key={i} value={i + 1}>
+                        {i + 1}
+                        {i === 0 ? ' (did best)' : i === outs.length - 1 ? ' (did worst)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="sticky bottom-20 z-10 -mx-2 rounded-xl bg-pd-surface/95 p-2 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] backdrop-blur sm:static sm:mx-0 sm:bg-transparent sm:p-0 sm:shadow-none">
         <SubmitButton className="pd-btn pd-btn-gold w-full sm:w-auto" disabled={!chosen} pendingText="Saving…">
           {chosen ? `Record ${chosen} result${chosen === 1 ? '' : 's'} for round` : 'Pick who lost this round'}
@@ -559,6 +606,23 @@ export function ProposalReview({
   )
 }
 
+export function CashOutEveryoneForm({ totalCents, disabled }: { totalCents: number; disabled: boolean }) {
+  return (
+    <ActionForm action={cashOutEveryone} className="w-full sm:w-auto">
+      <ConfirmSubmit
+        className="pd-btn pd-btn-gold w-full sm:w-auto"
+        confirmClassName="pd-btn pd-btn-gold"
+        question={`Have you paid everyone? This sets every balance to $0 (${formatMoney(totalCents)} in all).`}
+        confirmLabel="Yes, all paid"
+        pendingText="Saving…"
+        disabled={disabled}
+      >
+        Mark everyone as paid
+      </ConfirmSubmit>
+    </ActionForm>
+  )
+}
+
 export function SettleAllForm({ editionId, disabled }: { editionId: number; disabled: boolean }) {
   return (
     <ActionForm action={settleAll} className="w-full sm:w-auto">
@@ -865,74 +929,55 @@ function Check({ name, label, defaultChecked }: { name: string; label: string; d
 export function CopperScoresForm({
   event,
   competitors,
-  places,
-  scale,
+  scores,
   locked,
 }: {
-  event: { id: number; seq: number; name: string }
-  competitors: Named[]
-  places: Record<number, number>
-  scale: string
+  event: { id: number; seq: number; name: string; description: string | null }
+  competitors: (Named & { out: boolean })[]
+  scores: Record<number, number>
   locked: boolean
 }) {
-  const points = parseScale(scale) ?? []
   const [typed, setTyped] = useState<Record<number, string>>(() =>
-    Object.fromEntries(competitors.map((c) => [c.id, places[c.id] ? String(places[c.id]) : ''])),
+    Object.fromEntries(competitors.map((c) => [c.id, scores[c.id] != null ? String(scores[c.id]) : ''])),
   )
+  const total = Object.values(typed).reduce((n, v) => n + (Number(v) || 0), 0)
   return (
     <ActionForm action={saveCopperScores} className="space-y-3">
       <input type="hidden" name="eventId" value={event.id} />
-      <p className="text-xs text-pd-muted">Type each person&apos;s finishing place (1, 2, 3…). Leave blank if they didn&apos;t place.</p>
+      {event.description && <p className="text-sm text-pd-ink-2">{event.description}</p>}
+      <p className="text-xs text-pd-muted">
+        Type each person&apos;s points for this event. Everyone plays, including people who are out. Blank = no points.
+      </p>
       <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {competitors.map((c) => {
-          const place = Number(typed[c.id])
-          const pts = typed[c.id] ? pointsForPlace(points, place) : null
-          return (
-            <li key={c.id}>
-              <label className="flex items-center gap-2 text-sm">
-                <span className="min-w-0 flex-1 truncate">{c.name}</span>
-                <input
-                  name={`place_${c.id}`}
-                  value={typed[c.id] ?? ''}
-                  onChange={(e) => setTyped((t) => ({ ...t, [c.id]: e.target.value.replace(/[^0-9]/g, '') }))}
-                  inputMode="numeric"
-                  disabled={locked}
-                  placeholder="place"
-                  className="pd-field pd-num w-20 text-center"
-                  aria-label={`${c.name} place`}
-                />
-                <span className="pd-num w-14 text-right text-xs text-pd-muted">
-                  {pts != null && Number.isInteger(place) && place > 0 ? `${place}${ordinalSuffix(place)} · ${pts}` : ''}
-                </span>
-              </label>
-            </li>
-          )
-        })}
+        {competitors.map((c) => (
+          <li key={c.id}>
+            <label className="flex items-center gap-2 text-sm">
+              <span className={`min-w-0 flex-1 truncate ${c.out ? 'text-pd-muted' : ''}`}>
+                {c.name}
+                {c.out && <span className="ml-1 text-xs">(out)</span>}
+              </span>
+              <input
+                name={`pts_${c.id}`}
+                value={typed[c.id] ?? ''}
+                onChange={(e) => setTyped((t) => ({ ...t, [c.id]: e.target.value.replace(/[^0-9.]/g, '') }))}
+                inputMode="decimal"
+                disabled={locked}
+                placeholder="pts"
+                className="pd-field pd-num w-20 text-center"
+                aria-label={`${c.name} points`}
+              />
+            </label>
+          </li>
+        ))}
       </ul>
       {!locked && (
-        <SubmitButton className="pd-btn pd-btn-gold w-full sm:w-auto" pendingText="Saving…">
-          Save places for event {event.seq}
-        </SubmitButton>
+        <div className="flex flex-wrap items-center gap-3">
+          <SubmitButton className="pd-btn pd-btn-gold w-full sm:w-auto" pendingText="Saving…">
+            Save points for event {event.seq}
+          </SubmitButton>
+          {total > 0 && <span className="pd-num text-xs text-pd-muted">{total} points handed out</span>}
+        </div>
       )}
-    </ActionForm>
-  )
-}
-
-export function CopperScaleForm({ editionId, scale, locked }: { editionId: number; scale: string; locked: boolean }) {
-  return (
-    <ActionForm action={setCopperScale} className="space-y-1">
-      <input type="hidden" name="editionId" value={editionId} />
-      <label className="block text-sm font-medium">
-        Points for 1st, 2nd, 3rd… (everyone after gets 0)
-        <span className="mt-1 flex gap-2">
-          <input name="scale" defaultValue={scale.split(',').join(', ')} disabled={locked} className="pd-field pd-num min-w-0 flex-1" />
-          {!locked && (
-            <SubmitButton className="pd-btn pd-btn-ghost" pendingText="…">
-              Save scale
-            </SubmitButton>
-          )}
-        </span>
-      </label>
     </ActionForm>
   )
 }
@@ -979,7 +1024,7 @@ export function IdolForm({ editionId, competitors, round }: { editionId: number;
           ))}
         </select>
         <select name="kind" defaultValue="FOUND" className="pd-field" aria-label="What happened">
-          <option value="FOUND">found the idol</option>
+          <option value="FOUND">won the idol</option>
           <option value="PLAYED">played the idol</option>
         </select>
       </div>

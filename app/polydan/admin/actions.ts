@@ -12,7 +12,7 @@ import { createMarket, type MarketSpec } from '@/lib/polydan/createMarket'
 import { cleanCustom, specFor, type ProposalKind } from '@/lib/polydan/proposals'
 import { duplicateOf } from '@/lib/polydan/queries'
 import { formatMoney, parseDollarsToCents } from '@/lib/polydan/money'
-import { DEFAULT_COPPER_SCALE, parseScale, pointsForPlace } from '@/lib/polydan/copper'
+import { parseCopperPoints } from '@/lib/polydan/copper'
 import type { ActionState } from '../actions'
 
 // Every admin action re-checks the session, runs, and reports back as an
@@ -94,6 +94,28 @@ export async function adjustBalance(_: ActionState, f: FormData) {
   })
 }
 
+/**
+ * End of the event: records that every player has been paid their cash
+ * balance in real money, zeroing the books. Refused while any market is
+ * still unsettled, since those bets haven't paid out yet.
+ */
+export async function cashOutEveryone(_: ActionState, f: FormData) {
+  return run(async () => {
+    void f
+    const unsettled = await prisma.pdMarket.count({ where: { status: { in: ['OPEN', 'CLOSED'] } } })
+    if (unsettled)
+      throw new Error(`${unsettled} market${unsettled === 1 ? ' is' : 's are'} not settled yet: settle or void them first`)
+    const sums = await prisma.pdLedgerEntry.groupBy({ by: ['userId'], _sum: { amountCents: true } })
+    const owed = sums.map((s) => ({ userId: s.userId, cents: s._sum.amountCents ?? 0 })).filter((s) => s.cents > 0)
+    if (!owed.length) throw new Error('Nobody has any cash left to pay out')
+    await prisma.pdLedgerEntry.createMany({
+      data: owed.map((o) => ({ userId: o.userId, kind: 'WITHDRAWAL' as const, amountCents: -o.cents, note: 'Paid out at the end of the event' })),
+    })
+    const total = owed.reduce((t, o) => t + o.cents, 0)
+    return `Marked ${owed.length} ${owed.length === 1 ? 'person' : 'people'} as paid: ${formatMoney(total)} in all`
+  })
+}
+
 // --------------------------------------------------------------- editions
 
 export async function createEdition(_: ActionState, f: FormData) {
@@ -162,16 +184,29 @@ export async function recordResults(_: ActionState, f: FormData) {
     // One field per competitor: "" (no change), TO_ISLAND, OUT, RETURN
     const events = [...f.entries()]
       .filter(([k, v]) => k.startsWith('r_') && v)
-      .map(([k, v]) => ({ round, competitorId: Number(k.slice(2)), kind: v as ResultKind }))
+      .map(([k, v]) => ({ round, competitorId: Number(k.slice(2)), kind: v as ResultKind, rank: null as number | null }))
     if (!events.length) throw new Error('Nothing selected')
+    // Several out together share a place unless Steven orders them by score
+    // ("rank_<id>": 1 = did best). All equal = shared.
+    const outs = events.filter((e) => e.kind === 'OUT')
+    if (outs.length > 1) {
+      for (const e of outs) {
+        const r = int(f, `rank_${e.competitorId}`)
+        e.rank = Number.isInteger(r) && r >= 1 && r <= outs.length ? r : null
+      }
+      if (new Set(outs.map((e) => e.rank ?? 1)).size === 1) for (const e of outs) e.rank = null
+    }
 
-    const [entries, existing, event] = await Promise.all([
+    const [entries, existing, event, idols] = await Promise.all([
       prisma.pdEditionEntry.findMany({ where: { editionId } }),
       prisma.pdResultEvent.findMany({ where: { editionId }, orderBy: { id: 'asc' } }),
       prisma.pdEvent.findUnique({ where: { editionId_seq: { editionId, seq: round } } }),
+      prisma.pdIdol.findMany({ where: { editionId, kind: 'PLAYED', round }, include: { competitor: true } }),
     ])
     if (event && !event.islandOpen && events.some((e) => e.kind === 'TO_ISLAND'))
       throw new Error(`Redemption Island is closed for “${event.name}” — losers go straight out`)
+    const safe = idols.find((i) => events.some((e) => e.competitorId === i.competitorId && e.kind !== 'RETURN'))
+    if (safe) throw new Error(`${safe.competitor.name} played the idol this round, so they’re safe`)
     const next = computeStandings(
       entries.map((e) => e.competitorId),
       [...existing, ...events],
@@ -445,55 +480,36 @@ export async function deleteEvent(_: ActionState, f: FormData) {
 // ------------------------------------------------------------ copper cup
 
 /**
- * Saves one event's Copper Cup finishing places: one "place_<competitorId>"
- * field each (blank = didn't place). Points come from the edition's scale.
+ * Saves one event's Copper Cup points: one "pts_<competitorId>" field per
+ * person in the field (blank = no score). Everyone plays, including people
+ * already out, so the whole field is accepted.
  */
 export async function saveCopperScores(_: ActionState, f: FormData) {
   return run(async () => {
     const event = await prisma.pdEvent.findUniqueOrThrow({ where: { id: int(f, 'eventId') } })
     if (!event.copperCup) throw new Error(`“${event.name}” isn't a Copper Cup event`)
-    const edition = await prisma.pdEdition.findUniqueOrThrow({ where: { id: event.editionId } })
-    if (edition.copperFinal) throw new Error('The Copper Cup is finalised — reopen it to change places')
-    const scale = parseScale(edition.copperScale) ?? parseScale(DEFAULT_COPPER_SCALE)!
-    const rows = [...f.entries()]
-      .filter(([k, v]) => k.startsWith('place_') && String(v).trim())
-      .map(([k, v]) => ({ competitorId: Number(k.slice(6)), place: Number(String(v).trim()) }))
-    const bad = rows.find((r) => !Number.isInteger(r.place) || r.place < 1)
-    if (bad) throw new Error('Places must be whole numbers: 1, 2, 3…')
+    const [edition, entries] = await Promise.all([
+      prisma.pdEdition.findUniqueOrThrow({ where: { id: event.editionId } }),
+      prisma.pdEditionEntry.findMany({ where: { editionId: event.editionId }, include: { competitor: true } }),
+    ])
+    if (edition.copperFinal) throw new Error('The Copper Cup is finalised — reopen it to change points')
+    const rows: { eventId: number; competitorId: number; points: number }[] = []
+    for (const e of entries) {
+      let points: number | null
+      try {
+        points = parseCopperPoints(str(f, `pts_${e.competitorId}`))
+      } catch (err) {
+        throw new Error(`${e.competitor.name}: ${(err as Error).message}`)
+      }
+      if (points != null) rows.push({ eventId: event.id, competitorId: e.competitorId, points })
+    }
     await prisma.$transaction([
       prisma.pdCopperScore.deleteMany({ where: { eventId: event.id } }),
-      prisma.pdCopperScore.createMany({
-        data: rows.map((r) => ({
-          eventId: event.id,
-          competitorId: r.competitorId,
-          place: r.place,
-          points: pointsForPlace(scale, r.place),
-        })),
-      }),
+      prisma.pdCopperScore.createMany({ data: rows }),
     ])
-    return `Saved Copper Cup places for “${event.name}”`
-  })
-}
-
-/** Changes the points-per-place scale and re-scores every Copper Cup result. */
-export async function setCopperScale(_: ActionState, f: FormData) {
-  return run(async () => {
-    const editionId = int(f, 'editionId')
-    const scale = parseScale(str(f, 'scale'))
-    if (!scale) throw new Error('Enter points as numbers separated by commas, e.g. 10,8,6,5')
-    const edition = await prisma.pdEdition.findUniqueOrThrow({ where: { id: editionId } })
-    if (edition.copperFinal) throw new Error('The Copper Cup is finalised — reopen it to change the scale')
-    const scores = await prisma.pdCopperScore.findMany({ where: { event: { editionId }, place: { not: null } } })
-    await prisma.$transaction([
-      prisma.pdEdition.update({ where: { id: editionId }, data: { copperScale: scale.join(',') } }),
-      ...scores.map((sc) =>
-        prisma.pdCopperScore.update({
-          where: { eventId_competitorId: { eventId: sc.eventId, competitorId: sc.competitorId } },
-          data: { points: pointsForPlace(scale, sc.place!) },
-        }),
-      ),
-    ])
-    return `Points scale set to ${scale.join(' · ')}${scores.length ? ' — existing results re-scored' : ''}`
+    return rows.length
+      ? `Saved Copper Cup points for “${event.name}” (${rows.length} ${rows.length === 1 ? 'person' : 'people'})`
+      : `Cleared Copper Cup points for “${event.name}”`
   })
 }
 
@@ -524,6 +540,7 @@ export async function recordIdol(_: ActionState, f: FormData) {
       include: { competitor: true },
     })
     if (!entry) throw new Error('Not in this edition')
+    if (kind === 'PLAYED') await checkIdolPlay(editionId, competitorId, entry.competitor.name, round)
     await prisma.pdIdol.create({
       data: { editionId, competitorId, kind, round: Number.isFinite(round) && round > 0 ? round : null },
     })
@@ -531,6 +548,31 @@ export async function recordIdol(_: ActionState, f: FormData) {
       ? `${entry.competitor.name} has the immunity idol`
       : `${entry.competitor.name} played the idol${round > 0 ? ` in round ${round}` : ''}`
   })
+}
+
+/**
+ * Steven's idol rules: only the person who won it can play it (no passing it
+ * on), before an event with Redemption Island open (events 2–7 in IM10), and
+ * never while on the island.
+ */
+async function checkIdolPlay(editionId: number, competitorId: number, name: string, round: number) {
+  if (!(round > 0)) throw new Error('Which round is it played in?')
+  const [mine, event, entries, results] = await Promise.all([
+    prisma.pdIdol.findMany({ where: { editionId, competitorId }, orderBy: { id: 'asc' } }),
+    prisma.pdEvent.findUnique({ where: { editionId_seq: { editionId, seq: round } } }),
+    prisma.pdEditionEntry.findMany({ where: { editionId } }),
+    prisma.pdResultEvent.findMany({ where: { editionId, round: { lt: round } }, orderBy: { id: 'asc' } }),
+  ])
+  const held = mine.reduce((n, i) => n + (i.kind === 'FOUND' ? 1 : -1), 0)
+  if (held < 1) throw new Error(`${name} hasn’t got an idol to play (log that they won it first)`)
+  if (event && !event.islandOpen)
+    throw new Error(`Idols can only be played in events with Redemption Island open, not “${event.name}”`)
+  const status = computeStandings(
+    entries.map((e) => e.competitorId),
+    results,
+  ).byId.get(competitorId)?.status
+  if (status === 'ISLAND') throw new Error(`${name} is on Redemption Island, where idols can’t be played`)
+  if (status === 'OUT') throw new Error(`${name} is already out`)
 }
 
 export async function removeIdol(_: ActionState, f: FormData) {

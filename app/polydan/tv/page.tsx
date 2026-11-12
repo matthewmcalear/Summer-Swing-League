@@ -419,8 +419,8 @@ function CopperBoard({ copper }: { copper: TvBoard['copper'] }) {
       </p>
       {scored.length === 0 ? (
         <p className="text-[1.05em] text-pd-ink-2">
-          Points by finishing place in each Copper Cup event (events {copper.events.map((e) => e.seq).join(', ')}). A
-          side prize: surviving is still the goal.
+          Everyone scores points in each Copper Cup event (events {copper.events.map((e) => e.seq).join(', ')}), even
+          people who are out. A side prize: surviving is still the goal.
         </p>
       ) : (
         <div className="min-h-0 flex-1">

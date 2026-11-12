@@ -377,7 +377,7 @@ model PdEdition {
   createdAt   DateTime        @default(now())
   // Admin clicked "Finalize Copper Cup": the points table is final.
   copperFinal Boolean         @default(false)
-  // Copper Cup points by finishing place in an event: 1st, 2nd, 3rd, …
+  // Unused since Iron Man 10: Copper Cup points are now entered directly.
   copperScale String          @default("10,8,6,5,4,3,2,1")
 
   entries   PdEditionEntry[]
@@ -416,6 +416,9 @@ model PdResultEvent {
   competitorId Int
   competitor   PdCompetitor @relation(fields: [competitorId], references: [id])
   kind         PdResultKind
+  // OUT alongside others in the same round: Steven orders them by score,
+  // 1 = did best. Equal or blank ranks share the place.
+  rank         Int?
   createdAt    DateTime     @default(now())
 
   @@index([editionId])
