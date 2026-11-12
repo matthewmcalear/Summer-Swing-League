@@ -16,7 +16,7 @@ export default function Home(props: PageProps<'/polydan'>) {
   return (
     <Suspense fallback={<Loading />}>
       <Welcome {...props} />
-      <HomeContent />
+      <HomeContent {...props} />
     </Suspense>
   )
 }
@@ -36,8 +36,24 @@ async function Welcome({ searchParams }: PageProps<'/polydan'>) {
   )
 }
 
-async function HomeContent() {
+const SORTS = [
+  ['volume', 'Most bet'],
+  ['close', 'Closest odds'],
+  ['new', 'Newest'],
+  ['az', 'A–Z'],
+] as const
+type Sort = (typeof SORTS)[number][0]
+
+/** How lopsided a market is: 0 = a coin flip between its top two, 1 = a sure thing. */
+const lopsided = (m: { outcomes: { price: number; dead: boolean }[] }) => {
+  const p = m.outcomes.filter((o) => !o.dead).map((o) => o.price).sort((a, b) => b - a)
+  return p.length > 1 ? p[0] - p[1] : 1
+}
+
+async function HomeContent({ searchParams }: PageProps<'/polydan'>) {
   const user = await requireUser()
+  const raw = (await searchParams).sort
+  const sort: Sort = SORTS.some(([k]) => k === raw) ? (raw as Sort) : 'volume'
   const current = await getCurrentEdition()
 
   if (!current) {
@@ -64,7 +80,15 @@ async function HomeContent() {
     getIdols(current.id),
   ])
   const winner = markets.find((m) => m.kind === 'WINNER' && m.status !== 'VOID')
-  const active = markets.filter((m) => m !== winner && (m.status === 'OPEN' || m.status === 'CLOSED'))
+  const by: Record<Sort, (a: (typeof markets)[number], b: (typeof markets)[number]) => number> = {
+    volume: (a, b) => b.volumeCents - a.volumeCents || b.bets - a.bets || a.id - b.id,
+    close: (a, b) => lopsided(a) - lopsided(b) || a.id - b.id,
+    new: (a, b) => b.id - a.id,
+    az: (a, b) => a.question.localeCompare(b.question),
+  }
+  const active = markets
+    .filter((m) => m !== winner && (m.status === 'OPEN' || m.status === 'CLOSED'))
+    .sort(by[sort])
   // Sections: what's being decided right now first, then how far people go, rivalries, props.
   const thisRound = active.filter((m) => m.auto)
   const copperMarket = active.filter((m) => m.kind === 'COPPER')
@@ -101,6 +125,25 @@ async function HomeContent() {
 
       <CopperCard rows={copper.rows} final={copper.final} />
 
+      {active.length > 1 && (
+        <nav aria-label="Sort markets" className="flex flex-wrap items-center gap-1.5 text-sm">
+          <span className="pd-eyebrow mr-1">Sort</span>
+          {SORTS.map(([k, label]) => (
+            <Link
+              key={k}
+              href={k === 'volume' ? '/polydan' : `/polydan?sort=${k}`}
+              scroll={false}
+              aria-current={sort === k ? 'true' : undefined}
+              className={`rounded border px-2.5 py-1 font-medium ${
+                sort === k ? 'border-pd-arc bg-pd-island-soft text-pd-ink' : 'border-pd-line text-pd-muted hover:text-pd-ink'
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+      )}
+
       <MarketSection
         title="This round"
         hint="Quick ones that settle as soon as the round is recorded. If two people lose together, each pays half."
@@ -110,6 +153,7 @@ async function HomeContent() {
       <MarketSection title="Copper Cup" markets={copperMarket} />
 
       <FinishGrid
+        sort={sort}
         markets={finish}
         people={field.map((c) => ({ id: c.id, name: c.name, out: c.standing.status === 'OUT' }))}
       />

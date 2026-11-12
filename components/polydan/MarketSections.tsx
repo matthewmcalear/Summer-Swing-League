@@ -35,7 +35,10 @@ export function MarketSection({
 export function FinishGrid({
   markets,
   people,
+  sort = 'volume',
 }: {
+  /** Row order: most bet, closest to 50/50, or by name; anything else = best chance first. */
+  sort?: string
   markets: MarketView[]
   people: { id: number; name: string; out: boolean }[]
 }) {
@@ -47,7 +50,15 @@ export function FinishGrid({
     .map((p) => ({ ...p, cells: ns.map((n) => cell(p.id, n)) }))
     .filter((r) => r.cells.some(Boolean))
     .sort((a, b) => {
-      const best = (r: typeof a) => r.cells.find(Boolean)!.outcomes.find((o) => o.isYes)!.price
+      type Row = typeof a
+      const live = (r: Row) => r.cells.filter((m): m is MarketView => !!m)
+      const yes = (m: MarketView) => m.outcomes.find((o) => o.isYes)!.price
+      const best = (r: Row) => yes(live(r)[live(r).length - 1])
+      const volume = (r: Row) => live(r).reduce((s, m) => s + m.volumeCents, 0)
+      const coinFlip = (r: Row) => Math.min(...live(r).map((m) => Math.abs(yes(m) - 0.5)))
+      if (sort === 'az') return a.name.localeCompare(b.name)
+      if (sort === 'close') return coinFlip(a) - coinFlip(b) || best(b) - best(a)
+      if (sort === 'volume') return volume(b) - volume(a) || best(b) - best(a)
       return best(b) - best(a)
     })
   const label = (n: number) => (n === 1 ? 'Win' : n === 2 ? 'Final 2' : `Top ${n}`)
