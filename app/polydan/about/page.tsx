@@ -108,7 +108,7 @@ export default function AboutPage() {
 
       <Block title="How Iron Man 10 runs">
         <ul className="list-disc space-y-1.5 pl-5">
-          <li>21 players, 17 events, last one standing wins. The events are secret until they&apos;re played.</li>
+          <li>20 players, 17 events, last one standing wins. The events are secret until they&apos;re played.</li>
           <li>
             In events 1 to 7 the losers go to <B>Redemption Island</B>, where they play to stay alive. Event 8 is the
             island finale: two islanders get back into the game and the rest are out.

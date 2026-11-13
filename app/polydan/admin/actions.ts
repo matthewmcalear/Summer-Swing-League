@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { hashPin, requireAdmin } from '@/lib/polydan/auth'
-import { deleteMarket, loadStandings, priceMarket, settleMarket, voidMarket, TradeError } from '@/lib/polydan/markets'
+import { deleteMarket, loadStandings, priceMarket, settleMarket, voidMarket, withdrawCompetitor, TradeError } from '@/lib/polydan/markets'
 import { computeStandings, type ResultKind } from '@/lib/polydan/standings'
 import { autoRule, resolveMarket, type AutoRule } from '@/lib/polydan/resolve'
 import { createMarket, retuneUnbetMarkets, type MarketSpec } from '@/lib/polydan/createMarket'
@@ -149,6 +149,26 @@ export async function setField(_: ActionState, f: FormData) {
       prisma.pdEditionEntry.createMany({ data: ids.map((competitorId) => ({ editionId, competitorId })) }),
     ])
     return `Field set: ${ids.length} competitors`
+  })
+}
+
+/**
+ * Someone drops out before the day: takes them out of the field and undoes
+ * every bet that depended on them, then re-balances the markets nobody has
+ * bet on so the top-N chances still add up for the smaller field.
+ */
+export async function withdrawFromField(_: ActionState, f: FormData) {
+  return run(async () => {
+    const editionId = int(f, 'editionId')
+    const r = await withdrawCompetitor(editionId, int(f, 'competitorId'))
+    await retuneUnbetMarkets(editionId)
+    const left = await prisma.pdEditionEntry.count({ where: { editionId } })
+    const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
+    return [
+      `${r.name} is out: ${left} in the field now.`,
+      `Removed ${plural(r.removedMarkets, 'market')} about them and dropped them from ${plural(r.trimmedMarkets, 'other')}.`,
+      r.refundedCents ? `Refunded ${formatMoney(r.refundedCents)} of bets.` : 'Nobody had bet on them.',
+    ].join(' ')
   })
 }
 

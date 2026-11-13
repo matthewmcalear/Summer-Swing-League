@@ -30,6 +30,7 @@ import {
   CreateUserForm,
   EditionStatusForm,
   FieldForm,
+  WithdrawForm,
   MarketActions,
   NewMarketForm,
   ProposalReview,
@@ -719,6 +720,12 @@ async function EditionTab({ editionId, done }: { editionId?: number; done?: stri
             selected={edition.entries.map((e) => e.competitorId)}
             locked={edition._count.markets + edition._count.results > 0}
           />
+          {edition._count.markets > 0 && edition._count.results === 0 && (
+            <WithdrawForm
+              editionId={edition.id}
+              field={competitors.filter((c) => edition.entries.some((e) => e.competitorId === c.id))}
+            />
+          )}
           <div className="space-y-3 border-t border-pd-line pt-4">
             <div>
               <h3 className="font-semibold">Events schedule {events.length > 0 && <span className="text-pd-muted">· {events.length}</span>}</h3>

@@ -30,6 +30,7 @@ import {
   resolveCustom,
   setEditionStatus,
   setField,
+  withdrawFromField,
   setMarketStatus,
   settleAll,
   settleOne,
@@ -790,6 +791,48 @@ export function EditionStatusForm({ editionId, status }: { editionId: number; st
         <SubmitButton className="pd-btn pd-btn-ghost" pendingText="…">
           Save status
         </SubmitButton>
+      </div>
+    </ActionForm>
+  )
+}
+
+/** Shown once the field is locked: take out someone who has dropped out before the day. */
+export function WithdrawForm({ editionId, field }: { editionId: number; field: Named[] }) {
+  const [id, setId] = useState('')
+  const name = field.find((c) => String(c.id) === id)?.name
+  return (
+    <ActionForm action={withdrawFromField} className="space-y-2 rounded-lg border border-pd-line p-3">
+      <input type="hidden" name="editionId" value={editionId} />
+      <p className="text-sm font-medium">Someone dropped out?</p>
+      <p className="text-sm text-pd-muted">
+        Takes them out of the field, removes the markets about them and refunds every bet placed on them. Everyone
+        else&apos;s bets stand.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <select
+          name="competitorId"
+          value={id}
+          onChange={(e) => setId(e.target.value)}
+          aria-label="Who dropped out"
+          className="pd-field min-w-0 flex-1 sm:w-48 sm:flex-none"
+        >
+          <option value="">Pick who…</option>
+          {field.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        {name && (
+          <ConfirmSubmit
+            className="pd-btn pd-btn-danger"
+            question={`Take ${name} out of the field and refund the bets on them? This can't be undone.`}
+            confirmLabel={`Yes, ${name} is out`}
+            pendingText="Removing…"
+          >
+            Take {name} out
+          </ConfirmSubmit>
+        )}
       </div>
     </ActionForm>
   )

@@ -230,25 +230,96 @@ export async function voidMarket(marketId: number): Promise<void> {
  * deleted: their payouts are part of people's balances.
  */
 export async function deleteMarket(marketId: number): Promise<{ question: string; refundedCents: number }> {
+  return prisma.$transaction((tx) => deleteMarketIn(tx, marketId))
+}
+
+async function deleteMarketIn(
+  tx: Prisma.TransactionClient,
+  marketId: number,
+): Promise<{ question: string; refundedCents: number }> {
+  await tx.$queryRaw`SELECT id FROM "polydan_markets" WHERE id = ${marketId} FOR UPDATE`
+  const market = await tx.pdMarket.findUniqueOrThrow({ where: { id: marketId } })
+  if (market.status === 'SETTLED') throw new TradeError("This market has paid out, so it can't be deleted")
+  let refundedCents = 0
+  if (market.status !== 'VOID') {
+    const net = await tx.pdTrade.groupBy({ by: ['userId'], where: { marketId }, _sum: { costCents: true } })
+    for (const row of net) {
+      const cents = row._sum.costCents ?? 0
+      if (cents === 0) continue
+      refundedCents += cents
+      await tx.pdLedgerEntry.create({
+        data: { userId: row.userId, kind: 'REFUND', amountCents: cents, note: `Refund: deleted “${market.question}”` },
+      })
+    }
+  }
+  // Keep everyone's money history; just detach it from the market being removed.
+  await tx.pdLedgerEntry.updateMany({ where: { marketId }, data: { marketId: null } })
+  await tx.pdMarket.delete({ where: { id: marketId } }) // outcomes, positions, trades cascade
+  return { question: market.question, refundedCents }
+}
+
+export interface Withdrawal {
+  name: string
+  /** Markets that were only about them (top N, head to head): removed. */
+  removedMarkets: number
+  /** Markets they were one option in (winner, Copper Cup, specials): option dropped. */
+  trimmedMarkets: number
+  refundedCents: number
+}
+
+/**
+ * Someone pulls out before the event starts. They leave the field, and every
+ * bet that depended on them is undone at exactly what was paid for it:
+ *  - markets about them alone (their top-N markets, their head to heads) are
+ *    removed and refunded;
+ *  - in list markets (winner, Copper Cup, the specials) their option is
+ *    dropped and bets on it are refunded; everyone else's bets stand, and the
+ *    remaining chances scale up to fill the gap.
+ * Once results exist they can't withdraw: record them as knocked out instead.
+ */
+export async function withdrawCompetitor(editionId: number, competitorId: number): Promise<Withdrawal> {
   return prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT id FROM "polydan_markets" WHERE id = ${marketId} FOR UPDATE`
-    const market = await tx.pdMarket.findUniqueOrThrow({ where: { id: marketId } })
-    if (market.status === 'SETTLED') throw new TradeError("This market has paid out, so it can't be deleted")
-    let refundedCents = 0
-    if (market.status !== 'VOID') {
-      const net = await tx.pdTrade.groupBy({ by: ['userId'], where: { marketId }, _sum: { costCents: true } })
+    const entry = await tx.pdEditionEntry.findUnique({
+      where: { editionId_competitorId: { editionId, competitorId } },
+      include: { competitor: true },
+    })
+    if (!entry) throw new TradeError('They are not in this edition')
+    const name = entry.competitor.name
+    if (await tx.pdResultEvent.count({ where: { editionId } }))
+      throw new TradeError(`The event has started, so record ${name} as knocked out instead`)
+    if ((await tx.pdEditionEntry.count({ where: { editionId } })) <= 2) throw new TradeError('The field needs at least two people')
+
+    const markets = await tx.pdMarket.findMany({
+      where: { editionId, status: { in: ['OPEN', 'CLOSED'] }, outcomes: { some: { competitorId } } },
+      include: { outcomes: true },
+      orderBy: { id: 'asc' },
+    })
+    const out: Withdrawal = { name, removedMarkets: 0, trimmedMarkets: 0, refundedCents: 0 }
+    for (const m of markets) {
+      const theirs = m.outcomes.filter((o) => o.competitorId === competitorId)
+      const single = m.kind === 'TOP_N' || m.kind === 'H2H' || m.outcomes.length - theirs.length < 2
+      if (single) {
+        out.refundedCents += (await deleteMarketIn(tx, m.id)).refundedCents
+        out.removedMarkets++
+        continue
+      }
+      await tx.$queryRaw`SELECT id FROM "polydan_markets" WHERE id = ${m.id} FOR UPDATE`
+      const ids = theirs.map((o) => o.id)
+      const net = await tx.pdTrade.groupBy({ by: ['userId'], where: { outcomeId: { in: ids } }, _sum: { costCents: true } })
       for (const row of net) {
         const cents = row._sum.costCents ?? 0
-        if (cents === 0) continue
-        refundedCents += cents
+        if (cents <= 0) continue
+        out.refundedCents += cents
         await tx.pdLedgerEntry.create({
-          data: { userId: row.userId, kind: 'REFUND', amountCents: cents, note: `Refund: deleted “${market.question}”` },
+          data: { userId: row.userId, marketId: m.id, kind: 'REFUND', amountCents: cents, note: `Refund: ${name} withdrew (${m.question})` },
         })
       }
+      await tx.pdOutcome.deleteMany({ where: { id: { in: ids } } }) // their positions and trades cascade
+      out.trimmedMarkets++
     }
-    // Keep everyone's money history; just detach it from the market being removed.
-    await tx.pdLedgerEntry.updateMany({ where: { marketId }, data: { marketId: null } })
-    await tx.pdMarket.delete({ where: { id: marketId } }) // outcomes, positions, trades cascade
-    return { question: market.question, refundedCents }
+    await tx.pdCopperScore.deleteMany({ where: { competitorId, event: { editionId } } })
+    await tx.pdIdol.deleteMany({ where: { competitorId, editionId } })
+    await tx.pdEditionEntry.delete({ where: { editionId_competitorId: { editionId, competitorId } } })
+    return out
   })
 }

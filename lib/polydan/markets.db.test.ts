@@ -5,7 +5,7 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { prisma } from '../prisma'
-import { balanceCents, deleteMarket, executeTrade, settleMarket, TradeError, voidMarket } from './markets'
+import { balanceCents, deleteMarket, executeTrade, settleMarket, TradeError, voidMarket, withdrawCompetitor } from './markets'
 import { createMarket } from './createMarket'
 
 if (!process.env.DATABASE_URL?.includes('polydan_test')) throw new Error('Refusing to run against a non-test database')
@@ -150,5 +150,39 @@ describe('money flow', () => {
 
     const paid = await prisma.pdMarket.findFirstOrThrow({ where: { status: 'SETTLED' } })
     await expect(deleteMarket(paid.id)).rejects.toThrow(/paid out/)
+  })
+  it('withdrawing a competitor refunds bets on them and leaves the rest standing', async () => {
+    // A fresh edition: withdrawals are only allowed before any results.
+    const e = await prisma.pdEdition.create({ data: { number: 11 } })
+    for (const n of ['Megan', 'Jack', 'Jody', 'Newbie'])
+      await prisma.pdEditionEntry.create({ data: { editionId: e.id, competitorId: comp[n] } })
+    const winner = await createMarket(e.id, { kind: 'WINNER' })
+    const top2 = await createMarket(e.id, { kind: 'TOP_N', competitorId: comp.Newbie, n: 2 })
+    const h2h = await createMarket(e.id, { kind: 'H2H', a: comp.Newbie, b: comp.Jack })
+    const other = await createMarket(e.id, { kind: 'H2H', a: comp.Megan, b: comp.Jack })
+
+    const ann0 = await balanceCents(prisma, users.Ann)
+    const ben0 = await balanceCents(prisma, users.Ben)
+    await executeTrade({ side: 'BUY', userId: users.Ann, outcomeId: await outcomeFor(winner.id, 'Newbie'), spendCents: 500 })
+    await executeTrade({ side: 'BUY', userId: users.Ann, outcomeId: await outcomeFor(top2.id, 'Yes'), spendCents: 300 })
+    await executeTrade({ side: 'BUY', userId: users.Ann, outcomeId: await outcomeFor(h2h.id, 'Jack'), spendCents: 200 })
+    const megan = await outcomeFor(winner.id, 'Megan')
+    const kept = await executeTrade({ side: 'BUY', userId: users.Ben, outcomeId: megan, spendCents: 400 })
+
+    const r = await withdrawCompetitor(e.id, comp.Newbie)
+    expect(r).toMatchObject({ name: 'Newbie', removedMarkets: 2, trimmedMarkets: 1, refundedCents: 1000 })
+    expect(await balanceCents(prisma, users.Ann)).toBe(ann0)
+    expect(await balanceCents(prisma, users.Ben)).toBe(ben0 - 400)
+    expect(await prisma.pdMarket.count({ where: { id: { in: [top2.id, h2h.id] } } })).toBe(0)
+    expect(await prisma.pdMarket.count({ where: { id: other.id } })).toBe(1)
+    const left = await prisma.pdOutcome.findMany({ where: { marketId: winner.id } })
+    expect(left.map((o) => o.label).sort()).toEqual(['Jack', 'Jody', 'Megan'])
+    const pos = await prisma.pdPosition.findUniqueOrThrow({ where: { userId_outcomeId: { userId: users.Ben, outcomeId: megan } } })
+    expect(pos.shares).toBeCloseTo(kept.shares)
+    expect(await prisma.pdEditionEntry.count({ where: { editionId: e.id } })).toBe(3)
+
+    // Once a result is in, it's a knockout, not a withdrawal.
+    await prisma.pdResultEvent.create({ data: { editionId: e.id, round: 1, competitorId: comp.Jody, kind: 'OUT' } })
+    await expect(withdrawCompetitor(e.id, comp.Jody)).rejects.toThrow(/knocked out/)
   })
 })
