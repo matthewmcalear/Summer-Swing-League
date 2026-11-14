@@ -124,6 +124,10 @@ export default function AboutPage() {
 
       <Block title="Fair play">
         <p>
+          <B>PolyDan is here to add to the fun.</B> It isn&apos;t for making anyone rich, and it isn&apos;t for
+          exploiting the system or each other.
+        </p>
+        <p>
           Bet what you&apos;re happy to lose. Any question about a result goes to Steven; any question about money goes
           to Matt.
         </p>
