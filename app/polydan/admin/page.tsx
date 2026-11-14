@@ -43,12 +43,14 @@ import {
   UndoForm,
 } from './forms'
 import { GuideTab } from './Guide'
+import { ExposureTab } from './Exposure'
 
 const TABS = [
   { key: 'setup', label: 'Setup', short: 'Setup' },
   { key: 'players', label: 'Players & money', short: 'Players' },
   { key: 'markets', label: 'Markets', short: 'Markets' },
   { key: 'results', label: 'Results', short: 'Results' },
+  { key: 'exposure', label: '💵 Exposure', short: 'Risk' },
   { key: 'guide', label: '📋 Day-of guide', short: 'Guide' },
 ] as const
 type Tab = (typeof TABS)[number]['key']
@@ -102,7 +104,7 @@ async function AdminPageContent({ searchParams }: PageProps<'/polydan/admin'>) {
       </header>
 
       {/* Segmented tabs: four equal buttons on phones, a tab row on wider screens. */}
-      <nav className="grid grid-cols-5 gap-1 rounded-xl bg-pd-surface-2 p-1 text-sm sm:flex sm:w-fit">
+      <nav className="grid grid-cols-3 gap-1 rounded-xl bg-pd-surface-2 p-1 text-sm sm:flex sm:w-fit">
         {TABS.map((t) => (
           <Link
             key={t.key}
@@ -135,6 +137,8 @@ async function AdminPageContent({ searchParams }: PageProps<'/polydan/admin'>) {
         </p>
       ) : tab === 'results' ? (
         <ResultsTab editionId={editionId} />
+      ) : tab === 'exposure' ? (
+        <ExposureTab editionId={editionId} />
       ) : (
         <MarketsTab editionId={editionId} done={typeof sp.done === 'string' ? sp.done : undefined} />
       )}
@@ -463,6 +467,9 @@ async function MarketsTab({ editionId, done }: { editionId: number; done?: strin
             A ceiling, not a forecast: it assumes heavy betting on the right answer in every market. Retuning lowers
             liquidity and tidies the odds on markets with no bets; markets with bets keep their terms.
           </p>
+          <Link href={`/polydan/admin?tab=exposure&edition=${editionId}`} className="block text-sm text-pd-gold hover:underline">
+            Live exposure on the bets placed →
+          </Link>
           <RetuneForm editionId={editionId} />
         </div>
         {!standings.finished && (
