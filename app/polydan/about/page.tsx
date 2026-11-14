@@ -97,7 +97,7 @@ export default function AboutPage() {
 
       <Block title="When bets lock and pay">
         <p>
-          Betting stays open during the event. A market <B>locks the moment its result is certain</B>, for example when
+          Betting is open all day, <B>but only in between events</B>, never while one is being played. A market <B>locks the moment its result is certain</B>, for example when
           the person you bet on is knocked out, so nobody can bet on a sure thing.
         </p>
         <p>
@@ -130,6 +130,10 @@ export default function AboutPage() {
         <p>
           Bet what you&apos;re happy to lose. Any question about a result goes to Steven; any question about money goes
           to Matt.
+        </p>
+        <p>
+          <B>No betting during an active event.</B> Place your bets in between events only. Once an event has started,
+          hands off until it&apos;s finished.
         </p>
         <p>
           <B>No manipulating markets.</B> Anyone found betting on themselves and purposely manipulating a market, for
