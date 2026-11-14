@@ -33,6 +33,7 @@ import {
   setEditionStatus,
   setField,
   withdrawFromField,
+  addToField,
   setMarketStatus,
   settleAll,
   settleOne,
@@ -873,6 +874,66 @@ export function EditionStatusForm({ editionId, status }: { editionId: number; st
         <SubmitButton className="pd-btn pd-btn-ghost" pendingText="…">
           Save status
         </SubmitButton>
+      </div>
+    </ActionForm>
+  )
+}
+
+/** Shown once the field is locked: add someone who joins late, or comes back after dropping out. */
+export function LateEntryForm({ editionId, others }: { editionId: number; others: Named[] }) {
+  const [id, setId] = useState('')
+  const [newName, setNewName] = useState('')
+  const name = newName.trim() || others.find((c) => String(c.id) === id)?.name
+  return (
+    <ActionForm
+      action={addToField}
+      className="space-y-2 rounded-lg border border-pd-line p-3"
+      onSuccess={() => {
+        setId('')
+        setNewName('')
+      }}
+    >
+      <input type="hidden" name="editionId" value={editionId} />
+      <p className="text-sm font-medium">Someone joining late, or back in?</p>
+      <p className="text-sm text-pd-muted">
+        Adds them to the field, to the winner and other list markets, and opens the same top-finish markets everyone
+        else has. Bets already placed stand.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <select
+          name="competitorId"
+          value={id}
+          onChange={(e) => setId(e.target.value)}
+          aria-label="Who is joining"
+          disabled={newName.trim() !== ''}
+          className="pd-field min-w-0 flex-1 sm:w-48 sm:flex-none"
+        >
+          <option value="">Pick who…</option>
+          {others.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <input
+          name="newName"
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          placeholder="or a new name"
+          autoComplete="off"
+          className="pd-field min-w-0 flex-1 sm:w-40 sm:flex-none"
+        />
+        {name && (
+          <ConfirmSubmit
+            className="pd-btn pd-btn-gold"
+            confirmClassName="pd-btn pd-btn-gold"
+            question={`Add ${name} to the field and the markets?`}
+            confirmLabel={`Yes, ${name} is in`}
+            pendingText="Adding…"
+          >
+            Add {name}
+          </ConfirmSubmit>
+        )}
       </div>
     </ActionForm>
   )

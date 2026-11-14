@@ -6,7 +6,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { prisma } from '../prisma'
 import { balanceCents, deleteMarket, executeTrade, settleMarket, TradeError, voidMarket, withdrawCompetitor } from './markets'
-import { createMarket, setUnbetOdds } from './createMarket'
+import { addLateEntrant, createMarket, setUnbetOdds } from './createMarket'
 import { prices } from './lmsr'
 
 if (!process.env.DATABASE_URL?.includes('polydan_test')) throw new Error('Refusing to run against a non-test database')
@@ -202,5 +202,36 @@ describe('money flow', () => {
     await prisma.pdTrade.create({ data: { userId: users.Ann, marketId: m.id, outcomeId: yes.id, shares: 1, costCents: 35, pricesAfter: {} } })
     await expect(setUnbetOdds(m.id, { [yes.id]: 50, [no.id]: 50 })).rejects.toThrow('locked')
     await prisma.pdMarket.delete({ where: { id: m.id } })
+  })
+
+  it('adds a late entrant to the field and the markets without touching existing bets', async () => {
+    const e2 = (await prisma.pdEdition.create({ data: { number: 77, status: 'SETUP' } })).id
+    const ids: number[] = []
+    for (const n of ['Lee', 'Mo', 'Nat']) {
+      const c = await prisma.pdCompetitor.upsert({ where: { name: n }, create: { name: n }, update: {} })
+      ids.push(c.id)
+      await prisma.pdEditionEntry.create({ data: { editionId: e2, competitorId: c.id } })
+    }
+    const w = await createMarket(e2, { kind: 'WINNER' })
+    await createMarket(e2, { kind: 'TOP_N', competitorId: ids[0], n: 2 })
+    const lee = await outcomeFor(w.id, 'Lee')
+    const t = await executeTrade({ side: 'BUY', userId: users.Ann, outcomeId: lee, spendCents: 500 })
+    const before = await prisma.pdOutcome.findMany({ where: { marketId: w.id }, orderBy: { sort: 'asc' } })
+    const pBefore = prices(before.map((o) => o.q), w.b)
+
+    const late = await prisma.pdCompetitor.upsert({ where: { name: 'Kit' }, create: { name: 'Kit' }, update: {} })
+    const r = await addLateEntrant(e2, late.id)
+    expect(r).toMatchObject({ name: 'Kit', lists: 1, topN: 1 })
+    const after = await prisma.pdOutcome.findMany({ where: { marketId: w.id }, orderBy: { sort: 'asc' } })
+    expect(after.map((o) => o.label)).toEqual(['Kit', 'Lee', 'Mo', 'Nat'])
+    const pAfter = prices(after.map((o) => o.q), w.b)
+    expect(pAfter.reduce((s, p) => s + p, 0)).toBeCloseTo(1, 9)
+    expect(pAfter[0]).toBeGreaterThanOrEqual(0.025)
+    // Everyone else keeps their share of what's left.
+    expect(pAfter[1] / pAfter[2]).toBeCloseTo(pBefore[0] / pBefore[1], 9)
+    const pos = await prisma.pdPosition.findUniqueOrThrow({ where: { userId_outcomeId: { userId: users.Ann, outcomeId: lee } } })
+    expect(pos.shares).toBeCloseTo(t.shares, 9)
+    expect(await prisma.pdMarket.count({ where: { editionId: e2, kind: 'TOP_N' } })).toBe(2)
+    await expect(addLateEntrant(e2, late.id)).rejects.toThrow('already in the field')
   })
 })

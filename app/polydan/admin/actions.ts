@@ -8,7 +8,7 @@ import { hashPin, requireAdmin } from '@/lib/polydan/auth'
 import { deleteMarket, loadStandings, priceMarket, settleMarket, voidMarket, withdrawCompetitor, TradeError } from '@/lib/polydan/markets'
 import { computeStandings, type ResultKind } from '@/lib/polydan/standings'
 import { autoRule, resolveMarket, type AutoRule } from '@/lib/polydan/resolve'
-import { createMarket, retuneUnbetMarkets, setUnbetOdds, type MarketSpec } from '@/lib/polydan/createMarket'
+import { addLateEntrant, createMarket, retuneUnbetMarkets, setUnbetOdds, type MarketSpec } from '@/lib/polydan/createMarket'
 import { cleanCustom, specFor, unpackOptions, type ProposalKind } from '@/lib/polydan/proposals'
 import { duplicateOf } from '@/lib/polydan/queries'
 import { formatMoney, parseDollarsToCents } from '@/lib/polydan/money'
@@ -169,6 +169,26 @@ export async function withdrawFromField(_: ActionState, f: FormData) {
       `Removed ${plural(r.removedMarkets, 'market')} about them and dropped them from ${plural(r.trimmedMarkets, 'other')}.`,
       r.refundedCents ? `Refunded ${formatMoney(r.refundedCents)} of bets.` : 'Nobody had bet on them.',
     ].join(' ')
+  })
+}
+
+/**
+ * Someone joins late (or comes back after dropping out), before any result:
+ * adds them to the field and to the markets, then re-balances the unbet ones.
+ */
+export async function addToField(_: ActionState, f: FormData) {
+  return run(async () => {
+    const editionId = int(f, 'editionId')
+    const newName = str(f, 'newName')
+    const picked = int(f, 'competitorId')
+    if (!newName && !Number.isInteger(picked)) throw new Error('Pick who is joining')
+    const competitorId = newName
+      ? (await prisma.pdCompetitor.upsert({ where: { name: newName }, create: { name: newName }, update: {} })).id
+      : picked
+    const r = await addLateEntrant(editionId, competitorId)
+    await retuneUnbetMarkets(editionId)
+    const total = await prisma.pdEditionEntry.count({ where: { editionId } })
+    return `${r.name} is in: ${total} in the field now. Added to ${r.lists} list market${r.lists === 1 ? '' : 's'} and opened ${r.topN} top-finish market${r.topN === 1 ? '' : 's'} for them.`
   })
 }
 

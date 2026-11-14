@@ -1,7 +1,7 @@
 import { prisma } from '../prisma'
 import { seedQuantities } from './lmsr'
 import { AUTO_LIQUIDITY, coherentTopN, DEFAULT_LIQUIDITY, normaliseOdds, OPENING_BAND } from './marketDefaults'
-import { prices, maxHouseLoss } from './lmsr'
+import { cost, prices, maxHouseLoss } from './lmsr'
 import { autoRule } from './resolve'
 import { headToHeadProbability, topNProbability, winnerProbabilities } from './history'
 import { computeStandings } from './standings'
@@ -159,6 +159,66 @@ export async function createMarket(
       },
     },
   })
+}
+
+/**
+ * Someone joins (or re-joins) the field after markets are open, before any
+ * result. They go into the field, get an option in every list market (winner,
+ * Copper Cup, the self-settling specials) at their history-based chance, and
+ * get the same "top N" markets everyone else has. Bets already placed stand:
+ * the other options' chances just shrink a little to make room.
+ */
+export async function addLateEntrant(editionId: number, competitorId: number) {
+  const c = await prisma.pdCompetitor.findUniqueOrThrow({ where: { id: competitorId } })
+  const added = await prisma.$transaction(async (tx) => {
+    const entries = await tx.pdEditionEntry.findMany({ where: { editionId }, include: { competitor: true } })
+    if (entries.some((e) => e.competitorId === competitorId)) throw new Error(`${c.name} is already in the field`)
+    if (await tx.pdResultEvent.count({ where: { editionId } }))
+      throw new Error('The event has started, so nobody can be added now')
+    await tx.pdEditionEntry.create({ data: { editionId, competitorId } })
+
+    // Their chance among the new field: to win, and (for "who loses…" markets) to lose.
+    const strength = winnerProbabilities([...entries.map((e) => e.competitor.name), c.name])
+    const weak = strength.map((p) => 1 / Math.sqrt(p))
+    const pWin = strength[strength.length - 1]
+    const pLose = weak[weak.length - 1] / weak.reduce((s, w) => s + w, 0)
+
+    const markets = await tx.pdMarket.findMany({
+      where: { editionId, status: { in: ['OPEN', 'CLOSED'] }, kind: { in: ['WINNER', 'COPPER', 'CUSTOM'] } },
+      orderBy: { id: 'asc' },
+    })
+    let lists = 0
+    for (const m of markets) {
+      const auto = m.kind === 'CUSTOM' && autoRule(m.manualResult)
+      if (m.kind === 'CUSTOM' && !auto) continue
+      await tx.$queryRaw`SELECT id FROM "polydan_markets" WHERE id = ${m.id} FOR UPDATE`
+      const outcomes = await tx.pdOutcome.findMany({ where: { marketId: m.id } })
+      if (outcomes.some((o) => o.competitorId === competitorId)) continue
+      const p = Math.min(0.5, Math.max(0.025, auto ? pLose : pWin))
+      // The quantity that prices the new option at p; everyone else scales by (1 − p).
+      const q = m.b * Math.log(p / (1 - p)) + cost(outcomes.map((o) => o.q), m.b)
+      const made = await tx.pdOutcome.create({ data: { marketId: m.id, label: c.name, competitorId, q } })
+      // Keep the list alphabetical, as it was when the market opened.
+      const sorted = [...outcomes, made].sort((a, b) => a.label.localeCompare(b.label))
+      for (const [i, o] of sorted.entries()) if (o.sort !== i) await tx.pdOutcome.update({ where: { id: o.id }, data: { sort: i } })
+      lists++
+    }
+    return lists
+  })
+
+  // The same "finish top N" markets the rest of the field has.
+  const existing = await prisma.pdMarket.findMany({
+    where: { editionId, kind: 'TOP_N', status: { in: ['OPEN', 'CLOSED'] } },
+    select: { topN: true, outcomes: { select: { competitorId: true } } },
+  })
+  const ns = [...new Set(existing.map((m) => m.topN ?? 1))].sort((a, b) => b - a)
+  let topN = 0
+  for (const n of ns) {
+    if (existing.some((m) => (m.topN ?? 1) === n && m.outcomes.some((o) => o.competitorId === competitorId))) continue
+    await createMarket(editionId, { kind: 'TOP_N', competitorId, n })
+    topN++
+  }
+  return { name: c.name, lists: added, topN }
 }
 
 /**
