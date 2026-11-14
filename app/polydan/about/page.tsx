@@ -124,8 +124,20 @@ export default function AboutPage() {
 
       <Block title="Fair play">
         <p>
-          Bet what you&apos;re happy to lose, and remember you can bet on yourself. Any question about a result goes to
-          Steven; any question about money goes to Matt.
+          Bet what you&apos;re happy to lose. Any question about a result goes to Steven; any question about money goes
+          to Matt.
+        </p>
+        <p>
+          <B>No manipulating markets.</B> Anyone found betting on themselves and purposely manipulating a market, for
+          example betting that they&apos;ll lose and then throwing the event, will be <B>banned and will not get their
+          money back</B>.
+        </p>
+      </Block>
+
+      <Block title="The fine print">
+        <p>
+          PolyDan is a <B>prototype</B> and it may have bugs. Matt has the right to <B>cancel all bets and refund
+          everyone, for any reason</B>.
         </p>
       </Block>
     </div>
