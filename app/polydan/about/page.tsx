@@ -2,9 +2,9 @@ import Link from 'next/link'
 
 export const metadata = { title: 'PolyDan · How it works' }
 
-function Block({ title, children }: { title: string; children: React.ReactNode }) {
+function Block({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
   return (
-    <section className="pd-card space-y-2 p-4 sm:p-5">
+    <section id={id} className="pd-card scroll-mt-24 space-y-2 p-4 sm:p-5">
       <h2 className="font-pd-display text-xl font-semibold uppercase tracking-wide">{title}</h2>
       <div className="space-y-2 text-sm leading-relaxed text-pd-ink-2">{children}</div>
     </section>
@@ -122,7 +122,7 @@ export default function AboutPage() {
         </ul>
       </Block>
 
-      <Block title="Fair play">
+      <Block title="Fair play" id="rules">
         <p>
           <B>PolyDan is here to add to the fun.</B> It isn&apos;t for making anyone rich, and it isn&apos;t for
           exploiting the system or each other.

@@ -117,6 +117,22 @@ async function HomeContent({ searchParams }: PageProps<'/polydan'>) {
         )}
       </header>
 
+      <Link
+        href="/polydan/about#rules"
+        className="flex items-center gap-3 rounded-xl border border-pd-gold bg-pd-surface p-3 text-sm hover:bg-pd-surface-2/60 sm:p-4"
+      >
+        <span className="text-xl" aria-hidden>
+          ⚖️
+        </span>
+        <span className="flex-1">
+          <span className="font-semibold">Rules, conditions and fair play.</span>{' '}
+          <span className="text-pd-muted">
+            PolyDan is a prototype, here to add to the fun. Read this before you bet.
+          </span>
+        </span>
+        <span className="font-semibold text-pd-gold">Read the rules →</span>
+      </Link>
+
       {field.length > 0 && <FieldBoard field={field} idolHolders={idols.holders.map((h) => h.id)} />}
 
       <EventsCard {...events} />
