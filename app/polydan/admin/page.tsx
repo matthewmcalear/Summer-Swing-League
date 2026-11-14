@@ -34,6 +34,7 @@ import {
   MarketActions,
   NewMarketForm,
   ProposalReview,
+  OpeningOddsForm,
   RemovePlayerForm,
   ResetPinForm,
   ResultsForm,
@@ -406,6 +407,8 @@ async function MarketsTab({ editionId, done }: { editionId: number; done?: strin
         </div>
         {markets.map((m) => {
           const h = house(m.id)
+          const hasBets = trades.some((t) => t.marketId === m.id)
+          const live = m.status === 'OPEN' || m.status === 'CLOSED'
           return (
             <div key={m.id} className="pd-card space-y-2 p-4">
               <div className="flex flex-wrap items-center gap-2">
@@ -426,10 +429,16 @@ async function MarketsTab({ editionId, done }: { editionId: number; done?: strin
                   kind: m.auto ? 'AUTO' : m.kind,
                   status: m.status,
                   resolved: m.resolved,
-                  hasBets: trades.some((t) => t.marketId === m.id),
+                  hasBets,
                   outcomes: m.outcomes.map((o) => ({ id: o.id, label: o.label })),
                 }}
               />
+              {live && !hasBets && !m.resolved && !m.auto && m.kind !== 'WINNER' && m.kind !== 'COPPER' && (
+                <OpeningOddsForm
+                  marketId={m.id}
+                  outcomes={m.outcomes.map((o) => ({ id: o.id, label: o.label, pct: Math.round(o.price * 1000) / 10 }))}
+                />
+              )}
             </div>
           )
         })}

@@ -6,7 +6,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { prisma } from '../prisma'
 import { balanceCents, deleteMarket, executeTrade, settleMarket, TradeError, voidMarket, withdrawCompetitor } from './markets'
-import { createMarket } from './createMarket'
+import { createMarket, setUnbetOdds } from './createMarket'
+import { prices } from './lmsr'
 
 if (!process.env.DATABASE_URL?.includes('polydan_test')) throw new Error('Refusing to run against a non-test database')
 
@@ -184,5 +185,22 @@ describe('money flow', () => {
     // Once a result is in, it's a knockout, not a withdrawal.
     await prisma.pdResultEvent.create({ data: { editionId: e.id, round: 1, competitorId: comp.Jody, kind: 'OUT' } })
     await expect(withdrawCompetitor(e.id, comp.Jody)).rejects.toThrow(/knocked out/)
+  })
+
+  it('opens at the odds given, lets the admin change them until someone bets, then locks them', async () => {
+    const yesPrice = async (id: number) => {
+      const m = await prisma.pdMarket.findUniqueOrThrow({ where: { id }, include: { outcomes: { orderBy: { sort: 'asc' } } } })
+      return { p: prices(m.outcomes.map((o) => o.q), m.b)[0], outcomes: m.outcomes }
+    }
+    const m = await createMarket(editionId, { kind: 'CUSTOM', question: 'Pool?', options: ['Yes', 'No'] }, undefined, { Yes: 20, No: 80 })
+    const opened = await yesPrice(m.id)
+    expect(opened.p).toBeCloseTo(0.2, 6)
+    const [yes, no] = opened.outcomes
+    await setUnbetOdds(m.id, { [yes.id]: 35, [no.id]: 65 })
+    expect((await yesPrice(m.id)).p).toBeCloseTo(0.35, 6)
+    await expect(setUnbetOdds(m.id, { [yes.id]: 35 })).rejects.toThrow('every outcome')
+    await prisma.pdTrade.create({ data: { userId: users.Ann, marketId: m.id, outcomeId: yes.id, shares: 1, costCents: 35, pricesAfter: {} } })
+    await expect(setUnbetOdds(m.id, { [yes.id]: 50, [no.id]: 50 })).rejects.toThrow('locked')
+    await prisma.pdMarket.delete({ where: { id: m.id } })
   })
 })

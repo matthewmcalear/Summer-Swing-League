@@ -162,6 +162,28 @@ export async function createMarket(
 }
 
 /**
+ * Sets new odds ({outcome id: weight}, scaled to 100%) on a market nobody has
+ * bet on yet. Once there's a bet the price belongs to the market, so this
+ * refuses; the check runs under a lock so a bet placed meanwhile wins.
+ */
+export async function setUnbetOdds(marketId: number, odds: Record<string, number>) {
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "polydan_markets" WHERE id = ${marketId} FOR UPDATE`
+    const m = await tx.pdMarket.findUniqueOrThrow({
+      where: { id: marketId },
+      include: { outcomes: { orderBy: [{ sort: 'asc' }, { id: 'asc' }] } },
+    })
+    if (m.status !== 'OPEN' && m.status !== 'CLOSED') throw new Error('That market is finished')
+    if (await tx.pdTrade.count({ where: { marketId } })) throw new Error('Someone has bet on it, so the odds are locked')
+    const p = normaliseOdds(m.outcomes.map((o) => Number(odds[o.id])))
+    if (!p) throw new Error('Odds must be set for every outcome, each at least 0.5%')
+    const q = seedQuantities(p, m.b)
+    for (const [i, o] of m.outcomes.entries()) await tx.pdOutcome.update({ where: { id: o.id }, data: { q: q[i] } })
+    return m
+  })
+}
+
+/**
  * House-risk tune-up for markets nobody has bet on yet (bets lock a market's
  * terms, so those are left alone). Each one keeps its opening odds but:
  *  - drops to the current default liquidity for its kind, which is what caps

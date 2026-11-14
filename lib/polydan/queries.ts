@@ -4,7 +4,8 @@ import { prisma } from '../prisma'
 import { balanceCents, loadStandings, priceMarket } from './markets'
 import { cashOutCents, prices } from './lmsr'
 import type { Standings } from './standings'
-import { describeDraft, sameMarket, type ProposalDraft, type ProposalKind } from './proposals'
+import { headToHeadProbability, topNProbability } from './history'
+import { describeDraft, sameMarket, unpackOptions, type ProposalDraft, type ProposalKind } from './proposals'
 
 // Read models for the pages. Everything is computed per request from the
 // ledger, the result log and the LMSR quantities — nothing derived is stored.
@@ -522,11 +523,34 @@ async function loadProposalsForAdmin(editionId: number) {
     }),
   ])
   const nameOf = await competitorNames([...pending, ...decided].flatMap((p) => [p.a, p.b]).filter((x): x is number => x != null))
+  const fieldSize = pending.some((p) => p.kind === 'TOP_N') ? await prisma.pdEditionEntry.count({ where: { editionId } }) : 0
+  const pct = (p: number) => Math.round(p * 1000) / 10
+  /** Opening odds to start the review from: the player's for their own question, history for the rest. */
+  const startingOdds = (p: (typeof pending)[number]): { label: string; pct: number | null }[] => {
+    if (p.kind === 'H2H') {
+      const [a, b] = [nameOf(p.a!), nameOf(p.b!)]
+      const x = headToHeadProbability(a, b)
+      return [
+        { label: a, pct: pct(x) },
+        { label: b, pct: pct(1 - x) },
+      ]
+    }
+    if (p.kind === 'TOP_N') {
+      const x = topNProbability(nameOf(p.a!), p.topN!, fieldSize)
+      return [
+        { label: 'Yes', pct: pct(x) },
+        { label: 'No', pct: pct(1 - x) },
+      ]
+    }
+    const { options, odds } = unpackOptions(p.options)
+    return options.map((label, i) => ({ label, pct: odds?.[i] ?? null }))
+  }
   const view = (p: (typeof pending)[number]) => ({
     id: p.id,
     kind: p.kind as ProposalKind,
     question: p.question,
-    options: p.options,
+    options: unpackOptions(p.options).options,
+    odds: startingOdds(p),
     note: p.note,
     by: p.user.name,
     at: p.createdAt,

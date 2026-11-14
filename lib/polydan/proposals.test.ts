@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cleanCustom, describeDraft, draftFromForm, sameMarket, specFor } from './proposals'
+import { cleanCustom, cleanOdds, describeDraft, draftFromForm, packOptions, sameMarket, specFor, unpackOptions } from './proposals'
 
 const form = (v: Record<string, string>) => (k: string) => v[k] ?? ''
 const FIELD = [1, 2, 3, 4]
@@ -20,18 +20,42 @@ describe('cleanCustom', () => {
   })
 })
 
+describe('projected odds', () => {
+  it('scales what was typed to 100%', () => {
+    expect(cleanOdds('1, 3', 2)).toEqual([25, 75])
+    expect(cleanOdds('50,30,20', 3)).toEqual([50, 30, 20])
+  })
+
+  it('travels with the stored options and comes back out', () => {
+    const stored = packOptions(['Yes', 'No'], [15, 85])
+    expect(unpackOptions(stored)).toEqual({ options: ['Yes', 'No'], odds: [15, 85] })
+    // Suggestions sent before odds existed have none.
+    expect(unpackOptions(['Yes', 'No'])).toEqual({ options: ['Yes', 'No'], odds: null })
+    expect(unpackOptions([])).toEqual({ options: [], odds: null })
+  })
+})
+
 describe('draftFromForm', () => {
   it('builds a custom draft with an optional note', () => {
     const d = draftFromForm(
-      form({ kind: 'CUSTOM', question: 'Who spills first?', options: 'Tom\nSam', note: ' Steven decides ' }),
+      form({ kind: 'CUSTOM', question: 'Who spills first?', options: 'Tom\nSam', odds: '30,70', note: ' Steven decides ' }),
       FIELD,
     )
     expect(d).toMatchObject({
       kind: 'CUSTOM',
       question: 'Who spills first?',
       options: ['Tom', 'Sam'],
+      odds: [30, 70],
       note: 'Steven decides',
     })
+  })
+
+  it('makes the player give odds for their own question: no even-split default', () => {
+    const q = { kind: 'CUSTOM', question: 'Will Dan cry?', options: 'Yes\nNo' }
+    expect(() => draftFromForm(form(q), FIELD)).toThrow('Enter the odds')
+    expect(() => draftFromForm(form({ ...q, odds: '20,' }), FIELD)).toThrow('Enter the odds')
+    expect(() => draftFromForm(form({ ...q, odds: '20,0' }), FIELD)).toThrow('at least 0.5%')
+    expect(draftFromForm(form({ ...q, odds: '20,80' }), FIELD).odds).toEqual([20, 80])
   })
 
   it('checks head-to-head picks come from the field and differ', () => {

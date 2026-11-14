@@ -5,6 +5,7 @@ import { headToHeadProbability, topNProbability, winnerProbabilities } from '@/l
 import { DEFAULT_LIQUIDITY, normaliseOdds, type MarketKindName } from '@/lib/polydan/marketDefaults'
 import { formatMoney, formatMultiple } from '@/lib/polydan/money'
 import { ActionForm, ConfirmSubmit, SubmitButton } from '@/components/polydan/ui'
+import { OddsFields, oddsWeights, optionLabels } from '@/components/polydan/OddsFields'
 import {
   addEvents,
   deleteEvent,
@@ -21,6 +22,7 @@ import {
   retuneMarkets,
   cashOutEveryone,
   approveProposal,
+  setOpeningOdds,
   rejectProposal,
   createEdition,
   createUser,
@@ -259,8 +261,9 @@ export function NewMarketForm({
         { label: 'No', p: 1 - p },
       ]
     }
+    // Your own question has no history to go on, so its odds start blank: you set them.
     const opts = options.split('\n').map((o) => o.trim()).filter(Boolean)
-    return opts.length >= 2 ? opts.map((label) => ({ label, p: 1 / opts.length })) : []
+    return opts.length >= 2 ? opts.map((label) => ({ label, p: NaN })) : []
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kind, a, b, who, n, options, competitors])
 
@@ -268,11 +271,16 @@ export function NewMarketForm({
   const signature = `${kind}|${suggested.map((o) => o.label).join('|')}|${n}`
   const [edits, setEdits] = useState<{ sig: string; values: string[] }>({ sig: '', values: [] })
   const values =
-    edits.sig === signature ? edits.values : suggested.map((o) => (Math.round(o.p * 1000) / 10).toString())
+    edits.sig === signature
+      ? edits.values
+      : suggested.map((o) => (Number.isFinite(o.p) ? (Math.round(o.p * 1000) / 10).toString() : ''))
   const edited = edits.sig === signature
   const setValue = (i: number, v: string) => {
     const next = values.slice()
     next[i] = v.replace(/[^0-9.]/g, '')
+    // Two-way market: typing one side fills in the other.
+    const x = Number(next[i])
+    if (next.length === 2 && next[i] !== '' && x > 0 && x < 100) next[1 - i] = String(Math.round((100 - x) * 10) / 10)
     setEdits({ sig: signature, values: next })
   }
   const weights = values.map(Number)
@@ -321,7 +329,9 @@ export function NewMarketForm({
       <input
         type="hidden"
         name="odds"
-        value={edited ? JSON.stringify(Object.fromEntries(suggested.map((o, i) => [o.label, weights[i]]))) : ''}
+        value={
+          edited || kind === 'CUSTOM' ? JSON.stringify(Object.fromEntries(suggested.map((o, i) => [o.label, weights[i]]))) : ''
+        }
       />
 
       <div className="grid grid-cols-2 gap-1 text-sm">
@@ -398,10 +408,12 @@ export function NewMarketForm({
                 className="text-xs text-pd-gold hover:underline"
                 onClick={() => setEdits({ sig: '', values: [] })}
               >
-                Reset to {kind === 'CUSTOM' ? 'even' : 'history'}
+                {kind === 'CUSTOM' ? 'Clear' : 'Reset to history'}
               </button>
             ) : (
-              <span className="text-xs text-pd-muted">{kind === 'CUSTOM' ? 'even split' : 'from history'}</span>
+              <span className={`text-xs ${kind === 'CUSTOM' ? 'text-pd-gold' : 'text-pd-muted'}`}>
+                {kind === 'CUSTOM' ? 'enter your estimate' : 'from history'}
+              </span>
             )}
           </div>
           <ul className="max-h-72 divide-y divide-pd-line overflow-y-auto text-sm">
@@ -413,6 +425,7 @@ export function NewMarketForm({
                   value={values[i] ?? ''}
                   onChange={(e) => setValue(i, e.target.value)}
                   inputMode="decimal"
+                  placeholder="?"
                   className="pd-field w-16 px-2 py-0.5 text-right pd-num"
                 />
                 <span className="w-4 text-pd-muted">%</span>
@@ -424,9 +437,15 @@ export function NewMarketForm({
           </ul>
           <div className="space-y-0.5 border-t border-pd-line px-3 py-2 text-xs text-pd-muted pd-num">
             <p>
-              Total {edited ? Math.round(total * 10) / 10 : 100}%
+              Total {edited ? Math.round(total * 10) / 10 : kind === 'CUSTOM' ? 0 : 100}%
               {edited && probs && Math.abs(total - 100) > 0.05 && ' — will be scaled to 100%'}
-              {!probs && <span className="text-pd-no"> — every outcome needs at least 0.5%</span>}
+              {!probs && (
+                <span className="text-pd-no">
+                  {kind === 'CUSTOM' && values.some((v) => v === '')
+                    ? ' — set the chance of each option (no 50/50 default)'
+                    : ' — every outcome needs at least 0.5%'}
+                </span>
+              )}
             </p>
             {worstCase != null && <p>House worst case ≈ {formatMoney(Math.round(worstCase * 100))}</p>}
           </div>
@@ -555,17 +574,28 @@ export function ProposalReview({
     title: string
     question: string | null
     options: string[]
+    /** Where the odds start: the player's projection (their own question) or Iron Man history. */
+    odds: { label: string; pct: number | null }[]
     note: string | null
     by: string
     when: string
   }
 }) {
   const id = <input type="hidden" name="proposalId" value={p.id} />
+  const custom = p.kind === 'CUSTOM'
+  const [options, setOptions] = useState(p.options.join('\n'))
+  const [odds, setOdds] = useState<Record<string, string>>(() =>
+    Object.fromEntries(p.odds.map((o) => [o.label, o.pct == null ? '' : String(o.pct)])),
+  )
+  const labels = custom ? optionLabels(options) : p.odds.map((o) => o.label)
+  const values = labels.map((l) => odds[l] ?? '')
+  const theirs = custom && p.odds.some((o) => o.pct != null)
+  const changed = p.odds.some((o) => (odds[o.label] ?? '') !== (o.pct == null ? '' : String(o.pct)))
   return (
     <div className="space-y-3 rounded-lg border border-pd-line bg-pd-surface p-3">
       <p className="text-xs text-pd-muted">
         <span className="font-semibold text-pd-ink-2">{p.by}</span> · {p.when} ·{' '}
-        {p.kind === 'CUSTOM' ? 'their own question' : p.kind === 'H2H' ? 'head to head' : 'top finish'}
+        {custom ? 'their own question' : p.kind === 'H2H' ? 'head to head' : 'top finish'}
       </p>
       {p.note && (
         <p className="rounded-md bg-pd-surface-2 px-2.5 py-1.5 text-sm">
@@ -575,7 +605,7 @@ export function ProposalReview({
       )}
       <ActionForm action={approveProposal} className="space-y-2">
         {id}
-        {p.kind === 'CUSTOM' ? (
+        {custom ? (
           <>
             <label className="block text-xs font-medium text-pd-muted">
               Question (edit before approving if needed)
@@ -585,8 +615,9 @@ export function ProposalReview({
               Options, one per line
               <textarea
                 name="options"
-                defaultValue={p.options.join('\n')}
-                rows={Math.min(6, Math.max(2, p.options.length))}
+                value={options}
+                onChange={(e) => setOptions(e.target.value)}
+                rows={Math.min(6, Math.max(2, labels.length))}
                 className="pd-field mt-1 text-sm text-pd-ink"
               />
             </label>
@@ -594,6 +625,28 @@ export function ProposalReview({
         ) : (
           <p className="font-semibold">{p.title}</p>
         )}
+        <div>
+          <p className="mb-1 text-xs font-medium text-pd-muted">
+            Opening odds ·{' '}
+            {changed
+              ? 'adjusted by you'
+              : theirs
+                ? `${p.by}’s projection — adjust or approve`
+                : custom
+                  ? 'none given — set them'
+                  : 'from Iron Man history — adjust or approve'}
+          </p>
+          <OddsFields
+            labels={labels}
+            values={values}
+            onChange={(next) => setOdds((o) => ({ ...o, ...Object.fromEntries(labels.map((l, i) => [l, next[i]])) }))}
+          />
+          <input
+            type="hidden"
+            name="odds"
+            value={JSON.stringify(Object.fromEntries(labels.map((l, i) => [l, oddsWeights(values)[i]])))}
+          />
+        </div>
         <SubmitButton className="pd-btn pd-btn-gold" pendingText="Opening…">
           Approve & open
         </SubmitButton>
@@ -606,6 +659,35 @@ export function ProposalReview({
         </SubmitButton>
       </ActionForm>
     </div>
+  )
+}
+
+/** Change the odds on a market nobody has bet on yet (a bet locks them in). */
+export function OpeningOddsForm({
+  marketId,
+  outcomes,
+}: {
+  marketId: number
+  outcomes: { id: number; label: string; pct: number }[]
+}) {
+  const [values, setValues] = useState<string[] | null>(null)
+  const shown = values ?? outcomes.map((o) => String(o.pct))
+  return (
+    <details className="text-sm">
+      <summary className="cursor-pointer text-pd-muted">Change the odds (no bets yet)</summary>
+      <ActionForm action={setOpeningOdds} className="mt-2 max-w-sm space-y-2" onSuccess={() => setValues(null)}>
+        <input type="hidden" name="marketId" value={marketId} />
+        <input
+          type="hidden"
+          name="odds"
+          value={JSON.stringify(Object.fromEntries(outcomes.map((o, i) => [o.id, oddsWeights(shown)[i]])))}
+        />
+        <OddsFields labels={outcomes.map((o) => o.label)} values={shown} onChange={setValues} />
+        <SubmitButton className="pd-btn pd-btn-ghost pd-btn-sm" pendingText="Saving…">
+          Save odds
+        </SubmitButton>
+      </ActionForm>
+    </details>
   )
 }
 

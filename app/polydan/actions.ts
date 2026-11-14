@@ -8,7 +8,7 @@ import { currentUser, endSession, hashPin, startSession, verifyPin } from '@/lib
 import history from '@/data/polydan/iron-man-history.json'
 import { executeTrade, TradeError } from '@/lib/polydan/markets'
 import { formatMoney } from '@/lib/polydan/money'
-import { draftFromForm, MAX_PENDING_PER_PLAYER, type ProposalDraft } from '@/lib/polydan/proposals'
+import { draftFromForm, MAX_PENDING_PER_PLAYER, packOptions, type ProposalDraft } from '@/lib/polydan/proposals'
 import { duplicateOf, getCurrentEdition, isMissingTable } from '@/lib/polydan/queries'
 
 export interface ActionState {
@@ -127,7 +127,10 @@ export async function proposeMarket(_: ActionState, form: FormData): Promise<Act
     const dup = await duplicateOf(edition.id, d)
     if (dup === 'market') return { error: 'That market is already open — go bet on it!' }
     if (dup === 'proposal') return { error: 'Someone has already suggested that one. It’s waiting for approval.' }
-    await prisma.pdProposal.create({ data: { editionId: edition.id, userId: user.id, ...d } })
+    const { odds, ...rest } = d
+    await prisma.pdProposal.create({
+      data: { editionId: edition.id, userId: user.id, ...rest, options: packOptions(d.options, odds) },
+    })
   } catch (e) {
     if (isMissingTable(e)) return { error: 'Suggestions aren’t switched on yet. Try again soon!' }
     throw e

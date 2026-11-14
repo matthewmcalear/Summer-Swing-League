@@ -35,7 +35,7 @@ async function SuggestPageContent() {
         <p className="pd-card p-4 text-sm text-pd-muted">Suggestions are switching on shortly. Check back soon!</p>
       ) : open ? (
         <section className="pd-card max-w-xl p-4">
-          <SuggestForm competitors={competitors} />
+          <SuggestForm competitors={competitors} adminName={adminName} />
         </section>
       ) : (
         <p className="pd-card p-4 text-sm text-pd-muted">

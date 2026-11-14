@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { proposeMarket } from '@/app/polydan/actions'
 import { ActionForm, SubmitButton } from './ui'
+import { OddsFields, optionLabels } from './OddsFields'
 
 type Kind = 'CUSTOM' | 'H2H' | 'TOP_N'
 
@@ -17,11 +18,21 @@ const KINDS: { key: Kind; label: string; hint: string }[] = [
  * Fields are controlled so a refused suggestion (a duplicate, a typo in the
  * options) keeps what was typed; they clear only once it's sent.
  */
-export function SuggestForm({ competitors }: { competitors: { id: number; name: string }[] }) {
+export function SuggestForm({
+  competitors,
+  adminName,
+}: {
+  competitors: { id: number; name: string }[]
+  adminName: string
+}) {
   const defaultN = String(Math.min(10, Math.max(1, competitors.length - 1)))
   const blank = { question: '', options: 'Yes\nNo', note: '', a: '', b: '', n: defaultN }
   const [kind, setKind] = useState<Kind>('CUSTOM')
   const [v, setV] = useState(blank)
+  // The player's projected odds, kept per option so editing the list doesn't shuffle them.
+  const [odds, setOdds] = useState<Record<string, string>>({})
+  const labels = optionLabels(v.options)
+  const oddsValues = labels.map((l) => odds[l] ?? '')
   const set = (k: keyof typeof blank) => (e: { target: { value: string } }) => setV((x) => ({ ...x, [k]: e.target.value }))
   const people = competitors.length >= 2
 
@@ -42,7 +53,7 @@ export function SuggestForm({ competitors }: { competitors: { id: number; name: 
   )
 
   return (
-    <ActionForm action={proposeMarket} className="space-y-4" onSuccess={() => setV(blank)}>
+    <ActionForm action={proposeMarket} className="space-y-4" onSuccess={() => { setV(blank); setOdds({}) }}>
       <input type="hidden" name="kind" value={kind} />
       <div
         role="tablist"
@@ -86,6 +97,19 @@ export function SuggestForm({ competitors }: { competitors: { id: number; name: 
             Options <span className="font-normal text-pd-muted">(one per line)</span>
             <textarea name="options" rows={3} value={v.options} onChange={set('options')} className="pd-field mt-1" />
           </label>
+          {labels.length >= 2 && (
+            <div className="text-sm font-medium">
+              Your odds <span className="font-normal text-pd-muted">(how likely is each one? {adminName} can adjust them)</span>
+              <div className="mt-1 font-normal">
+                <OddsFields
+                  labels={labels}
+                  values={oddsValues}
+                  onChange={(next) => setOdds(Object.fromEntries(labels.map((l, i) => [l, next[i]])))}
+                />
+              </div>
+              <input type="hidden" name="odds" value={oddsValues.join(',')} />
+            </div>
+          )}
         </>
       )}
       {kind === 'H2H' && (

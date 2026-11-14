@@ -3,6 +3,7 @@
 // admin's approve action (which may edit a custom question's wording).
 
 import type { MarketSpec } from './createMarket'
+import { normaliseOdds } from './marketDefaults'
 
 export type ProposalKind = 'CUSTOM' | 'H2H' | 'TOP_N'
 
@@ -14,6 +15,8 @@ export interface ProposalDraft {
   b: number | null
   topN: number | null
   note: string | null
+  /** The player's projected chance of each option, in % (same order as options). CUSTOM only. */
+  odds: number[] | null
 }
 
 export const MAX_PENDING_PER_PLAYER = 5
@@ -39,6 +42,34 @@ export function cleanCustom(questionRaw: string, optionsRaw: string): { question
   return { question, options }
 }
 
+/**
+ * The player's projected odds, one percentage per option. Every option needs
+ * one (there is no even-split default); they're scaled to total 100%.
+ */
+export function cleanOdds(raw: string, count: number): number[] {
+  const parts = raw.split(',').map((x) => x.trim())
+  if (parts.length !== count || parts.some((x) => x === ''))
+    throw new Error('Enter the odds: your best guess at the % chance of each option')
+  const p = normaliseOdds(parts.map(Number))
+  if (!p) throw new Error('Each option needs a chance of at least 0.5%')
+  return p.map((x) => Math.round(x * 1000) / 10)
+}
+
+// The projected odds ride along in the stored options list as one tagged
+// trailing entry, so they need no database change.
+const ODDS_TAG = '\u0001odds:'
+
+export function packOptions(options: string[], odds: number[] | null): string[] {
+  return odds ? [...options, ODDS_TAG + odds.join(',')] : options
+}
+
+export function unpackOptions(stored: string[]): { options: string[]; odds: number[] | null } {
+  const options = stored.filter((o) => !o.startsWith(ODDS_TAG))
+  const tagged = stored.find((o) => o.startsWith(ODDS_TAG))
+  const odds = tagged ? tagged.slice(ODDS_TAG.length).split(',').map(Number) : null
+  return { options, odds: odds && odds.length === options.length && odds.every((x) => x > 0) ? odds : null }
+}
+
 export function cleanNote(raw: string): string | null {
   const note = raw.trim().replace(/\s+/g, ' ')
   if (note.length > MAX_NOTE) throw new Error(`Keep the note under ${MAX_NOTE} characters`)
@@ -55,7 +86,8 @@ export function draftFromForm(get: (k: string) => string, field: number[]): Prop
   const inField = (id: number) => Number.isInteger(id) && field.includes(id)
   if (kind === 'CUSTOM') {
     const { question, options } = cleanCustom(get('question'), get('options'))
-    return { kind, question, options, a: null, b: null, topN: null, note }
+    const odds = cleanOdds(get('odds'), options.length)
+    return { kind, question, options, a: null, b: null, topN: null, note, odds }
   }
   if (field.length < 2) throw new Error('The field for this Iron Man isn’t set yet')
   if (kind === 'H2H') {
@@ -63,7 +95,7 @@ export function draftFromForm(get: (k: string) => string, field: number[]): Prop
     const b = Number(get('b'))
     if (!inField(a) || !inField(b)) throw new Error('Pick two people from the field')
     if (a === b) throw new Error('Pick two different people')
-    return { kind, question: null, options: [], a, b, topN: null, note }
+    return { kind, question: null, options: [], a, b, topN: null, note, odds: null }
   }
   if (kind === 'TOP_N') {
     const a = Number(get('a'))
@@ -71,7 +103,7 @@ export function draftFromForm(get: (k: string) => string, field: number[]): Prop
     if (!inField(a)) throw new Error('Pick someone from the field')
     if (!Number.isInteger(n) || n < 1 || n >= field.length)
       throw new Error(`Top N must be between 1 and ${field.length - 1}`)
-    return { kind, question: null, options: [], a, b: null, topN: n, note }
+    return { kind, question: null, options: [], a, b: null, topN: n, note, odds: null }
   }
   throw new Error('Pick what kind of market it is')
 }

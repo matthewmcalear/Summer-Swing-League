@@ -8,8 +8,8 @@ import { hashPin, requireAdmin } from '@/lib/polydan/auth'
 import { deleteMarket, loadStandings, priceMarket, settleMarket, voidMarket, withdrawCompetitor, TradeError } from '@/lib/polydan/markets'
 import { computeStandings, type ResultKind } from '@/lib/polydan/standings'
 import { autoRule, resolveMarket, type AutoRule } from '@/lib/polydan/resolve'
-import { createMarket, retuneUnbetMarkets, type MarketSpec } from '@/lib/polydan/createMarket'
-import { cleanCustom, specFor, type ProposalKind } from '@/lib/polydan/proposals'
+import { createMarket, retuneUnbetMarkets, setUnbetOdds, type MarketSpec } from '@/lib/polydan/createMarket'
+import { cleanCustom, specFor, unpackOptions, type ProposalKind } from '@/lib/polydan/proposals'
 import { duplicateOf } from '@/lib/polydan/queries'
 import { formatMoney, parseDollarsToCents } from '@/lib/polydan/money'
 import { parseCopperPoints } from '@/lib/polydan/copper'
@@ -348,6 +348,8 @@ export async function addMarket(_: ActionState, f: FormData) {
     // Edited opening odds arrive as JSON {outcome label: percentage}; blank = history.
     const oddsRaw = str(f, 'odds')
     const odds = oddsRaw ? (JSON.parse(oddsRaw) as Record<string, number>) : undefined
+    // No history to price your own question from, and an even split is rarely right.
+    if (kind === 'CUSTOM' && !odds) throw new Error('Set the opening odds: the chance of each option')
     const m = await createMarket(editionId, spec, b, odds)
     return `Opened “${m.question}”`
   })
@@ -364,7 +366,21 @@ export async function approveProposal(_: ActionState, f: FormData) {
   return run(async () => {
     const p = await prisma.pdProposal.findUniqueOrThrow({ where: { id: int(f, 'proposalId') } })
     if (p.status !== 'PENDING') throw new Error('Already decided')
-    let draft = { kind: p.kind as ProposalKind, question: p.question, options: p.options, a: p.a, b: p.b, topN: p.topN }
+    let draft = {
+      kind: p.kind as ProposalKind,
+      question: p.question,
+      options: unpackOptions(p.options).options,
+      a: p.a,
+      b: p.b,
+      topN: p.topN,
+    }
+    // The opening odds as reviewed on the form: the player's projection (or history), adjusted or left as is.
+    let odds: Record<string, number>
+    try {
+      odds = JSON.parse(str(f, 'odds')) as Record<string, number>
+    } catch {
+      throw new Error('Set the opening odds before approving')
+    }
     if (p.kind === 'CUSTOM') draft = { ...draft, ...cleanCustom(str(f, 'question'), String(f.get('options') ?? '')) }
     if ((await duplicateOf(p.editionId, draft, p.id)) === 'market') throw new Error('That market is already open')
     const claimed = await prisma.pdProposal.updateMany({
@@ -373,13 +389,27 @@ export async function approveProposal(_: ActionState, f: FormData) {
     })
     if (!claimed.count) throw new Error('Already decided')
     try {
-      const m = await createMarket(p.editionId, specFor(draft))
+      const m = await createMarket(p.editionId, specFor(draft), undefined, odds)
       await prisma.pdProposal.update({ where: { id: p.id }, data: { marketId: m.id } })
       return `Opened “${m.question}”`
     } catch (e) {
       await prisma.pdProposal.update({ where: { id: p.id }, data: { status: 'PENDING', decidedAt: null } })
       throw e
     }
+  })
+}
+
+/** Admin changes the odds on a market that has no bets yet. */
+export async function setOpeningOdds(_: ActionState, f: FormData) {
+  return run(async () => {
+    let odds: Record<string, number>
+    try {
+      odds = JSON.parse(str(f, 'odds')) as Record<string, number>
+    } catch {
+      throw new Error('Enter the odds')
+    }
+    const m = await setUnbetOdds(int(f, 'marketId'), odds)
+    return `Odds updated on “${m.question}”`
   })
 }
 
