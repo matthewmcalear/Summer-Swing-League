@@ -46,7 +46,7 @@ async function PortfolioPageContent() {
         {[
           ['Cash', balance],
           ['In play', openValue],
-          ['Total', balance + openValue],
+          ['If all win', positions.reduce((s, p) => s + Math.floor(p.shares * 100), 0)],
         ].map(([k, v]) => (
           <div key={k} className="pd-card p-3 sm:p-4">
             <p className="pd-eyebrow">{k}</p>
@@ -57,7 +57,10 @@ async function PortfolioPageContent() {
 
       <section>
         <h2 className="pd-eyebrow">Open positions</h2>
-        <p className="mb-2 text-xs text-pd-muted">Each bet is valued at what it would sell for right now.</p>
+        <p className="mb-2 text-xs text-pd-muted">
+          For each bet: what it wins if you’re right, what it would sell for right now, and how that compares with
+          what you paid.
+        </p>
         {positions.length ? (
           <ul className="pd-card divide-y divide-pd-line">
             {positions.map((p) => {
@@ -75,6 +78,7 @@ async function PortfolioPageContent() {
                       </p>
                     </div>
                     <div className="text-right">
+                      <p className="pd-num text-xs text-pd-gold">wins {formatMoney(Math.floor(p.shares * 100))} if right</p>
                       <p className="font-semibold pd-num">{formatMoney(p.valueCents)}</p>
                       <p className={`text-xs pd-num ${pnl > 0 ? 'text-pd-yes' : pnl < 0 ? 'text-pd-no' : 'text-pd-muted'}`}>{formatMoney(pnl, { sign: true })}</p>
                     </div>

@@ -31,7 +31,9 @@ beforeAll(async () => {
     users[n] = (await prisma.pdUser.create({ data: { name: n, pinHash: 'x:y' } })).id
     await prisma.pdLedgerEntry.create({ data: { userId: users[n], kind: 'DEPOSIT', amountCents: 10000 } })
   }
-  const e = await prisma.pdEdition.create({ data: { number: 10, status: 'LIVE' } })
+  // The money-flow tests below run without the house's cut or stake limit;
+  // those have their own test at the bottom.
+  const e = await prisma.pdEdition.create({ data: { number: 10, status: 'LIVE', houseCutPct: 0, maxStakeCents: 0 } })
   editionId = e.id
   for (const n of ['Megan', 'Jack', 'Jody', 'Newbie']) {
     comp[n] = (await prisma.pdCompetitor.create({ data: { name: n } })).id
@@ -233,5 +235,38 @@ describe('money flow', () => {
     expect(pos.shares).toBeCloseTo(t.shares, 9)
     expect(await prisma.pdMarket.count({ where: { editionId: e2, kind: 'TOP_N' } })).toBe(2)
     await expect(addLateEntrant(e2, late.id)).rejects.toThrow('already in the field')
+  })
+
+  it('applies the house cut, the per-market limit and the pause', async () => {
+    const e3 = (await prisma.pdEdition.create({ data: { number: 78, status: 'LIVE' } })).id // defaults: 5% cut, $25 limit
+    const ids: number[] = []
+    for (const n of ['Ora', 'Pip', 'Quin']) {
+      const c = await prisma.pdCompetitor.upsert({ where: { name: n }, create: { name: n }, update: {} })
+      ids.push(c.id)
+      await prisma.pdEditionEntry.create({ data: { editionId: e3, competitorId: c.id } })
+    }
+    const free = await createMarket(e3, { kind: 'H2H', a: ids[0], b: ids[1] })
+    const m = await createMarket(e3, { kind: 'H2H', a: ids[0], b: ids[2] })
+    await prisma.pdEdition.update({ where: { id: e3 }, data: { houseCutPct: 0 } })
+    const noCut = await executeTrade({ side: 'BUY', userId: users.Ben, outcomeId: await outcomeFor(free.id, 'Ora'), spendCents: 1000 })
+    await prisma.pdEdition.update({ where: { id: e3 }, data: { houseCutPct: 5 } })
+    const ora = await outcomeFor(m.id, 'Ora')
+    const before = await balanceCents(prisma, users.Ben)
+    const cut = await executeTrade({ side: 'BUY', userId: users.Ben, outcomeId: ora, spendCents: 1000 })
+    // Same $10, same opening price, but only $9.50 of it buys shares.
+    expect(await balanceCents(prisma, users.Ben)).toBe(before - 1000)
+    expect(cut.shares).toBeLessThan(noCut.shares)
+    expect(cut.shares).toBeGreaterThan(noCut.shares * 0.93)
+
+    // $10 on it already: $15 more is fine, $16 is over the $25 limit.
+    await expect(executeTrade({ side: 'BUY', userId: users.Ben, outcomeId: ora, spendCents: 1600 })).rejects.toThrow('up to $15.00')
+    await executeTrade({ side: 'BUY', userId: users.Ben, outcomeId: ora, spendCents: 1500 })
+    await expect(executeTrade({ side: 'BUY', userId: users.Ben, outcomeId: ora, spendCents: 100 })).rejects.toThrow('limit')
+
+    await prisma.pdEdition.update({ where: { id: e3 }, data: { bettingPaused: true } })
+    await expect(executeTrade({ side: 'BUY', userId: users.Ann, outcomeId: ora, spendCents: 500 })).rejects.toThrow('paused')
+    await expect(executeTrade({ side: 'SELL', userId: users.Ben, outcomeId: ora, shares: 1 })).rejects.toThrow('paused')
+    await prisma.pdEdition.update({ where: { id: e3 }, data: { bettingPaused: false } })
+    await executeTrade({ side: 'SELL', userId: users.Ben, outcomeId: ora, shares: 1 })
   })
 })

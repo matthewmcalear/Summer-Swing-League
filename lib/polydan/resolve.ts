@@ -4,6 +4,7 @@
 // A known result locks the market straight away (nobody can bet on a sure
 // thing); winnings are paid out when the admin settles at the end of the day.
 // Payouts are per share: 1 = full win, 0.5 = dead heat between two, 0 = loss.
+// "Top N" markets use the bookmaker's dead-heat rule when a tie straddles N.
 
 import type { Standings } from './standings'
 
@@ -81,14 +82,22 @@ export function resolveMarket(market: MarketLike, st: Standings): Resolution {
       const no = outcomes.find((o) => !o.isYes)!
       const n = market.topN ?? 1
       const p = pos(yes)
-      let made: boolean | null = null
-      if (p != null) made = p <= n
+      // Share of a full win the Yes side gets: 1 made it, 0 missed.
+      let made: number | null = null
+      if (p != null) {
+        made = p <= n ? 1 : 0
+        // Dead heat: people who went out together share a place. If that group
+        // straddles the cut-off (5 share 10th, one top-10 place left) they
+        // split the places that are left instead of all counting as top N.
+        const tied = [...st.byId.values()].filter((s) => s.position === p).length
+        if (st.deadHeat !== false && p <= n && p + tied - 1 > n) made = (n - p + 1) / tied
+      }
       // Still alive with only N or fewer left: guaranteed a top-N finish.
-      else if (st.alive.length <= n) made = true
+      else if (st.alive.length <= n) made = 1
       if (made == null) return { dead: new Set(), payouts: null }
       return {
-        dead: new Set([made ? no.id : yes.id]),
-        payouts: new Map([[yes.id, made ? 1 : 0], [no.id, made ? 0 : 1]]),
+        dead: new Set(made === 1 ? [no.id] : made === 0 ? [yes.id] : []),
+        payouts: new Map([[yes.id, made], [no.id, 1 - made]]),
       }
     }
 

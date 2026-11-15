@@ -11,6 +11,7 @@ import { autoRule, resolveMarket, type AutoRule } from '@/lib/polydan/resolve'
 import { addLateEntrant, createMarket, retuneUnbetMarkets, setUnbetOdds, type MarketSpec } from '@/lib/polydan/createMarket'
 import { cleanCustom, specFor, unpackOptions, type ProposalKind } from '@/lib/polydan/proposals'
 import { duplicateOf } from '@/lib/polydan/queries'
+import { requoteMarkets } from '@/lib/polydan/requote'
 import { formatMoney, parseDollarsToCents } from '@/lib/polydan/money'
 import { parseCopperPoints } from '@/lib/polydan/copper'
 import type { ActionState } from '../actions'
@@ -200,6 +201,54 @@ export async function setEditionStatus(_: ActionState, f: FormData) {
   })
 }
 
+/**
+ * Ends the event: pays out every market that has a result, marks the edition
+ * finished, and goes to the final results page (placings and what everyone
+ * is owed). Markets still without a result stay open and are listed there.
+ */
+export async function endEvent(_: ActionState, f: FormData): Promise<ActionState> {
+  await requireAdmin()
+  const editionId = int(f, 'editionId')
+  try {
+    const markets = await prisma.pdMarket.findMany({
+      where: { editionId, status: { in: ['OPEN', 'CLOSED'] } },
+      include: { outcomes: true },
+    })
+    const st = await loadStandings(prisma, editionId)
+    for (const m of markets) if (priceMarket(m, st).resolution.payouts) await settleMarket(m.id)
+    await prisma.pdEdition.update({ where: { id: editionId }, data: { status: 'FINISHED', bettingPaused: false } })
+  } catch (e) {
+    if (e instanceof Error) return { error: e.message }
+    throw e
+  }
+  revalidatePath('/polydan', 'layout')
+  redirect(`/polydan/final?edition=${editionId}`)
+}
+
+/** Pauses every market while an event is being played; recording the round reopens them. */
+export async function setBettingPaused(_: ActionState, f: FormData) {
+  return run(async () => {
+    const paused = str(f, 'paused') === '1'
+    await prisma.pdEdition.update({ where: { id: int(f, 'editionId') }, data: { bettingPaused: paused } })
+    return paused ? 'Betting is paused. It reopens when you record the round.' : 'Betting is open again'
+  })
+}
+
+/** The house's safety settings for an edition: its cut of each bet and the most one person can stake on a market. */
+export async function saveHouseRules(_: ActionState, f: FormData) {
+  return run(async () => {
+    const cut = Number(str(f, 'houseCutPct'))
+    const max = Number(str(f, 'maxStake'))
+    if (!(cut >= 0 && cut <= 20)) throw new Error('The house cut must be between 0 and 20%')
+    if (!(max >= 0 && max <= 1000)) throw new Error('The stake limit must be between $0 (no limit) and $1,000')
+    await prisma.pdEdition.update({
+      where: { id: int(f, 'editionId') },
+      data: { houseCutPct: cut, maxStakeCents: Math.round(max * 100) },
+    })
+    return `Saved: house keeps ${cut}% of each bet, ${max ? `$${max} limit per person per market` : 'no stake limit'}`
+  })
+}
+
 // ---------------------------------------------------------------- results
 
 async function checkSettledUnchanged(editionId: number, nextStandings: ReturnType<typeof computeStandings>) {
@@ -252,11 +301,17 @@ export async function recordResults(_: ActionState, f: FormData) {
       [...existing, ...events],
     ) // throws on an impossible move
     await checkSettledUnchanged(editionId, next)
+    const before = computeStandings(
+      entries.map((e) => e.competitorId),
+      existing,
+    )
     await prisma.pdResultEvent.createMany({ data: events.map((e) => ({ ...e, editionId })) })
+    // The result is in: betting reopens, at odds that already reflect it.
     await prisma.pdEdition.update({
       where: { id: editionId },
-      data: { status: next.finished ? 'FINISHED' : 'LIVE' },
+      data: { status: next.finished ? 'FINISHED' : 'LIVE', bettingPaused: false },
     })
+    await requoteMarkets(editionId, before, next, round)
     // A knockout reveals the next event on the schedule (and keeps this one visible).
     const revealed = next.finished
       ? null
@@ -343,8 +398,13 @@ export async function undoLastResult(_: ActionState, f: FormData) {
       all.slice(0, -1),
     )
     await checkSettledUnchanged(editionId, next)
+    const before = computeStandings(
+      entries.map((e) => e.competitorId),
+      all,
+    )
     await prisma.pdResultEvent.delete({ where: { id: last.id } })
     if (!next.finished) await prisma.pdEdition.update({ where: { id: editionId }, data: { status: 'LIVE' } })
+    await requoteMarkets(editionId, before, next, last.round) // moves the odds back
     return 'Undid the last result'
   })
 }

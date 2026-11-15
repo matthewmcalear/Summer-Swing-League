@@ -379,6 +379,13 @@ model PdEdition {
   copperFinal Boolean         @default(false)
   // Unused since Iron Man 10: Copper Cup points are now entered directly.
   copperScale String          @default("10,8,6,5,4,3,2,1")
+  // House protection (added after Iron Man 10):
+  // nobody can bet or sell while an event is being played
+  bettingPaused Boolean       @default(false)
+  // % of every bet the house keeps before it buys shares (0 = none)
+  houseCutPct   Float         @default(5)
+  // most one person can have staked on one market, in cents (0 = no limit)
+  maxStakeCents Int           @default(2500)
 
   entries   PdEditionEntry[]
   results   PdResultEvent[]
@@ -469,6 +476,7 @@ model PdMarket {
   trades    PdTrade[]
   ledger    PdLedgerEntry[]
   proposals PdProposal[]
+  requotes  PdRequote[]
 
   @@index([editionId])
   @@map("polydan_markets")
@@ -487,6 +495,9 @@ model PdOutcome {
   isYes        Boolean?
   // LMSR quantity (shares sold, plus the seed that sets the opening price)
   q            Float         @default(0)
+  // Part of q the house added by re-quoting after results came in (see
+  // lib/polydan/requote.ts); opening seed = q − adj − shares traded.
+  adj          Float         @default(0)
 
   positions PdPosition[]
   trades    PdTrade[]
@@ -521,6 +532,21 @@ model PdTrade {
 
   @@index([marketId, createdAt])
   @@map("polydan_trades")
+}
+
+// The house moved a market's odds because a round was recorded (not because
+// of a bet). Kept so the odds chart shows the step and the audit can see it.
+model PdRequote {
+  id        Int      @id @default(autoincrement())
+  marketId  Int
+  market    PdMarket @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  round     Int
+  // {outcomeId: price} right after the re-quote
+  prices    Json
+  createdAt DateTime @default(now())
+
+  @@index([marketId, createdAt])
+  @@map("polydan_requotes")
 }
 
 // Steven's event schedule. Round N is played on the event with seq N.

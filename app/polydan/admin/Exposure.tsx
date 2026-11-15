@@ -56,7 +56,7 @@ export async function ExposureTab({ editionId }: { editionId: number }) {
       // The most this market could ever lose, however much more is bet on it.
       const ceilingCents = m.resolved
         ? -Math.min(e.worstCents, 0)
-        : Math.round(maxHouseLoss(m.outcomes.map((o) => o.q - (held.get(o.id) ?? 0)), m.b) * 100)
+        : Math.round(maxHouseLoss(m.outcomes.map((o) => o.q - o.adj - (held.get(o.id) ?? 0)), m.b) * 100)
       return { m, e, ceilingCents, bet: outcomes.some((o) => o.shares > 0.0001) }
     })
   const withBets = open.filter((x) => x.bet).sort((a, b) => a.e.worstCents - b.e.worstCents || a.m.id - b.m.id)

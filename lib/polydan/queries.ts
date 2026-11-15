@@ -32,6 +32,8 @@ export interface OutcomeView {
   competitorId: number | null
   isYes: boolean | null
   q: number
+  /** Part of q the house added by re-quoting after results (not shares, not the opening seed). */
+  adj: number
   price: number
   dead: boolean
 }
@@ -78,6 +80,7 @@ function toView(m: MarketRow, st: Standings, volumeCents: number, bets = 0): Mar
       competitorId: o.competitorId,
       isYes: o.isYes,
       q: o.q,
+      adj: o.adj,
       price: priced.price.get(o.id) ?? 0,
       dead: priced.resolution.dead.has(o.id),
     })),
@@ -132,9 +135,16 @@ type TradeTick = { outcomeId: number; shares: number; createdAt: Date; pricesAft
  * current top 4. With `since`, everything earlier collapses into one starting
  * point at that time (the TV charts event day, not the whole week).
  */
-function priceHistory(m: MarketRow, view: MarketView, trades: TradeTick[], since?: number): ChartSeries[] {
-  // Opening quantities = today's minus every share traded since.
-  const openQ = new Map(m.outcomes.map((o) => [o.id, o.q]))
+function priceHistory(
+  m: MarketRow,
+  view: MarketView,
+  trades: TradeTick[],
+  since?: number,
+  /** Odds the house re-quoted after each round, so the chart steps when results come in. */
+  requotes: { createdAt: Date; prices: Prisma.JsonValue }[] = [],
+): ChartSeries[] {
+  // Opening quantities = today's minus every share traded since and every re-quote.
+  const openQ = new Map(m.outcomes.map((o) => [o.id, o.q - o.adj]))
   for (const t of trades) openQ.set(t.outcomeId, openQ.get(t.outcomeId)! - t.shares)
   const opening = prices(
     m.outcomes.map((o) => openQ.get(o.id)!),
@@ -142,7 +152,10 @@ function priceHistory(m: MarketRow, view: MarketView, trades: TradeTick[], since
   )
   let snapshots: { t: number; prices: Record<string, number> }[] = [
     { t: m.createdAt.getTime(), prices: Object.fromEntries(m.outcomes.map((o, i) => [o.id, opening[i]])) },
-    ...trades.map((t) => ({ t: t.createdAt.getTime(), prices: t.pricesAfter as Record<string, number> })),
+    ...[
+      ...trades.map((t) => ({ t: t.createdAt.getTime(), prices: t.pricesAfter as Record<string, number> })),
+      ...requotes.map((r) => ({ t: r.createdAt.getTime(), prices: r.prices as Record<string, number> })),
+    ].sort((a, b) => a.t - b.t),
     { t: Date.now(), prices: Object.fromEntries(view.outcomes.map((o) => [o.id, o.price])) },
   ]
   if (since != null && since > snapshots[0].t) {
@@ -168,7 +181,7 @@ function priceHistory(m: MarketRow, view: MarketView, trades: TradeTick[], since
 export async function getMarketDetail(marketId: number, userId: number) {
   const m = await loadMarketRow(marketId)
   if (!m) return null
-  const [standings, trades, positions, edition] = await Promise.all([
+  const [standings, trades, positions, edition, requotes] = await Promise.all([
     loadStandings(prisma, m.editionId),
     prisma.pdTrade.findMany({
       where: { marketId },
@@ -177,6 +190,7 @@ export async function getMarketDetail(marketId: number, userId: number) {
     }),
     prisma.pdPosition.findMany({ where: { userId, outcome: { marketId } } }),
     prisma.pdEdition.findUniqueOrThrow({ where: { id: m.editionId } }),
+    prisma.pdRequote.findMany({ where: { marketId }, orderBy: { id: 'asc' } }),
   ])
   const view = toView(
     m,
@@ -184,7 +198,8 @@ export async function getMarketDetail(marketId: number, userId: number) {
     trades.reduce((s, t) => s + Math.abs(t.costCents), 0),
     trades.length,
   )
-  const series = priceHistory(m, view, trades)
+  const series = priceHistory(m, view, trades, undefined, requotes)
+  const myStaked = trades.filter((t) => t.userId === userId).reduce((s, t) => s + t.costCents, 0)
 
   const costBasis = new Map<number, number>()
   for (const t of trades)
@@ -194,6 +209,8 @@ export async function getMarketDetail(marketId: number, userId: number) {
   return {
     market: view,
     edition,
+    /** What this player has riding on the market: bets minus anything sold back. */
+    myStakedCents: Math.max(0, myStaked),
     series,
     myPositions: positions
       .filter((p) => p.shares > 1e-9)
@@ -315,7 +332,7 @@ export async function getTvBoard(editionId: number) {
     getIdols(editionId),
   ])
   const winnerView = board.markets.find((m) => m.kind === 'WINNER' && m.status !== 'VOID')
-  const [events, winnerRow, winnerTrades, firstResult] = await Promise.all([
+  const [events, winnerRow, winnerTrades, firstResult, winnerRequotes] = await Promise.all([
     getPublicEvents(editionId, board.standings.currentRound),
     winnerView ? loadMarketRow(winnerView.id) : null,
     winnerView
@@ -326,6 +343,7 @@ export async function getTvBoard(editionId: number) {
         })
       : [],
     prisma.pdResultEvent.findFirst({ where: { editionId }, orderBy: { id: 'asc' }, select: { createdAt: true } }),
+    winnerView ? prisma.pdRequote.findMany({ where: { marketId: winnerView.id }, orderBy: { id: 'asc' } }) : [],
   ])
   // Once the event is under way, chart from just before the first knockout.
   const chartSince = firstResult ? firstResult.createdAt.getTime() - 30 * 60_000 : undefined
@@ -335,7 +353,9 @@ export async function getTvBoard(editionId: number) {
     events,
     /** Winner odds over time (top 4), once anyone has bet on it. */
     winnerSeries:
-      winnerView && winnerRow && winnerTrades.length ? priceHistory(winnerRow, winnerView, winnerTrades, chartSince) : [],
+      winnerView && winnerRow && winnerTrades.length + winnerRequotes.length
+        ? priceHistory(winnerRow, winnerView, winnerTrades, chartSince, winnerRequotes)
+        : [],
     copper,
     idols,
     /** An idol was played more recently than the latest knockout: lead with it. */
@@ -608,5 +628,115 @@ export async function getSuggestPage(userId: number) {
     competitors: entries.map((e) => ({ id: e.competitorId, name: e.competitor.name })).sort((a, b) => a.name.localeCompare(b.name)),
     mine: mine ?? [],
     adminName: admin?.name ?? 'An admin',
+  }
+}
+
+// --------------------------------------------------------------------------
+// Final results: placings, the money, and every bet, for everyone to check
+// --------------------------------------------------------------------------
+
+/**
+ * Everything about a finished (or nearly finished) edition on one page: the
+ * finishing order, the Copper Cup, what each player won or lost on the bets,
+ * and every market with who bet what and what it paid. Money comes straight
+ * from the ledger, so it is exactly what was credited.
+ */
+export async function getFinalResults(editionId: number) {
+  const [board, copper, users, ledger, trades, balances] = await Promise.all([
+    getEditionBoard(editionId),
+    getCopperTable(editionId),
+    prisma.pdUser.findMany({ select: { id: true, name: true } }),
+    prisma.pdLedgerEntry.groupBy({
+      by: ['userId', 'marketId', 'kind'],
+      where: { market: { editionId } },
+      _sum: { amountCents: true },
+    }),
+    prisma.pdTrade.findMany({
+      where: { market: { editionId } },
+      orderBy: { id: 'asc' },
+      select: { id: true, userId: true, marketId: true, outcomeId: true, shares: true, costCents: true, createdAt: true },
+    }),
+    prisma.pdLedgerEntry.groupBy({ by: ['userId', 'kind'], _sum: { amountCents: true } }),
+  ])
+  const nameOf = new Map(users.map((u) => [u.id, u.name]))
+  const sumOf = (rows: { kind: string; _sum: { amountCents: number | null } }[], kinds: string[]) =>
+    rows.filter((r) => kinds.includes(r.kind)).reduce((s, r) => s + (r._sum.amountCents ?? 0), 0)
+
+  const markets = board.markets
+    .map((m) => {
+      const mine = trades.filter((t) => t.marketId === m.id)
+      const labelOf = new Map(m.outcomes.map((o) => [o.id, o.label]))
+      const bettors = [...new Set(mine.map((t) => t.userId))].map((userId) => {
+        const rows = ledger.filter((l) => l.marketId === m.id && l.userId === userId)
+        const picks = new Map<number, number>()
+        for (const t of mine.filter((x) => x.userId === userId)) picks.set(t.outcomeId, (picks.get(t.outcomeId) ?? 0) + t.shares)
+        const staked = -sumOf(rows, ['BUY', 'SELL'])
+        const paid = sumOf(rows, ['PAYOUT', 'REFUND'])
+        return {
+          userId,
+          name: nameOf.get(userId) ?? '?',
+          picks: [...picks.entries()]
+            .filter(([, shares]) => shares >= 0.05)
+            .map(([id, shares]) => ({ label: labelOf.get(id) ?? '?', shares })),
+          stakedCents: staked,
+          paidCents: paid,
+          profitCents: paid - staked,
+        }
+      })
+      const done = m.status === 'SETTLED' || m.status === 'VOID'
+      return {
+        id: m.id,
+        question: m.question,
+        kind: m.kind,
+        status: m.status,
+        resolved: m.resolved,
+        /** What happened: the outcomes that paid, with the share of a full win each got. */
+        result: m.status === 'VOID' ? [] : m.resolved ? m.outcomes.filter((o) => o.price > 0).map((o) => ({ label: o.label, pays: o.price })) : [],
+        bettors: bettors.sort((a, b) => b.profitCents - a.profitCents),
+        takenCents: bettors.reduce((s, b) => s + b.stakedCents, 0),
+        paidCents: bettors.reduce((s, b) => s + b.paidCents, 0),
+        done,
+      }
+    })
+    .filter((m) => m.bettors.length > 0)
+
+  const players = users
+    .map((u) => {
+      const bets = ledger.filter((l) => l.userId === u.id)
+      const all = balances.filter((b) => b.userId === u.id)
+      const staked = -sumOf(bets, ['BUY'])
+      const won = sumOf(bets, ['PAYOUT', 'REFUND', 'SELL'])
+      return {
+        id: u.id,
+        name: u.name,
+        bets: trades.filter((t) => t.userId === u.id && t.shares > 0).length,
+        stakedCents: staked,
+        wonCents: won,
+        profitCents: won - staked,
+        putInCents: sumOf(all, ['DEPOSIT']),
+        cashedOutCents: -sumOf(all, ['WITHDRAWAL']),
+        /** Still sitting in their account: what the admin owes them. */
+        balanceCents: sumOf(all, ['DEPOSIT', 'WITHDRAWAL', 'BUY', 'SELL', 'PAYOUT', 'REFUND']),
+      }
+    })
+    .filter((p) => p.bets > 0 || p.balanceCents !== 0 || p.putInCents !== 0)
+    .sort((a, b) => b.profitCents - a.profitCents)
+
+  const placings = board.field
+    .map((c) => ({ id: c.id, name: c.name, position: c.standing.position, outRound: c.standing.outRound, status: c.standing.status }))
+    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0) || a.name.localeCompare(b.name))
+
+  return {
+    edition: board.edition,
+    finished: board.standings.finished,
+    champion: board.field.find((c) => c.id === board.standings.champion)?.name ?? null,
+    rounds: board.standings.currentRound,
+    placings,
+    copper: { final: copper.final, rows: copper.rows.filter((r) => r.points !== 0) },
+    players,
+    markets,
+    /** Markets not yet paid out (should be none once the event is closed). */
+    unsettled: board.markets.filter((m) => m.status === 'OPEN' || m.status === 'CLOSED').length,
+    houseCents: -players.reduce((s, p) => s + p.profitCents, 0),
   }
 }

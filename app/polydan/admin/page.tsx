@@ -32,6 +32,9 @@ import {
   FieldForm,
   WithdrawForm,
   LateEntryForm,
+  BettingPauseForm,
+  EndEventForm,
+  HouseRulesForm,
   MarketActions,
   NewMarketForm,
   ProposalReview,
@@ -150,7 +153,7 @@ async function AdminPageContent({ searchParams }: PageProps<'/polydan/admin'>) {
 // ------------------------------------------------------------------ results
 
 async function ResultsTab({ editionId }: { editionId: number }) {
-  const [{ edition, field, standings }, log, events, copper, idols] = await Promise.all([
+  const [{ edition, field, standings, markets }, log, events, copper, idols] = await Promise.all([
     getEditionBoard(editionId),
     prisma.pdResultEvent.findMany({
       where: { editionId },
@@ -190,10 +193,24 @@ async function ResultsTab({ editionId }: { editionId: number }) {
             </p>
           </div>
         )}
+        {!standings.finished && (
+          <BettingPauseForm editionId={edition.id} paused={edition.bettingPaused} eventName={nextEvent?.name} />
+        )}
         {standings.finished ? (
-          <p className="text-sm font-medium text-pd-gold">
-            Finished — {field.find((c) => c.id === standings.champion)?.name ?? 'dead heat'} is the champion.
-          </p>
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-pd-gold">
+              Finished — {field.find((c) => c.id === standings.champion)?.name ?? 'dead heat'} is the champion.
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <EndEventForm
+                editionId={edition.id}
+                unsettled={markets.filter((m) => m.status === 'OPEN' || m.status === 'CLOSED').length}
+              />
+              <Link href={`/polydan/final?edition=${edition.id}`} className="text-sm text-pd-gold hover:underline">
+                Final results →
+              </Link>
+            </div>
+          </div>
         ) : (
           <ResultsForm
             editionId={edition.id}
@@ -346,7 +363,7 @@ async function MarketsTab({ editionId, done }: { editionId: number; done?: strin
   }
   const risk = (m: (typeof markets)[number]) => {
     const openQ = m.outcomes.map(
-      (o) => o.q - trades.filter((t) => t.outcomeId === o.id).reduce((s, t) => s + t.shares, 0),
+      (o) => o.q - o.adj - trades.filter((t) => t.outcomeId === o.id).reduce((s, t) => s + t.shares, 0),
     )
     return maxHouseLoss(openQ, m.b)
   }
@@ -737,6 +754,7 @@ async function EditionTab({ editionId, done }: { editionId?: number; done?: stri
             selected={edition.entries.map((e) => e.competitorId)}
             locked={edition._count.markets + edition._count.results > 0}
           />
+          <HouseRulesForm editionId={edition.id} houseCutPct={edition.houseCutPct} maxStakeCents={edition.maxStakeCents} />
           {edition._count.markets > 0 && edition._count.results === 0 && (
             <LateEntryForm
               editionId={edition.id}

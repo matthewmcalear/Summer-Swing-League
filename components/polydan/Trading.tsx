@@ -5,6 +5,7 @@ import { trade } from '@/app/polydan/actions'
 import type { OutcomeView } from '@/lib/polydan/queries'
 import { cashOutCents, prices, sellProceeds, sharesForSpend } from '@/lib/polydan/lmsr'
 import { formatMoney, formatMultiple, formatPct } from '@/lib/polydan/money'
+import { stakeAfterCut } from '@/lib/polydan/stake'
 import { Notice, SubmitButton } from './ui'
 
 interface Holding {
@@ -25,6 +26,9 @@ export function Trading({
   balanceCents,
   holdings,
   binary,
+  houseCutPct = 0,
+  maxStakeCents = 0,
+  stakedCents = 0,
 }: {
   outcomes: OutcomeView[]
   b: number
@@ -35,6 +39,11 @@ export function Trading({
   balanceCents: number
   holdings: Holding[]
   binary: boolean
+  /** % of each bet the house keeps before it buys shares. */
+  houseCutPct?: number
+  /** Most one person can have on this market, in cents (0 = no limit), and what this player has on it. */
+  maxStakeCents?: number
+  stakedCents?: number
 }) {
   const ranked = useMemo(
     () => (binary ? outcomes : [...outcomes].sort((x, y) => Number(x.dead) - Number(y.dead) || y.price - x.price)),
@@ -66,7 +75,8 @@ export function Trading({
     if (!sel || i < 0 || !(n > 0)) return null
     const q = live.map((o) => o.q)
     if (side === 'BUY') {
-      const shares = sharesForSpend(q, b, i, n)
+      // Same sum the server does: the house's cut comes off before shares are bought.
+      const shares = sharesForSpend(q, b, i, stakeAfterCut(Math.round(n * 100), houseCutPct))
       q[i] += shares
       return { shares, avg: n / shares, payout: shares, after: prices(q, b)[i] }
     }
@@ -75,7 +85,9 @@ export function Trading({
     q[i] -= shares
     return { shares, avg: shares ? proceeds / shares : 0, proceeds, after: prices(q, b)[i] }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sel, i, n, side, b, outcomes])
+  }, [sel, i, n, side, b, outcomes, houseCutPct])
+  const roomCents = maxStakeCents > 0 ? Math.max(0, maxStakeCents - stakedCents) : Infinity
+  const overLimit = side === 'BUY' && Math.round(n * 100) > roomCents
 
   const myShares = sel ? (held.get(sel.id)?.shares ?? 0) : 0
 
@@ -99,7 +111,15 @@ export function Trading({
                 <p className={`font-medium ${o.dead ? 'text-pd-muted line-through' : ''}`}>{o.label}</p>
                 {h && (
                   <p className="text-xs text-pd-gold pd-num">
-                    You hold {h.shares.toFixed(2)} · worth {formatMoney(cashOutCents(outcomes, b, resolved, o.id, h.shares))}
+                    Your bet: {formatMoney(h.costCents)} in ·{' '}
+                    {resolved || o.dead ? (
+                      <>paid {formatMoney(cashOutCents(outcomes, b, resolved, o.id, h.shares))}</>
+                    ) : (
+                      <>
+                        <span className="font-semibold">wins {formatMoney(Math.floor(h.shares * 100))}</span> if right · sells
+                        for {formatMoney(cashOutCents(outcomes, b, resolved, o.id, h.shares))} now
+                      </>
+                    )}
                   </p>
                 )}
               </div>
@@ -185,7 +205,7 @@ export function Trading({
                 <button
                   type="button"
                   className="pd-btn pd-btn-ghost flex-1 px-2 py-1 text-xs"
-                  onClick={() => setAmount((Math.floor(balanceCents) / 100).toString())}
+                  onClick={() => setAmount((Math.floor(Math.min(balanceCents, roomCents)) / 100).toString())}
                 >
                   Max
                 </button>
@@ -204,6 +224,7 @@ export function Trading({
                       {sel?.competitorId && sel.isYes == null ? `if ${sel.label} wins` : "if you're right"}
                     </p>
                     <Row k="Your payout (locked in)" v={formatMultiple(quote.avg)} />
+                    {houseCutPct > 0 && <Row k={`Includes house cut (${houseCutPct}%)`} v={formatMoney(Math.round(n * houseCutPct))} />}
                     <Row k="Next bet pays" v={formatMultiple(quote.after)} />
                   </>
                 ) : (
@@ -222,11 +243,21 @@ export function Trading({
             <SubmitButton
               className={`pd-btn w-full ${side === 'BUY' ? 'pd-btn-gold' : 'pd-btn-danger'}`}
               pendingText="Placing…"
-              disabled={!sel || !(n > 0) || (side === 'SELL' && !myShares)}
+              disabled={!sel || !(n > 0) || (side === 'SELL' && !myShares) || overLimit}
             >
               {side === 'BUY' ? `Buy ${sel?.label ?? ''}` : `Sell ${sel?.label ?? ''}`}
             </SubmitButton>
-            <p className="text-center text-xs text-pd-muted pd-num">Balance {formatMoney(balanceCents)}</p>
+            {overLimit && (
+              <p className="text-center text-xs font-medium text-pd-no">
+                {roomCents >= 100
+                  ? `The limit is ${formatMoney(maxStakeCents)} a person on one market: you can add up to ${formatMoney(roomCents)} here.`
+                  : `You’re at the ${formatMoney(maxStakeCents)} limit on this market.`}
+              </p>
+            )}
+            <p className="text-center text-xs text-pd-muted pd-num">
+              Balance {formatMoney(balanceCents)}
+              {maxStakeCents > 0 && ` · limit ${formatMoney(maxStakeCents)} a market`}
+            </p>
             <Notice state={state} />
           </form>
         )}

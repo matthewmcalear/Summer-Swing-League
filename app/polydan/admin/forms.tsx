@@ -33,6 +33,9 @@ import {
   setEditionStatus,
   setField,
   withdrawFromField,
+  endEvent,
+  setBettingPaused,
+  saveHouseRules,
   addToField,
   setMarketStatus,
   settleAll,
@@ -873,6 +876,104 @@ export function EditionStatusForm({ editionId, status }: { editionId: number; st
         </select>
         <SubmitButton className="pd-btn pd-btn-ghost" pendingText="…">
           Save status
+        </SubmitButton>
+      </div>
+    </ActionForm>
+  )
+}
+
+/** One tap before each event: nobody can bet while it's being played. Recording the round reopens betting. */
+export function BettingPauseForm({ editionId, paused, eventName }: { editionId: number; paused: boolean; eventName?: string }) {
+  return (
+    <ActionForm
+      action={setBettingPaused}
+      className={`mb-4 space-y-2 rounded-lg border p-3 ${paused ? 'border-pd-no bg-pd-no-soft' : 'border-pd-line-strong bg-pd-surface-2'}`}
+    >
+      <input type="hidden" name="editionId" value={editionId} />
+      <input type="hidden" name="paused" value={paused ? '0' : '1'} />
+      <div className="flex flex-wrap items-center gap-3">
+        <p className="min-w-40 flex-1 text-sm">
+          {paused ? (
+            <>
+              <span className="font-semibold text-pd-no">⏸ Betting is paused.</span> It reopens by itself when you record
+              the round below.
+            </>
+          ) : (
+            <>
+              <span className="font-semibold">Betting is open.</span> Pause it when{' '}
+              {eventName ? `“${eventName}”` : 'the event'} starts, so nobody bets on what they can see happening.
+            </>
+          )}
+        </p>
+        <SubmitButton className={`pd-btn ${paused ? 'pd-btn-ghost' : 'pd-btn-danger'}`} pendingText="…">
+          {paused ? 'Reopen betting' : '⏸ Event starting: pause betting'}
+        </SubmitButton>
+      </div>
+    </ActionForm>
+  )
+}
+
+/** Pays out everything that has a result, marks the edition finished and opens the final results. */
+export function EndEventForm({ editionId, unsettled }: { editionId: number; unsettled: number }) {
+  return (
+    <ActionForm action={endEvent}>
+      <input type="hidden" name="editionId" value={editionId} />
+      <ConfirmSubmit
+        className="pd-btn pd-btn-gold"
+        confirmClassName="pd-btn pd-btn-gold"
+        question={
+          unsettled
+            ? `End the event? This pays out the ${unsettled} market${unsettled === 1 ? '' : 's'} still open that have a result, then shows the final results.`
+            : 'End the event and show the final results?'
+        }
+        confirmLabel="Yes, end it"
+        pendingText="Paying out…"
+      >
+        🏁 End event & show final results
+      </ConfirmSubmit>
+    </ActionForm>
+  )
+}
+
+/** The house's safety settings: its cut of each bet and the most one person can have on one market. */
+export function HouseRulesForm({
+  editionId,
+  houseCutPct,
+  maxStakeCents,
+}: {
+  editionId: number
+  houseCutPct: number
+  maxStakeCents: number
+}) {
+  return (
+    <ActionForm action={saveHouseRules} className="space-y-2 rounded-lg border border-pd-line p-3">
+      <input type="hidden" name="editionId" value={editionId} />
+      <p className="text-sm font-medium">House rules</p>
+      <p className="text-sm text-pd-muted">
+        These keep the house from losing big. The cut comes off each bet before it buys shares; the limit is the most
+        one person can have riding on a single market.
+      </p>
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="block text-sm">
+          House cut (%)
+          <input
+            name="houseCutPct"
+            defaultValue={houseCutPct}
+            inputMode="decimal"
+            className="pd-field pd-num mt-1 w-24"
+          />
+        </label>
+        <label className="block text-sm">
+          Limit per market ($, 0 = none)
+          <input
+            name="maxStake"
+            defaultValue={maxStakeCents / 100}
+            inputMode="decimal"
+            className="pd-field pd-num mt-1 w-28"
+          />
+        </label>
+        <SubmitButton className="pd-btn pd-btn-ghost" pendingText="…">
+          Save
         </SubmitButton>
       </div>
     </ActionForm>

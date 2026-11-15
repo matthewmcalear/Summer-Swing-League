@@ -66,8 +66,8 @@ export function GuideTab({ tabHref }: { tabHref: (tab: 'setup' | 'players' | 'ma
             They then can’t be marked as losing it.
           </li>
           <li>
-            <B>Optional:</B> pause “Who loses round N?” in <T href={tabHref('markets')}>Markets</T> when the event starts, so nobody
-            bets while watching it.
+            <B>When the event starts:</B> press <B>Event starting: pause betting</B>. Nobody can bet or sell while it’s
+            being played. Recording the round reopens betting by itself, at odds that already reflect the result.
           </li>
           <li>
             <B>When the event ends:</B> in “Record a round”, tap what happened to each person who lost:
@@ -135,8 +135,10 @@ export function GuideTab({ tabHref }: { tabHref: (tab: 'setup' | 'players' | 'ma
             Enter the last Copper Cup points and press <B>Finalize Copper Cup</B> in <T href={tabHref('results')}>Results</T>.
           </li>
           <li>
-            In <T href={tabHref('markets')}>Markets</T>, pick the winner on any prop you settle by hand, then press{' '}
-            <B>Settle all decided</B>. Void anything that can’t be decided; that refunds the stakes.
+            In <T href={tabHref('markets')}>Markets</T>, pick the winner on any prop you settle by hand and void anything that
+            can’t be decided (that refunds the stakes). Then in <T href={tabHref('results')}>Results</T> press{' '}
+            <B>End event &amp; show final results</B>: it pays out every market with a result and opens the final results
+            page, which everyone can see (placings, who won what, and every bet).
           </li>
           <li>
             In <T href={tabHref('players')}>Players &amp; money</T>, the Settle up table now shows a final <B>Pay them</B> amount for

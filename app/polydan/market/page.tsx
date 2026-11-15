@@ -34,7 +34,7 @@ async function MarketPageContent({ searchParams }: PageProps<'/polydan/market'>)
   const id = Number((await searchParams).id)
   const detail = Number.isInteger(id) ? await getMarketDetail(id, user.id) : null
   if (!detail) notFound()
-  const { market, edition, series, myPositions, activity } = detail
+  const { market, edition, series, myPositions, activity, myStakedCents } = detail
   const balance = await balanceCents(prisma, user.id)
   const binary = market.outcomes.length === 2
 
@@ -64,6 +64,9 @@ async function MarketPageContent({ searchParams }: PageProps<'/polydan/market'>)
         balanceCents={balance}
         holdings={myPositions}
         binary={binary}
+        houseCutPct={edition.houseCutPct}
+        maxStakeCents={edition.maxStakeCents}
+        stakedCents={myStakedCents}
       />
 
       <section>

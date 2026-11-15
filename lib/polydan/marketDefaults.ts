@@ -3,19 +3,20 @@
 export type MarketKindName = 'WINNER' | 'TOP_N' | 'H2H' | 'CUSTOM' | 'COPPER'
 
 // Liquidity sets how much the house can lose on a market: at most
-// b × ln(1 / the lowest opening chance). The family bets $5–$20 at a time,
-// so these are small: prices move visibly on a $10 bet and the house's worst
-// case per side market is tens of dollars, not hundreds.
+// b × ln(1 / the opening chance of whatever wins). The family bets $5–$20 at
+// a time, so these are small: prices move visibly on a $10 bet, and a long
+// shot coming in costs the house tens of dollars, not hundreds. (Iron Man 10
+// ran the winner market at 100: $30 on the eventual winner paid $297.)
 export const DEFAULT_LIQUIDITY: Record<MarketKindName, number> = {
-  WINNER: 100,
-  TOP_N: 15,
-  H2H: 15,
-  CUSTOM: 15,
-  COPPER: 25,
+  WINNER: 40,
+  TOP_N: 12,
+  H2H: 12,
+  CUSTOM: 10,
+  COPPER: 15,
 }
 
 /** Liquidity for the self-settling specials (who loses round N, first out…). */
-export const AUTO_LIQUIDITY = 12
+export const AUTO_LIQUIDITY = 8
 
 /** Opening chances for side markets are kept inside this band, which caps the house's worst case. */
 export const OPENING_BAND: [number, number] = [0.1, 0.9]

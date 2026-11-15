@@ -43,7 +43,16 @@ export default function AboutPage() {
           a share, so a winning $10 bet pays about $40. The &quot;pays 4×&quot; next to each answer is that same
           number.
         </p>
-        <p>The bet box shows exactly what you&apos;d win before you confirm.</p>
+        <p>
+          The bet box shows exactly what you&apos;d win before you confirm. After that, the market page and your{' '}
+          <Link href="/polydan/portfolio" className="text-pd-gold underline">portfolio</Link> show what each bet{' '}
+          <B>wins if you&apos;re right</B>.
+        </p>
+        <p>
+          The house keeps a small cut of each bet (shown in the bet box), and there&apos;s a limit on how much one person
+          can have on a single market. Both are there so PolyDan stays a bit of fun and nobody, the house included,
+          loses their shirt.
+        </p>
       </Block>
 
       <Block title="Why the odds move">
@@ -55,6 +64,11 @@ export default function AboutPage() {
         <p>
           Opening odds come from past Iron Mans: how far each person usually gets, with recent years counting more and
           past champions getting a boost.
+        </p>
+        <p>
+          <B>The odds also move when a round is recorded.</B> If people go out or land on Redemption Island, everyone
+          else&apos;s chances are marked up straight away, so there&apos;s no free money in betting old odds after a
+          result.
         </p>
       </Block>
 
@@ -97,12 +111,14 @@ export default function AboutPage() {
 
       <Block title="When bets lock and pay">
         <p>
-          Betting is open all day, <B>but only in between events</B>, never while one is being played. A market <B>locks the moment its result is certain</B>, for example when
+          Betting is open all day, <B>but only in between events</B>: it&apos;s switched off while an event is being
+          played and comes back on when the result is in. A market <B>locks the moment its result is certain</B>, for example when
           the person you bet on is knocked out, so nobody can bet on a sure thing.
         </p>
         <p>
           Winnings are added to your balance when Matt settles the market. If a market has to be cancelled, everyone
-          gets their stake back.
+          gets their stake back. When the event ends, the final results page lists every market, who bet what and what
+          it paid, so anyone can check the sums.
         </p>
       </Block>
 
@@ -118,7 +134,11 @@ export default function AboutPage() {
             Whoever does best in event 1 wins an <B>immunity idol</B>. It can be played before one of events 2 to 7 to
             be safe that round. It can&apos;t be given away or used on the island.
           </li>
-          <li>People who go out in the same round share a place, unless Steven splits them by score.</li>
+          <li>
+            People who go out in the same round share a place, unless Steven splits them by score. For &quot;top
+            N&quot; bets a shared place across the cut-off is a <B>dead heat</B>: if five people share 10th, there is one
+            top-10 place between them, so a Yes bet on each pays a fifth.
+          </li>
         </ul>
       </Block>
 

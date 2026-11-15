@@ -38,6 +38,14 @@ export interface Standings {
   rounds: Map<number, RoundLog>
   /** Copper Cup points so far (attached by loadStandings; absent in pure tests). */
   copper?: CopperTable
+  /** Betting is paused while an event is being played (attached by loadStandings). */
+  bettingPaused?: boolean
+  /**
+   * How "top N" treats people who share a place across the cut-off. True
+   * (Iron Man 11 on): a dead heat, the tied people split the places that are
+   * left. False (Iron Man 10 and earlier, already paid): they all count.
+   */
+  deadHeat?: boolean
 }
 
 export interface RoundLog {

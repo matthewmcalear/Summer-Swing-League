@@ -3,6 +3,7 @@ import { prisma } from '../prisma'
 import { computeStandings, type CopperTable, type Standings } from './standings'
 import { resolveMarket, type Resolution } from './resolve'
 import { prices, sellProceeds, sharesForSpend } from './lmsr'
+import { stakeAfterCut } from './stake'
 
 type Db = Prisma.TransactionClient | typeof prisma
 
@@ -14,26 +15,38 @@ const EPS = 1e-9
 // ---------------------------------------------------------------------------
 
 export async function loadStandings(db: Db, editionId: number): Promise<Standings> {
-  const [entries, results] = await Promise.all([
+  const [entries, results, edition] = await Promise.all([
     db.pdEditionEntry.findMany({ where: { editionId }, select: { competitorId: true } }),
     db.pdResultEvent.findMany({ where: { editionId }, orderBy: { id: 'asc' } }),
+    db.pdEdition.findUnique({ where: { id: editionId }, select: { number: true, bettingPaused: true, copperFinal: true } }),
   ])
   const st = computeStandings(
     entries.map((e) => e.competitorId),
     results,
   )
-  st.copper = await loadCopper(db, editionId)
+  st.copper = await loadCopper(db, editionId, edition?.copperFinal)
+  st.bettingPaused = edition?.bettingPaused ?? false
+  st.deadHeat = usesDeadHeat(edition?.number)
   return st
 }
 
-export async function loadCopper(db: Db, editionId: number): Promise<CopperTable> {
+/**
+ * Iron Man 10 paid "top N" with everyone in a tie counting (5 people shared
+ * 10th and all five were paid as top 10). From Iron Man 11 a tie across the
+ * cut-off is a dead heat. Kept by edition so paid markets never change.
+ */
+export function usesDeadHeat(editionNumber: number | undefined): boolean {
+  return (editionNumber ?? 11) > 10
+}
+
+export async function loadCopper(db: Db, editionId: number, copperFinal?: boolean): Promise<CopperTable> {
   const [edition, scores] = await Promise.all([
-    db.pdEdition.findUnique({ where: { id: editionId }, select: { copperFinal: true } }),
+    copperFinal == null ? db.pdEdition.findUnique({ where: { id: editionId }, select: { copperFinal: true } }) : null,
     db.pdCopperScore.findMany({ where: { event: { editionId } }, select: { competitorId: true, points: true } }),
   ])
   const totals = new Map<number, number>()
   for (const s of scores) totals.set(s.competitorId, (totals.get(s.competitorId) ?? 0) + s.points)
-  return { final: edition?.copperFinal ?? false, totals }
+  return { final: copperFinal ?? edition?.copperFinal ?? false, totals }
 }
 
 interface PriceableMarket {
@@ -76,7 +89,9 @@ export function priceMarket(market: PriceableMarket, st: Standings): Priced {
           ? 'Result is in — pays out at settlement'
           : market.status === 'CLOSED'
             ? 'Trading paused by the admin'
-            : null
+            : st.bettingPaused
+              ? 'Betting is paused while the event is being played. It reopens as soon as the result is in.'
+              : null
   return { resolution, price, tradable: lockedReason == null, lockedReason }
 }
 
@@ -132,7 +147,22 @@ export async function executeTrade(req: TradeRequest): Promise<TradeResult> {
         throw new TradeError(`Minimum bet is $${MIN_BUY_CENTS / 100}`)
       const balance = await balanceCents(tx, req.userId)
       if (req.spendCents > balance) throw new TradeError('Not enough money — ask Matt to top you up')
-      shares = sharesForSpend(q, market.b, i, req.spendCents / 100)
+      const rules = await tx.pdEdition.findUniqueOrThrow({
+        where: { id: market.editionId },
+        select: { houseCutPct: true, maxStakeCents: true },
+      })
+      if (rules.maxStakeCents > 0) {
+        // What they have riding on this market already: bets minus anything sold back.
+        const staked = await tx.pdTrade.aggregate({ where: { marketId: market.id, userId: req.userId }, _sum: { costCents: true } })
+        const room = rules.maxStakeCents - Math.max(0, staked._sum.costCents ?? 0)
+        if (req.spendCents > room)
+          throw new TradeError(
+            room >= MIN_BUY_CENTS
+              ? `The most anyone can have on one market is $${rules.maxStakeCents / 100}. You can add up to $${(room / 100).toFixed(2)} here.`
+              : `You’re at the $${rules.maxStakeCents / 100} limit on this market. Try another one!`,
+          )
+      }
+      shares = sharesForSpend(q, market.b, i, stakeAfterCut(req.spendCents, rules.houseCutPct))
       costCents = req.spendCents
     } else {
       const held = position?.shares ?? 0

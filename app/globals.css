@@ -511,7 +511,17 @@ body:has(.polydan) {
   background-size: 18% 100%, 100% 100%;
   animation: pd-sweep 7s linear infinite;
 }
+@keyframes pd-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.4em);
+  }
+}
+.pd-fade-in {
+  animation: pd-fade-in 0.45s ease-out;
+}
 @media (prefers-reduced-motion: reduce) {
+  .pd-fade-in,
   .pd-spin-slow,
   .pd-spin-rev,
   .pd-spin-mid,
@@ -540,7 +550,8 @@ body:has(.polydan) {
     color: var(--pd-arc);
     opacity: 0.85;
   }
-  /* A glass panel with lit corner brackets (top-left, bottom-right). */
+  /* A panel that reads as a box against the backdrop: a solid, lighter face, a
+     visible edge and a drop shadow, with lit corner brackets (top-left, bottom-right). */
   .pd-card {
     position: relative;
     background:
@@ -548,13 +559,13 @@ body:has(.polydan) {
       linear-gradient(var(--pd-arc), var(--pd-arc)) top left / 2px 14px no-repeat,
       linear-gradient(var(--pd-arc), var(--pd-arc)) bottom right / 14px 2px no-repeat,
       linear-gradient(var(--pd-arc), var(--pd-arc)) bottom right / 2px 14px no-repeat,
-      linear-gradient(180deg, rgba(17, 36, 54, 0.88), rgba(8, 17, 28, 0.9));
-    border: 1px solid var(--pd-line);
+      linear-gradient(180deg, #132a3e, #0c1b2a);
+    border: 1px solid rgba(94, 214, 255, 0.3);
     border-radius: 3px;
     box-shadow:
-      inset 0 1px 0 rgba(140, 225, 255, 0.07),
-      0 0 22px rgba(20, 130, 220, 0.07);
-    backdrop-filter: blur(3px);
+      inset 0 1px 0 rgba(140, 225, 255, 0.09),
+      0 1px 0 rgba(0, 0, 0, 0.5),
+      0 10px 24px rgba(0, 0, 0, 0.35);
   }
   .pd-field {
     width: 100%;
