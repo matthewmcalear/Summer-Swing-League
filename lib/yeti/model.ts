@@ -8,11 +8,16 @@
  * and pure helpers, safe to use on the server and in the browser.
  */
 
-export const SKILLS = ['Elite', 'Good', 'Mid', 'Low'] as const
+export const SKILLS = ['Elite', 'Good', 'Mid', 'Low', 'Trash'] as const
 export type Skill = (typeof SKILLS)[number]
 
-/** Points per skill tier — drives line strength and auto-balance. */
-export const SKILL_POINTS: Record<Skill, number> = { Elite: 4, Good: 3, Mid: 2, Low: 1 }
+/** Points per skill tier — drives line strength and auto-balance. Trash is the joke tier: worth nothing. */
+export const SKILL_POINTS: Record<Skill, number> = { Elite: 4, Good: 3, Mid: 2, Low: 1, Trash: 0 }
+
+export const TRASH = '🗑️'
+
+/** How each tier reads on screen. */
+export const SKILL_LABEL: Record<Skill, string> = { Elite: 'Elite', Good: 'Good', Mid: 'Mid', Low: 'Low', Trash: TRASH }
 
 export const POSITIONS = ['F', 'D', 'F/D', 'G'] as const
 export type Position = (typeof POSITIONS)[number]
@@ -89,8 +94,9 @@ export const LIMITS = {
  *   3:   beer
  *   4:   skill levels need the admin password (no new field; bumped so open
  *        pages reload into the locked editor)
+ *   5:   the Trash (🗑️) skill level — older pages read it as Mid
  */
-export const APP_VERSION = 4
+export const APP_VERSION = 5
 
 /** The other five Westmount teams, offered as quick picks for the opponent. */
 export const OPPONENTS = ['Kings', 'Hawks', 'Devils', 'Lightning', 'Coyotes'] as const

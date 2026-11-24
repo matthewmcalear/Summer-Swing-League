@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { BEER } from '@/lib/yeti/beer'
-import { SKILL_POINTS, type Attendance, type Fit, type Player } from '@/lib/yeti/model'
+import { SKILL_POINTS, TRASH, type Attendance, type Fit, type Player } from '@/lib/yeti/model'
 import type { SyncStatus } from '@/lib/yeti/sync'
 import type { Toast } from './hooks'
 
@@ -23,6 +23,13 @@ export function YetiMark() {
 // ── Player chip ──────────────────────────────────────────────────────────────
 
 export function Pips({ skill }: { skill: Player['skill'] }) {
+  if (skill === 'Trash') {
+    return (
+      <span className="yt-pips" data-trash aria-hidden="true">
+        {TRASH}
+      </span>
+    )
+  }
   const n = SKILL_POINTS[skill]
   return (
     <span className="yt-pips" aria-hidden="true">

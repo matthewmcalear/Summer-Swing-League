@@ -13,12 +13,22 @@ export function carryOverForOldPage(incoming: Board, stored: Board, appVersion: 
   const version = appVersion ?? 2
   // Pages from before the schedule (version 1) don't send the schedule marker.
   const preSchedule = !incoming.schedule
-  if (version >= 3 && !preSchedule) return incoming
+  if (version >= 5 && !preSchedule) return incoming
+
+  // Pages from before the Trash level (version 5) read it as Mid, so a Mid
+  // from them on a player stored as Trash is that misreading, not a change.
+  const storedTrash = new Set(stored.players.filter((p) => p.skill === 'Trash').map((p) => p.id))
+  const players =
+    version < 5 && storedTrash.size
+      ? incoming.players.map((p) => (p.skill === 'Mid' && storedTrash.has(p.id) ? { ...p, skill: 'Trash' as const } : p))
+      : incoming.players
+  if (version >= 3 && !preSchedule) return players === incoming.players ? incoming : { ...incoming, players }
 
   const known = new Set(incoming.players.map((p) => p.id))
   const storedGames = new Map(stored.games.map((g) => [g.id, g]))
   return {
     ...incoming,
+    players,
     ...(preSchedule && stored.schedule ? { schedule: stored.schedule } : {}),
     games: incoming.games.map((g) => {
       const s = storedGames.get(g.id)

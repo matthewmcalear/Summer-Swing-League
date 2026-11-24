@@ -100,3 +100,33 @@ describe('keepSkills', () => {
     expect(skillOf(keepSkills(added, stored).board, 'sub1')).toBe('Mid')
   })
 })
+
+describe('the Trash skill level and pages from before it', () => {
+  const stored = applyAll(seedBoard(), [{ t: 'editPlayer', player: 'tom', patch: { skill: 'Trash' } }])
+  const skillOf = (b: Board, id: string) => b.players.find((p) => p.id === id)?.skill
+  /** What a version-4 page holds: it doesn't know Trash, so it reads Tom as Mid. */
+  const asOldPage = (b: Board) => ({ ...b, players: b.players.map((p) => (p.skill === 'Trash' ? { ...p, skill: 'Mid' as const } : p)) })
+
+  it('survives cleaning as a level of its own', () => {
+    expect(sanitizeBoard(stored)!.players.find((p) => p.id === 'tom')!.skill).toBe('Trash')
+  })
+
+  it('keeps Trash when an older page saves something unrelated', () => {
+    const edited = applyAll(asOldPage(stored), [{ t: 'attend', game: 'g-2026-10-20', player: 'max', value: 'out' }])
+    const saved = carryOverForOldPage(edited, stored, 4)
+    expect(skillOf(saved, 'tom')).toBe('Trash')
+    expect(g(saved, '2026-10-20').attendance.max).toBe('out')
+    // …so the skill lock has nothing to refuse
+    expect(keepSkills(saved, stored).kept).toBe(0)
+  })
+
+  it('still lets an older page (admin) move him off Trash on purpose', () => {
+    const edited = applyAll(asOldPage(stored), [{ t: 'editPlayer', player: 'tom', patch: { skill: 'Good' } }])
+    expect(skillOf(carryOverForOldPage(edited, stored, 4), 'tom')).toBe('Good')
+  })
+
+  it('takes a current page at its word', () => {
+    const edited = applyAll(stored, [{ t: 'editPlayer', player: 'tom', patch: { skill: 'Mid' } }])
+    expect(skillOf(carryOverForOldPage(edited, stored, APP_VERSION), 'tom')).toBe('Mid')
+  })
+})

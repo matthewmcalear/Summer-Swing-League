@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { AlertTriangle, ArrowLeft, CalendarDays, Clock, Info, LayoutGrid, Share2, Sparkles, Undo2, Users } from 'lucide-react'
-import { SKILLS, SKILL_POINTS, type Skill } from '@/lib/yeti/model'
+import { SKILLS, SKILL_POINTS, TRASH, type Skill } from '@/lib/yeti/model'
 import { YetiMark } from '../ui'
 
 export const metadata: Metadata = {
@@ -10,6 +10,13 @@ export const metadata: Metadata = {
 }
 
 function Pips({ skill }: { skill: Skill }) {
+  if (skill === 'Trash') {
+    return (
+      <span className="yt-pips" data-trash aria-hidden="true">
+        {TRASH}
+      </span>
+    )
+  }
   return (
     <span className="yt-pips" aria-hidden="true">
       {[1, 2, 3, 4].map((i) => (
@@ -146,8 +153,11 @@ export default function YetiHelpPage() {
               <b>Number</b> top left, <b>name</b>, and <b>position</b>: F forward, D defence, F/D either, G goalie.
             </li>
             <li>
-              <b>Color and dots = skill.</b> {SKILLS.map((s, i) => `${s} ${'●'.repeat(SKILL_POINTS[s])}${i < SKILLS.length - 1 ? ', ' : ''}`)}. On a light screen darker is stronger; in
-              dark mode brighter is stronger. The dots always tell you.
+              <b>Color and dots = skill.</b>{' '}
+              {SKILLS.filter((s) => s !== 'Trash')
+                .map((s) => `${s} ${'●'.repeat(SKILL_POINTS[s])}`)
+                .join(', ')}
+              . On a light screen darker is stronger; in dark mode brighter is stronger. The dots always tell you. And then there’s {TRASH}, which needs no explanation.
             </li>
           </ul>
           <div className="yt-help-cards">
@@ -167,7 +177,7 @@ export default function YetiHelpPage() {
         <section id="strength">
           <h2>Line strength</h2>
           <p>
-            Each skill level is worth points: <b>Elite 4 · Good 3 · Mid 2 · Low 1</b>. A line’s strength is the <b>average</b> of the players on it — the number and bar under
+            Each skill level is worth points: <b>Elite 4 · Good 3 · Mid 2 · Low 1 · {TRASH} 0</b>. A line’s strength is the <b>average</b> of the players on it — the number and bar under
             L1, L2… An average (rather than a total) keeps a line with an empty spot comparable to a full one.
           </p>
           <p>

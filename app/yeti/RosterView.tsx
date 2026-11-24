@@ -10,7 +10,9 @@ import {
   POSITIONS,
   POSITION_LABEL,
   SKILLS,
+  SKILL_LABEL,
   SKILL_POINTS,
+  TRASH,
   attendanceOf,
   formatGameDate,
   slotLabel,
@@ -128,7 +130,7 @@ export function RosterView({ board, game, info, dispatch, toast, newId }: Roster
                   </span>
                   <span className="yt-row-sub">
                     <span className="yt-tag" data-skill={p.skill}>
-                      {p.skill}
+                      {SKILL_LABEL[p.skill]}
                     </span>
                     <span className="yt-tag">{p.pos}</span>
                     <span className="yt-row-status" data-warn={(att === 'in' && !slot && !(p.pos === 'G' && info.goalie.slots[0].player)) || undefined}>
@@ -164,12 +166,17 @@ export function RosterView({ board, game, info, dispatch, toast, newId }: Roster
 
 const SKILL_OPTIONS = SKILLS.map((s) => ({
   value: s,
-  label: (
-    <span className="yt-skill-opt">
-      {s}
-      <Pips skill={s} />
-    </span>
-  ),
+  label:
+    s === 'Trash' ? (
+      <span className="yt-skill-opt yt-skill-trash" role="img" aria-label="Trash">
+        {TRASH}
+      </span>
+    ) : (
+      <span className="yt-skill-opt">
+        {s}
+        <Pips skill={s} />
+      </span>
+    ),
 }))
 const POS_OPTIONS = POSITIONS.map((p) => ({ value: p, label: p }))
 

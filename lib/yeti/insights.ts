@@ -34,7 +34,7 @@ export interface LineInfo {
   filled: number
   /** Sum of skill points of the players on the line. */
   points: number
-  /** Average skill points per player on the line (1–4), null when empty. */
+  /** Average skill points per player on the line (0–4), null when empty. */
   avg: number | null
 }
 

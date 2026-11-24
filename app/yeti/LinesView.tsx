@@ -143,7 +143,7 @@ function SpreadTag({ spread }: { spread: number | null }) {
   const level = spread < 0.5 ? 'even' : spread < 1 ? 'close' : 'uneven'
   const text = level === 'even' ? 'Even' : `Gap ${spread.toFixed(1)}`
   return (
-    <span className="yt-spread" data-level={level} title="Difference between the strongest and weakest line (average skill: Elite 4, Good 3, Mid 2, Low 1)">
+    <span className="yt-spread" data-level={level} title="Difference between the strongest and weakest line (average skill: Elite 4, Good 3, Mid 2, Low 1, 🗑️ 0)">
       {text}
     </span>
   )
@@ -387,7 +387,7 @@ export function LinesView({
         </button>
       </div>
       <p className="yt-help-text">
-        Press and hold a player to drag, or tap a player and then tap a spot. Line strength is the average skill (Elite 4 · Good 3 · Mid 2 · Low 1).
+        Press and hold a player to drag, or tap a player and then tap a spot. Line strength is the average skill (Elite 4 · Good 3 · Mid 2 · Low 1 · 🗑️ 0).
         Team sheet shows just the names, ready to screenshot for the group chat.{' '}
         <Link href="/yeti/help">How it all works →</Link>
       </p>

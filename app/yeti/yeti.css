@@ -36,6 +36,9 @@
   --yt-on-mid: #0c1a2c;
   --yt-low: #e4eaf2;
   --yt-on-low: #0c1a2c;
+  /* 🗑️ — dumpster khaki, light enough for the grey bin to show */
+  --yt-trash: #c3c59a;
+  --yt-on-trash: #23261a;
   --yt-beer: #9a5b00;
   --yt-beer-soft: rgba(245, 158, 11, 0.16);
   --yt-beer-line: rgba(217, 119, 6, 0.45);
@@ -87,6 +90,8 @@
   --yt-on-mid: #e8eff8;
   --yt-low: #1b293d;
   --yt-on-low: #c9d6e7;
+  --yt-trash: #4a4e35;
+  --yt-on-trash: #eceee0;
   --yt-beer: #fbbf24;
   --yt-beer-soft: rgba(251, 191, 36, 0.14);
   --yt-beer-line: rgba(251, 191, 36, 0.4);
@@ -126,6 +131,7 @@ body:has(.yeti) {
 .yeti [data-skill='Good'] { --chip-bg: var(--yt-good); --chip-fg: var(--yt-on-good); }
 .yeti [data-skill='Mid'] { --chip-bg: var(--yt-mid); --chip-fg: var(--yt-on-mid); }
 .yeti [data-skill='Low'] { --chip-bg: var(--yt-low); --chip-fg: var(--yt-on-low); }
+.yeti [data-skill='Trash'] { --chip-bg: var(--yt-trash); --chip-fg: var(--yt-on-trash); }
 
 .yt-display {
   font-family: var(--font-yt-display), var(--font-sans);
@@ -617,6 +623,13 @@ body:has(.yeti) {
 }
 .yt-pips i[data-on] {
   opacity: 1;
+}
+.yt-pips[data-trash] {
+  font-size: 13px;
+  line-height: 1;
+}
+.yt-skill-trash {
+  font-size: 22px;
 }
 .yt-chip-name {
   max-width: 100%;
@@ -1364,6 +1377,10 @@ body:has(.yeti) {
   color: var(--chip-fg);
   background: var(--chip-bg);
   border-color: transparent;
+}
+.yt-tag[data-skill='Trash'] {
+  font-size: 13px;
+  line-height: 1.25;
 }
 .yt-row-status {
   white-space: nowrap;
