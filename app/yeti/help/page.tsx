@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { AlertTriangle, ArrowLeft, CalendarDays, Clock, Info, LayoutGrid, Share2, Sparkles, Undo2, Users } from 'lucide-react'
-import { SKILLS, SKILL_POINTS, TRASH, type Skill } from '@/lib/yeti/model'
+import { LEAGUE_SITE, SKILLS, SKILL_POINTS, TRASH, type Skill } from '@/lib/yeti/model'
 import { YetiLogo } from '../ui'
 
 export const metadata: Metadata = {
@@ -310,7 +310,13 @@ export default function YetiHelpPage() {
             <li>
               <b>New game</b> is for playoffs or anything extra.
             </li>
-            <li>League rule: players need 60% of regular-season games (23 of 38) to play in the playoffs.</li>
+            <li>
+              League rule: players need 60% of regular-season games (23 of 38) to play in the playoffs. Games played, standings and stats are on the league site,{' '}
+              <a href={LEAGUE_SITE.url} target="_blank" rel="noopener noreferrer">
+                {LEAGUE_SITE.label}
+              </a>
+              ; the <b>Games</b> tab links there too.
+            </li>
           </ul>
         </section>
 

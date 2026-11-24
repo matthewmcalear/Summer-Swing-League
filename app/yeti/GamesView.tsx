@@ -1,11 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { CalendarPlus, ChevronRight, Clock, Pencil, Trash2 } from 'lucide-react'
+import { CalendarPlus, ChevronRight, Clock, ExternalLink, Pencil, Trash2, Trophy } from 'lucide-react'
 import { newGame, type Action } from '@/lib/yeti/actions'
 import { BEER, beerNames } from '@/lib/yeti/beer'
 import { analyzeGame } from '@/lib/yeti/insights'
 import {
+  LEAGUE_SITE,
   LIMITS,
   OPPONENTS,
   addDays,
@@ -108,6 +109,15 @@ export function GamesView({ board, currentId, today, dispatch, toast, select, ne
       <button type="button" className="yt-btn yt-add" data-primary onClick={() => setSheet('new')} disabled={board.games.length >= LIMITS.games}>
         <CalendarPlus size={18} aria-hidden="true" /> New game
       </button>
+
+      <a className="yt-league-link" href={LEAGUE_SITE.url} target="_blank" rel="noopener noreferrer">
+        <Trophy size={19} aria-hidden="true" />
+        <span>
+          <b>{LEAGUE_SITE.label}</b>
+          <small>League standings, stats and details</small>
+        </span>
+        <ExternalLink size={16} aria-hidden="true" />
+      </a>
 
       <section className="yt-group" aria-label="Upcoming games">
         <header>

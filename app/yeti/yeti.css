@@ -1506,6 +1506,40 @@ body:has(.yeti) {
 .yt-games > .yt-add {
   margin: 0 0 4px;
 }
+.yt-league-link {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 10px;
+  padding: 11px 14px;
+  color: var(--yt-ink);
+  text-decoration: none;
+  background: color-mix(in srgb, var(--yt-surface) 84%, transparent);
+  border: 1px solid var(--yt-line);
+  border-radius: 13px;
+}
+.yt-league-link > svg:first-child {
+  flex: none;
+  color: var(--yt-red);
+}
+.yt-league-link > svg:last-child {
+  flex: none;
+  margin-left: auto;
+  color: var(--yt-muted);
+}
+.yt-league-link b {
+  display: block;
+  font-size: 15px;
+}
+.yt-league-link small {
+  display: block;
+  margin-top: 1px;
+  font-size: 12.5px;
+  color: var(--yt-muted);
+}
+.yt-league-link:active {
+  background: var(--yt-ice);
+}
 .yt-month + .yt-month {
   margin-top: 14px;
 }
