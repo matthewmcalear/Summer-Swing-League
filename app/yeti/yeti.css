@@ -105,6 +105,25 @@ body:has(.yeti) {
 .dark body:has(.yeti) {
   background: #08111d;
 }
+/* The team logo as a faint watermark behind everything. The header, dock and
+   sheets paint over it; the line and roster cards let a little through. */
+.yeti {
+  isolation: isolate;
+  --yt-mark-opacity: 0.07;
+}
+.dark .yeti {
+  --yt-mark-opacity: 0.06;
+}
+.yeti::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: url('./logo.webp') center 52% / min(82vw, 440px) auto no-repeat;
+  opacity: var(--yt-mark-opacity);
+}
+
 /* The page-entry slide would briefly re-anchor the fixed dock; skip it here. */
 .page-enter:has(.yeti) {
   animation: none;
@@ -464,7 +483,7 @@ body:has(.yeti) {
   gap: 6px;
   padding: 6px;
   margin-bottom: 7px;
-  background: var(--yt-ice);
+  background: color-mix(in srgb, var(--yt-ice) 82%, transparent);
   border: 1px solid var(--yt-line);
   border-radius: 15px;
 }
@@ -1312,7 +1331,7 @@ body:has(.yeti) {
   gap: 6px;
   padding: 0 7px 0 0;
   overflow: hidden;
-  background: var(--yt-surface);
+  background: color-mix(in srgb, var(--yt-surface) 84%, transparent);
   border: 1px solid var(--yt-line);
   border-radius: 13px;
 }
@@ -1834,6 +1853,8 @@ body:has(.yeti) {
   animation: yt-fade 0.15s ease-out;
 }
 .yt-ts-card {
+  position: relative;
+  isolation: isolate;
   width: 100%;
   max-width: 480px;
   overflow: hidden;
@@ -1841,6 +1862,16 @@ body:has(.yeti) {
   border: 1px solid var(--yt-line);
   border-radius: 22px;
   box-shadow: 0 12px 32px rgba(12, 26, 44, 0.14);
+}
+/* The same watermark inside the shared sheet; the header's own background covers it up top. */
+.yt-ts-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: url('./logo.webp') center 64% / 72% auto no-repeat;
+  opacity: 0.06;
 }
 .yt-ts-head {
   display: flex;
