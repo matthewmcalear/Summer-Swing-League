@@ -20,7 +20,7 @@ import { CalendarDays, ChevronDown, CircleHelp, LayoutGrid, RefreshCw, Undo2, Us
 import { analyzeGame } from '@/lib/yeti/insights'
 import { attendanceOf, defaultGameId, findGame, formatGameDate, localDate, slotLabel } from '@/lib/yeti/model'
 import { GamesView } from './GamesView'
-import { useBoardSync, useLocalState, useToasts, useToday, vibrate } from './hooks'
+import { recheckAdmin, useBoardSync, useLocalState, useToasts, useToday, vibrate } from './hooks'
 import { LinesView, Tray, type LinesHandlers } from './LinesView'
 import { PlayerSheet, RosterView } from './RosterView'
 import { TeamSheet } from './TeamSheet'
@@ -82,6 +82,15 @@ export default function YetiApp() {
   useEffect(() => {
     if (state.error) toast(state.error, { tone: 'alert' })
   }, [state.error, toast])
+
+  // The server kept the old skill level: this phone isn't (or is no longer) unlocked.
+  const lastRefused = useRef(0)
+  useEffect(() => {
+    if (state.skillsRefused <= lastRefused.current) return
+    lastRefused.current = state.skillsRefused
+    toast('Only an admin can change skill levels, so that was put back', { tone: 'alert', ms: 5000 })
+    void recheckAdmin()
+  }, [state.skillsRefused, toast])
 
   const goTo = useCallback(
     (next: Tab) => {

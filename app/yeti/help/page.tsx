@@ -270,8 +270,12 @@ export default function YetiHelpPage() {
               Under each name: skill, position and where he’s playing (e.g. “L2 C”). <span className="yt-help-warn">Not in the lineup</span> in red means he’s in but has no spot.
             </li>
             <li>
-              <b>Tap a player</b> to change his name, number, skill or position, mark him in or out, take him out of the lineup, or remove him from the roster (removing takes
+              <b>Tap a player</b> to change his name, number or position, mark him in or out, take him out of the lineup, or remove him from the roster (removing takes
               him off every game; you can undo).
+            </li>
+            <li>
+              <b>Skill levels need the admin password.</b> In the player sheet tap <b>Unlock</b> and enter it once; that phone stays unlocked until you tap{' '}
+              <b>Admin · Lock</b>. Without it the skill shows but can’t be changed, and new players start at Mid.
             </li>
             <li>
               <b>Add a player or sub</b> at the bottom. He appears on the bench, ready to drag in.
@@ -303,7 +307,8 @@ export default function YetiHelpPage() {
           <h2>Who sees what</h2>
           <ul>
             <li>
-              Anyone with the link can see and change everything here, including skill levels — so keep <b>sslgolf.com/yeti</b> between the people setting the lines.
+              Anyone with the link can see everything here, skill levels included, and change everything except skill levels — so keep <b>sslgolf.com/yeti</b> between the
+              people setting the lines.
             </li>
             <li>
               For the wider group, post a <b>Team sheet</b> screenshot or the <b>Share text</b>; neither shows skill levels.

@@ -1,4 +1,5 @@
 import { NextResponse, connection } from 'next/server'
+import { isYetiAdmin } from '@/lib/yeti/admin'
 import { APP_VERSION } from '@/lib/yeti/model'
 import { readBoard, saveBoard } from '@/lib/yeti/store'
 import { sanitizeBoard } from '@/lib/yeti/validate'
@@ -9,6 +10,10 @@ import { sanitizeBoard } from '@/lib/yeti/validate'
 //                          otherwise { version, updatedAt, app, board }
 //   PUT  /api/yeti        { baseVersion, board, app } → 200 saved | 409 someone saved
 //                          first (body has the newer board to rebase onto)
+//
+// Skill levels need the admin password (lib/yeti/admin.ts): a save without it
+// keeps every existing player's stored skill, and a 200 reports `skillsKept`
+// when it had to, so the page can say why the change didn't stick.
 //
 // `app` is the page-code version (APP_VERSION). Pages send theirs so an older
 // page's save can't wipe fields it doesn't know about; the server sends its own
@@ -52,7 +57,7 @@ export async function PUT(request: Request) {
 
   try {
     const app = typeof body?.app === 'number' && Number.isInteger(body.app) ? body.app : undefined
-    const result = await saveBoard(board, baseVersion, app)
+    const result = await saveBoard(board, baseVersion, { appVersion: app, canEditSkills: await isYetiAdmin() })
     const { ok, ...stored } = result
     return json(stored, ok ? 200 : 409)
   } catch (err) {

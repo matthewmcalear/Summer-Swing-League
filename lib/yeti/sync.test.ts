@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { applyAll } from './actions'
+import { keepSkills } from './merge'
 import { APP_VERSION, attendanceOf, sheetSeed, type Board } from './model'
 import { BoardSync } from './sync'
 import { sanitizeBoard } from './validate'
@@ -18,6 +19,8 @@ class FakeServer {
   /** Page version the server reports; undefined = an older server that doesn't send one. */
   app: number | undefined = undefined
   lastPutApp: unknown = undefined
+  /** Like the real route without the admin password: skill changes are refused. */
+  lockSkills = false
 
   fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     if (this.offline) throw new TypeError('Failed to fetch')
@@ -35,9 +38,10 @@ class FakeServer {
       this.conflicts++
       return reply(409, { version: this.version, updatedAt: this.updatedAt, board: this.board })
     }
-    this.board = sanitizeBoard(board)!
+    const { board: saved, kept } = this.lockSkills ? keepSkills(sanitizeBoard(board)!, this.board) : { board: sanitizeBoard(board)!, kept: 0 }
+    this.board = saved
     this.version++
-    return reply(200, { version: this.version, updatedAt: this.updatedAt, board: this.board })
+    return reply(200, { version: this.version, updatedAt: this.updatedAt, board: this.board, ...(kept ? { skillsKept: kept } : {}) })
   }) as typeof fetch
 }
 
@@ -182,6 +186,22 @@ describe('BoardSync', () => {
     a.dispatch({ t: 'attend', game: GAME, player: 'owen', value: 'out' })
     await settle()
     expect(server.lastPutApp).toBe(APP_VERSION)
+  })
+
+  it('puts a refused skill change back and says so, keeping the rest of the save', async () => {
+    server.lockSkills = true
+    const a = client()
+    await settle()
+    a.dispatch({ t: 'editPlayer', player: 'hugo', patch: { skill: 'Elite' } })
+    a.dispatch({ t: 'attend', game: GAME, player: 'owen', value: 'out' })
+    expect(a.getSnapshot().board!.players.find((p) => p.id === 'hugo')!.skill).toBe('Elite') // shown right away…
+    await settle()
+    const snap = a.getSnapshot()
+    expect(snap.board!.players.find((p) => p.id === 'hugo')!.skill).toBe('Low') // …until the server says no
+    expect(attendanceOf(game(snap.board), 'owen')).toBe('out')
+    expect(snap.skillsRefused).toBe(1)
+    expect(snap.status).toBe('live')
+    expect(snap.pending).toBe(0)
   })
 
   it('notices when the site has a newer page than this one', async () => {

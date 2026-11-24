@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { CheckCheck, Plus, Trash2, UserMinus } from 'lucide-react'
+import { CheckCheck, Lock, LockOpen, Plus, ShieldCheck, Trash2, UserMinus } from 'lucide-react'
 import type { Action } from '@/lib/yeti/actions'
 import { BEER } from '@/lib/yeti/beer'
 import type { GameInsights } from '@/lib/yeti/insights'
@@ -21,6 +21,7 @@ import {
   type Position,
   type Skill,
 } from '@/lib/yeti/model'
+import { useYetiAdmin } from './hooks'
 import { AttendanceToggle, Pips, Segmented, Sheet } from './ui'
 
 type SortKey = 'lineup' | 'skill' | 'number' | 'name'
@@ -201,6 +202,7 @@ export function PlayerSheet({
   const [draftPos, setDraftPos] = useState<Position>('F')
   const [draftAtt, setDraftAtt] = useState<Attendance>('in')
   const [confirmRemove, setConfirmRemove] = useState(false)
+  const admin = useYetiAdmin()
   const skill = player ? player.skill : draftSkill
   const pos = player ? player.pos : draftPos
   const att = player ? attendanceOf(game, player.id) : draftAtt
@@ -280,14 +282,35 @@ export function PlayerSheet({
       </div>
 
       <div className="yt-field">
-        <span className="yt-field-label">Skill</span>
+        <span className="yt-field-head">
+          <span className="yt-field-label">Skill</span>
+          {admin.admin &&
+            (admin.site ? (
+              <span className="yt-admin-tag" title="Signed in to the SSL admin">
+                <ShieldCheck size={14} aria-hidden="true" /> Admin
+              </span>
+            ) : (
+              <button
+                type="button"
+                className="yt-admin-tag"
+                onClick={async () => {
+                  await admin.lock()
+                  toast('Skill levels locked on this phone')
+                }}
+              >
+                <LockOpen size={14} aria-hidden="true" /> Admin · Lock
+              </button>
+            ))}
+        </span>
         <Segmented
           label="Skill"
           attr="skill"
           value={skill}
           options={SKILL_OPTIONS}
+          locked={!admin.admin}
           onChange={(s) => (player ? dispatch({ t: 'editPlayer', player: player.id, patch: { skill: s } }) : setDraftSkill(s))}
         />
+        {!admin.admin && <SkillUnlock isNew={isNew} unlock={admin.unlock} onUnlocked={() => toast('Unlocked: you can change skill levels on this phone')} />}
       </div>
 
       <div className="yt-field">
@@ -370,6 +393,80 @@ export function PlayerSheet({
         </div>
       )}
     </Sheet>
+  )
+}
+
+/** Skill levels need the admin password; this is where a phone gets unlocked. */
+function SkillUnlock({
+  isNew,
+  unlock,
+  onUnlocked,
+}: {
+  isNew: boolean
+  unlock: (password: string) => Promise<string | null>
+  onUnlocked: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  if (!open) {
+    return (
+      <div className="yt-lock-note">
+        <span>
+          <Lock size={14} aria-hidden="true" />
+          {isNew ? 'New players start at Mid. Only an admin can change skill.' : 'Only an admin can change skill.'}
+        </span>
+        <button type="button" className="yt-mini-btn" onClick={() => setOpen(true)}>
+          Unlock
+        </button>
+      </div>
+    )
+  }
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!password || busy) return
+    setBusy(true)
+    const problem = await unlock(password)
+    setBusy(false)
+    if (problem) {
+      setError(problem)
+      return
+    }
+    setPassword('')
+    onUnlocked()
+  }
+
+  return (
+    <form className="yt-unlock" onSubmit={submit}>
+      <div className="yt-unlock-row">
+        <input
+          className="yt-input"
+          type="password"
+          name="password"
+          autoComplete="current-password"
+          placeholder="Admin password"
+          aria-label="Admin password"
+          aria-invalid={error ? true : undefined}
+          value={password}
+          autoFocus
+          onChange={(e) => {
+            setPassword(e.target.value)
+            setError(null)
+          }}
+        />
+        <button type="submit" className="yt-mini-btn" data-primary disabled={!password || busy}>
+          {busy ? 'Checking…' : 'Unlock'}
+        </button>
+      </div>
+      {error && (
+        <p className="yt-unlock-error" role="alert">
+          {error}
+        </p>
+      )}
+    </form>
   )
 }
 

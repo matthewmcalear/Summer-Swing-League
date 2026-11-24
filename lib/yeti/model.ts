@@ -87,8 +87,10 @@ export const LIMITS = {
  * merge.ts). Bump it whenever the board gains a field.
  *   1–2: no version sent (lines, roster, games; then time/rink/home)
  *   3:   beer
+ *   4:   skill levels need the admin password (no new field; bumped so open
+ *        pages reload into the locked editor)
  */
-export const APP_VERSION = 3
+export const APP_VERSION = 4
 
 /** The other five Westmount teams, offered as quick picks for the opponent. */
 export const OPPONENTS = ['Kings', 'Hawks', 'Devils', 'Lightning', 'Coyotes'] as const

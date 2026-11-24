@@ -34,6 +34,8 @@ export interface SyncState {
   pending: number
   /** The server is running newer page code than this page: reload to get it. */
   updateAvailable: boolean
+  /** Increments whenever the server keeps skill levels a save tried to change (no admin password). */
+  skillsRefused: number
 }
 
 export interface SyncOptions {
@@ -50,6 +52,8 @@ interface ServerPayload {
   updatedAt: string | null
   board?: unknown
   app?: number
+  /** Skill changes the server refused on this save (they need the admin password). */
+  skillsKept?: number
 }
 
 interface Cached {
@@ -74,6 +78,7 @@ export class BoardSync {
   private remoteChanges = 0
   private error: string | null = null
   private serverApp = APP_VERSION
+  private skillsRefused = 0
 
   private inflight = false
   private fetching = false
@@ -127,6 +132,7 @@ export class BoardSync {
       error: this.error,
       pending: this.pending.length,
       updateAvailable: this.serverApp > APP_VERSION,
+      skillsRefused: this.skillsRefused,
     }
   }
 
@@ -274,6 +280,7 @@ export class BoardSync {
         this.version = body.version
         this.updatedAt = body.updatedAt ?? null
         this.view = applyAll(this.server, this.pending)
+        if (typeof body.skillsKept === 'number' && body.skillsKept > 0) this.skillsRefused++
         this.status = this.pending.length ? 'saving' : 'live'
         this.retryMs = 0
         this.conflicts = 0

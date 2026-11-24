@@ -31,3 +31,25 @@ export function carryOverForOldPage(incoming: Board, stored: Board, appVersion: 
     }),
   }
 }
+
+/**
+ * Skill levels need the admin password (see lib/yeti/admin.ts). The server
+ * calls this on saves made without it: every player the stored board already
+ * has keeps the stored skill, whatever the page sent. A player the stored board
+ * doesn't have (a new sub, or someone brought back by undo after a removal)
+ * keeps the skill the page sent; the page only offers non-admins Mid for a new
+ * player, and undo puts back the skill he had.
+ *
+ * `kept` counts the skill changes that were refused.
+ */
+export function keepSkills(incoming: Board, stored: Board): { board: Board; kept: number } {
+  const storedSkill = new Map(stored.players.map((p) => [p.id, p.skill]))
+  let kept = 0
+  const players = incoming.players.map((p) => {
+    const skill = storedSkill.get(p.id)
+    if (!skill || skill === p.skill) return p
+    kept++
+    return { ...p, skill }
+  })
+  return kept ? { board: { ...incoming, players }, kept } : { board: incoming, kept }
+}

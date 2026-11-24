@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { applyAll } from './actions'
-import { carryOverForOldPage } from './merge'
+import { carryOverForOldPage, keepSkills } from './merge'
 import { APP_VERSION, type Board } from './model'
 import { seedBoard } from './schedule'
 import { sanitizeBoard } from './validate'
@@ -54,5 +54,49 @@ describe('carryOverForOldPage', () => {
     expect(g(saved, '2026-11-03').beer).toEqual([])
     expect(g(saved, '2027-03-18').beer).toEqual([])
     expect(g(saved, '2026-10-20').beer).toEqual(['max'])
+  })
+})
+
+describe('keepSkills', () => {
+  const stored = seedBoard()
+  const skillOf = (b: Board, id: string) => b.players.find((p) => p.id === id)?.skill
+
+  it('puts back the stored skill for players the board already has', () => {
+    const edited = applyAll(stored, [
+      { t: 'editPlayer', player: 'hugo', patch: { skill: 'Elite' } },
+      { t: 'editPlayer', player: 'owen', patch: { skill: 'Low' } },
+    ])
+    const { board, kept } = keepSkills(edited, stored)
+    expect(kept).toBe(2)
+    expect(skillOf(board, 'hugo')).toBe('Low')
+    expect(skillOf(board, 'owen')).toBe('Elite')
+  })
+
+  it('leaves everything else the save changed alone', () => {
+    const edited = applyAll(stored, [
+      { t: 'editPlayer', player: 'hugo', patch: { skill: 'Elite', number: '55', pos: 'F' } },
+      { t: 'attend', game: 'g-2026-10-20', player: 'tom', value: 'out' },
+    ])
+    const { board } = keepSkills(edited, stored)
+    const hugo = board.players.find((p) => p.id === 'hugo')!
+    expect(hugo).toMatchObject({ skill: 'Low', number: '55', pos: 'F' })
+    expect(g(board, '2026-10-20').attendance.tom).toBe('out')
+  })
+
+  it('returns the same board when no skill changed', () => {
+    const edited = applyAll(stored, [{ t: 'editPlayer', player: 'hugo', patch: { name: 'Hugo B' } }])
+    const result = keepSkills(edited, stored)
+    expect(result.kept).toBe(0)
+    expect(result.board).toBe(edited)
+  })
+
+  it('keeps the sent skill for a player the stored board does not have (new sub, or undo after a removal)', () => {
+    const removed = applyAll(stored, [{ t: 'removePlayer', player: 'owen' }])
+    const { board, kept } = keepSkills(stored, removed) // undo brings Owen back
+    expect(kept).toBe(0)
+    expect(skillOf(board, 'owen')).toBe('Elite')
+
+    const added = applyAll(stored, [{ t: 'addPlayer', player: { id: 'sub1', name: 'Sub', number: '', skill: 'Mid', pos: 'F' } }])
+    expect(skillOf(keepSkills(added, stored).board, 'sub1')).toBe('Mid')
   })
 })

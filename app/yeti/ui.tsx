@@ -140,21 +140,25 @@ export function Segmented<T extends string | number>({
   onChange,
   label,
   attr,
+  locked,
 }: {
   value: T
   options: { value: T; label: ReactNode }[]
   onChange: (v: T) => void
   label: string
   attr?: string
+  /** Shows the current value but can't be changed. */
+  locked?: boolean
 }) {
   return (
-    <span className="yt-seg" data-size="lg" role="radiogroup" aria-label={label}>
+    <span className="yt-seg" data-size="lg" role="radiogroup" aria-label={label} aria-disabled={locked || undefined} data-locked={locked || undefined}>
       {options.map((o) => (
         <button
           key={String(o.value)}
           type="button"
           role="radio"
           aria-checked={value === o.value}
+          disabled={locked}
           {...(attr ? { [`data-${attr}`]: String(o.value) } : {})}
           onClick={() => onChange(o.value)}
         >

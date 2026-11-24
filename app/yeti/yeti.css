@@ -1087,6 +1087,74 @@ body:has(.yeti) {
   gap: 7px;
   margin-bottom: 16px;
 }
+/* Skill levels need the admin password: a locked picker shows the level but can't change it. */
+.yt-seg[data-locked] button {
+  cursor: default;
+}
+.yt-seg[data-locked] button:not([aria-checked='true']) {
+  opacity: 0.4;
+}
+.yt-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 18px;
+}
+.yt-admin-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--yt-in);
+}
+.yt-lock-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--yt-muted);
+}
+.yt-lock-note > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.yt-lock-note svg {
+  flex: none;
+}
+.yt-unlock {
+  display: grid;
+  gap: 6px;
+}
+.yt-unlock-row {
+  display: flex;
+  gap: 8px;
+}
+.yt-unlock-row .yt-input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+}
+.yt-unlock-row .yt-mini-btn {
+  height: 40px;
+}
+.yt-mini-btn[data-primary] {
+  color: var(--yt-on-primary);
+  background: var(--yt-primary);
+  border-color: transparent;
+}
+.yt-mini-btn:disabled {
+  opacity: 0.45;
+}
+.yt-unlock-error {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--yt-out);
+}
 .yt-field-label {
   font-size: 12px;
   font-weight: 700;

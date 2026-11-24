@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { carryOverForOldPage } from './merge'
+import { carryOverForOldPage, keepSkills } from './merge'
 import type { Board } from './model'
 import { SCHEDULE_ID, applySchedule, seedBoard } from './schedule'
 import { sanitizeBoard } from './validate'
@@ -95,20 +95,32 @@ async function readRow(): Promise<StoredBoard> {
 /**
  * Save `board` if the stored version is still `baseVersion`; either way, return
  * what's stored now. `appVersion` is the page version that sent it — an older
- * page's save keeps the fields that page doesn't know about (merge.ts).
+ * page's save keeps the fields that page doesn't know about (merge.ts). Without
+ * `canEditSkills` (the admin password) every existing player keeps his stored
+ * skill; `skillsKept` counts the skill changes that were refused.
  */
-export async function saveBoard(board: Board, baseVersion: number, appVersion?: number): Promise<SaveResult> {
+export async function saveBoard(
+  board: Board,
+  baseVersion: number,
+  opts: { appVersion?: number; canEditSkills: boolean },
+): Promise<SaveResult & { skillsKept: number }> {
   await ensureTable()
   const based = await readRow()
-  if (based.version === baseVersion) board = carryOverForOldPage(board, based.board, appVersion)
-  // No row yet (fresh database) → count 0 → readBoard creates it and the caller rebases.
-  // Anyone who saved since `based` was read bumps the version, so this can't overwrite them.
-  const { count } = await prisma.yetiBoard.updateMany({
-    where: { id: BOARD_ID, version: baseVersion },
-    data: { data: board as unknown as Prisma.InputJsonValue, version: { increment: 1 } },
-  })
+  let count = 0
+  let skillsKept = 0
+  // Only a save based on the board we just read can succeed, so the checks
+  // below always compare against the board it would replace.
+  if (based.version === baseVersion) {
+    board = carryOverForOldPage(board, based.board, opts.appVersion)
+    if (!opts.canEditSkills) ({ board, kept: skillsKept } = keepSkills(board, based.board))
+    // Anyone who saved since `based` was read bumps the version, so this can't overwrite them.
+    ;({ count } = await prisma.yetiBoard.updateMany({
+      where: { id: BOARD_ID, version: baseVersion },
+      data: { data: board as unknown as Prisma.InputJsonValue, version: { increment: 1 } },
+    }))
+  }
   const now = await readBoard()
   // A save from a phone still running the old page drops the schedule fields;
   // readBoard just put them back, which bumps the version — still a success.
-  return { ok: count === 1, ...now }
+  return { ok: count === 1, ...now, skillsKept: count === 1 ? skillsKept : 0 }
 }

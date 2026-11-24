@@ -14,6 +14,7 @@ const EMPTY: SyncState = {
   error: null,
   pending: 0,
   updateAvailable: false,
+  skillsRefused: 0,
 }
 
 function safeStorage(): Storage | null {
@@ -127,6 +128,94 @@ export function useLocalState<T extends string | null>(key: string, initial: T) 
     [key],
   )
   return [value, set] as const
+}
+
+// ── Admin: who may change skill levels ───────────────────────────────────────
+// Skill levels need the admin password (lib/yeti/admin.ts). Whether this phone
+// is unlocked is shared by every player editor on the page, checked once on
+// load and again whenever the server refuses a skill change.
+
+export interface AdminState {
+  /** May change skill levels on this phone. */
+  admin: boolean
+  /** Unlocked through the SSL admin sign-in, so "Lock" here can't undo it. */
+  site: boolean
+  /** The server has answered at least once. */
+  checked: boolean
+}
+
+const ADMIN_URL = '/api/yeti/admin'
+const NOT_ADMIN: AdminState = { admin: false, site: false, checked: false }
+let adminState: AdminState = NOT_ADMIN
+let adminCheck: Promise<void> | null = null
+const adminListeners = new Set<() => void>()
+
+function setAdmin(next: { admin: boolean; site: boolean }) {
+  adminState = { admin: next.admin, site: next.site, checked: true }
+  adminListeners.forEach((l) => l())
+}
+
+function subscribeAdmin(listener: () => void) {
+  adminListeners.add(listener)
+  return () => {
+    adminListeners.delete(listener)
+  }
+}
+
+const readAdminReply = (body: unknown) => {
+  const b = body as { admin?: unknown; site?: unknown } | null
+  if (b && typeof b.admin === 'boolean') setAdmin({ admin: b.admin, site: b.site === true })
+}
+
+/** Ask the server whether this phone may change skill levels. */
+export function recheckAdmin(): Promise<void> {
+  adminCheck ??= fetch(ADMIN_URL, { cache: 'no-store' })
+    .then((r) => (r.ok ? r.json() : null))
+    .then(readAdminReply)
+    .catch(() => {
+      // offline: keep what we knew
+    })
+    .finally(() => {
+      adminCheck = null
+    })
+  return adminCheck
+}
+
+export function useYetiAdmin() {
+  const state = useSyncExternalStore(subscribeAdmin, () => adminState, () => NOT_ADMIN)
+
+  useEffect(() => {
+    if (!adminState.checked) void recheckAdmin()
+  }, [])
+
+  /** Resolves to null when unlocked, or the message to show. */
+  const unlock = useCallback(async (password: string): Promise<string | null> => {
+    try {
+      const res = await fetch(ADMIN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
+      if (res.ok) {
+        setAdmin({ admin: true, site: adminState.site })
+        return null
+      }
+      return res.status === 401 ? 'Wrong password' : 'Couldn’t check the password. Try again.'
+    } catch {
+      return 'No connection. Try again when you’re back online.'
+    }
+  }, [])
+
+  const lock = useCallback(async () => {
+    try {
+      const res = await fetch(ADMIN_URL, { method: 'DELETE' })
+      readAdminReply(res.ok ? await res.json() : null)
+    } catch {
+      // offline: the phone stays unlocked until the next try
+    }
+  }, [])
+
+  return { ...state, unlock, lock }
 }
 
 const noopSubscribeDay = () => () => {}
