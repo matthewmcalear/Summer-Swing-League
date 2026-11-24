@@ -113,8 +113,8 @@ export function GamesView({ board, currentId, today, dispatch, toast, select, ne
       <a className="yt-league-link" href={LEAGUE_SITE.url} target="_blank" rel="noopener noreferrer">
         <Trophy size={19} aria-hidden="true" />
         <span>
-          <b>{LEAGUE_SITE.label}</b>
-          <small>League standings, stats and details</small>
+          <b>Yeti on {LEAGUE_SITE.label}</b>
+          <small>Record, stats, and games played toward the playoffs</small>
         </span>
         <ExternalLink size={16} aria-hidden="true" />
       </a>

@@ -98,8 +98,12 @@ export const LIMITS = {
  */
 export const APP_VERSION = 5
 
-/** The league's own site: standings, stats, games played. The app links there rather than repeat it. */
-export const LEAGUE_SITE = { url: 'https://westmounthockey.com', label: 'westmounthockey.com' } as const
+/**
+ * The Yeti's page on the league site: record, roster stats, and games played
+ * with how many each player still needs for the playoffs. The app links there
+ * rather than repeat it.
+ */
+export const LEAGUE_SITE = { url: 'https://westmounthockey.com/teams/687468', label: 'westmounthockey.com' } as const
 
 /** The other five Westmount teams, offered as quick picks for the opponent. */
 export const OPPONENTS = ['Kings', 'Hawks', 'Devils', 'Lightning', 'Coyotes'] as const

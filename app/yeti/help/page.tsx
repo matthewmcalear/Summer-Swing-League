@@ -311,11 +311,11 @@ export default function YetiHelpPage() {
               <b>New game</b> is for playoffs or anything extra.
             </li>
             <li>
-              League rule: players need 60% of regular-season games (23 of 38) to play in the playoffs. Games played, standings and stats are on the league site,{' '}
+              League rule: players need 60% of regular-season games (23 of 38) to play in the playoffs. The{' '}
               <a href={LEAGUE_SITE.url} target="_blank" rel="noopener noreferrer">
-                {LEAGUE_SITE.label}
-              </a>
-              ; the <b>Games</b> tab links there too.
+                Yeti page on {LEAGUE_SITE.label}
+              </a>{' '}
+              shows each player’s games played and how many he still needs, plus the record and stats; the <b>Games</b> tab links there too.
             </li>
           </ul>
         </section>
