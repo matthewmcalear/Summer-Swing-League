@@ -176,10 +176,13 @@ body:has(.yeti) {
   letter-spacing: 0.14em;
   line-height: 1;
 }
-.yt-brand svg {
-  width: 24px;
-  height: 24px;
+.yt-logo {
   flex: none;
+  width: auto;
+  object-fit: contain;
+}
+.yt-brand .yt-logo {
+  height: 40px;
 }
 /* Narrow phones: the logo alone, so the game button keeps its room. */
 @media (max-width: 400px) {
@@ -197,9 +200,8 @@ body:has(.yeti) {
   font-size: 21px;
   letter-spacing: 0.14em;
 }
-.yt-back svg:nth-child(2) {
-  width: 22px;
-  height: 22px;
+.yt-back .yt-logo {
+  height: 34px;
 }
 .yt-header-title {
   margin-left: auto;
@@ -1841,7 +1843,10 @@ body:has(.yeti) {
   box-shadow: 0 12px 32px rgba(12, 26, 44, 0.14);
 }
 .yt-ts-head {
-  padding: 16px 20px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px 18px 14px;
   color: #fff;
   background: linear-gradient(160deg, #173163 0%, #0c1a2c 62%);
   border-bottom: 4px solid #c8102e;
@@ -1856,9 +1861,11 @@ body:has(.yeti) {
   letter-spacing: 0.16em;
   opacity: 0.92;
 }
-.yt-ts-brand svg {
-  width: 22px;
-  height: 22px;
+.yt-ts-crest {
+  height: 84px;
+}
+.yt-ts-head-text {
+  min-width: 0;
 }
 .yt-ts-date {
   margin-top: 10px;
@@ -2053,6 +2060,11 @@ body:has(.yeti) {
   font-size: 15.5px;
   line-height: 1.55;
   color: var(--yt-ink-2);
+}
+.yt-help-logo {
+  display: block;
+  height: 96px;
+  margin: 10px 0 4px;
 }
 .yt-help h1 {
   margin: 6px 2px 8px;

@@ -5,7 +5,7 @@ import { X } from 'lucide-react'
 import { BEER, beerNames } from '@/lib/yeti/beer'
 import type { GameInsights, LineInfo } from '@/lib/yeti/insights'
 import { D_ROLES, F_ROLES, formatGameDate, gameWhere, opponentLabel, type Game } from '@/lib/yeti/model'
-import { YetiMark } from './ui'
+import { YetiLogo } from './ui'
 
 /**
  * The lines for the whole team, made to be screenshotted into the group chat:
@@ -77,17 +77,19 @@ export function TeamSheet({ game, info, onClose }: { game: Game; info: GameInsig
     <div className="yt-ts" role="dialog" aria-modal="true" aria-label={`Team sheet for ${formatGameDate(game.date)}`}>
       <article className="yt-ts-card">
         <header className="yt-ts-head">
-          <div className="yt-ts-brand">
-            <YetiMark />
-            <span>YETI</span>
-          </div>
-          <div className="yt-ts-date">{formatGameDate(game.date)}</div>
-          {(where || versus) && (
-            <div className="yt-ts-where">
-              {[where, versus].filter(Boolean).join(' · ')}
-              {game.home !== null && <span>{game.home ? 'Home' : 'Away'}</span>}
+          <YetiLogo size={84} className="yt-ts-crest" priority />
+          <div className="yt-ts-head-text">
+            <div className="yt-ts-brand">
+              <span>YETI</span>
             </div>
-          )}
+            <div className="yt-ts-date">{formatGameDate(game.date)}</div>
+            {(where || versus) && (
+              <div className="yt-ts-where">
+                {[where, versus].filter(Boolean).join(' · ')}
+                {game.home !== null && <span>{game.home ? 'Home' : 'Away'}</span>}
+              </div>
+            )}
+          </div>
         </header>
 
         <section className="yt-ts-section">

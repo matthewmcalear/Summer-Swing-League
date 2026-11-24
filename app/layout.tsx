@@ -19,6 +19,11 @@ export const metadata: Metadata = {
   title: 'Summer Swing League 2026',
   description: 'Competitive and social golf league — April 15 to October 10, 2026',
   metadataBase: new URL('https://sslgolf.com'),
+  // Home-screen name, status bar and manifest live here (not as hand-written
+  // <head> tags) so a section like /yeti can swap in its own. The home-screen
+  // icon is app/apple-icon.png.
+  manifest: '/manifest.json',
+  appleWebApp: { title: 'SSL 2026', statusBarStyle: 'black-translucent' },
   openGraph: {
     title: 'Summer Swing League 2026',
     description: 'Competitive group golf all summer long. Any course. Any skill level. Play more, earn more, win cash.',
@@ -58,11 +63,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `(function(){try{var t=localStorage.getItem('theme');var d=t==='dark'||((!t||t==='auto')&&matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark')}catch(e){}})()`,
           }}
         />
-        <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        {/* Next's appleWebApp metadata writes mobile-web-app-capable; older iOS wants this one. */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="SSL 2026" />
       </head>
       <body className={`${inter.className} ${fraunces.variable}`}>
         <NavBar />

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { AlertTriangle, ArrowLeft, CalendarDays, Clock, Info, LayoutGrid, Share2, Sparkles, Undo2, Users } from 'lucide-react'
 import { SKILLS, SKILL_POINTS, TRASH, type Skill } from '@/lib/yeti/model'
-import { YetiMark } from '../ui'
+import { YetiLogo } from '../ui'
 
 export const metadata: Metadata = {
   title: 'How Yeti Lines works',
@@ -51,7 +51,7 @@ export default function YetiHelpPage() {
         <div className="yt-header-inner">
           <Link href="/yeti" className="yt-back" aria-label="Back to the lines">
             <ArrowLeft size={20} aria-hidden="true" />
-            <YetiMark />
+            <YetiLogo size={34} />
             <span>YETI</span>
           </Link>
           <span className="yt-header-title">How it works</span>
@@ -59,6 +59,7 @@ export default function YetiHelpPage() {
       </header>
 
       <div className="yt-main yt-help">
+        <YetiLogo size={96} className="yt-help-logo" priority />
         <h1>How Yeti Lines works</h1>
         <p className="yt-help-lead">
           One shared board for setting the Yeti’s lines every game. Everyone who opens <b>sslgolf.com/yeti</b> sees the same board, and a change on one phone

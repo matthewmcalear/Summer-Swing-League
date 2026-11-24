@@ -24,7 +24,7 @@ import { recheckAdmin, useBoardSync, useLocalState, useToasts, useToday, vibrate
 import { LinesView, Tray, type LinesHandlers } from './LinesView'
 import { PlayerSheet, RosterView } from './RosterView'
 import { TeamSheet } from './TeamSheet'
-import { ChipFace, SyncBadge, Toasts, YetiMark } from './ui'
+import { ChipFace, SyncBadge, Toasts, YetiLogo } from './ui'
 
 type Tab = 'lines' | 'roster' | 'games'
 
@@ -273,7 +273,7 @@ export default function YetiApp() {
       <header className="yt-header">
         <div className="yt-header-inner">
           <div className="yt-brand">
-            <YetiMark />
+            <YetiLogo size={40} priority />
             <span>YETI</span>
           </div>
           {game ? (
