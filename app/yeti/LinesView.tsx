@@ -3,10 +3,11 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
-import { AlertTriangle, ArrowDown, ArrowUp, Clock, Copy, Eraser, Info, LayoutGrid, Pencil, Share2, Sparkles, Users, X } from 'lucide-react'
+import { AlertTriangle, ArrowDown, ArrowUp, Clock, Copy, Eraser, ExternalLink, Info, LayoutGrid, Pencil, Share2, Sparkles, Users, X } from 'lucide-react'
 import type { Action } from '@/lib/yeti/actions'
 import { suggestLineup, type BalanceMode } from '@/lib/yeti/balance'
 import type { GameInsights, LineInfo, SlotInfo } from '@/lib/yeti/insights'
+import { leagueGameUrl } from '@/lib/yeti/league'
 import {
   LIMITS,
   ROLE_LABEL,
@@ -263,6 +264,7 @@ export function LinesView({
   const warnings = showAllWarnings ? info.warnings : info.warnings.slice(0, 3)
   const where = gameWhere(game)
   const versus = opponentLabel(game)
+  const league = leagueGameUrl(game)
   // An empty game can start from the most recent earlier game that has lines.
   const source =
     info.counts.filled === 0
@@ -280,6 +282,11 @@ export function LinesView({
           )}
           {versus && <b>{versus}</b>}
           {game.home !== null && <span className="yt-homeaway">{game.home ? 'Home' : 'Away'}</span>}
+          {league && (
+            <a className="yt-gameinfo-link" href={league} target="_blank" rel="noopener noreferrer">
+              League page <ExternalLink size={13} aria-hidden="true" />
+            </a>
+          )}
         </p>
       )}
 

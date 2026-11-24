@@ -5,8 +5,8 @@ import { CalendarPlus, ChevronRight, Clock, ExternalLink, Pencil, Trash2, Trophy
 import { newGame, type Action } from '@/lib/yeti/actions'
 import { BEER, beerNames } from '@/lib/yeti/beer'
 import { analyzeGame } from '@/lib/yeti/insights'
+import { LEAGUE_SITE, leagueGameUrl } from '@/lib/yeti/league'
 import {
-  LEAGUE_SITE,
   LIMITS,
   OPPONENTS,
   addDays,
@@ -57,6 +57,7 @@ export function GamesView({ board, currentId, today, dispatch, toast, select, ne
     const info = analyzeGame(board, g)
     const where = gameWhere(g)
     const untouched = info.counts.filled === 0 && info.counts.in === 0 && info.counts.out === 0
+    const league = leagueGameUrl(g)
     return (
       <li key={g.id} className="yt-game" data-current={g.id === currentId || undefined}>
         <button type="button" className="yt-game-main" onClick={() => select(g.id)}>
@@ -89,6 +90,18 @@ export function GamesView({ board, currentId, today, dispatch, toast, select, ne
           </span>
           <ChevronRight className="yt-game-go" size={18} aria-hidden="true" />
         </button>
+        {league && (
+          <a
+            className="yt-icon-btn yt-game-league"
+            href={league}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${formatGameDate(g.date)} on ${LEAGUE_SITE.label}${g.date < today ? ' (score)' : ''}`}
+            title={g.date < today ? 'Score and scorers on the league site' : 'Game page on the league site'}
+          >
+            <ExternalLink size={17} aria-hidden="true" />
+          </a>
+        )}
         <button type="button" className="yt-icon-btn" onClick={() => setSheet(g.id)} aria-label={`Edit game on ${formatGameDate(g.date)}`}>
           <Pencil size={17} />
         </button>

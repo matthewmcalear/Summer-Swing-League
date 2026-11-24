@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { AlertTriangle, ArrowLeft, CalendarDays, Clock, Info, LayoutGrid, Share2, Sparkles, Undo2, Users } from 'lucide-react'
-import { LEAGUE_SITE, SKILLS, SKILL_POINTS, TRASH, type Skill } from '@/lib/yeti/model'
+import { LEAGUE_SITE } from '@/lib/yeti/league'
+import { SKILLS, SKILL_POINTS, TRASH, type Skill } from '@/lib/yeti/model'
 import { YetiLogo } from '../ui'
 
 export const metadata: Metadata = {
@@ -307,6 +308,10 @@ export default function YetiHelpPage() {
               Every game keeps its own attendance and lines, so you can plan Thursday while Tuesday stays as it was. New games start with everyone unconfirmed and no lines.
             </li>
             <li>Tap a game to open it; tap the pencil to change its date, time, rink, opponent or home/away, or delete it.</li>
+            <li>
+              The <b>↗</b> next to a game opens its page on {LEAGUE_SITE.label}: the matchup before, the score and scorers after. The game info at the top of the
+              Lines tab links there too.
+            </li>
             <li>
               <b>New game</b> is for playoffs or anything extra.
             </li>

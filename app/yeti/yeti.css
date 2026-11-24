@@ -324,6 +324,16 @@ body:has(.yeti) {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
+.yt-gameinfo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--yt-blue);
+  text-decoration: none;
+}
 .yt-gameinfo b {
   font-family: var(--font-yt-display), var(--font-sans);
   font-size: 17px;
@@ -1445,6 +1455,9 @@ body:has(.yeti) {
   background: var(--yt-surface);
   border: 1px solid var(--yt-line);
   border-radius: 14px;
+}
+.yt-game-league {
+  color: var(--yt-muted);
 }
 .yt-game[data-current] {
   border-color: var(--yt-blue);
