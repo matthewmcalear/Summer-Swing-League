@@ -11,9 +11,11 @@ import { sanitizeBoard } from '@/lib/yeti/validate'
 //   PUT  /api/yeti        { baseVersion, board, app } → 200 saved | 409 someone saved
 //                          first (body has the newer board to rebase onto)
 //
-// Skill levels need the admin password (lib/yeti/admin.ts): a save without it
-// keeps every existing player's stored skill, and a 200 reports `skillsKept`
-// when it had to, so the page can say why the change didn't stick.
+// The roster needs the admin password (lib/yeti/admin.ts): a save without it
+// keeps the stored roster — who's on the team and every player's name, number,
+// skill and position — while the rest of the save goes through, and a 200
+// reports `rosterKept` when it had to, so the page can say why the change
+// didn't stick.
 //
 // `app` is the page-code version (APP_VERSION). Pages send theirs so an older
 // page's save can't wipe fields it doesn't know about; the server sends its own
@@ -57,7 +59,7 @@ export async function PUT(request: Request) {
 
   try {
     const app = typeof body?.app === 'number' && Number.isInteger(body.app) ? body.app : undefined
-    const result = await saveBoard(board, baseVersion, { appVersion: app, canEditSkills: await isYetiAdmin() })
+    const result = await saveBoard(board, baseVersion, { appVersion: app, canEditRoster: await isYetiAdmin() })
     const { ok, ...stored } = result
     return json(stored, ok ? 200 : 409)
   } catch (err) {

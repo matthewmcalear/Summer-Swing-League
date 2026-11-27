@@ -282,15 +282,15 @@ export default function YetiHelpPage() {
               Under each name: skill, position and where he’s playing (e.g. “L2 C”). <span className="yt-help-warn">Not in the lineup</span> in red means he’s in but has no spot.
             </li>
             <li>
-              <b>Tap a player</b> to change his name, number or position, mark him in or out, take him out of the lineup, or remove him from the roster (removing takes
-              him off every game; you can undo).
+              <b>Tap a player</b> to mark him in or out for the game, put him on beer, or take him out of the lineup.
             </li>
             <li>
-              <b>Skill levels need the admin password.</b> In the player sheet tap <b>Unlock</b> and enter it once; that phone stays unlocked until you tap{' '}
-              <b>Admin · Lock</b>. Without it the skill shows but can’t be changed, and new players start at Mid.
+              <b>The roster needs the admin password:</b> adding or removing players, and each player’s name, number, skill and position. In the player sheet tap{' '}
+              <b>Unlock</b> and enter it once; that phone stays unlocked until you tap <b>Lock</b>. Without it the details show but can’t be changed. Removing a
+              player takes him off every game (you can undo).
             </li>
             <li>
-              <b>Add a player or sub</b> at the bottom. He appears on the bench, ready to drag in.
+              <b>Add a player or sub</b> at the bottom (admin). He appears on the bench, ready to drag in.
             </li>
             <li>Sort by lines, skill, number or name.</li>
           </ul>
@@ -329,8 +329,8 @@ export default function YetiHelpPage() {
           <h2>Who sees what</h2>
           <ul>
             <li>
-              Anyone with the link can see everything here, skill levels included, and change everything except skill levels — so keep <b>sslgolf.com/yeti</b> between the
-              people setting the lines.
+              Anyone with the link can see everything here, skill levels included, and set the lines, attendance, beer and games; only the roster needs the admin
+              password. So keep <b>sslgolf.com/yeti</b> between the people setting the lines.
             </li>
             <li>
               For the wider group, post a <b>Team sheet</b> screenshot or the <b>Share text</b>; neither shows skill levels.

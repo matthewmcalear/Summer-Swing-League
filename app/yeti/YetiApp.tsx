@@ -83,14 +83,19 @@ export default function YetiApp() {
     if (state.error) toast(state.error, { tone: 'alert' })
   }, [state.error, toast])
 
-  // The server kept the old skill level: this phone isn't (or is no longer) unlocked.
+  // Whether this phone may change the roster, known before anyone opens a player.
+  useEffect(() => {
+    void recheckAdmin()
+  }, [])
+
+  // The server kept the stored roster: this phone isn't (or is no longer) unlocked.
   const lastRefused = useRef(0)
   useEffect(() => {
-    if (state.skillsRefused <= lastRefused.current) return
-    lastRefused.current = state.skillsRefused
-    toast('Only an admin can change skill levels, so that was put back', { tone: 'alert', ms: 5000 })
+    if (state.rosterRefused <= lastRefused.current) return
+    lastRefused.current = state.rosterRefused
+    toast('Only an admin can change the roster, so that was put back', { tone: 'alert', ms: 5000 })
     void recheckAdmin()
-  }, [state.skillsRefused, toast])
+  }, [state.rosterRefused, toast])
 
   const goTo = useCallback(
     (next: Tab) => {

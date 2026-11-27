@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useEffect, useEffectEvent, useId, useRef, type ReactNode } from 'react'
 import Image from 'next/image'
 import { X } from 'lucide-react'
 import { BEER } from '@/lib/yeti/beer'
@@ -203,17 +203,21 @@ export function Sheet({
   const titleId = useId()
   const ref = useRef<HTMLDivElement>(null)
   const restore = useRef<HTMLElement | null>(null)
+  // Callers pass a fresh onClose on every render (each keystroke in a field), so
+  // it's read as an event: the effect below runs on open and close only, and
+  // never pulls focus back to the first field mid-typing.
+  const closeOnEscape = useEffectEvent(() => onClose())
 
   useEffect(() => {
     if (!open) return
     restore.current = document.activeElement as HTMLElement | null
     const el = ref.current
-    const first = el?.querySelector<HTMLElement>('[data-autofocus], input, button:not([data-close])')
+    const first = el?.querySelector<HTMLElement>('[data-autofocus]') ?? el?.querySelector<HTMLElement>('input, button:not([data-close])')
     first?.focus({ preventScroll: true })
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation()
-        onClose()
+        closeOnEscape()
       }
     }
     document.addEventListener('keydown', onKey)
@@ -224,7 +228,7 @@ export function Sheet({
       document.body.style.overflow = prevOverflow
       restore.current?.focus?.({ preventScroll: true })
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
   return (

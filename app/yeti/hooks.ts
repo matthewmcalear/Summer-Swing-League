@@ -14,7 +14,7 @@ const EMPTY: SyncState = {
   error: null,
   pending: 0,
   updateAvailable: false,
-  skillsRefused: 0,
+  rosterRefused: 0,
 }
 
 function safeStorage(): Storage | null {
@@ -130,13 +130,14 @@ export function useLocalState<T extends string | null>(key: string, initial: T) 
   return [value, set] as const
 }
 
-// ── Admin: who may change skill levels ───────────────────────────────────────
-// Skill levels need the admin password (lib/yeti/admin.ts). Whether this phone
-// is unlocked is shared by every player editor on the page, checked once on
-// load and again whenever the server refuses a skill change.
+// ── Admin: who may change the roster ─────────────────────────────────────────
+// The roster (who's on the team; names, numbers, skill, position) needs the
+// admin password (lib/yeti/admin.ts). Whether this phone is unlocked is shared
+// by every player editor on the page, checked once on load and again whenever
+// the server refuses a roster change.
 
 export interface AdminState {
-  /** May change skill levels on this phone. */
+  /** May change the roster on this phone. */
   admin: boolean
   /** Unlocked through the SSL admin sign-in, so "Lock" here can't undo it. */
   site: boolean
@@ -167,7 +168,7 @@ const readAdminReply = (body: unknown) => {
   if (b && typeof b.admin === 'boolean') setAdmin({ admin: b.admin, site: b.site === true })
 }
 
-/** Ask the server whether this phone may change skill levels. */
+/** Ask the server whether this phone may change the roster. */
 export function recheckAdmin(): Promise<void> {
   adminCheck ??= fetch(ADMIN_URL, { cache: 'no-store' })
     .then((r) => (r.ok ? r.json() : null))

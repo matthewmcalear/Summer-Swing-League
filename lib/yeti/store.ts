@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { carryOverForOldPage, keepSkills } from './merge'
+import { carryOverForOldPage, keepRoster } from './merge'
 import type { Board } from './model'
 import { SCHEDULE_ID, applySchedule, seedBoard } from './schedule'
 import { sanitizeBoard } from './validate'
@@ -96,23 +96,24 @@ async function readRow(): Promise<StoredBoard> {
  * Save `board` if the stored version is still `baseVersion`; either way, return
  * what's stored now. `appVersion` is the page version that sent it — an older
  * page's save keeps the fields that page doesn't know about (merge.ts). Without
- * `canEditSkills` (the admin password) every existing player keeps his stored
- * skill; `skillsKept` counts the skill changes that were refused.
+ * `canEditRoster` (the admin password) the roster stays as stored: who's on the
+ * team and every player's name, number, skill and position. `rosterKept` counts
+ * the players whose change was refused.
  */
 export async function saveBoard(
   board: Board,
   baseVersion: number,
-  opts: { appVersion?: number; canEditSkills: boolean },
-): Promise<SaveResult & { skillsKept: number }> {
+  opts: { appVersion?: number; canEditRoster: boolean },
+): Promise<SaveResult & { rosterKept: number }> {
   await ensureTable()
   const based = await readRow()
   let count = 0
-  let skillsKept = 0
+  let rosterKept = 0
   // Only a save based on the board we just read can succeed, so the checks
   // below always compare against the board it would replace.
   if (based.version === baseVersion) {
     board = carryOverForOldPage(board, based.board, opts.appVersion)
-    if (!opts.canEditSkills) ({ board, kept: skillsKept } = keepSkills(board, based.board))
+    if (!opts.canEditRoster) ({ board, kept: rosterKept } = keepRoster(board, based.board))
     // Anyone who saved since `based` was read bumps the version, so this can't overwrite them.
     ;({ count } = await prisma.yetiBoard.updateMany({
       where: { id: BOARD_ID, version: baseVersion },
@@ -122,5 +123,5 @@ export async function saveBoard(
   const now = await readBoard()
   // A save from a phone still running the old page drops the schedule fields;
   // readBoard just put them back, which bumps the version — still a success.
-  return { ok: count === 1, ...now, skillsKept: count === 1 ? skillsKept : 0 }
+  return { ok: count === 1, ...now, rosterKept: count === 1 ? rosterKept : 0 }
 }

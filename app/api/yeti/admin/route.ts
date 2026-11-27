@@ -2,9 +2,9 @@ import { NextResponse, connection } from 'next/server'
 import { isAdmin as isSiteAdmin } from '@/lib/auth'
 import { adminStatus, endSession, isConfigured, passwordMatches, startSession } from '@/lib/yeti/admin'
 
-// Unlocks skill editing on /yeti for this phone (see lib/yeti/admin.ts).
+// Unlocks roster editing on /yeti for this phone (see lib/yeti/admin.ts).
 //
-//   GET    → { admin, site }   whether this phone may change skill levels
+//   GET    → { admin, site }   whether this phone may change the roster
 //   POST   { password }        → 200 unlocked | 401 wrong password
 //   DELETE                     → locks this phone again → { admin, site }
 

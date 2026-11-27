@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { applyAll } from './actions'
-import { carryOverForOldPage, keepSkills } from './merge'
-import { APP_VERSION, type Board } from './model'
+import { carryOverForOldPage, keepRoster } from './merge'
+import { APP_VERSION, slotOf, type Board } from './model'
 import { seedBoard } from './schedule'
 import { sanitizeBoard } from './validate'
 
@@ -57,47 +57,79 @@ describe('carryOverForOldPage', () => {
   })
 })
 
-describe('keepSkills', () => {
-  const stored = seedBoard()
-  const skillOf = (b: Board, id: string) => b.players.find((p) => p.id === id)?.skill
+describe('keepRoster', () => {
+  const stored = applyAll(seedBoard(), [
+    { t: 'setBeer', game: 'g-2026-10-20', players: ['hugo'] },
+    { t: 'attend', game: 'g-2026-11-03', player: 'hugo', value: 'out' },
+  ])
+  const player = (b: Board, id: string) => b.players.find((p) => p.id === id)
 
-  it('puts back the stored skill for players the board already has', () => {
+  it('puts back the stored name, number, skill and position', () => {
     const edited = applyAll(stored, [
-      { t: 'editPlayer', player: 'hugo', patch: { skill: 'Elite' } },
+      { t: 'editPlayer', player: 'hugo', patch: { name: 'Hugo B', number: '55', skill: 'Elite', pos: 'F' } },
       { t: 'editPlayer', player: 'owen', patch: { skill: 'Low' } },
     ])
-    const { board, kept } = keepSkills(edited, stored)
+    const { board, kept } = keepRoster(edited, stored)
     expect(kept).toBe(2)
-    expect(skillOf(board, 'hugo')).toBe('Low')
-    expect(skillOf(board, 'owen')).toBe('Elite')
+    expect(board.players).toEqual(stored.players)
   })
 
-  it('leaves everything else the save changed alone', () => {
+  it('lets the rest of the save through: attendance, lines, beer and games', () => {
     const edited = applyAll(stored, [
-      { t: 'editPlayer', player: 'hugo', patch: { skill: 'Elite', number: '55', pos: 'F' } },
+      { t: 'editPlayer', player: 'hugo', patch: { name: 'Hugo B' } },
       { t: 'attend', game: 'g-2026-10-20', player: 'tom', value: 'out' },
+      { t: 'place', game: 'g-2026-10-20', player: 'dan', slot: 'F3-LW' },
+      { t: 'setBeer', game: 'g-2026-11-03', players: ['max'] },
+      { t: 'editGame', game: 'g-2026-10-22', patch: { time: '21:30' } },
     ])
-    const { board } = keepSkills(edited, stored)
-    const hugo = board.players.find((p) => p.id === 'hugo')!
-    expect(hugo).toMatchObject({ skill: 'Low', number: '55', pos: 'F' })
-    expect(g(board, '2026-10-20').attendance.tom).toBe('out')
+    const { board } = keepRoster(edited, stored)
+    expect(board).toEqual({ ...edited, players: stored.players })
   })
 
-  it('returns the same board when no skill changed', () => {
-    const edited = applyAll(stored, [{ t: 'editPlayer', player: 'hugo', patch: { name: 'Hugo B' } }])
-    const result = keepSkills(edited, stored)
+  it('returns the same board when the roster is untouched', () => {
+    const edited = applyAll(stored, [{ t: 'attend', game: 'g-2026-10-20', player: 'tom', value: 'out' }])
+    const result = keepRoster(edited, stored)
     expect(result.kept).toBe(0)
     expect(result.board).toBe(edited)
   })
 
-  it('keeps the sent skill for a player the stored board does not have (new sub, or undo after a removal)', () => {
-    const removed = applyAll(stored, [{ t: 'removePlayer', player: 'owen' }])
-    const { board, kept } = keepSkills(stored, removed) // undo brings Owen back
-    expect(kept).toBe(0)
-    expect(skillOf(board, 'owen')).toBe('Elite')
+  it('drops a player the save added, from the games too', () => {
+    const edited = applyAll(stored, [
+      { t: 'addPlayer', player: { id: 'sub1', name: 'Sub', number: '99', skill: 'Elite', pos: 'F' }, game: 'g-2026-10-20', attendance: 'in' },
+      { t: 'place', game: 'g-2026-10-20', player: 'sub1', slot: 'F3-LW' },
+      { t: 'beer', game: 'g-2026-10-20', player: 'sub1', on: true },
+    ])
+    const { board, kept } = keepRoster(edited, stored)
+    expect(kept).toBe(1)
+    expect(player(board, 'sub1')).toBeUndefined()
+    const game = g(board, '2026-10-20')
+    expect(game.attendance.sub1).toBeUndefined()
+    expect(game.slots['F3-LW']).toBeUndefined()
+    expect(game.beer).toEqual(['hugo'])
+    expect(board).toEqual(stored)
+  })
 
-    const added = applyAll(stored, [{ t: 'addPlayer', player: { id: 'sub1', name: 'Sub', number: '', skill: 'Mid', pos: 'F' } }])
-    expect(skillOf(keepSkills(added, stored).board, 'sub1')).toBe('Mid')
+  it('brings back a player the save removed, with his attendance, spot and beer', () => {
+    const edited = applyAll(stored, [{ t: 'removePlayer', player: 'hugo' }])
+    const { board, kept } = keepRoster(edited, stored)
+    expect(kept).toBe(1)
+    expect(board).toEqual(stored)
+    expect(g(board, '2026-10-20')).toMatchObject({ beer: ['hugo'], slots: { 'D1-RD': 'hugo' }, attendance: { hugo: 'in' } })
+    expect(g(board, '2026-11-03').attendance.hugo).toBe('out')
+  })
+
+  it('sends a removed player to the bench when the save filled his spot', () => {
+    const edited = applyAll(stored, [
+      { t: 'removePlayer', player: 'hugo' },
+      { t: 'place', game: 'g-2026-10-20', player: 'dan', slot: 'D1-RD' },
+    ])
+    const { board } = keepRoster(edited, stored)
+    const game = g(board, '2026-10-20')
+    expect(player(board, 'hugo')).toEqual(player(stored, 'hugo'))
+    expect(game.slots['D1-RD']).toBe('dan')
+    expect(slotOf(game, 'hugo')).toBeNull()
+    expect(game.attendance.hugo).toBe('in')
+    expect(game.beer).toEqual(['hugo'])
   })
 })
 
@@ -116,8 +148,8 @@ describe('the Trash skill level and pages from before it', () => {
     const saved = carryOverForOldPage(edited, stored, 4)
     expect(skillOf(saved, 'tom')).toBe('Trash')
     expect(g(saved, '2026-10-20').attendance.max).toBe('out')
-    // …so the skill lock has nothing to refuse
-    expect(keepSkills(saved, stored).kept).toBe(0)
+    // …so the roster lock has nothing to refuse
+    expect(keepRoster(saved, stored).kept).toBe(0)
   })
 
   it('still lets an older page (admin) move him off Trash on purpose', () => {

@@ -95,8 +95,10 @@ export const LIMITS = {
  *   4:   skill levels need the admin password (no new field; bumped so open
  *        pages reload into the locked editor)
  *   5:   the Trash (🗑️) skill level — older pages read it as Mid
+ *   6:   the whole roster needs the admin password, not just skill levels (no
+ *        new field; bumped so open pages reload into the locked editor)
  */
-export const APP_VERSION = 5
+export const APP_VERSION = 6
 
 /** The other five Westmount teams, offered as quick picks for the opponent. */
 export const OPPONENTS = ['Kings', 'Hawks', 'Devils', 'Lightning', 'Coyotes'] as const
