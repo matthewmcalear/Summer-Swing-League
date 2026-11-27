@@ -2,7 +2,8 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { cookies } from 'next/headers'
 import { isAdmin as isSiteAdmin } from '@/lib/auth'
 
-// Changing skill levels on /yeti needs a password: YETI_ADMIN_PASSWORD when it's
+// Changing the roster on /yeti — adding or removing players, or a player's name,
+// number, skill or position — needs a password: YETI_ADMIN_PASSWORD when it's
 // set (so the team's line-setter can have one without getting into the SSL
 // admin), otherwise the site's ADMIN_PASSWORD. Being signed in to the SSL admin
 // counts too. The cookie holds a value derived from the password, never the
@@ -31,7 +32,7 @@ export function passwordMatches(input: string): boolean {
   return !!pw && timingSafeEqual(digest(input), digest(pw))
 }
 
-/** admin: may change skill levels. site: that's because of the SSL admin sign-in (so locking here won't undo it). */
+/** admin: may change the roster. site: that's because of the SSL admin sign-in (so locking here won't undo it). */
 export async function adminStatus(): Promise<{ admin: boolean; site: boolean }> {
   const token = sessionToken()
   const got = (await cookies()).get(COOKIE)?.value

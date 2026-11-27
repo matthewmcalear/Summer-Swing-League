@@ -1131,19 +1131,16 @@ body:has(.yeti) {
   gap: 7px;
   margin-bottom: 16px;
 }
-/* Skill levels need the admin password: a locked picker shows the level but can't change it. */
+/* The roster needs the admin password: locked pickers and fields show the value but can't change it. */
 .yt-seg[data-locked] button {
   cursor: default;
 }
 .yt-seg[data-locked] button:not([aria-checked='true']) {
   opacity: 0.4;
 }
-.yt-field-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 18px;
+.yt-input[readonly] {
+  background: transparent;
+  border-color: var(--yt-line);
 }
 .yt-admin-tag {
   display: inline-flex;

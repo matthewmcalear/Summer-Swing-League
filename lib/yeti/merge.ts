@@ -1,4 +1,5 @@
-import type { Board } from './model'
+import { slotOf, type Board, type Game } from './model'
+import { sanitizeBoard } from './validate'
 
 /**
  * A phone can keep running an older page for hours after a deploy. That page
@@ -43,23 +44,52 @@ export function carryOverForOldPage(incoming: Board, stored: Board, appVersion: 
 }
 
 /**
- * Skill levels need the admin password (see lib/yeti/admin.ts). The server
- * calls this on saves made without it: every player the stored board already
- * has keeps the stored skill, whatever the page sent. A player the stored board
- * doesn't have (a new sub, or someone brought back by undo after a removal)
- * keeps the skill the page sent; the page only offers non-admins Mid for a new
- * player, and undo puts back the skill he had.
+ * The roster — who's on the team, and each player's name, number, skill and
+ * position — needs the admin password (see lib/yeti/admin.ts). The server
+ * calls this on saves made without it. The roster stays exactly as stored,
+ * whatever the page sent, while the rest of the save (attendance, lines, beer,
+ * games) goes through:
+ *   - a player the save changed keeps his stored details
+ *   - a player the save added is dropped, with his attendance, spot and beer
+ *   - a player the save removed comes back with his attendance and beer, and
+ *     his spot in each game if the save hasn't filled it (otherwise the bench)
  *
- * `kept` counts the skill changes that were refused.
+ * `kept` counts the players whose change was refused.
  */
-export function keepSkills(incoming: Board, stored: Board): { board: Board; kept: number } {
-  const storedSkill = new Map(stored.players.map((p) => [p.id, p.skill]))
-  let kept = 0
-  const players = incoming.players.map((p) => {
-    const skill = storedSkill.get(p.id)
-    if (!skill || skill === p.skill) return p
-    kept++
-    return { ...p, skill }
-  })
-  return kept ? { board: { ...incoming, players }, kept } : { board: incoming, kept }
+export function keepRoster(incoming: Board, stored: Board): { board: Board; kept: number } {
+  const sent = new Map(incoming.players.map((p) => [p.id, p]))
+  const storedIds = new Set(stored.players.map((p) => p.id))
+  let kept = incoming.players.filter((p) => !storedIds.has(p.id)).length
+  const removed: string[] = []
+  for (const p of stored.players) {
+    const s = sent.get(p.id)
+    if (!s) {
+      removed.push(p.id)
+      kept++
+    } else if (s.name !== p.name || s.number !== p.number || s.skill !== p.skill || s.pos !== p.pos) {
+      kept++
+    }
+  }
+  if (!kept) return { board: incoming, kept }
+
+  const before = new Map(stored.games.map((g) => [g.id, g]))
+  const games = removed.length ? incoming.games.map((g) => putBack(g, before.get(g.id), removed)) : incoming.games
+  // Cleaning against the stored roster also clears out players the save added.
+  const board = sanitizeBoard({ ...incoming, players: stored.players, games }) ?? incoming
+  return { board, kept }
+}
+
+/** Puts removed players back into a game as the stored board had them, leaving any spot the save has filled since. */
+function putBack(game: Game, before: Game | undefined, ids: readonly string[]): Game {
+  if (!before) return game // a game the save added
+  const attendance = { ...game.attendance }
+  const slots = { ...game.slots }
+  const beer = game.beer.slice()
+  for (const id of ids) {
+    if (before.attendance[id]) attendance[id] = before.attendance[id]
+    const slot = slotOf(before, id)
+    if (slot && !slots[slot]) slots[slot] = id
+    if (before.beer.includes(id) && !beer.includes(id)) beer.push(id)
+  }
+  return { ...game, attendance, slots, beer }
 }

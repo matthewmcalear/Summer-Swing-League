@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { applyAll } from './actions'
-import { keepSkills } from './merge'
+import { keepRoster } from './merge'
 import { APP_VERSION, attendanceOf, sheetSeed, type Board } from './model'
 import { BoardSync } from './sync'
 import { sanitizeBoard } from './validate'
@@ -19,8 +19,8 @@ class FakeServer {
   /** Page version the server reports; undefined = an older server that doesn't send one. */
   app: number | undefined = undefined
   lastPutApp: unknown = undefined
-  /** Like the real route without the admin password: skill changes are refused. */
-  lockSkills = false
+  /** Like the real route without the admin password: roster changes are refused. */
+  lockRoster = false
 
   fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     if (this.offline) throw new TypeError('Failed to fetch')
@@ -38,10 +38,10 @@ class FakeServer {
       this.conflicts++
       return reply(409, { version: this.version, updatedAt: this.updatedAt, board: this.board })
     }
-    const { board: saved, kept } = this.lockSkills ? keepSkills(sanitizeBoard(board)!, this.board) : { board: sanitizeBoard(board)!, kept: 0 }
+    const { board: saved, kept } = this.lockRoster ? keepRoster(sanitizeBoard(board)!, this.board) : { board: sanitizeBoard(board)!, kept: 0 }
     this.board = saved
     this.version++
-    return reply(200, { version: this.version, updatedAt: this.updatedAt, board: this.board, ...(kept ? { skillsKept: kept } : {}) })
+    return reply(200, { version: this.version, updatedAt: this.updatedAt, board: this.board, ...(kept ? { rosterKept: kept } : {}) })
   }) as typeof fetch
 }
 
@@ -188,18 +188,21 @@ describe('BoardSync', () => {
     expect(server.lastPutApp).toBe(APP_VERSION)
   })
 
-  it('puts a refused skill change back and says so, keeping the rest of the save', async () => {
-    server.lockSkills = true
+  it('puts a refused roster change back and says so, keeping the rest of the save', async () => {
+    server.lockRoster = true
     const a = client()
     await settle()
-    a.dispatch({ t: 'editPlayer', player: 'hugo', patch: { skill: 'Elite' } })
+    const hugo = (b: Board | null) => b!.players.find((p) => p.id === 'hugo')
+    a.dispatch({ t: 'editPlayer', player: 'hugo', patch: { name: 'Hugo B', skill: 'Elite' } })
+    a.dispatch({ t: 'addPlayer', player: { id: 'sub1', name: 'Sub', number: '', skill: 'Mid', pos: 'F' }, game: GAME, attendance: 'in' })
     a.dispatch({ t: 'attend', game: GAME, player: 'owen', value: 'out' })
-    expect(a.getSnapshot().board!.players.find((p) => p.id === 'hugo')!.skill).toBe('Elite') // shown right away…
+    expect(hugo(a.getSnapshot().board)).toMatchObject({ name: 'Hugo B', skill: 'Elite' }) // shown right away…
     await settle()
     const snap = a.getSnapshot()
-    expect(snap.board!.players.find((p) => p.id === 'hugo')!.skill).toBe('Low') // …until the server says no
+    expect(hugo(snap.board)).toMatchObject({ name: 'Hugo', skill: 'Low' }) // …until the server says no
+    expect(snap.board!.players.some((p) => p.id === 'sub1')).toBe(false)
     expect(attendanceOf(game(snap.board), 'owen')).toBe('out')
-    expect(snap.skillsRefused).toBe(1)
+    expect(snap.rosterRefused).toBe(1)
     expect(snap.status).toBe('live')
     expect(snap.pending).toBe(0)
   })

@@ -42,6 +42,7 @@ const ATT_ORDER: Record<Attendance, number> = { in: 0, maybe: 1, out: 2 }
 export function RosterView({ board, game, info, dispatch, toast, newId }: RosterProps) {
   const [sort, setSort] = useState<SortKey>('lineup')
   const [editing, setEditing] = useState<string | 'new' | null>(null)
+  const admin = useYetiAdmin()
 
   const players = useMemo(() => {
     const list = board.players.slice()
@@ -145,8 +146,14 @@ export function RosterView({ board, game, info, dispatch, toast, newId }: Roster
         })}
       </ul>
 
-      <button type="button" className="yt-btn yt-add" onClick={() => setEditing('new')} disabled={board.players.length >= LIMITS.players}>
-        <Plus size={18} aria-hidden="true" /> Add a player or sub
+      <button
+        type="button"
+        className="yt-btn yt-add"
+        onClick={() => setEditing('new')}
+        disabled={board.players.length >= LIMITS.players}
+        aria-label={admin.admin ? undefined : 'Add a player or sub (needs the admin password)'}
+      >
+        {admin.admin ? <Plus size={18} aria-hidden="true" /> : <Lock size={17} aria-hidden="true" />} Add a player or sub
       </button>
 
       <PlayerSheet
@@ -210,6 +217,8 @@ export function PlayerSheet({
   const [draftAtt, setDraftAtt] = useState<Attendance>('in')
   const [confirmRemove, setConfirmRemove] = useState(false)
   const admin = useYetiAdmin()
+  // The roster needs the admin password: without it a player's details show but can't change.
+  const locked = !admin.admin
   const skill = player ? player.skill : draftSkill
   const pos = player ? player.pos : draftPos
   const att = player ? attendanceOf(game, player.id) : draftAtt
@@ -217,7 +226,7 @@ export function PlayerSheet({
   if (!playerId || (!isNew && !player)) return null
 
   const commitText = () => {
-    if (!player) return
+    if (!player || locked) return
     const patch: { name?: string; number?: string } = {}
     if (name.trim() && name.trim() !== player.name) patch.name = name
     if (number.trim() !== player.number) patch.number = number
@@ -230,7 +239,7 @@ export function PlayerSheet({
   }
 
   const add = () => {
-    if (!name.trim()) return
+    if (!name.trim() || locked) return
     const ok = dispatch({
       t: 'addPlayer',
       player: { id: newId(), name, number, skill, pos },
@@ -242,6 +251,8 @@ export function PlayerSheet({
   }
 
   const slot = player ? info.placed.get(player.id) : undefined
+  // Adding a player without the password: just the password, then the form.
+  const askFirst = isNew && locked
 
   return (
     <Sheet
@@ -250,9 +261,11 @@ export function PlayerSheet({
       onClose={close}
       footer={
         isNew ? (
-          <button type="button" className="yt-btn" data-primary disabled={!name.trim()} onClick={add}>
-            <Plus size={17} aria-hidden="true" /> Add to roster
-          </button>
+          askFirst ? undefined : (
+            <button type="button" className="yt-btn" data-primary disabled={!name.trim()} onClick={add}>
+              <Plus size={17} aria-hidden="true" /> Add to roster
+            </button>
+          )
         ) : (
           <button type="button" className="yt-btn" data-primary onClick={close}>
             Done
@@ -260,85 +273,87 @@ export function PlayerSheet({
         )
       }
     >
-      <div className="yt-form-row">
-        <label className="yt-field" data-grow>
-          <span className="yt-field-label">Name</span>
-          <input
-            className="yt-input"
-            value={name}
-            maxLength={LIMITS.nameLength}
-            autoComplete="off"
-            autoCapitalize="words"
-            onChange={(e) => setName(e.target.value)}
-            onBlur={commitText}
-            data-autofocus={isNew || undefined}
-          />
-        </label>
-        <label className="yt-field" data-num>
-          <span className="yt-field-label">Number</span>
-          <input
-            className="yt-input"
-            value={number}
-            inputMode="numeric"
-            maxLength={LIMITS.numberLength}
-            autoComplete="off"
-            onChange={(e) => setNumber(e.target.value)}
-            onBlur={commitText}
-          />
-        </label>
-      </div>
-
       <div className="yt-field">
-        <span className="yt-field-head">
-          <span className="yt-field-label">Skill</span>
-          {admin.admin &&
-            (admin.site ? (
-              <span className="yt-admin-tag" title="Signed in to the SSL admin">
-                <ShieldCheck size={14} aria-hidden="true" /> Admin
-              </span>
-            ) : (
-              <button
-                type="button"
-                className="yt-admin-tag"
-                onClick={async () => {
-                  await admin.lock()
-                  toast('Skill levels locked on this phone')
-                }}
-              >
-                <LockOpen size={14} aria-hidden="true" /> Admin · Lock
-              </button>
-            ))}
-        </span>
-        <Segmented
-          label="Skill"
-          attr="skill"
-          value={skill}
-          options={SKILL_OPTIONS}
-          locked={!admin.admin}
-          onChange={(s) => (player ? dispatch({ t: 'editPlayer', player: player.id, patch: { skill: s } }) : setDraftSkill(s))}
-        />
-        {!admin.admin && <SkillUnlock isNew={isNew} unlock={admin.unlock} onUnlocked={() => toast('Unlocked: you can change skill levels on this phone')} />}
-      </div>
-
-      <div className="yt-field">
-        <span className="yt-field-label">Position · {POSITION_LABEL[pos]}</span>
-        <Segmented
-          label="Position"
-          value={pos}
-          options={POS_OPTIONS}
-          onChange={(p) => (player ? dispatch({ t: 'editPlayer', player: player.id, patch: { pos: p } }) : setDraftPos(p))}
+        <RosterAccess
+          admin={admin}
+          isNew={isNew}
+          toast={toast}
+          onUnlocked={() => {
+            // Edit from the board as it is now, in case it changed while this was open.
+            if (player) {
+              setName(player.name)
+              setNumber(player.number)
+            }
+          }}
         />
       </div>
 
-      <div className="yt-field">
-        <span className="yt-field-label">{formatGameDate(game.date)}</span>
-        <AttendanceToggle
-          size="lg"
-          name={player?.name ?? 'New player'}
-          value={att}
-          onChange={(v) => (player ? dispatch({ t: 'attend', game: game.id, player: player.id, value: v }) : setDraftAtt(v))}
-        />
-      </div>
+      {!askFirst && (
+        <>
+          <div className="yt-form-row">
+            <label className="yt-field" data-grow>
+              <span className="yt-field-label">Name</span>
+              <input
+                className="yt-input"
+                value={locked && player ? player.name : name}
+                readOnly={locked}
+                maxLength={LIMITS.nameLength}
+                autoComplete="off"
+                autoCapitalize="words"
+                onChange={(e) => setName(e.target.value)}
+                onBlur={commitText}
+                data-autofocus={!locked || undefined}
+              />
+            </label>
+            <label className="yt-field" data-num>
+              <span className="yt-field-label">Number</span>
+              <input
+                className="yt-input"
+                value={locked && player ? player.number : number}
+                readOnly={locked}
+                inputMode="numeric"
+                maxLength={LIMITS.numberLength}
+                autoComplete="off"
+                onChange={(e) => setNumber(e.target.value)}
+                onBlur={commitText}
+              />
+            </label>
+          </div>
+
+          <div className="yt-field">
+            <span className="yt-field-label">Skill</span>
+            <Segmented
+              label="Skill"
+              attr="skill"
+              value={skill}
+              options={SKILL_OPTIONS}
+              locked={locked}
+              onChange={(s) => (player ? dispatch({ t: 'editPlayer', player: player.id, patch: { skill: s } }) : setDraftSkill(s))}
+            />
+          </div>
+
+          <div className="yt-field">
+            <span className="yt-field-label">Position · {POSITION_LABEL[pos]}</span>
+            <Segmented
+              label="Position"
+              value={pos}
+              options={POS_OPTIONS}
+              locked={locked}
+              onChange={(p) => (player ? dispatch({ t: 'editPlayer', player: player.id, patch: { pos: p } }) : setDraftPos(p))}
+            />
+          </div>
+
+          <div className="yt-field">
+            <span className="yt-field-label">{formatGameDate(game.date)}</span>
+            <AttendanceToggle
+              size="lg"
+              name={player?.name ?? 'New player'}
+              value={att}
+              onChange={(v) => (player ? dispatch({ t: 'attend', game: game.id, player: player.id, value: v }) : setDraftAtt(v))}
+            />
+          </div>
+        </>
+      )}
 
       {player && (
         <div className="yt-field yt-inline">
@@ -371,7 +386,7 @@ export function PlayerSheet({
         </div>
       )}
 
-      {player && (
+      {player && !locked && (
         <div className="yt-danger-zone">
           {confirmRemove ? (
             <>
@@ -403,8 +418,64 @@ export function PlayerSheet({
   )
 }
 
-/** Skill levels need the admin password; this is where a phone gets unlocked. */
-function SkillUnlock({
+/**
+ * The roster (who's on the team; names, numbers, skill, position) needs the
+ * admin password. The top of the player sheet says whether this phone has it,
+ * and is where a phone gets unlocked, or locked again.
+ */
+function RosterAccess({
+  admin,
+  isNew,
+  toast,
+  onUnlocked,
+}: {
+  admin: ReturnType<typeof useYetiAdmin>
+  isNew: boolean
+  toast: RosterProps['toast']
+  onUnlocked: () => void
+}) {
+  if (!admin.admin) {
+    return (
+      <RosterUnlock
+        isNew={isNew}
+        unlock={admin.unlock}
+        onUnlocked={() => {
+          onUnlocked()
+          toast('Unlocked: you can change the roster on this phone')
+        }}
+      />
+    )
+  }
+  if (admin.site) {
+    return (
+      <div className="yt-lock-note">
+        <span className="yt-admin-tag" title="Signed in to the SSL admin">
+          <ShieldCheck size={14} aria-hidden="true" /> Admin · signed in to the SSL admin
+        </span>
+      </div>
+    )
+  }
+  return (
+    <div className="yt-lock-note">
+      <span className="yt-admin-tag">
+        <LockOpen size={14} aria-hidden="true" /> Admin · roster unlocked
+      </span>
+      <button
+        type="button"
+        className="yt-mini-btn"
+        onClick={async () => {
+          await admin.lock()
+          toast('Roster locked on this phone')
+        }}
+      >
+        <Lock size={14} aria-hidden="true" /> Lock
+      </button>
+    </div>
+  )
+}
+
+/** Where a phone gets unlocked. Adding a player opens straight to the password. */
+function RosterUnlock({
   isNew,
   unlock,
   onUnlocked,
@@ -413,18 +484,22 @@ function SkillUnlock({
   unlock: (password: string) => Promise<string | null>
   onUnlocked: () => void
 }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(isNew)
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
+  const note = (
+    <span>
+      <Lock size={14} aria-hidden="true" />
+      {isNew ? 'Only an admin can add players.' : 'Only an admin can change the roster.'}
+    </span>
+  )
+
   if (!open) {
     return (
       <div className="yt-lock-note">
-        <span>
-          <Lock size={14} aria-hidden="true" />
-          {isNew ? 'New players start at Mid. Only an admin can change skill.' : 'Only an admin can change skill.'}
-        </span>
+        {note}
         <button type="button" className="yt-mini-btn" onClick={() => setOpen(true)}>
           Unlock
         </button>
@@ -448,6 +523,7 @@ function SkillUnlock({
 
   return (
     <form className="yt-unlock" onSubmit={submit}>
+      <div className="yt-lock-note">{note}</div>
       <div className="yt-unlock-row">
         <input
           className="yt-input"
